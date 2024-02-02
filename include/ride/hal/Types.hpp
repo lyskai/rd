@@ -40,7 +40,9 @@ typedef enum
     RIDE_HAL_ERROR_UNSUPPORTED,       ///<  Unsupported.
     RIDE_HAL_ERROR_STATE,             ///<  Wrong state
     RIDE_HAL_ERROR_BUSY,              ///<  Device or resource busy
-    RIDE_HAL_ERROR_EXISTS,            ///<  the object already exists
+    RIDE_HAL_ERROR_EXISTS,            ///<  The object already exists
+    RIDE_HAL_ERROR_ACCES,             ///<  Permission denied
+    RIDE_HAL_ERROR_TIMEOUT,           ///<  Timeout
     RIDE_HAL_ERROR_MAX = 0x7FFFFFFF   ///<  Do not use.
 } RideHalError_e;
 

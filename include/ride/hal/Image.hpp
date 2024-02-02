@@ -28,7 +28,7 @@ public:
     /// @param usage the DMA buffer usage
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Allocate( uint32_t width, uint32_t height, RideHal_ImageFormat_e format,
-                             RideHal_BufferFlags_t flags = 0,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA,
                              RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA );
 
     /// @brief Allocate the DMA memory for batched image with best strides/paddings
@@ -41,7 +41,8 @@ public:
     /// @param usage the DMA buffer usage
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Allocate( uint32_t batchSize, uint32_t width, uint32_t height,
-                             RideHal_ImageFormat_e format, RideHal_BufferFlags_t flags = 0,
+                             RideHal_ImageFormat_e format,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA,
                              RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA );
 
     /// @brief Allocate the DMA memory for image with specified image properties
@@ -49,7 +50,8 @@ public:
     /// @param flags the DMA buffer flags
     /// @param usage the DMA buffer usage
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Allocate( const RideHal_ImageProps_t *pImgProps, RideHal_BufferFlags_t flags = 0,
+    RideHalError_e Allocate( const RideHal_ImageProps_t *pImgProps,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA,
                              RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA );
 
     /// @brief Get the shared buffer information

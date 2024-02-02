@@ -21,7 +21,8 @@ endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
     list( APPEND BUFFER_MANAGER_SOURCES Buffer_Linux.cpp )    
-    list( APPEND TARGET_LIBRARIES kiumd )
+    list( APPEND TARGET_LIBRARIES kiumd apdf )
+    list( APPEND HEADERS_DIR ${CMAKE_SYSROOT}/usr/include/WF )
 endif()
 
 add_library( RideHalBufferManager SHARED ${BUFFER_MANAGER_SOURCES} )

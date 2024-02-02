@@ -25,7 +25,7 @@ public:
     /// @param usage the DMA buffer usage
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Allocate( const RideHal_TensorProps_t *pTensorProps,
-                             RideHal_BufferFlags_t flags = 0,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA,
                              RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_HTP );
 };
 

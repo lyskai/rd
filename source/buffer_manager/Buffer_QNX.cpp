@@ -21,27 +21,17 @@ static uint32_t s_usageToPMemID[RIDE_HAL_BUFFER_USAGE_MAX] = {
         PMEM_DSP_ID                   /* RIDE_HAL_BUFFER_USAGE_HTP */
 };
 
-RideHalError_e Buffer::Allocate( size_t size, RideHal_BufferFlags_t flags,
-                                 RideHal_BufferUsage_e usage )
+RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t size,
+                                    RideHal_BufferFlags_t flags, RideHal_BufferUsage_e usage )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    void *pData = nullptr;
     uint32_t pmemFlags = PMEM_FLAGS_CACHE_NONE | PMEM_FLAGS_PHYS_NON_CONTIG | PMEM_FLAGS_SHMEM;
     uint32_t pmemID = PMEM_DMA_ID;
     pmem_handle_t pmemHandle = nullptr;
-    BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
-    uint64_t id;
 
-    if ( nullptr == pBufferManager )
+    if ( ( nullptr == pData ) || ( nullptr == pDmaHandle ) )
     {
-        ret = RIDE_HAL_ERROR_STATE;
-    }
-    else if ( nullptr != m_sharedBuffer.buffer.pData )
-    {
-        ret = RIDE_HAL_ERROR_EXISTS;
-    }
-    else
-    {
+        ret = RIDE_HAL_ERROR_NULL_PTR;
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -65,73 +55,38 @@ RideHalError_e Buffer::Allocate( size_t size, RideHal_BufferFlags_t flags,
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        pData = pmem_malloc_ext_v2( size, pmemID, pmemFlags, PMEM_ALIGNMENT_4K, 0x0, &pmemHandle,
-                                    NULL );
-        if ( nullptr == pData )
+        *pData = pmem_malloc_ext_v2( size, pmemID, pmemFlags, PMEM_ALIGNMENT_4K, 0x0, &pmemHandle,
+                                     NULL );
+        if ( nullptr == *pData )
         {
             ret = RIDE_HAL_ERROR_NORES;
         }
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        m_sharedBuffer.buffer.pData = pData;
-        m_sharedBuffer.buffer.dmaHandle = static_cast<uint64_t>( (uintptr_t) pmemHandle );
-        m_sharedBuffer.buffer.size = size;
-        m_sharedBuffer.buffer.id = id;
-        m_sharedBuffer.buffer.usage = usage;
-        m_sharedBuffer.buffer.flags = flags;
-        m_sharedBuffer.size = size;
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = pBufferManager->Register( this, &id );
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        m_sharedBuffer.buffer.id = id;
-    }
-    else
-    {
-        if ( nullptr != pData )
+        else
         {
-            pmem_free( pData );
+            *pDmaHandle = static_cast<uint64_t>( (uintptr_t) pmemHandle );
         }
-        ResetSharedBuffer();
     }
 
     return ret;
 }
 
-RideHalError_e Buffer::Free()
+RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
 {
+    int rc = 0;
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
 
-    if ( nullptr == pBufferManager )
+    if ( nullptr == pData )
     {
-        ret = RIDE_HAL_ERROR_STATE;
-    }
-    else if ( nullptr == m_sharedBuffer.buffer.pData )
-    {
-        ret = RIDE_HAL_ERROR_INVALID_BUF;
+        ret = RIDE_HAL_ERROR_NULL_PTR;
     }
     else
     {
-        /* OK */
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = pBufferManager->Deregister( m_sharedBuffer.buffer.id );
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        pmem_free( m_sharedBuffer.buffer.pData );
-        ResetSharedBuffer();
+        rc = pmem_free( pData );
+        if (0 != rc)
+        {
+            ret = RIDE_HAL_ERROR_ACCES;
+        }
     }
 
     return ret;

@@ -35,7 +35,8 @@ public:
     /// @param flags the DMA buffer flags
     /// @param usage the DMA buffer usage
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Allocate( size_t size, RideHal_BufferFlags_t flags = 0,
+    RideHalError_e Allocate( size_t size,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA,
                              RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
 
     /// @brief Free the DMA memory
@@ -61,6 +62,23 @@ private:
 protected:
     RideHal_SharedBuffer_t m_sharedBuffer;
 };
+
+/// @brief Allocate the DMA memory
+/// @param pData [out] the allocated DMA data address
+/// @param pDmaHandle [out] the allocated DMA handle
+/// @param size the wanted DMA memory size
+/// @param flags the DMA buffer flags
+/// @param usage the DMA buffer usage
+/// @return RIDE_HAL_ERROR_NONE on success, others on failure
+RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t size,
+                                    RideHal_BufferFlags_t flags, RideHal_BufferUsage_e usage );
+
+/// @brief Free the DMA memory
+/// @param pData the allocated DMA data address
+/// @param pDmaHandle the allocated DMA handle
+/// @param size the wanted DMA memory size
+/// @return RIDE_HAL_ERROR_NONE on success, others on failure
+RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size );
 
 }   // namespace memory
 }   // namespace hal
