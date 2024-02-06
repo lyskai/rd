@@ -34,6 +34,7 @@ public:
     ~Logger() = default;
 
     void Log( Logger::Level_e level, const char *pFormat, ... );
+    void Log( Logger::Level_e level, const char *pFormat, va_list args );
 
 private:
     void *m_pPriv = nullptr;

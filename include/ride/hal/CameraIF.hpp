@@ -23,13 +23,6 @@ public:
     CameraIF() = default;
     ~CameraIF() = default;
 
-    /// @brief Initialize the camera
-    /// @param name the camera unique instance name
-    /// @param pConfig the camera opaque configuration paramaters
-    /// @param pLogger the logger used by the camera to log messages
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Init( std::string name, const void *pConfig, Logger *pLogger ) = 0;
-
     /// @brief Start the camera
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Start() = 0;

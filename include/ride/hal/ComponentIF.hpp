@@ -21,6 +21,7 @@ typedef enum
     RIDE_HAL_COMPONENT_STATE_INITIAL = 0,   ///< the initial state
     RIDE_HAL_COMPONENT_STATE_READY,         ///< the ready state
     RIDE_HAL_COMPONENT_STATE_RUNNING,       ///< the running state
+    RIDE_HAL_COMPONENT_STATE_ERROR,         ///< the error state
     RIDE_HAL_COMPONENT_STATE_MAX
 } RideHal_ComponentState_t;
 
@@ -35,10 +36,9 @@ public:
 
     /// @brief Initialize the component
     /// @param name the component unique instance name
-    /// @param pConfig the component opaque configuration paramaters
     /// @param pLogger the logger used by the component to log messages
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Init( std::string name, const void *pConfig, Logger *pLogger ) = 0;
+    RideHalError_e Init( std::string name, Logger *pLogger );
 
     /// @brief Start the component
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
@@ -64,19 +64,11 @@ protected:
     /// @return void
     void Log( Logger::Level_e level, const char *pFormat, ... );
 
-    /// @brief check is the component OK to go to the new state
-    /// @param newState the new state
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e IsOKToGoToState( RideHal_ComponentState_t newState );
-
-    /// @brief put the component into new state
-    /// @param newState the new state
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GoToState( RideHal_ComponentState_t newState );
-
 private:
     std::string m_Name;
     Logger *m_pLogger = nullptr;
+
+protected:
     RideHal_ComponentState_t m_State = RIDE_HAL_COMPONENT_STATE_INITIAL;
 
 };   // class ComponentIF

@@ -20,13 +20,6 @@ public:
     ExecutorIF() = default;
     ~ExecutorIF() = default;
 
-    /// @brief Initialize the executor
-    /// @param name the executor unique instance name
-    /// @param pConfig the executor opaque configuration paramaters
-    /// @param pLogger the logger used by the executor to log messages
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Init( std::string name, const void *pConfig, Logger *pLogger ) = 0;
-
     /// @brief Start the executor
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Start() = 0;

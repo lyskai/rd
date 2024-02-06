@@ -10,3 +10,4 @@ set(GTEST_TIMEOUT 600)
 include(GoogleTest)
 
 add_subdirectory(buffer_manager)
+add_subdirectory(components)

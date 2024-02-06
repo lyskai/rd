@@ -3,3 +3,4 @@
 
 add_executable( gtest_BufferManager gtest_BufferManager.cpp )
 target_link_libraries( gtest_BufferManager GTest::Main Ride::Hal::BufferManager )
+install(TARGETS gtest_BufferManager DESTINATION bin)

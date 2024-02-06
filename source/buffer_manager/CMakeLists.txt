@@ -21,7 +21,7 @@ endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
     list( APPEND BUFFER_MANAGER_SOURCES Buffer_Linux.cpp )    
-    list( APPEND TARGET_LIBRARIES kiumd apdf )
+    list( APPEND TARGET_LIBRARIES kiumd apdf aosal )
     list( APPEND HEADERS_DIR ${CMAKE_SYSROOT}/usr/include/WF )
 endif()
 
@@ -35,3 +35,5 @@ target_include_directories( RideHalBufferManager PUBLIC ${HEADERS_DIR} )
 target_link_libraries( RideHalBufferManager PUBLIC ${TARGET_LIBRARIES} )
 
 add_library(Ride::Hal::BufferManager ALIAS RideHalBufferManager)
+
+install(TARGETS RideHalBufferManager DESTINATION lib)
