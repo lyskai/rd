@@ -18,7 +18,6 @@ RideHalError_e ComponentIF::Init( std::string name, Logger *pLogger )
     }
     else
     {
-
         m_Name = name;
         m_pLogger = pLogger;
     }

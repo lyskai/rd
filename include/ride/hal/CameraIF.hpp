@@ -17,7 +17,7 @@ typedef void ( *Camera_FrameCallback_t )( RideHal_SharedBuffer_t *pBuffer, uint6
 /// @brief ride::hal::CameraIF
 ///
 /// Camera Interface
-class CameraIF
+class CameraIF : public ComponentIF
 {
 public:
     CameraIF() = default;

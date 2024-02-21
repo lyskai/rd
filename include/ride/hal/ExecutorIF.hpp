@@ -14,7 +14,7 @@ namespace hal
 /// @brief ride::hal::ExecutorIF
 ///
 /// Executor Interface
-class ExecutorIF
+class ExecutorIF : public ComponentIF
 {
 public:
     ExecutorIF() = default;
