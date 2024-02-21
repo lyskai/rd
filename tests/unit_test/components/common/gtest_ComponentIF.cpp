@@ -108,7 +108,7 @@ public:
     }
 };
 
-TEST( BufferManager, SANITY_ComponentIF )
+TEST( ComponentIF, SANITY_ComponentIF )
 {
     ComponentIFTest cifTest;
     ComponentIFTest_Config_t config = { 10 };
@@ -133,9 +133,11 @@ TEST( BufferManager, SANITY_ComponentIF )
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
 }
 
+#ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )
 {
     ::testing::InitGoogleTest( &argc, argv );
     int nVal = RUN_ALL_TESTS();
     return nVal;
 }
+#endif
