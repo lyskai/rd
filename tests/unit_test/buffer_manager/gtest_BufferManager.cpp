@@ -149,9 +149,11 @@ TEST( BufferManager, SANITY_TensorAllocate )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 }
 
+#ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )
 {
     ::testing::InitGoogleTest( &argc, argv );
     int nVal = RUN_ALL_TESTS();
     return nVal;
 }
+#endif

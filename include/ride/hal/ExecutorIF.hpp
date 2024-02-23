@@ -14,18 +14,11 @@ namespace hal
 /// @brief ride::hal::ExecutorIF
 ///
 /// Executor Interface
-class ExecutorIF
+class ExecutorIF : public ComponentIF
 {
 public:
     ExecutorIF() = default;
     ~ExecutorIF() = default;
-
-    /// @brief Initialize the executor
-    /// @param name the executor unique instance name
-    /// @param pConfig the executor opaque configuration paramaters
-    /// @param pLogger the logger used by the executor to log messages
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Init( std::string name, const void *pConfig, Logger *pLogger ) = 0;
 
     /// @brief Start the executor
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
@@ -39,14 +32,14 @@ public:
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Deinit() = 0;
 
-    /// @brief execute
+    /// @brief Execute
     /// @param pInputs the input shared buffers
     /// @param numInputs the number of the input shared buffers
     /// @param pOutputs the input shared buffers
     /// @param numOutputs the number of the output shared buffers
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Execute( RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
-                                    RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs ) = 0;
+    virtual RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
+                                    const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs ) = 0;
 };   // class ExecutorIF
 
 }   // namespace hal

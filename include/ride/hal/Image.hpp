@@ -19,7 +19,7 @@ public:
     Image();
     ~Image();
 
-    /// @brief Allocate the DMA memory for image with best strides/paddings
+    /// @brief Allocate the DMA memory for the image with the best strides/paddings
     /// that can be shared among CPU/GPU/VPU/HTP, etc
     /// @param width the image width
     /// @param height the image height

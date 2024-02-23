@@ -69,17 +69,19 @@ typedef enum
     RIDE_HAL_BUFFER_USAGE_MAX
 } RideHal_BufferUsage_e;
 
+/// @brief The attributes of an allocated DMA memory.
 typedef struct
 {
-    void *pData;                 /* the buffer virtual address */
-    uint64_t dmaHandle;          /* the buffer DMA handle */
-    size_t size;                 /* the buffer size */
-    uint64_t id;                 /* the unique ID assigned by the buffer maneger */
-    uint64_t pid;                /* the process id */
-    RideHal_BufferUsage_e usage; /* the buffer usage */
-    RideHal_BufferFlags_t flags; /* the buffer flags */
+    void *pData;                 /* The buffer virtual address */
+    uint64_t dmaHandle;          /* The buffer DMA handle */
+    size_t size;                 /* The buffer size */
+    uint64_t id;                 /* The unique ID assigned by the buffer manager */
+    uint64_t pid;                /* The process id that allocated this buffer */
+    RideHal_BufferUsage_e usage; /* The buffer usage */
+    RideHal_BufferFlags_t flags; /* The buffer flags */
 } RideHal_Buffer_t;
 
+/// @brief The image format.
 typedef enum
 {
     RIDE_HAL_IMAGE_FORMAT_RGB888,
@@ -90,18 +92,22 @@ typedef enum
     RIDE_HAL_IMAGE_FORMAT_MAX,
 } RideHal_ImageFormat_e;
 
+/// @brief The image properties.
 typedef struct
 {
-    RideHal_ImageFormat_e format;
-    uint32_t batchSize;
-    uint32_t width;
-    uint32_t height;
+    RideHal_ImageFormat_e format; /* The image format */
+    uint32_t batchSize;           /* The image batch size */
+    uint32_t width;               /* The image width in pixels */
+    uint32_t height;              /* The image height in pixels */
+    /* The image stride along width in bytes for each plane */
     uint32_t stride[RIDE_HAL_NUM_IMAGE_PLANES];
+    /* The image actual height in scanlines for each plane */
     uint32_t actualHeight[RIDE_HAL_NUM_IMAGE_PLANES];
-    uint32_t numPlanes;
-    uint32_t extraPadding;
+    uint32_t numPlanes;    /* The number of image planes */
+    uint32_t extraPadding; /* The extra paddings in bytes at the end of the last image plane */
 } RideHal_ImageProps_t;
 
+/// @brief The RideHal tensor data type.
 typedef enum
 {
     RIDE_HAL_TEBSOR_TYPE_INT8,
@@ -115,11 +121,12 @@ typedef enum
     RIDE_HAL_TEBSOR_TYPE_MAX
 } RideHal_TensorType_e;
 
+/// @brief The tensor properties.
 typedef struct
 {
-    RideHal_TensorType_e type;
-    uint32_t dims[RIDE_HAL_NUM_DIMS];
-    uint32_t numDims;
+    RideHal_TensorType_e type;        /* The tensor type */
+    uint32_t dims[RIDE_HAL_NUM_DIMS]; /* The tensor dimensions */
+    uint32_t numDims;                 /* The number of dimensions */
 } RideHal_TensorProps_t;
 
 
@@ -132,8 +139,8 @@ typedef struct
     RideHal_BufferType_e type; /* The buffer type */
     union
     {
-        RideHal_ImageProps_t imgProps;     /* the image properties if type is IMAGE */
-        RideHal_TensorProps_t tensorProps; /* the tensor properties if type is TENSOR */
+        RideHal_ImageProps_t imgProps;     /* The image properties if type is IMAGE */
+        RideHal_TensorProps_t tensorProps; /* The tensor properties if type is TENSOR */
     };
 
 public:

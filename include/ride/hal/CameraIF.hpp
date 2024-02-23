@@ -17,18 +17,11 @@ typedef void ( *Camera_FrameCallback_t )( RideHal_SharedBuffer_t *pBuffer, uint6
 /// @brief ride::hal::CameraIF
 ///
 /// Camera Interface
-class CameraIF
+class CameraIF : public ComponentIF
 {
 public:
     CameraIF() = default;
     ~CameraIF() = default;
-
-    /// @brief Initialize the camera
-    /// @param name the camera unique instance name
-    /// @param pConfig the camera opaque configuration paramaters
-    /// @param pLogger the logger used by the camera to log messages
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Init( std::string name, const void *pConfig, Logger *pLogger ) = 0;
 
     /// @brief Start the camera
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure

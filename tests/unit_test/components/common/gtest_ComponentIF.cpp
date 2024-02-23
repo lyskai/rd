@@ -1,0 +1,143 @@
+// Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+// Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
+
+#include "gtest/gtest.h"
+#include <stdio.h>
+
+#include "ride/hal/ComponentIF.hpp"
+#include "ride/hal/Image.hpp"
+#include "ride/hal/Tensor.hpp"
+
+using namespace ride::hal;
+using namespace ride::hal::memory;
+
+typedef struct
+{
+    int a;
+} ComponentIFTest_Config_t;
+
+class ComponentIFTest : public ComponentIF
+{
+public:
+    ComponentIFTest() {}
+    ~ComponentIFTest() {}
+    RideHalError_e Init( std::string name, const ComponentIFTest_Config_t *pConfig,
+                         Logger *pLogger )
+    {
+        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+        ret = ComponentIF::Init( name, pLogger );
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            // DO real initialize using pConfig.
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            m_State = RIDE_HAL_COMPONENT_STATE_READY;
+        }
+
+        return ret;
+    }
+
+    RideHalError_e Start()
+    {
+        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+        if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+        {
+            ret = RIDE_HAL_ERROR_STATE;
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            // DO start
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            m_State = RIDE_HAL_COMPONENT_STATE_RUNNING;
+        }
+
+        return ret;
+    }
+
+
+    RideHalError_e Stop()
+    {
+        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+        if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_State )
+        {
+            ret = RIDE_HAL_ERROR_STATE;
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            // DO stop
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            m_State = RIDE_HAL_COMPONENT_STATE_READY;
+        }
+
+        return ret;
+    }
+
+    RideHalError_e Deinit()
+    {
+        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+        if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+        {
+            ret = RIDE_HAL_ERROR_STATE;
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            // DO deinit
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            m_State = RIDE_HAL_COMPONENT_STATE_INITIAL;
+        }
+
+        return ret;
+    }
+};
+
+TEST( ComponentIF, SANITY_ComponentIF )
+{
+    ComponentIFTest cifTest;
+    ComponentIFTest_Config_t config = { 10 };
+    RideHalError_e ret;
+
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+
+    ret = cifTest.Init( "test", &config, nullptr );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
+
+    ret = cifTest.Start();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, cifTest.GetState() );
+
+    ret = cifTest.Stop();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
+
+    ret = cifTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+}
+
+#ifndef GTEST_RIDEHAL
+int main( int argc, char **argv )
+{
+    ::testing::InitGoogleTest( &argc, argv );
+    int nVal = RUN_ALL_TESTS();
+    return nVal;
+}
+#endif
