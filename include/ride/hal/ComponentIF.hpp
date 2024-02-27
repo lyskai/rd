@@ -38,7 +38,7 @@ public:
     /// @param name the component unique instance name
     /// @param pLogger the logger used by the component to log messages
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( std::string name, Logger *pLogger );
+    RideHalError_e Init( const char *pName, Logger *pLogger );
 
     /// @brief Start the component
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure

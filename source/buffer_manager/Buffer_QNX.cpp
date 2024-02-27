@@ -83,7 +83,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
     else
     {
         rc = pmem_free( pData );
-        if (0 != rc)
+        if ( 0 != rc )
         {
             ret = RIDE_HAL_ERROR_ACCES;
         }

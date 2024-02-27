@@ -179,11 +179,16 @@ RideHalError_e Image::Allocate( const RideHal_ImageProps_t *pImgProps, RideHal_B
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
     else if ( ( 0 == pImgProps->batchSize ) || ( 0 == pImgProps->width ) ||
-              ( 0 == pImgProps->height ) || ( pImgProps->format >= RIDE_HAL_IMAGE_FORMAT_MAX ) )
+              ( 0 == pImgProps->height ) )
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( s_rideHalFormatToNumPlanes[pImgProps->format] != pImgProps->numPlanes )
+    else if ( ( pImgProps->format >= RIDE_HAL_IMAGE_FORMAT_MAX ) &&
+              ( pImgProps->format < RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MIN ) )
+    {
+        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( pImgProps->format >= RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MAX )
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
@@ -193,38 +198,62 @@ RideHalError_e Image::Allocate( const RideHal_ImageProps_t *pImgProps, RideHal_B
     }
     else
     {
-        bpp = s_rideHalFormatToBytesPerPixel[pImgProps->format];
-        /* check each plane def is reasonable */
-        for ( i = 0; ( i < pImgProps->numPlanes ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        if ( pImgProps->format < RIDE_HAL_IMAGE_FORMAT_MAX )
+        { /* check properties for uncompressed image */
+            if ( s_rideHalFormatToNumPlanes[pImgProps->format] != pImgProps->numPlanes )
+            {
+                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            }
+        }
+        else
+        { /* check properties for compressed image */
+            if ( 0 == pImgProps->compressedSize )
+            {
+                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            }
+        }
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        if ( pImgProps->format < RIDE_HAL_IMAGE_FORMAT_MAX )
         {
-            div = s_rideHalFormatToHeightDividerPerPlanes[pImgProps->format][i];
-            if ( ( pImgProps->width * bpp ) < pImgProps->stride[i] )
+            bpp = s_rideHalFormatToBytesPerPixel[pImgProps->format];
+            /* check each plane def is reasonable */
+            for ( i = 0; ( i < pImgProps->numPlanes ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
             {
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                div = s_rideHalFormatToHeightDividerPerPlanes[pImgProps->format][i];
+                if ( ( pImgProps->width * bpp ) < pImgProps->stride[i] )
+                {
+                    ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                }
+                else if ( ( pImgProps->height * bpp ) < pImgProps->actualHeight[i] )
+                {
+                    ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                }
+                else
+                {
+                }
             }
-            else if ( ( pImgProps->height * bpp ) < pImgProps->actualHeight[i] )
+            if ( RIDE_HAL_ERROR_NONE == ret )
             {
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                for ( i = 0; i < pImgProps->numPlanes; i++ )
+                {
+                    size += pImgProps->stride[i] * pImgProps->actualHeight[i];
+                }
+                size += pImgProps->extraPadding;
+                size = size * pImgProps->batchSize;
             }
-            else
-            {
-            }
+        }
+        else
+        {
+            size = pImgProps->compressedSize;
         }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         m_sharedBuffer.imgProps = *pImgProps;
-        for ( i = 0; i < pImgProps->numPlanes; i++ )
-        {
-            size += pImgProps->stride[i] * pImgProps->actualHeight[i];
-        }
-        size += pImgProps->extraPadding;
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        size = size * pImgProps->batchSize;
         ret = Buffer::Allocate( size, flags, usage );
     }
 
