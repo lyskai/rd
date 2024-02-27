@@ -8,6 +8,10 @@
 #include "ride/hal/Image.hpp"
 #include "ride/hal/Tensor.hpp"
 
+#include "ride/hal/CameraIF.hpp"
+#include "ride/hal/ExecutorIF.hpp"
+#include "ride/hal/VideoCodecIF.hpp"
+
 using namespace ride::hal;
 using namespace ride::hal::memory;
 
@@ -21,12 +25,12 @@ class ComponentIFTest : public ComponentIF
 public:
     ComponentIFTest() {}
     ~ComponentIFTest() {}
-    RideHalError_e Init( std::string name, const ComponentIFTest_Config_t *pConfig,
+    RideHalError_e Init( const char *pName, const ComponentIFTest_Config_t *pConfig,
                          Logger *pLogger )
     {
         RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-        ret = ComponentIF::Init( name, pLogger );
+        ret = ComponentIF::Init( pName, pLogger );
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
             // DO real initialize using pConfig.

@@ -8,7 +8,7 @@ namespace ride
 namespace hal
 {
 
-RideHalError_e ComponentIF::Init( std::string name, Logger *pLogger )
+RideHalError_e ComponentIF::Init( const char *pName, Logger *pLogger )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
@@ -18,7 +18,7 @@ RideHalError_e ComponentIF::Init( std::string name, Logger *pLogger )
     }
     else
     {
-        m_Name = name;
+        m_Name = pName;
         m_pLogger = pLogger;
     }
 
