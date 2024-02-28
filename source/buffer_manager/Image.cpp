@@ -111,23 +111,24 @@ RideHalError_e Image::Allocate( uint32_t batchSize, uint32_t width, uint32_t hei
         }
     }
 
-    Log( Logger::Level_e::VERBOSE, "PlaneDef for image %ux%u format %s\n", width, height,
-         s_rideHalFormatToString[format] );
+    RIDEHAL_VERBOSE( "PlaneDef for image %ux%u format %s\n", width, height,
+                     s_rideHalFormatToString[format] );
     for ( i = 0; ( i < numPlanes ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
     {
         planeDef.nPlaneIndex = i + 1;
         status = PDQueryPlaneDef( eColorFormat, nUsage, &frameRes, &planeDef, 0 );
         if ( PD_OK == status )
         {
-            Log( Logger::Level_e::VERBOSE,
-                 " plane %u: nMinStride = %u, nMaxstride = %u nStrideMultiples = %u,\n"
-                 "  nActualStride = %u nMinPlaneBufHeight = %u, nHeightMultiples = %u,\n"
-                 "  nActualPlaneBufHeight = %u nActualBufSizeAlignment =%u,\n"
-                 "  nBufAddrAlignment = %u nPlaneBufSize = %u, nPlanePaddingSize = %u\n",
-                 i, planeDef.nMinStride, planeDef.nMaxstride, planeDef.nStrideMultiples,
-                 planeDef.nActualStride, planeDef.nMinPlaneBufHeight, planeDef.nHeightMultiples,
-                 planeDef.nActualPlaneBufHeight, planeDef.nActualBufSizeAlignment,
-                 planeDef.nBufAddrAlignment, planeDef.nPlaneBufSize, planeDef.nPlanePaddingSize );
+            RIDEHAL_VERBOSE(
+                    " plane %u: nMinStride = %u, nMaxstride = %u nStrideMultiples = %u,\n"
+                    "  nActualStride = %u nMinPlaneBufHeight = %u, nHeightMultiples = %u,\n"
+                    "  nActualPlaneBufHeight = %u nActualBufSizeAlignment =%u,\n"
+                    "  nBufAddrAlignment = %u nPlaneBufSize = %u, nPlanePaddingSize = %u\n",
+                    i, planeDef.nMinStride, planeDef.nMaxstride, planeDef.nStrideMultiples,
+                    planeDef.nActualStride, planeDef.nMinPlaneBufHeight, planeDef.nHeightMultiples,
+                    planeDef.nActualPlaneBufHeight, planeDef.nActualBufSizeAlignment,
+                    planeDef.nBufAddrAlignment, planeDef.nPlaneBufSize,
+                    planeDef.nPlanePaddingSize );
             m_sharedBuffer.imgProps.stride[i] = planeDef.nActualStride;
             m_sharedBuffer.imgProps.actualHeight[i] = planeDef.nActualPlaneBufHeight;
             size += planeDef.nActualStride * planeDef.nActualPlaneBufHeight;

@@ -10,7 +10,7 @@ set( BUFFER_MANAGER_SOURCES
     Tensor.cpp
 )
 
-set( TARGET_LIBRARIES )
+set( TARGET_LIBRARIES Ride::Hal::Component::Common )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     find_package(pmem)

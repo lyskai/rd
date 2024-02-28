@@ -54,14 +54,14 @@ public:
     /// @param pFormat the message format
     /// @param ... variable arguments
     /// @return void
-    void Log( Logger::Level_e level, const char *pFormat, ... );
+    void Log( Logger_Level_e level, const char *pFormat, ... );
 
     /// @brief Log a message
     /// @param level the message log level
     /// @param pFormat the message format
     /// @param args variable arguments
     /// @return void
-    void Log( Logger::Level_e level, const char *pFormat, va_list args );
+    void Log( Logger_Level_e level, const char *pFormat, va_list args );
 
 public:
     /// @brief Get the default buffer manager
@@ -72,6 +72,7 @@ private:
     std::mutex m_Lock;
     std::map<uint64_t, RideHal_SharedBuffer_t *> m_bufferMap;
     uint64_t m_IDAllocator = 0;
+    Logger m_DefaultLogger;
     Logger *m_pLogger = nullptr;
 
 private:

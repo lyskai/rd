@@ -12,7 +12,14 @@ namespace memory
 
 BufferManager BufferManager::s_defaultBufferManager;
 
-BufferManager::BufferManager() {}
+BufferManager::BufferManager()
+{
+    RideHalError_e ret = m_DefaultLogger.Init( "BUFMGR" );
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_pLogger = &m_DefaultLogger;
+    }
+}
 
 BufferManager::~BufferManager() {}
 
@@ -52,10 +59,9 @@ RideHalError_e BufferManager::Register( Buffer *pBuffer, uint64_t *pID )
         pSharedBuffer->buffer.id = m_IDAllocator;
         *pID = m_IDAllocator;
         m_bufferMap[pSharedBuffer->buffer.id] = pSharedBuffer;
-        Log( Logger::Level_e::DEBUG,
-             "buffer manager: register %p(%" PRIu64 ", %" PRIu64 ") as %" PRIu64 "\n",
-             pSharedBuffer->buffer.pData, pSharedBuffer->buffer.dmaHandle,
-             pSharedBuffer->buffer.size, pSharedBuffer->buffer.id );
+        RIDEHAL_DEBUG( "buffer manager: register %p(%" PRIu64 ", %" PRIu64 ") as %" PRIu64 "\n",
+                       pSharedBuffer->buffer.pData, pSharedBuffer->buffer.dmaHandle,
+                       pSharedBuffer->buffer.size, pSharedBuffer->buffer.id );
     }
 
     return ret;
@@ -73,10 +79,9 @@ RideHalError_e BufferManager::Deregister( uint64_t id )
     {
         pSharedBuffer = it->second;
         m_bufferMap.erase( it );
-        Log( Logger::Level_e::DEBUG,
-             "buffer manager: deregister %p(%" PRIu64 ", %" PRIu64 ") as %" PRIu64 "\n",
-             pSharedBuffer->buffer.pData, pSharedBuffer->buffer.dmaHandle,
-             pSharedBuffer->buffer.size, pSharedBuffer->buffer.id );
+        RIDEHAL_DEBUG( "buffer manager: deregister %p(%" PRIu64 ", %" PRIu64 ") as %" PRIu64 "\n",
+                       pSharedBuffer->buffer.pData, pSharedBuffer->buffer.dmaHandle,
+                       pSharedBuffer->buffer.size, pSharedBuffer->buffer.id );
         delete pSharedBuffer;
     }
     else
@@ -112,19 +117,37 @@ RideHalError_e BufferManager::GetSharedBuffer( uint64_t id, RideHal_SharedBuffer
     return ret;
 }
 
-void BufferManager::Log( Logger::Level_e level, const char *pFormat, va_list args )
+void BufferManager::Log( Logger_Level_e level, const char *pFormat, va_list args )
 {
-    // TODO:
-    vprintf( pFormat, args );
+    if ( nullptr != m_pLogger )
+    {
+        m_pLogger->Log( level, pFormat, args );
+    }
 }
 
-void BufferManager::Log( Logger::Level_e level, const char *pFormat, ... )
+void BufferManager::Log( Logger_Level_e level, const char *pFormat, ... )
 {
     va_list args;
 
     va_start( args, pFormat );
     Log( level, pFormat, args );
     va_end( args );
+}
+
+RideHalError_e BufferManager::SetLogger( Logger *pLogger )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( nullptr == pLogger )
+    {
+        ret = RIDE_HAL_ERROR_NULL_PTR;
+    }
+    else
+    {
+        m_pLogger = pLogger;
+    }
+
+    return ret;
 }
 
 }   // namespace memory
