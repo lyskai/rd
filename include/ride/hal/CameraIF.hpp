@@ -11,8 +11,14 @@ namespace ride
 namespace hal
 {
 
-typedef void ( *Camera_FrameCallback_t )( RideHal_SharedBuffer_t *pBuffer, uint64_t handle );
+typedef struct
+{
+    RideHal_SharedBuffer_t *pSharedBuffer;
+    uint64_t timestamp;      /* Hardware timestamp (in nanoseconds) */
+    uint64_t timestampQGPTP; /* Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
+} RideHal_CameraFrame_t;
 
+typedef void ( *Camera_FrameCallback_t )( const RideHal_CameraFrame_t *pCameraFrame );
 
 /// @brief ride::hal::CameraIF
 ///
@@ -36,14 +42,14 @@ public:
     virtual RideHalError_e Deinit() = 0;
 
     /// @brief get a camera frame
-    /// @param frameDesc the frame descriptor
+    /// @param pCameraFrame pointer to hold the camera frame information
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e GetFrame( RideHal_SharedBuffer_t *pBuffer, uint64_t *pHandle ) = 0;
+    virtual RideHalError_e GetFrame( RideHal_CameraFrame_t *pCameraFrame ) = 0;
 
     /// @brief release a camera frame
-    /// @param frameDesc the frame descriptor
+    /// @param pCameraFrame pointer to the camera frame
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e ReleaseFrame( uint64_t handle ) = 0;
+    virtual RideHalError_e ReleaseFrame( const RideHal_CameraFrame_t *pCameraFrame ) = 0;
 
 
     /// @brief Get the shared buffers used by the camera stream

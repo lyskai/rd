@@ -10,7 +10,7 @@ namespace hal
 namespace memory
 {
 
-static uint32_t s_rideHalTensorTypeToDataSize[RIDE_HAL_TEBSOR_TYPE_MAX] = {
+static uint32_t s_rideHalTensorTypeToDataSize[RIDE_HAL_TENSOR_TYPE_MAX] = {
         sizeof( int8_t ),   /* RIDE_HAL_TEBSOR_TYPE_INT8 */
         sizeof( int16_t ),  /* RIDE_HAL_TEBSOR_TYPE_INT16 */
         sizeof( int32_t ),  /* RIDE_HAL_TEBSOR_TYPE_INT32 */
@@ -40,7 +40,7 @@ RideHalError_e Tensor::Allocate( const RideHal_TensorProps_t *pTensorProps,
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
     else if ( ( pTensorProps->numDims > RIDE_HAL_NUM_DIMS ) ||
-              ( pTensorProps->type >= RIDE_HAL_TEBSOR_TYPE_MAX ) )
+              ( pTensorProps->type >= RIDE_HAL_TENSOR_TYPE_MAX ) )
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }

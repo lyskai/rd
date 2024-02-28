@@ -126,13 +126,41 @@ TEST( BufferManager, SANITY_ImageAllocateByProps )
     ASSERT_EQ( 2160, sharedBuffer.imgProps.actualHeight[0] );
     ret = img.Free();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+}
+
+TEST( BufferManager, SANITY_CompressedImageAllocateByProps )
+{
+    Image img;
+    RideHal_SharedBuffer_t sharedBuffer;
+    RideHal_ImageProps_t imgProp;
+
+    imgProp.format = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    imgProp.batchSize = 1;
+    imgProp.width = 3840;
+    imgProp.height = 2160;
+    imgProp.numPlanes = 0;
+    imgProp.compressedSize = 1024 * 64;
+    auto ret = img.Allocate( &imgProp );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ret = img.GetSharedBuffer( &sharedBuffer );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_NE( nullptr, sharedBuffer.data() );
+    ASSERT_EQ( 0, sharedBuffer.offset );
+    std::generate( (uint8_t *) sharedBuffer.data(),
+                   (uint8_t *) sharedBuffer.data() + sharedBuffer.size, std::rand );
+    ASSERT_EQ( sharedBuffer.buffer.size, sharedBuffer.size );
+    ASSERT_EQ( 1024 * 64, sharedBuffer.size );
+    ASSERT_EQ( 0, sharedBuffer.imgProps.numPlanes );
+    ret = img.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 }
 
 TEST( BufferManager, SANITY_TensorAllocate )
 {
     Tensor tensor;
     RideHal_SharedBuffer_t sharedBuffer;
-    RideHal_TensorProps_t tensorProp = { RIDE_HAL_TEBSOR_TYPE_UINT8, { 1, 128, 128, 10 }, 4 };
+    RideHal_TensorProps_t tensorProp = { RIDE_HAL_TENSOR_TYPE_UINT8, { 1, 128, 128, 10 }, 4 };
 
     auto ret = tensor.Allocate( &tensorProp );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );

@@ -88,12 +88,18 @@ typedef struct
 /// @brief The image format.
 typedef enum
 {
-    RIDE_HAL_IMAGE_FORMAT_RGB888,
+    /* Below formats for an image without compression */
+    RIDE_HAL_IMAGE_FORMAT_RGB888 = 0,
     RIDE_HAL_IMAGE_FORMAT_BGR888,
     RIDE_HAL_IMAGE_FORMAT_UYVY,
     RIDE_HAL_IMAGE_FORMAT_NV12,
     RIDE_HAL_IMAGE_FORMAT_P010,
     RIDE_HAL_IMAGE_FORMAT_MAX,
+    /* Below formats for an image with compression, such as by the Video Encoder */
+    RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MIN = 100,
+    RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264 = 100,
+    RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265,
+    RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MAX,
 } RideHal_ImageFormat_e;
 
 /// @brief The image properties.
@@ -107,22 +113,23 @@ typedef struct
     uint32_t stride[RIDE_HAL_NUM_IMAGE_PLANES];
     /* The image actual height in scanlines for each plane */
     uint32_t actualHeight[RIDE_HAL_NUM_IMAGE_PLANES];
-    uint32_t numPlanes;    /* The number of image planes */
-    uint32_t extraPadding; /* The extra paddings in bytes at the end of the last image plane */
+    uint32_t numPlanes;      /* The number of the image planes */
+    uint32_t extraPadding;   /* The extra paddings in bytes at the end of the last image plane */
+    uint32_t compressedSize; /* the size in bytes of the compressed image */
 } RideHal_ImageProps_t;
 
 /// @brief The RideHal tensor data type.
 typedef enum
 {
-    RIDE_HAL_TEBSOR_TYPE_INT8,
-    RIDE_HAL_TEBSOR_TYPE_INT16,
-    RIDE_HAL_TEBSOR_TYPE_INT32,
-    RIDE_HAL_TEBSOR_TYPE_UINT8,
-    RIDE_HAL_TEBSOR_TYPE_UINT16,
-    RIDE_HAL_TEBSOR_TYPE_UINT32,
-    RIDE_HAL_TEBSOR_TYPE_FLOAT16,
-    RIDE_HAL_TEBSOR_TYPE_FLOAT32,
-    RIDE_HAL_TEBSOR_TYPE_MAX
+    RIDE_HAL_TENSOR_TYPE_INT8,
+    RIDE_HAL_TENSOR_TYPE_INT16,
+    RIDE_HAL_TENSOR_TYPE_INT32,
+    RIDE_HAL_TENSOR_TYPE_UINT8,
+    RIDE_HAL_TENSOR_TYPE_UINT16,
+    RIDE_HAL_TENSOR_TYPE_UINT32,
+    RIDE_HAL_TENSOR_TYPE_FLOAT16,
+    RIDE_HAL_TENSOR_TYPE_FLOAT32,
+    RIDE_HAL_TENSOR_TYPE_MAX
 } RideHal_TensorType_e;
 
 /// @brief The tensor properties.
