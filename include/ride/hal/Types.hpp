@@ -15,6 +15,10 @@ namespace hal
 #define RIDE_HAL_NUM_IMAGE_PLANES ( 4 )
 #define RIDE_HAL_NUM_DIMS ( 8 )
 
+#ifndef RIDE_HAL_MAX_INPUTS
+#define RIDE_HAL_MAX_INPUTS 32
+#endif
+
 /* Allocate uncached memory (default).*/
 #define RIDE_HAL_BUFFER_FLAGS_CACHE_NONE (RideHal_BufferFlags_t) 0x00000000U
 
