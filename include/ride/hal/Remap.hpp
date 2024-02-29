@@ -12,70 +12,69 @@
 #include "ride/hal/BufferManager.hpp"
 #include "ride/hal/ComponentIF.hpp"
 
-#include <fadas.h>
-
 namespace ride
 {
 namespace hal
 {
-namespace remap
+namespace component
 {
 
-/// @brief ride::hal::Remap
+/// @brief ride::hal::component
 ///
 /// Remap Interface
+
+typedef enum
+{
+    REMAP_PROCESSOR_DSP0,
+    REMAP_PROCESSOR_DSP1,
+    REMAP_PROCESSOR_CPU
+} Remap_ProcessorType_t;
+
+typedef struct
+{
+    float *pMapX;
+    size_t sizeX;
+    float *pMapY;
+    size_t sizeY;
+} Remap_MapTable_t;
+
+typedef struct
+{
+    uint32_t topX;
+    uint32_t topY;
+    uint32_t width;
+    uint32_t height;
+} Remap_ROI_t;
+
+typedef struct
+{
+    RideHal_ImageFormat_e inputFormat;
+    uint32_t inputWidth;
+    uint32_t inputHeight;
+    uint32_t mapWidth;
+    uint32_t mapHeight;
+    Remap_MapTable_t remapTable;
+    Remap_ROI_t ROI;
+} Remap_InputConfig_t;
+
+typedef struct
+{
+    Remap_ProcessorType_t processor;
+    Remap_InputConfig_t inputConfigs[RIDE_HAL_MAX_INPUTS];
+    uint32_t numOfInputs;
+    uint32_t outputWidth;
+    uint32_t outputHeight;
+    RideHal_ImageFormat_e outputFormat;
+    FadasNormlzParams_t normlzR;
+    FadasNormlzParams_t normlzG;
+    FadasNormlzParams_t normlzB;
+    bool bEnableUndistortion;
+    bool bEnableNormalize;
+} Remap_Config_t;
+
 class Remap
 {
 public:
-    typedef enum
-    {
-        REMAP_PROCESSOR_DSP0,
-        REMAP_PROCESSOR_DSP1,
-        REMAP_PROCESSOR_CPU
-    } Remap_ProcessorType_t;
-
-    typedef struct
-    {
-        float *pMapX;
-        size_t sizeX;
-        float *pMapY;
-        size_t sizeY;
-    } Remap_MapTable_t;
-
-    typedef struct
-    {
-        uint32_t ROITopX;
-        uint32_t ROITopY;
-        uint32_t ROIWidth;
-        uint32_t ROIHeight;
-    } Remap_ROI_t;
-
-    typedef struct
-    {
-        RideHal_ImageFormat_e inputFormat;
-        uint32_t inputWidth;
-        uint32_t inputHeight;
-        uint32_t mapWidth;
-        uint32_t mapHeight;
-        Remap_MapTable_t remapTable;
-        Remap_ROI_t ROI;
-    } Remap_InputConfig_t;
-
-    typedef struct
-    {
-        Remap_ProcessorType_t processor;
-        Remap_InputConfig_t inputConfigs[RIDE_HAL_MAX_INPUTS];
-        uint32_t numOfInputs;
-        uint32_t outputWidth;
-        uint32_t outputHeight;
-        RideHal_ImageFormat_e outputFormat;
-        FadasNormlzParams_t normlzR;
-        FadasNormlzParams_t normlzG;
-        FadasNormlzParams_t normlzB;
-        bool bEnableUndistortion;
-        bool bEnableNormalize;
-    } Remap_Config_t;
-
 public:
     Remap() = default;
     ~Remap() = default;
@@ -85,7 +84,7 @@ public:
     /// @param pConfig the remap configuration paramaters
     /// @param pLogger the logger used by the remap to log messages
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( const char *pName, const Config *pConfig, Logger *pLogger );
+    RideHalError_e Init( const char *pName, const Remap_Config_t *pConfig, Logger *pLogger );
 
     /// @brief Start the remap pipeline
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
@@ -110,14 +109,12 @@ public:
 
 private:
     Remap_Config_t m_Config;
-    float m_QuantScale;
-    int32_t m_QuantOffset;
     std::vector<size_t> m_InputSizes;
     std::unique_ptr<RemapImpl> m_Impl = nullptr;
 
 };   // class Remap
 
-}   // namespace remap
+}   // namespace component
 }   // namespace hal
 }   // namespace ride
 
