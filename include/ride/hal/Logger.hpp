@@ -4,15 +4,43 @@
 #ifndef _RIDE_HAL_LOGGER_HPP_
 #define _RIDE_HAL_LOGGER_HPP_
 
+#include "ride/hal/Types.hpp"
 #include <stdarg.h>
 #include <stdio.h>
+#include <string>
 
 namespace ride
 {
 namespace hal
 {
 
-typedef void ( *Logger_Callback_t )( const void *pPriv, const char *pFormat, va_list args );
+/* The following macros are provided to be used by RideHal components and utils only,
+ * It's not for the application and any other usage */
+#ifndef DISABLE_RIDEHAL_LOG
+#define RIDEHAL_VERBOSE( format, ... ) Log( LOGGER_LEVEL_VERBOSE, format, ##__VA_ARGS__ )
+#define RIDEHAL_DEBUG( format, ... ) Log( LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
+#define RIDEHAL_INFO( format, ... ) Log( LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
+#define RIDEHAL_WARN( format, ... ) Log( LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
+#define RIDEHAL_ERROR( format, ... ) Log( LOGGER_LEVEL_ERROR, format, ##__VA_ARGS__ )
+#else
+#define RIDEHAL_VERBOSE( format, ... )
+#define RIDEHAL_DEBUG( format, ... )
+#define RIDEHAL_INFO( format, ... )
+#define RIDEHAL_WARN( format, ... )
+#define RIDEHAL_ERROR( format, ... )
+#endif
+
+typedef enum
+{
+    LOGGER_LEVEL_VERBOSE,
+    LOGGER_LEVEL_DEBUG,
+    LOGGER_LEVEL_INFO,
+    LOGGER_LEVEL_WARN,
+    LOGGER_LEVEL_ERROR
+} Logger_Level_e;
+
+typedef void ( *Logger_Callback_t )( const void *pPriv, Logger_Level_e level, const char *pFormat,
+                                     va_list args );
 
 /// @brief ride::hal::Logger
 ///
@@ -20,25 +48,47 @@ typedef void ( *Logger_Callback_t )( const void *pPriv, const char *pFormat, va_
 class Logger
 {
 public:
-    typedef enum
-    {
-        VERBOSE,
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR
-    } Level_e;
+    Logger();
+    ~Logger();
 
-public:
-    Logger( Logger_Callback_t callback, const void *pPriv );
-    ~Logger() = default;
+    /// @brief Initialize the logger with the default callback implemented
+    /// @param pName the name of the logger
+    /// @param level the message log level
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
-    void Log( Logger::Level_e level, const char *pFormat, ... );
-    void Log( Logger::Level_e level, const char *pFormat, va_list args );
+    /// @brief Initialize the logger with a customized callback and a private parameter
+    /// @param callback the logger callback
+    /// @param pPriv the private parameter when invoke the callback
+    /// @param level the message log level
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Init( Logger_Callback_t callback, const void *pPriv,
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
+
+    /// @brief Log a message
+    /// @param level the message log level
+    /// @param pFormat the message format
+    /// @param ... variable arguments
+    /// @return void
+    void Log( Logger_Level_e level, const char *pFormat, ... );
+
+    /// @brief Log a message
+    /// @param level the message log level
+    /// @param pFormat the message format
+    /// @param args variable arguments
+    /// @return void
+    void Log( Logger_Level_e level, const char *pFormat, va_list args );
 
 private:
-    void *m_pPriv = nullptr;
+    Logger_Level_e DecideLoggerLevel( std::string name, Logger_Level_e level );
+    static void Logger_DefaultCallback( const void *pPriv, Logger_Level_e level,
+                                        const char *pFormat, va_list args );
+
+private:
+    std::string m_Name; /* used to store the name of the logger when use API Init(name) */
+    const void *m_pPriv = nullptr;
     Logger_Callback_t m_callback = nullptr;
+    Logger_Level_e m_level = LOGGER_LEVEL_ERROR;
 };   // class ComponentIF
 
 }   // namespace hal

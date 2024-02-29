@@ -5,9 +5,19 @@ set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 
 set( COMPONENT_COMMON_SOURCES
     ComponentIF.cpp
+    Logger.cpp
 )
 
 set( TARGET_LIBRARIES )
+
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
+    list( APPEND COMPONENT_COMMON_SOURCES Logger_QNX.cpp )
+    list( APPEND TARGET_LIBRARIES slog2 )
+endif()
+
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
+    list( APPEND COMPONENT_COMMON_SOURCES Logger_Linux.cpp )
+endif()
 
 add_library( RideHalComponentCommon STATIC ${COMPONENT_COMMON_SOURCES} )
 

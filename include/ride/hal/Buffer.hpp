@@ -54,7 +54,7 @@ protected:
     /// @param pFormat the message format
     /// @param ... variable arguments
     /// @return void
-    void Log( Logger::Level_e level, const char *pFormat, ... );
+    void Log( Logger_Level_e level, const char *pFormat, ... );
 
 private:
     void ResetSharedBuffer();

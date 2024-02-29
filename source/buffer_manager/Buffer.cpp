@@ -165,7 +165,7 @@ RideHalError_e Buffer::GetSharedBuffer( RideHal_SharedBuffer_t *pSharedBuffer )
     return ret;
 }
 
-void Buffer::Log( Logger::Level_e level, const char *pFormat, ... )
+void Buffer::Log( Logger_Level_e level, const char *pFormat, ... )
 {
     va_list args;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();

@@ -19,20 +19,33 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger *pLogger )
     else
     {
         m_Name = pName;
-        m_pLogger = pLogger;
+        if ( nullptr == pLogger )
+        {
+            ret = m_DefaultLogger.Init( pName );
+            if ( RIDE_HAL_ERROR_NONE == ret )
+            {
+                m_pLogger = &m_DefaultLogger;
+            }
+        }
+        else
+        {
+            m_pLogger = pLogger;
+        }
     }
 
     return ret;
 }
 
-void ComponentIF::Log( Logger::Level_e level, const char *pFormat, ... )
+void ComponentIF::Log( Logger_Level_e level, const char *pFormat, ... )
 {
     va_list args;
 
-    va_start( args, pFormat );
-    // TODO:
-    vprintf( pFormat, args );
-    va_end( args );
+    if ( nullptr != m_pLogger )
+    {
+        va_start( args, pFormat );
+        m_pLogger->Log( level, pFormat, args );
+        va_end( args );
+    }
 }
 
 RideHal_ComponentState_t ComponentIF::GetState()
