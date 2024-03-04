@@ -158,6 +158,7 @@ typedef struct
 public:
     /// @brief get the valid buffer virtual address
     /// @return the valid buffer virtual address
+    void *data() { return (void *) ( (uintptr_t) buffer.pData + offset ); }
     void *data() const { return (void *) ( (uintptr_t) buffer.pData + offset ); }
 } RideHal_SharedBuffer_t;
 

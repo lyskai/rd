@@ -3,3 +3,4 @@
 
 add_subdirectory(buffer_manager)
 add_subdirectory(components)
+add_subdirectory(QnnRuntime)

@@ -19,11 +19,14 @@
 #include <mutex>
 #include <queue>
 #include <random>
+#include <sstream>
 #include <string.h>
 #include <thread>
 #include <vector>
 
 #include "DynamicLoadUtil.hpp"
+#include "ride/hal/ExecutorIF.hpp"
+#include "ride/hal/Logger.hpp"
 
 using namespace qnn::tools;
 using namespace qnn::tools::sample_app;
@@ -34,10 +37,10 @@ namespace hal
 
 typedef enum
 {
-    QNNRUNTIME_BACKEND_HTP_0 = 0,   // HTP device: 0 core:0
-    QNNRUNTIME_BACKEND_HTP_1,       // HTP device: 1 core:0
+    QNNRUNTIME_BACKEND_HTP = 0,
     QNNRUNTIME_BACKEND_CPU,
-    QNNRUNTIME_BACKEND_GPU
+    QNNRUNTIME_BACKEND_GPU,
+    QNNRUNTIME_BACKEND_HTP_MCP
 } QnnRuntime_Backend_e;
 
 typedef struct
@@ -55,6 +58,19 @@ typedef struct
     int backendCoreId = 0;
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;
 } QnnRuntime_Config_t;
+
+typedef struct
+{
+    uint8_t *buf;      // buffer base pointer, valid in case of heap memory
+    uint64_t handle;   // Buffer Handle, valid in case of device allocated
+                       // memory such as dma buf
+    size_t size;       // Size of the total buffer
+
+    uint8_t *data;     // = buf + offset
+    uint32_t offset;   // offset within handle
+    uint32_t dataSize;
+    // QBufferType type;   // type of the buffer, see QBufferType
+} QnnRuntime_Buffer_t;
 
 typedef struct
 {
@@ -106,7 +122,7 @@ public:
     QnnRuntime();
     ~QnnRuntime();
 
-    RideHalError_e Init( const char *pName, , const QnnRuntime_Config_t *pConfig, Logger *pLogger );
+    RideHalError_e Init( const char *pName, const QnnRuntime_Config_t *pConfig, Logger *pLogger );
     RideHalError_e GetInputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
     RideHalError_e GetOutputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
 
@@ -120,9 +136,9 @@ private:
     RideHalError_e CreateFromBinary( std::string binPath );
     RideHalError_e LoadOpPackages( std::string opPackgesTxtPath );
 
-    Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t &buffer,
+    Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
                                      const Qnn_Tensor_t &tensor );
-    Qnn_MemHandle_t GetMemHandle( const RideHal_SharedBuffer_t &buffer,
+    Qnn_MemHandle_t GetMemHandle( const RideHal_SharedBuffer_t &sharedBuffer,
                                   const Qnn_Tensor_t &tensor );
     void DeResisterMemory();
 
@@ -135,8 +151,8 @@ private:
     static constexpr size_t DMA_MEMINFO_MAP_SIZE = 2;
 
     std::string m_Name;
-    hogl::area *m_HoglArea = nullptr;
-    int m_BackendId = QnnRuntime_Backend_e::BACKEND_HTP;
+    Logger *m_pLogger = nullptr;
+    int m_BackendId = QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP;
     int m_BackendCoreId = 0;
     Qnn_BackendHandle_t m_BackendHandle = nullptr;
     Qnn_DeviceHandle_t m_DeviceHandle = nullptr;
@@ -174,6 +190,7 @@ private:
     static uint64_t s_DmaMemInfoMapUseRef[DMA_MEMINFO_MAP_SIZE];
     static std::mutex s_DmaMemInfoMapLock[DMA_MEMINFO_MAP_SIZE];
     static std::map<uint8_t *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
+    QnnRuntime_Perf_t *m_pPerf;
 };   // QnnRuntime
 
 }   // namespace hal
