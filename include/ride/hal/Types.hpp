@@ -37,6 +37,7 @@ typedef enum
     RIDE_HAL_ERROR_BAD_ARGUMENTS,     ///<  Bad arguments.
     RIDE_HAL_ERROR_BAD_OUTPUT,        ///<  Bad output.
     RIDE_HAL_ERROR_NULL_PTR,          ///<  NULL pointer.
+    RIDE_HAL_ERROR_TYPE,              ///<  Error type.
     RIDE_HAL_ERROR_UNKNOWN,           ///<  Unknown error.
     RIDE_HAL_ERROR_FAIL,              ///<  Failure.
     RIDE_HAL_ERROR_NORES,             ///<  No resource of insufficient resource.
