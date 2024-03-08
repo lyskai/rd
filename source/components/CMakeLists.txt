@@ -2,3 +2,4 @@
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 add_subdirectory(common)
+add_subdirectory(C2D)

@@ -104,8 +104,6 @@ private:
     uint32_t m_Align = 1;
     uint32_t m_Stride = 0;
 
-    std::vector<std::unique_ptr<C2DImpl>> m_Impls;
-
 };   // class C2D
 
 }   // namespace component
