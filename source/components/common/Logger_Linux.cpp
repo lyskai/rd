@@ -2,19 +2,29 @@
 // Confidential & Proprietary.
 
 #include "ride/hal/Logger.hpp"
+#include <syslog.h>
 
 namespace ride
 {
 namespace hal
 {
 
+static int s_rideHalLoggerLevelToJournalPriotity[] = {
+        LOG_DEBUG,   /* LOGGER_LEVEL_VERBOSE */
+        LOG_INFO,    /* LOGGER_LEVEL_DEBUG */
+        LOG_NOTICE,  /* LOGGER_LEVEL_INFO */
+        LOG_WARNING, /* LOGGER_LEVEL_WARN */
+        LOG_ERR      /* LOGGER_LEVEL_ERROR */
+};
+
 void Logger::Logger_DefaultCallback( const void *pPriv, Logger_Level_e level, const char *pFormat,
                                      va_list args )
 {
+    std::string strFmt;
+    int priority = s_rideHalLoggerLevelToJournalPriotity[level];
     const char *pName = (const char *) pPriv;
-
-    printf( "%s: ", pName );
-    vprintf( pFormat, args );
+    strFmt = std::string( pName ) + " : " + std::string( pFormat );
+    vsyslog( priority, strFmt.c_str(), args );
 }
 
 RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )

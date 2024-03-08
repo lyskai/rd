@@ -30,13 +30,14 @@ namespace hal
 #define RIDEHAL_ERROR( format, ... )
 #endif
 
+/// @brief The message log level
 typedef enum
 {
-    LOGGER_LEVEL_VERBOSE,
-    LOGGER_LEVEL_DEBUG,
-    LOGGER_LEVEL_INFO,
-    LOGGER_LEVEL_WARN,
-    LOGGER_LEVEL_ERROR
+    LOGGER_LEVEL_VERBOSE,   /// The level for the verbose message
+    LOGGER_LEVEL_DEBUG,     /// The level for the debug message
+    LOGGER_LEVEL_INFO,      /// The level for the information message
+    LOGGER_LEVEL_WARN,      /// The level for the warning message
+    LOGGER_LEVEL_ERROR      /// The level for the error message
 } Logger_Level_e;
 
 typedef void ( *Logger_Callback_t )( const void *pPriv, Logger_Level_e level, const char *pFormat,
