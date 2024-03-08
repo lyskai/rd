@@ -48,6 +48,14 @@ void ComponentIF::Log( Logger_Level_e level, const char *pFormat, ... )
     }
 }
 
+void ComponentIF::Log( Logger_Level_e level, const char *pFormat, va_list args )
+{
+    if ( nullptr != m_pLogger )
+    {
+        m_pLogger->Log( level, pFormat, args );
+    }
+}
+
 RideHal_ComponentState_t ComponentIF::GetState()
 {
     return m_State;
