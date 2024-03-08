@@ -3,3 +3,4 @@
 
 add_subdirectory(common)
 add_subdirectory(C2D)
+add_subdirectory(camera)
