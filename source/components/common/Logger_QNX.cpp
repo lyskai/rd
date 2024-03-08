@@ -2,7 +2,6 @@
 // Confidential & Proprietary.
 
 #include "ride/hal/Logger.hpp"
-#include <string>
 #include <sys/slog2.h>
 
 namespace ride
