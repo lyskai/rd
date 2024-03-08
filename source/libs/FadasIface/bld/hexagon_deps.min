@@ -1,0 +1,9 @@
+include $(HEXAGON_SDK_ROOT)/build/default_deps.min
+# must list all variants supported by this project
+SUPPORTED_VS = $(default_VS)
+# must list all the dependencies of this project
+DEPENDENCIES = \
+  RPCMEM \
+  TEST_MAIN \
+  TEST_UTIL \
+  WORKER_POOL

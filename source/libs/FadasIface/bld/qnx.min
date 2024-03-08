@@ -1,0 +1,21 @@
+INCDIRS+=/opt/qnx710/target/qnx7/aarch64le/usr/include/fadas
+
+BUILD_DLLS+=libFadasIface_stub
+libFadasIface_stub_QAICIDLS += ../src/FadasIface
+libFadasIface_stub_C_SRCS += $(V)/FadasIface_stub
+libFadasIface_stub_DLLS += libfastrpc libfastrpc_pmem liblibstd libsmmu_client
+libFadasIface_stub_DEFINES += VERIFY_PRINT_ERROR
+
+BUILD_EXES+=fadas_test
+fadas_test_QAICIDLS += ../src/FadasIface
+fadas_test_C_SRCS += $V/FadasIface_stub
+fadas_test_CPP_SRCS += ../fadas_test
+fadas_test_DLLS += libfastrpc libfastrpc_pmem liblibstd libsmmu_client
+fadas_test_DEFINES += VERIFY_PRINT_ERROR
+
+# copy final build products to the ship directory
+BUILD_COPIES = \
+   $(DLLS) \
+   $(EXES) \
+   $(LIBS) \
+   $(SHIP_DIR)/ ;

@@ -9,6 +9,10 @@
 #include <memory>
 #include <unistd.h>
 
+extern "C"
+{
+#include "fadas.h"
+}
 #include "ride/hal/BufferManager.hpp"
 #include "ride/hal/ComponentIF.hpp"
 
@@ -33,18 +37,8 @@ typedef enum
 typedef struct
 {
     float *pMapX;
-    size_t sizeX;
     float *pMapY;
-    size_t sizeY;
 } Remap_MapTable_t;
-
-typedef struct
-{
-    uint32_t topX;
-    uint32_t topY;
-    uint32_t width;
-    uint32_t height;
-} Remap_ROI_t;
 
 typedef struct
 {
@@ -54,7 +48,7 @@ typedef struct
     uint32_t mapWidth;
     uint32_t mapHeight;
     Remap_MapTable_t remapTable;
-    Remap_ROI_t ROI;
+    FadasROI_t ROI;
 } Remap_InputConfig_t;
 
 typedef struct
@@ -72,12 +66,24 @@ typedef struct
     bool bEnableNormalize;
 } Remap_Config_t;
 
-class Remap
+class RemapImpl
 {
 public:
+    RemapImpl() = default;
+    ~RemapImpl() = default;
+
+    virtual bool init( const Remap_Config_t *pConfig ) = 0;
+    virtual void kill() = 0;
+    virtual RideHalError_e remap( const RideHal_SharedBuffer_t *inputs,
+                                  const RideHal_SharedBuffer_t *outputs ) = 0;
+
+};   // namespace RemapImpl
+
+class Remap : public ComponentIF
+{
 public:
-    Remap() = default;
-    ~Remap() = default;
+    Remap();
+    ~Remap();
 
     /// @brief Initialize the remap pipeline
     /// @param pName the remap unique instance name
@@ -109,7 +115,7 @@ public:
 
 private:
     Remap_Config_t m_Config;
-    std::vector<size_t> m_InputSizes;
+    size_t m_InputSizes[RIDE_HAL_MAX_INPUTS];
     std::unique_ptr<RemapImpl> m_Impl = nullptr;
 
 };   // class Remap

@@ -3,4 +3,6 @@
 
 add_subdirectory(buffer_manager)
 add_subdirectory(components)
+add_subdirectory(libs/FadasIface)
+add_subdirectory(remap)
 add_subdirectory(QnnRuntime)

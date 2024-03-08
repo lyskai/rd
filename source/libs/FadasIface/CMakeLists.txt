@@ -1,0 +1,25 @@
+# FastADAS interface is supported only on aarch64 QNX targets
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
+
+    list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface )
+    list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/bld/include )
+    list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/externals/include )
+
+    add_library(FadasIfaceStub SHARED)
+    target_sources(FadasIfaceStub PRIVATE FadasIface.c FadasIface.h)
+    target_include_directories(FadasIfaceStub PUBLIC ${HEADERS_DIR})
+    target_compile_definitions(FadasIfaceStub PUBLIC VARIANT_le_ BUILDENV_qss)
+    target_link_libraries(FadasIfaceStub PUBLIC cdsprpc)
+    add_library(Ride::Hal::Libs::FadasIfaceStub ALIAS FadasIfaceStub)
+    install(TARGETS FadasIfaceStub DESTINATION lib)
+
+    add_library(FadasIface SHARED FadasSrv.cpp)
+    target_include_directories(FadasIface PUBLIC ${HEADERS_DIR})
+    target_compile_definitions(FadasIface PUBLIC USE_FADAS_DSP)
+    target_link_libraries(FadasIface PUBLIC FadasIfaceStub fadas)
+    add_library(Ride::Hal::Libs::FadasIface ALIAS FadasIface)
+    install(TARGETS FadasIface DESTINATION lib)
+
+    install(FILES prebuilt/dsp/libFadasIface_skel.so DESTINATION lib/dsp)
+
+endif () # aarch64-QNX
