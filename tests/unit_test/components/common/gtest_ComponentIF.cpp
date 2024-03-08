@@ -10,7 +10,6 @@
 
 #include "ride/hal/CameraIF.hpp"
 #include "ride/hal/ExecutorIF.hpp"
-#include "ride/hal/VideoCodecIF.hpp"
 
 using namespace ride::hal;
 using namespace ride::hal::memory;
