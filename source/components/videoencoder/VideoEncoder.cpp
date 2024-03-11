@@ -54,7 +54,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
             return RIDE_HAL_ERROR_UNSUPPORTED;
         }
 
-        m_VidcEncoderData.bitrate.target_bitrate = pConfig->bitRate * 1000000;
+        m_VidcEncoderData.bitrate.target_bitrate = pConfig->bitRate;
 
         if ( pConfig->rateControlMode == RIDE_HAL_VBR_CFR )
         {
@@ -458,7 +458,7 @@ RideHalError_e VideoEncoder::SubmitInputBuffer( const RideHal_SharedBuffer_t *pS
         return RIDE_HAL_ERROR_STATE;
     }
 
-    if ( nullptr != inputBuffer )
+    if ( nullptr == inputBuffer )
     {
         RIDEHAL_ERROR( "Not submitting empty inputBuffer!" );
         return RIDE_HAL_ERROR_NULL_PTR;
@@ -532,7 +532,7 @@ RideHalError_e VideoEncoder::SubmitInputBuffer( const RideHal_SharedBuffer_t *pS
     pFrameData->frame_handle = (pmem_handle_t) inputBuffer->buffer.dmaHandle;
 
     pFrameData->data_len = convertedSize;
-    pFrameData->timestamp = timestampNs / 1000000;   // ns convert to ms
+    pFrameData->timestamp = timestampNs / 1000;   // ns convert to us
 
     int rc = device_ioctl( m_VidcEncoderData.ioHandle, VIDC_IOCTL_EMPTY_INPUT_BUFFER,
                            (uint8_t *) pFrameData, sizeof( vidc_frame_data_type ), nullptr, 0 );
