@@ -48,6 +48,7 @@ typedef enum
     RIDE_HAL_ERROR_EXISTS,            ///<  The object already exists
     RIDE_HAL_ERROR_ACCES,             ///<  Permission denied
     RIDE_HAL_ERROR_TIMEOUT,           ///<  Timeout
+    RIDE_HAL_ERROR_NODATA,            ///<  No Data
     RIDE_HAL_ERROR_MAX = 0x7FFFFFFF   ///<  Do not use.
 } RideHalError_e;
 
@@ -73,6 +74,16 @@ typedef enum
     RIDE_HAL_BUFFER_USAGE_HTP,           ///< Buffer used by HTP
     RIDE_HAL_BUFFER_USAGE_MAX
 } RideHal_BufferUsage_e;
+
+/// @brief RideHal Computing Processor Type
+typedef enum
+{
+    RIDE_HAL_PROCESSOR_HTP0,   ///< do computing on the processor HTP0
+    RIDE_HAL_PROCESSOR_HTP1,   ///< do computing on the processor HTP1
+    RIDE_HAL_PROCESSOR_CPU,    ///< do computing on the processor CPU
+    RIDE_HAL_PROCESSOR_GPU,    ///< do computing on the processor GPU
+    RIDE_HAL_PROCESSOR_MAX
+} RideHal_ProcessorType_e;
 
 /// @brief The attributes of an allocated DMA memory.
 typedef struct
@@ -143,7 +154,7 @@ typedef struct
 
 
 /// @brief RideHal Shared Buffer between Components for zero copy purpose
-typedef struct
+typedef struct RideHal_SharedBuffer
 {
     RideHal_Buffer_t buffer;   /* The shared buffer */
     size_t size;               /* The size of the valid buffer in the shared buffer */
@@ -156,10 +167,98 @@ typedef struct
     };
 
 public:
+    RideHal_SharedBuffer();
+    ~RideHal_SharedBuffer();
+
+    /// @brief Construct an shared buffer from another shared buffer
+    /// @param rhs the shared buffer
+    /// @return void
+    RideHal_SharedBuffer( const RideHal_SharedBuffer &rhs );
+    RideHal_SharedBuffer &operator=( const RideHal_SharedBuffer &rhs );
+
+    /// @brief Allocate the DMA memory
+    /// @param size the wanted DMA memory size
+    /// @param usage the DMA buffer usage
+    /// @param flags the DMA buffer flags
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Allocate( size_t size,
+                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+
+    /// @brief Allocate the DMA memory for the image with the best strides/paddings
+    /// that can be shared among CPU/GPU/VPU/HTP, etc
+    /// @param width the image width
+    /// @param height the image height
+    /// @param format the image format
+    /// @param usage the DMA buffer usage
+    /// @param flags the DMA buffer flags
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Allocate( uint32_t width, uint32_t height, RideHal_ImageFormat_e format,
+                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+
+
+    /// @brief Allocate the DMA memory for batched image with best strides/paddings
+    /// that can be shared among CPU/GPU/VPU/HTP, etc
+    /// @param batchSize the image batch size
+    /// @param width the image width
+    /// @param height the image height
+    /// @param format the image format
+    /// @param usage the DMA buffer usage
+    /// @param flags the DMA buffer flags
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Allocate( uint32_t batchSize, uint32_t width, uint32_t height,
+                             RideHal_ImageFormat_e format,
+                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+
+    /// @brief Allocate the DMA memory for image with specified image properties
+    /// @param pImgProps the specified image properties
+    /// @param flags the DMA buffer flags
+    /// @param usage the DMA buffer usage
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Allocate( const RideHal_ImageProps_t *pImgProps,
+                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+
+    /// @brief Allocate the DMA memory for tensor with specified tensor properties
+    /// @param pTensorProps the specified tensor properties
+    /// @param usage the DMA buffer usage
+    /// @param flags the DMA buffer flags
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Allocate( const RideHal_TensorProps_t *pTensorProps,
+                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA,
+                             RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+
+    /// @brief Free the DMA memory
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Free();
+
+    /// @brief Get the shared buffer information
+    /// @param sharedBuffer pointer to hold the shared buffer information for
+    /// the image batches specified by batchOffset and batchSize
+    /// @param batchOffset the image batch offset
+    /// @param batchSize the image batch size
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e GetSharedBuffer( RideHal_SharedBuffer *pSharedBuffer, uint32_t batchOffset,
+                                    uint32_t batchSize = 1 );
+
+
     /// @brief get the valid buffer virtual address
     /// @return the valid buffer virtual address
-    void *data() { return (void *) ( (uintptr_t) buffer.pData + offset ); }
     void *data() const { return (void *) ( (uintptr_t) buffer.pData + offset ); }
+
+private:
+    /// @brief Initialize the shared buffer variables
+    void Init();
+
+    /// @brief Log a message
+    /// @param level the message log level
+    /// @param pFormat the message format
+    /// @param ... variable arguments
+    /// @return void
+    void Log( int level, const char *pFormat, ... );
+
 } RideHal_SharedBuffer_t;
 
 }   // namespace hal

@@ -15,8 +15,6 @@ namespace ride
 {
 namespace hal
 {
-namespace memory
-{
 
 RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t size,
                                     RideHal_BufferFlags_t flags, RideHal_BufferUsage_e usage )
@@ -115,6 +113,5 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
 
     return ret;
 }
-}   // namespace memory
 }   // namespace hal
 }   // namespace ride

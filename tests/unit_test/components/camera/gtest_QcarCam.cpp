@@ -5,57 +5,57 @@
 #include <stdio.h>
 
 #include "ride/hal/Component_QcarCam.hpp"
-#include "ride/hal/Image.hpp"
+#include "ride/hal/Types.hpp"
 
-#define RUNTIME_SECOND (5)
+#define RUNTIME_SECOND ( 5 )
 
 const char *pDumpPath = "/tmp/camera_frame.bin";
 
 using namespace ride::hal;
-using namespace ride::hal::memory;
 
 std::FILE *g_Dumpfile = nullptr;
 
-int DumpFrame(RideHal_CameraFrame_t *pFrame, const char *path)
+int DumpFrame( RideHal_CameraFrame_t *pFrame, const char *path )
 {
     int ret = 0;
 
-    if (nullptr == g_Dumpfile)
+    if ( nullptr == g_Dumpfile )
     {
-        g_Dumpfile = std::fopen(path, "wb+");
+        g_Dumpfile = std::fopen( path, "wb+" );
     }
 
-    if (nullptr != g_Dumpfile)
+    if ( nullptr != g_Dumpfile )
     {
         int frameSize = pFrame->sharedBuffer.size;
         void *buffer = pFrame->sharedBuffer.data();
 
-        ret = std::fwrite(buffer, frameSize, 1, g_Dumpfile);
+        ret = std::fwrite( buffer, frameSize, 1, g_Dumpfile );
     }
 
     return ret;
 }
 
-void FrameCallBack(RideHal_CameraFrame_t *pFrame, void *pPrivData)
+void FrameCallBack( RideHal_CameraFrame_t *pFrame, void *pPrivData )
 {
     RideHalError_e ret;
 
-    printf("FrameCallBack Index: %d stream id: %d, pPrivData: %p\n", pFrame->frameIndex, pFrame->streamId, pPrivData);
+    printf( "FrameCallBack Index: %d stream id: %d, pPrivData: %p\n", pFrame->frameIndex,
+            pFrame->streamId, pPrivData );
     RideHalCam *pCamera = (RideHalCam *) pPrivData;
 
 #ifdef DUMPFRAME
-    uint32_t writeBytes = DumpFrame(pFrame, pDumpPath);
+    uint32_t writeBytes = DumpFrame( pFrame, pDumpPath );
 #endif
-    ret = pCamera->ReleaseFrame(pFrame->streamId, pFrame->frameIndex);
-    ASSERT_EQ(RIDE_HAL_ERROR_NONE, ret);
+    ret = pCamera->ReleaseFrame( pFrame->streamId, pFrame->frameIndex );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 }
 
-void EventCallBack(const uint32_t eventId, const void *pPayload, void *pPrivData)
+void EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivData )
 {
-    printf("Received event: %d, pPrivData:%p\n", eventId, pPrivData);
+    printf( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
 }
 
-TEST(RideHalCam, SANITY_QcarCam)
+TEST( RideHalCam, SANITY_QcarCam )
 {
     RideHalError_e ret;
     RideHalCam *pCamera = new RideHalCam;
@@ -70,25 +70,25 @@ TEST(RideHalCam, SANITY_QcarCam)
     camConfig.bufCnt = 5;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
 
-    ret = pCamera->Init(componentName, camConfig);
-    ASSERT_EQ(RIDE_HAL_ERROR_NONE, ret);
+    ret = pCamera->Init( componentName, camConfig );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
 
-    ret = pCamera->RegisterCallback(FrameCallBack, EventCallBack, (void *)pCamera);
-    ASSERT_EQ(RIDE_HAL_ERROR_NONE, ret);
+    ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = pCamera->Start();
-    ASSERT_EQ(RIDE_HAL_ERROR_NONE, ret);
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    //sanity test to run few seconds and then stop
-    sleep(RUNTIME_SECOND);
+    // sanity test to run few seconds and then stop
+    sleep( RUNTIME_SECOND );
 
     ret = pCamera->Stop();
-    ASSERT_EQ(RIDE_HAL_ERROR_NONE, ret);
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-#if 1 //deinit crash
+#if 1   // deinit crash
     ret = pCamera->Deinit();
-    ASSERT_EQ(RIDE_HAL_ERROR_NONE, ret);
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 #endif
 
     delete pCamera;

@@ -44,8 +44,8 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
             inputRes[1] = pConfig->inputConfigs[i].inputResolution.height;
             m_InputResolutions.push_back( inputRes );
             m_InputFormats.push_back( pConfig->inputConfigs[i].inputFormat );
-            size_t inputSize = (size_t) ( m_InputResolutions[i][0] * m_InputResolutions[i][1] *
-                                          GetFormatDepthSize( m_InputFormats[i] ) );
+            size_t inputSize = ( size_t )( m_InputResolutions[i][0] * m_InputResolutions[i][1] *
+                                           GetFormatDepthSize( m_InputFormats[i] ) );
             m_InputSizes.push_back( inputSize );
 
             std::array<uint32_t, 4> inputROI;
@@ -62,7 +62,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
         m_OutputFormat = pConfig->outputFormat;
         uint32_t stride = m_OutputResolution[0] * GetFormatDepthSize( m_OutputFormat );
         m_Stride = ALIGN_S( stride, m_Align );
-        m_OutputSize = (size_t) ( m_Stride * m_OutputResolution[1] * m_BatchSize );
+        m_OutputSize = ( size_t )( m_Stride * m_OutputResolution[1] * m_BatchSize );
 
         /* Initialize C2DImpl parameters */
         for ( uint32_t i = 0; i < m_BatchSize; i++ )
@@ -79,7 +79,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
         }
 
         /* Complete initialization */
-        m_State = RIDE_HAL_COMPONENT_STATE_READY;
+        m_state = RIDE_HAL_COMPONENT_STATE_READY;
         // RIDEHAL_INFO( "Component C2D is initialized\n" );
     }
 
@@ -89,7 +89,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
 RideHalError_e C2D::Start()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -97,7 +97,7 @@ RideHalError_e C2D::Start()
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         // DO start
-        m_State = RIDE_HAL_COMPONENT_STATE_RUNNING;
+        m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
         // RIDEHAL_INFO( "Component C2D start to run\n" );
     }
 
@@ -108,7 +108,7 @@ RideHalError_e C2D::Stop()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -116,7 +116,7 @@ RideHalError_e C2D::Stop()
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         // DO stop
-        m_State = RIDE_HAL_COMPONENT_STATE_READY;
+        m_state = RIDE_HAL_COMPONENT_STATE_READY;
         // RIDEHAL_INFO( "Component C2D is stopped\n" );
     }
 
@@ -127,7 +127,7 @@ RideHalError_e C2D::Deinit()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -141,7 +141,7 @@ RideHalError_e C2D::Deinit()
         m_ROIs.clear();
         g_Impls.clear();
 
-        m_State = RIDE_HAL_COMPONENT_STATE_INITIAL;
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
         // RIDEHAL_INFO( "Component C2D is deinitialized\n" );
     }
 
@@ -186,4 +186,3 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
 }   // namespace component
 }   // namespace hal
 }   // namespace ride
-

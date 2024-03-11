@@ -8,3 +8,7 @@ install(TARGETS gtest_ComponentC2D DESTINATION bin)
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}
      ${CMAKE_CURRENT_SOURCE_DIR}/gtest_ComponentC2D.cpp
      PARENT_SCOPE )
+
+set( GTEST_RIDEHAL_LIBS ${GTEST_RIDEHAL_LIBS}
+     Ride::Hal::Component::C2D
+     PARENT_SCOPE )

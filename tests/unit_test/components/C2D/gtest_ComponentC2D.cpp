@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 #include "ride/hal/C2D.hpp"
-#include "ride/hal/Image.hpp"
+#include "ride/hal/Types.hpp"
 
 using namespace ride::hal;
 using namespace ride::hal::component;

@@ -8,7 +8,7 @@
 #include <malloc.h>
 #include <vidc_ioctl.h>
 
-#include "ride/hal/Image.hpp"
+#include "ride/hal/Types.hpp"
 #include "ride/hal/VideoEncoder.hpp"
 using namespace ride::hal;
 
@@ -393,7 +393,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
     }
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_State = RIDE_HAL_COMPONENT_STATE_READY;
+        m_state = RIDE_HAL_COMPONENT_STATE_READY;
     }
 
     return ret;
@@ -403,7 +403,7 @@ RideHalError_e VideoEncoder::Start()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -442,7 +442,7 @@ RideHalError_e VideoEncoder::Start()
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_State = RIDE_HAL_COMPONENT_STATE_RUNNING;
+        m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
     }
 
     return RIDE_HAL_ERROR_NONE;
@@ -452,7 +452,7 @@ RideHalError_e VideoEncoder::SubmitInputBuffer( const RideHal_SharedBuffer_t *pS
                                                 uint64_t timestampNs )
 {
     auto inputBuffer = pSharedBuffer;
-    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
     {
         RIDEHAL_WARN( "Not submitting inputBuffer since encoder is shutting down!" );
         return RIDE_HAL_ERROR_STATE;
@@ -568,7 +568,7 @@ RideHalError_e VideoEncoder::Stop()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -589,7 +589,7 @@ RideHalError_e VideoEncoder::Stop()
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_State = RIDE_HAL_COMPONENT_STATE_READY;
+        m_state = RIDE_HAL_COMPONENT_STATE_READY;
     }
 
     return ret;
@@ -599,7 +599,7 @@ RideHalError_e VideoEncoder::Deinit()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -616,7 +616,7 @@ RideHalError_e VideoEncoder::Deinit()
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_State = RIDE_HAL_COMPONENT_STATE_INITIAL;
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
     }
 
     return ret;
@@ -1052,10 +1052,8 @@ int32_t VideoEncoder::allocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_inf
                 return -1;
             }
             memset( pBuf[i], 0, sizeof( vidc_buffer_info_type ) );
-            ride::hal::memory::Buffer buffer;
             RideHal_SharedBuffer_t sharedBuffer;
-            auto ret = buffer.Allocate( bufSize );
-            ret = buffer.GetSharedBuffer( &sharedBuffer );
+            auto ret = sharedBuffer.Allocate( bufSize );
             // m_Buffers.push_back( buffer );
             pBuf[i]->buf_addr = (uint8_t *) sharedBuffer.data();
 #if defined( __QNXNTO__ )

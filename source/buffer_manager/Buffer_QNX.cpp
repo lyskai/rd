@@ -9,8 +9,6 @@ namespace ride
 {
 namespace hal
 {
-namespace memory
-{
 
 static uint32_t s_usageToPMemID[RIDE_HAL_BUFFER_USAGE_MAX] = {
         PMEM_DMA_ID,                  /* RIDE_HAL_BUFFER_USAGE_DEFAULT */
@@ -91,6 +89,6 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
 
     return ret;
 }
-}   // namespace memory
+
 }   // namespace hal
 }   // namespace ride

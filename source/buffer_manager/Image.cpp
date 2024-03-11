@@ -1,14 +1,13 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
-
-#include "ride/hal/Image.hpp"
+#include "ride/hal/Buffer.hpp"
+#include "ride/hal/BufferManager.hpp"
+#include "ride/hal/Types.hpp"
 #include <apdf.h>
 
 namespace ride
 {
 namespace hal
-{
-namespace memory
 {
 
 #define PLANEDEF_HW_USAGE_FLAGS                                                                    \
@@ -56,16 +55,10 @@ static const char *s_rideHalFormatToString[RIDE_HAL_IMAGE_FORMAT_MAX] = {
         "P010"    /* RIDE_HAL_IMAGE_FORMAT_P010 */
 };
 
-Image::Image() : Buffer()
-{
-    m_sharedBuffer.type = RIDE_HAL_BUFFER_TYPE_IMAGE;
-}
-
-Image::~Image() {}
-
-RideHalError_e Image::Allocate( uint32_t batchSize, uint32_t width, uint32_t height,
-                                RideHal_ImageFormat_e format, RideHal_BufferFlags_t flags,
-                                RideHal_BufferUsage_e usage )
+RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t width, uint32_t height,
+                                               RideHal_ImageFormat_e format,
+                                               RideHal_BufferUsage_e usage,
+                                               RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     size_t size = 0;
@@ -82,7 +75,7 @@ RideHalError_e Image::Allocate( uint32_t batchSize, uint32_t width, uint32_t hei
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( nullptr != m_sharedBuffer.buffer.pData )
+    else if ( nullptr != this->buffer.pData )
     {
         ret = RIDE_HAL_ERROR_EXISTS;
     }
@@ -103,11 +96,12 @@ RideHalError_e Image::Allocate( uint32_t batchSize, uint32_t width, uint32_t hei
         {
             frameRes.nWidthInPixels = width;
             frameRes.nHeightInPixels = height;
-            m_sharedBuffer.imgProps.format = format;
-            m_sharedBuffer.imgProps.batchSize = batchSize;
-            m_sharedBuffer.imgProps.width = width;
-            m_sharedBuffer.imgProps.height = height;
-            m_sharedBuffer.imgProps.numPlanes = numPlanes;
+            this->imgProps.format = format;
+            this->imgProps.batchSize = batchSize;
+            this->imgProps.width = width;
+            this->imgProps.height = height;
+            this->imgProps.numPlanes = numPlanes;
+            this->type = RIDE_HAL_BUFFER_TYPE_IMAGE;
         }
     }
 
@@ -129,12 +123,12 @@ RideHalError_e Image::Allocate( uint32_t batchSize, uint32_t width, uint32_t hei
                     planeDef.nActualPlaneBufHeight, planeDef.nActualBufSizeAlignment,
                     planeDef.nBufAddrAlignment, planeDef.nPlaneBufSize,
                     planeDef.nPlanePaddingSize );
-            m_sharedBuffer.imgProps.stride[i] = planeDef.nActualStride;
-            m_sharedBuffer.imgProps.actualHeight[i] = planeDef.nActualPlaneBufHeight;
+            this->imgProps.stride[i] = planeDef.nActualStride;
+            this->imgProps.actualHeight[i] = planeDef.nActualPlaneBufHeight;
             size += planeDef.nActualStride * planeDef.nActualPlaneBufHeight;
             if ( i == ( numPlanes - 1 ) )
             {
-                m_sharedBuffer.imgProps.extraPadding = planeDef.nPlanePaddingSize;
+                this->imgProps.extraPadding = planeDef.nPlanePaddingSize;
                 size += planeDef.nPlanePaddingSize;
             }
             else
@@ -154,20 +148,23 @@ RideHalError_e Image::Allocate( uint32_t batchSize, uint32_t width, uint32_t hei
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         size = size * batchSize;
-        ret = Buffer::Allocate( size, flags, usage );
+        ret = Allocate( size, usage, flags );
     }
 
     return ret;
 }
 
-RideHalError_e Image::Allocate( uint32_t width, uint32_t height, RideHal_ImageFormat_e format,
-                                RideHal_BufferFlags_t flags, RideHal_BufferUsage_e usage )
+RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t width, uint32_t height,
+                                               RideHal_ImageFormat_e format,
+                                               RideHal_BufferUsage_e usage,
+                                               RideHal_BufferFlags_t flags )
 {
-    return Allocate( 1, width, height, format, flags, usage );
+    return Allocate( 1, width, height, format, usage, flags );
 }
 
-RideHalError_e Image::Allocate( const RideHal_ImageProps_t *pImgProps, RideHal_BufferFlags_t flags,
-                                RideHal_BufferUsage_e usage )
+RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgProps,
+                                               RideHal_BufferUsage_e usage,
+                                               RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     size_t size = 0;
@@ -193,7 +190,7 @@ RideHalError_e Image::Allocate( const RideHal_ImageProps_t *pImgProps, RideHal_B
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( nullptr != m_sharedBuffer.buffer.pData )
+    else if ( nullptr != this->buffer.pData )
     {
         ret = RIDE_HAL_ERROR_EXISTS;
     }
@@ -254,39 +251,39 @@ RideHalError_e Image::Allocate( const RideHal_ImageProps_t *pImgProps, RideHal_B
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_sharedBuffer.imgProps = *pImgProps;
-        ret = Buffer::Allocate( size, flags, usage );
+        this->imgProps = *pImgProps;
+        this->type = RIDE_HAL_BUFFER_TYPE_IMAGE;
+        ret = Allocate( size, usage, flags );
     }
 
     return ret;
 }
 
-RideHalError_e Image::GetSharedBuffer( RideHal_SharedBuffer_t *pSharedBuffer )
-{
-    return Buffer::GetSharedBuffer( pSharedBuffer );
-}
-
-RideHalError_e Image::GetSharedBuffer( RideHal_SharedBuffer_t *pSharedBuffer, uint32_t batchOffset,
-                                       uint32_t batchSize )
+RideHalError_e RideHal_SharedBuffer::GetSharedBuffer( RideHal_SharedBuffer_t *pSharedBuffer,
+                                                      uint32_t batchOffset, uint32_t batchSize )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     size_t singleImageSize = 0;
 
-    if ( nullptr == m_sharedBuffer.buffer.pData )
+    if ( nullptr == this->buffer.pData )
     {
         ret = RIDE_HAL_ERROR_INVALID_BUF;
     }
-    else if ( batchOffset >= m_sharedBuffer.imgProps.batchSize )
+    else if ( RIDE_HAL_BUFFER_TYPE_IMAGE != this->type )
+    {
+        ret = RIDE_HAL_ERROR_UNSUPPORTED;
+    }
+    else if ( batchOffset >= this->imgProps.batchSize )
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( ( batchOffset + batchSize ) >= m_sharedBuffer.imgProps.batchSize )
+    else if ( ( batchOffset + batchSize ) >= this->imgProps.batchSize )
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        ret = Buffer::GetSharedBuffer( pSharedBuffer );
+        *pSharedBuffer = *this;
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -300,7 +297,5 @@ RideHalError_e Image::GetSharedBuffer( RideHal_SharedBuffer_t *pSharedBuffer, ui
     return ret;
 }
 
-
-}   // namespace memory
 }   // namespace hal
 }   // namespace ride

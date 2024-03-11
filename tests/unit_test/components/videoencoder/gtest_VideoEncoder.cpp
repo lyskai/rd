@@ -8,12 +8,11 @@
 #include <vidc_ioctl.h>
 
 
-#include "ride/hal/Image.hpp"
+#include "ride/hal/Types.hpp"
 #include "ride/hal/VideoEncoder.hpp"
 
 using namespace ride::hal;
 using namespace ride::hal::component;
-using namespace ride::hal::memory;
 
 static std::mutex s_inMutex;
 static std::condition_variable s_InCondVar;
@@ -66,11 +65,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
-    Image img;
     RideHal_SharedBuffer_t sharedBuffer;
-    ret = img.Allocate( 176, 144, RIDE_HAL_IMAGE_FORMAT_NV12 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ret = img.GetSharedBuffer( &sharedBuffer );
+    ret = sharedBuffer.Allocate( 176, 144, RIDE_HAL_IMAGE_FORMAT_NV12 );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ret = veTest.SubmitInputBuffer( &sharedBuffer, 0 );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );

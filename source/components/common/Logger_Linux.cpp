@@ -37,9 +37,9 @@ RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )
     }
     else
     {
-        m_Name = pName;
+        m_name = pName;
         m_callback = Logger_DefaultCallback;
-        m_pPriv = (void *) m_Name.c_str();
+        m_pPriv = (void *) m_name.c_str();
         m_level = DecideLoggerLevel( pName, level );
     }
 

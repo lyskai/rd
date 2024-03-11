@@ -1,13 +1,12 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
-
-#include "ride/hal/Tensor.hpp"
+#include "ride/hal/Buffer.hpp"
+#include "ride/hal/BufferManager.hpp"
+#include "ride/hal/Types.hpp"
 
 namespace ride
 {
 namespace hal
-{
-namespace memory
 {
 
 static uint32_t s_rideHalTensorTypeToDataSize[RIDE_HAL_TENSOR_TYPE_MAX] = {
@@ -21,15 +20,9 @@ static uint32_t s_rideHalTensorTypeToDataSize[RIDE_HAL_TENSOR_TYPE_MAX] = {
         sizeof( float )     /* RIDE_HAL_TEBSOR_TYPE_FLOAT32 */
 };
 
-Tensor::Tensor() : Buffer()
-{
-    m_sharedBuffer.type = RIDE_HAL_BUFFER_TYPE_TENSOR;
-}
-
-Tensor::~Tensor() {}
-
-RideHalError_e Tensor::Allocate( const RideHal_TensorProps_t *pTensorProps,
-                                 RideHal_BufferFlags_t flags, RideHal_BufferUsage_e usage )
+RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_TensorProps_t *pTensorProps,
+                                               RideHal_BufferUsage_e usage,
+                                               RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     size_t size = 1;
@@ -44,7 +37,7 @@ RideHalError_e Tensor::Allocate( const RideHal_TensorProps_t *pTensorProps,
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( nullptr != m_sharedBuffer.buffer.pData )
+    else if ( nullptr != this->buffer.pData )
     {
         ret = RIDE_HAL_ERROR_EXISTS;
     }
@@ -62,7 +55,7 @@ RideHalError_e Tensor::Allocate( const RideHal_TensorProps_t *pTensorProps,
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_sharedBuffer.tensorProps = *pTensorProps;
+        this->tensorProps = *pTensorProps;
         for ( i = 0; i < pTensorProps->numDims; i++ )
         {
             size *= pTensorProps->dims[i];
@@ -72,12 +65,12 @@ RideHalError_e Tensor::Allocate( const RideHal_TensorProps_t *pTensorProps,
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = Buffer::Allocate( size, flags, usage );
+        this->type = RIDE_HAL_BUFFER_TYPE_TENSOR;
+        ret = Allocate( size, usage, flags );
     }
 
     return ret;
 }
 
-}   // namespace memory
 }   // namespace hal
 }   // namespace ride

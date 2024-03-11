@@ -52,7 +52,7 @@ RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )
         int rv = slog2_register( &bufferConfig, &hBuffer, SLOG2_TRY_REUSE_BUFFER_SET );
         if ( 0 == rv )
         {
-            m_Name = pName;
+            m_name = pName;
             m_callback = Logger_DefaultCallback;
             m_pPriv = (void *) hBuffer;
             m_level = DecideLoggerLevel( pName, level );

@@ -14,22 +14,6 @@ namespace ride
 namespace hal
 {
 
-/* The following macros are provided to be used by RideHal components and utils only,
- * It's not for the application and any other usage */
-#ifndef DISABLE_RIDEHAL_LOG
-#define RIDEHAL_VERBOSE( format, ... ) Log( LOGGER_LEVEL_VERBOSE, format, ##__VA_ARGS__ )
-#define RIDEHAL_DEBUG( format, ... ) Log( LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
-#define RIDEHAL_INFO( format, ... ) Log( LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
-#define RIDEHAL_WARN( format, ... ) Log( LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
-#define RIDEHAL_ERROR( format, ... ) Log( LOGGER_LEVEL_ERROR, format, ##__VA_ARGS__ )
-#else
-#define RIDEHAL_VERBOSE( format, ... )
-#define RIDEHAL_DEBUG( format, ... )
-#define RIDEHAL_INFO( format, ... )
-#define RIDEHAL_WARN( format, ... )
-#define RIDEHAL_ERROR( format, ... )
-#endif
-
 /// @brief The message log level
 typedef enum
 {
@@ -86,7 +70,7 @@ private:
                                         const char *pFormat, va_list args );
 
 private:
-    std::string m_Name; /* used to store the name of the logger when use API Init(name) */
+    std::string m_name; /* used to store the name of the logger when use API Init(name) */
     const void *m_pPriv = nullptr;
     Logger_Callback_t m_callback = nullptr;
     Logger_Level_e m_level = LOGGER_LEVEL_ERROR;

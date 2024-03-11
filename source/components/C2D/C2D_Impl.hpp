@@ -14,8 +14,6 @@
 #include <thread>
 #include <vector>
 
-#include "ride/hal/Buffer.hpp"
-#include "ride/hal/Image.hpp"
 #include "ride/hal/Logger.hpp"
 #include "ride/hal/Types.hpp"
 
@@ -73,7 +71,6 @@ private:
     uint32_t m_Align = 1;
 
     RideHal_SharedBuffer_t m_SharedBuffer;
-    memory::Image m_Img;
 };
 
 #endif

@@ -11,7 +11,7 @@ include(GoogleTest)
 
 set( GTEST_RIDEHAL_SOURCES gtest_RideHal.cpp )
 set( GTEST_RIDEHAL_INCLUDES ${PROJECT_SOURCE_DIR}/include )
-set( GTEST_RIDEHAL_LIBS GTest::Main Ride::Hal::BufferManager Ride::Hal::Component::Common Ride::Hal::Component::C2D Ride::Hal::Component::Camera Ride::Hal::Component::VideoEncoder)
+set( GTEST_RIDEHAL_LIBS GTest::Main Ride::Hal::BufferManager Ride::Hal::Component::Common )
 
 add_subdirectory(buffer_manager)
 add_subdirectory(components)

@@ -153,17 +153,8 @@ RideHalError_e C2DImpl::init( std::array<uint32_t, 2> &inputResolution,
     }
 
     /* allocate shared buffer for input image */
-    ret = m_Img.Allocate( inputResolution[0], inputResolution[1], inputFormat );
-    if ( ret == RIDE_HAL_ERROR_NONE )
-    {
-        ret = m_Img.GetSharedBuffer( &m_SharedBuffer );
-        if ( ret != RIDE_HAL_ERROR_NONE )
-        {
-            // RIDEHAL_ERROR( "Failed to get shared dma buffer for image\n" );
-            return ret;
-        }
-    }
-    else
+    ret = m_SharedBuffer.Allocate( inputResolution[0], inputResolution[1], inputFormat );
+    if ( ret != RIDE_HAL_ERROR_NONE )
     {
         // RIDEHAL_ERROR( "Failed to allocate shared dma buffer for image\n" );
         return ret;
@@ -393,7 +384,7 @@ RideHalError_e C2DImpl::updateYUVSurface( C2D_YUV_SURFACE_DEF *surfaceDef, uint3
     surfaceDef->plane1 = (void *) ( (uint8_t *) surfaceDef->plane0 + stride * height );
     auto c2dStatus = c2dUpdateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
-            (C2D_SURFACE_TYPE) ( C2D_SURFACE_YUV_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
+            ( C2D_SURFACE_TYPE )( C2D_SURFACE_YUV_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
@@ -413,7 +404,7 @@ RideHalError_e C2DImpl::updateRGBSurface( C2D_RGB_SURFACE_DEF *surfaceDef, uint3
     surfaceDef->buffer = ptr;
     auto c2dStatus = c2dUpdateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
-            (C2D_SURFACE_TYPE) ( C2D_SURFACE_RGB_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
+            ( C2D_SURFACE_TYPE )( C2D_SURFACE_RGB_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;

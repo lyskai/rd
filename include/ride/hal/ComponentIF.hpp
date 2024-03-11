@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "ride/hal/Logger.hpp"
+#include "ride/hal/LoggerIF.hpp"
 #include "ride/hal/Types.hpp"
 
 
@@ -28,7 +28,7 @@ typedef enum
 /// @brief ride::hal::ComponentIF
 ///
 /// Component Interface
-class ComponentIF
+class ComponentIF : public LoggerIF
 {
 public:
     ComponentIF() = default;
@@ -52,32 +52,13 @@ public:
 
 protected:
     /// @brief Initialize the component
-    /// @param name the component unique instance name
+    /// @param pName the component unique instance name
     /// @param pLogger the logger used by the component to log messages
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, Logger *pLogger = nullptr );
 
-    /// @brief Log a message
-    /// @param level the message log level
-    /// @param pFormat the message format
-    /// @param ... variable arguments
-    /// @return void
-    void Log( Logger_Level_e level, const char *pFormat, ... );
-
-    /// @brief Log a message
-    /// @param level the message log level
-    /// @param pFormat the message format
-    /// @param args variable arguments
-    /// @return void
-    void Log( Logger_Level_e level, const char *pFormat, va_list args );
-
-private:
-    std::string m_Name;
-    Logger m_DefaultLogger;
-    Logger *m_pLogger = nullptr;
-
 protected:
-    RideHal_ComponentState_t m_State = RIDE_HAL_COMPONENT_STATE_INITIAL;
+    RideHal_ComponentState_t m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
 
 };   // class ComponentIF
 

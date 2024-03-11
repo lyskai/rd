@@ -3,58 +3,77 @@
 
 #include "ride/hal/Buffer.hpp"
 #include "ride/hal/BufferManager.hpp"
+#include <string.h>
 #include <unistd.h>
 
 namespace ride
 {
 namespace hal
 {
-namespace memory
-{
 
-void Buffer::ResetSharedBuffer()
+void RideHal_SharedBuffer::Init()
 {
-    m_sharedBuffer.buffer.pData = nullptr;
-    m_sharedBuffer.buffer.dmaHandle = 0;
-    m_sharedBuffer.buffer.size = 0;
-    m_sharedBuffer.buffer.id = 0;
-    m_sharedBuffer.buffer.pid = static_cast<uint64_t>( getpid() );
-    m_sharedBuffer.buffer.usage = RIDE_HAL_BUFFER_USAGE_DEFAULT;
-    m_sharedBuffer.buffer.flags = 0;
-    m_sharedBuffer.size = 0;
-    m_sharedBuffer.offset = 0;
+    memset( this, 0, sizeof( *this ) );
+    this->buffer.pData = nullptr;
+    this->buffer.dmaHandle = 0;
+    this->buffer.size = 0;
+    this->buffer.id = 0;
+    this->buffer.pid = static_cast<uint64_t>( getpid() );
+    this->buffer.usage = RIDE_HAL_BUFFER_USAGE_DEFAULT;
+    this->buffer.flags = 0;
+    this->size = 0;
+    this->offset = 0;
+    this->type = RIDE_HAL_BUFFER_TYPE_RAW;
 }
 
-Buffer::Buffer()
+RideHal_SharedBuffer::RideHal_SharedBuffer()
 {
-    ResetSharedBuffer();
-    m_sharedBuffer.type = RIDE_HAL_BUFFER_TYPE_RAW;
+    Init();
 }
 
-Buffer::Buffer( Buffer &&rhs )
+RideHal_SharedBuffer::RideHal_SharedBuffer( const RideHal_SharedBuffer &rhs )
 {
-    RideHalError_e ret = rhs.GetSharedBuffer( &m_sharedBuffer );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    this->buffer = rhs.buffer;
+    this->size = rhs.size;
+    this->offset = rhs.offset;
+    this->type = rhs.type;
+    switch ( type )
     {
-        rhs.ResetSharedBuffer();
+        case RIDE_HAL_BUFFER_TYPE_IMAGE:
+            this->imgProps = rhs.imgProps;
+            break;
+        case RIDE_HAL_BUFFER_TYPE_TENSOR:
+            this->tensorProps = rhs.tensorProps;
+            break;
+        default:
+            break;
     }
 }
 
-Buffer &Buffer::operator=( Buffer &&rhs )
+RideHal_SharedBuffer &RideHal_SharedBuffer::operator=( const RideHal_SharedBuffer &rhs )
 {
-    RideHalError_e ret = rhs.GetSharedBuffer( &m_sharedBuffer );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    this->buffer = rhs.buffer;
+    this->size = rhs.size;
+    this->offset = rhs.offset;
+    this->type = rhs.type;
+    switch ( type )
     {
-        rhs.ResetSharedBuffer();
+        case RIDE_HAL_BUFFER_TYPE_IMAGE:
+            this->imgProps = rhs.imgProps;
+            break;
+        case RIDE_HAL_BUFFER_TYPE_TENSOR:
+            this->tensorProps = rhs.tensorProps;
+            break;
+        default:
+            break;
     }
-
     return *this;
 }
 
-Buffer::~Buffer() {}
+RideHal_SharedBuffer::~RideHal_SharedBuffer() {}
 
-RideHalError_e Buffer::Allocate( size_t size, RideHal_BufferFlags_t flags,
-                                 RideHal_BufferUsage_e usage )
+RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_e usage,
+                                               RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     void *pData = nullptr;
@@ -66,7 +85,7 @@ RideHalError_e Buffer::Allocate( size_t size, RideHal_BufferFlags_t flags,
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
-    else if ( nullptr != m_sharedBuffer.buffer.pData )
+    else if ( nullptr != this->buffer.pData )
     {
         ret = RIDE_HAL_ERROR_EXISTS;
     }
@@ -81,36 +100,32 @@ RideHalError_e Buffer::Allocate( size_t size, RideHal_BufferFlags_t flags,
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_sharedBuffer.buffer.pData = pData;
-        m_sharedBuffer.buffer.dmaHandle = dmaHandle;
-        m_sharedBuffer.buffer.size = size;
-        m_sharedBuffer.buffer.usage = usage;
-        m_sharedBuffer.buffer.flags = flags;
-        m_sharedBuffer.size = size;
+        this->buffer.pData = pData;
+        this->buffer.dmaHandle = dmaHandle;
+        this->buffer.size = size;
+        this->buffer.usage = usage;
+        this->buffer.flags = flags;
+        this->size = size;
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = pBufferManager->Register( this, &id );
+        ret = pBufferManager->Register( this );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        m_sharedBuffer.buffer.id = id;
-    }
-    else
+    if ( RIDE_HAL_ERROR_NONE != ret )
     {
         if ( nullptr != pData )
         {
             (void) RideHal_DmaFree( pData, dmaHandle, size );
         }
-        ResetSharedBuffer();
+        Init();
     }
 
     return ret;
 }
 
-RideHalError_e Buffer::Free()
+RideHalError_e RideHal_SharedBuffer::Free()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
@@ -119,7 +134,7 @@ RideHalError_e Buffer::Free()
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
-    else if ( nullptr == m_sharedBuffer.buffer.pData )
+    else if ( nullptr == this->buffer.pData )
     {
         ret = RIDE_HAL_ERROR_INVALID_BUF;
     }
@@ -130,52 +145,34 @@ RideHalError_e Buffer::Free()
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = pBufferManager->Deregister( m_sharedBuffer.buffer.id );
+        ret = pBufferManager->Deregister( this->buffer.id );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = RideHal_DmaFree( m_sharedBuffer.buffer.pData, m_sharedBuffer.buffer.dmaHandle,
-                               m_sharedBuffer.buffer.size );
-        ResetSharedBuffer();
+        ret = RideHal_DmaFree( this->buffer.pData, this->buffer.dmaHandle, this->buffer.size );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        Init();
     }
 
     return ret;
 }
 
-RideHalError_e Buffer::GetSharedBuffer( RideHal_SharedBuffer_t *pSharedBuffer )
-{
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-
-    if ( nullptr == pSharedBuffer )
-    {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
-    }
-
-    if ( nullptr == m_sharedBuffer.buffer.pData )
-    {
-        ret = RIDE_HAL_ERROR_INVALID_BUF;
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        *pSharedBuffer = m_sharedBuffer;
-    }
-
-    return ret;
-}
-
-void Buffer::Log( Logger_Level_e level, const char *pFormat, ... )
+void RideHal_SharedBuffer::Log( int level, const char *pFormat, ... )
 {
     va_list args;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
     if ( nullptr != pBufferManager )
     {
         va_start( args, pFormat );
-        pBufferManager->Log( level, pFormat, args );
+        pBufferManager->Log( (Logger_Level_e) level, pFormat, args );
         va_end( args );
     }
 }
-}   // namespace memory
+
+
 }   // namespace hal
 }   // namespace ride

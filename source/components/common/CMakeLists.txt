@@ -6,6 +6,7 @@ set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 set( COMPONENT_COMMON_SOURCES
     ComponentIF.cpp
     Logger.cpp
+    LoggerIF.cpp
 )
 
 set( TARGET_LIBRARIES )

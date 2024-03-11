@@ -5,14 +5,9 @@
 #include <stdio.h>
 
 #include "ride/hal/ComponentIF.hpp"
-#include "ride/hal/Image.hpp"
-#include "ride/hal/Tensor.hpp"
-
-#include "ride/hal/CameraIF.hpp"
 #include "ride/hal/ExecutorIF.hpp"
 
 using namespace ride::hal;
-using namespace ride::hal::memory;
 
 typedef struct
 {
@@ -37,7 +32,7 @@ public:
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            m_State = RIDE_HAL_COMPONENT_STATE_READY;
+            m_state = RIDE_HAL_COMPONENT_STATE_READY;
         }
 
         return ret;
@@ -47,7 +42,7 @@ public:
     {
         RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-        if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+        if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
         {
             ret = RIDE_HAL_ERROR_STATE;
         }
@@ -59,7 +54,7 @@ public:
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            m_State = RIDE_HAL_COMPONENT_STATE_RUNNING;
+            m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
         }
 
         return ret;
@@ -70,7 +65,7 @@ public:
     {
         RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-        if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_State )
+        if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
         {
             ret = RIDE_HAL_ERROR_STATE;
         }
@@ -82,7 +77,7 @@ public:
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            m_State = RIDE_HAL_COMPONENT_STATE_READY;
+            m_state = RIDE_HAL_COMPONENT_STATE_READY;
         }
 
         return ret;
@@ -92,7 +87,7 @@ public:
     {
         RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-        if ( RIDE_HAL_COMPONENT_STATE_READY != m_State )
+        if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
         {
             ret = RIDE_HAL_ERROR_STATE;
         }
@@ -104,7 +99,7 @@ public:
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            m_State = RIDE_HAL_COMPONENT_STATE_INITIAL;
+            m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
         }
 
         return ret;
