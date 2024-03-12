@@ -1,0 +1,185 @@
+//  Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+//  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
+
+#include "ridehal/sample/SharedBufferPool.hpp"
+
+using namespace ridehal;
+
+namespace ridehal
+{
+namespace sample
+{
+
+SharedBufferPool::SharedBufferPool() {}
+
+RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    ret = LoggerIF::Init( name.c_str(), pLogger );
+    {
+        m_queue.resize( number );
+        memset( m_queue.data(), 0, m_queue.size() * sizeof( SharedBufferInfo ) );
+        RIDEHAL_DEBUG( "Pool %s inited with queue size %u", GetName(), number );
+        for ( uint32_t idx = 0; idx < number; idx++ )
+        {
+            m_queue[idx].sharedBuffer.pubHandle = idx;
+            m_queue[idx].dirty = false;
+        }
+    }
+
+    return ret;
+}
+
+std::shared_ptr<SharedBuffer_t> SharedBufferPool::Get()
+{
+    if ( false == m_bIsInited )
+    {
+        RIDEHAL_ERROR( "(Should not be here) %s pool is not inited", GetName() );
+        return nullptr;
+    }
+
+    uint32_t idx = 0;
+    auto it = m_queue.begin();
+    for ( ; it != m_queue.end() && __atomic_load_n( &it->dirty, __ATOMIC_RELAXED ); it++, idx++ )
+    {
+    }
+
+    if ( it == m_queue.end() )
+    {
+        RIDEHAL_ERROR( "(Should not be here) All buffer are in use. Pool name %s", GetName() );
+        return nullptr;
+    }
+    __atomic_store_n( &it->dirty, true, __ATOMIC_RELAXED );
+
+    RIDEHAL_DEBUG( "Marked %s buffer %u in use", GetName(), idx );
+
+    std::shared_ptr<SharedBuffer_t> ptr( &it->sharedBuffer,
+                                         [&]( SharedBuffer_t *p ) { Deleter( p ); } );
+
+    return ptr;
+}
+
+void SharedBufferPool::Deleter( SharedBuffer_t *ptrToDelete )
+{
+    if ( !ptrToDelete )
+    {
+        RIDEHAL_ERROR( "(Should not be here) Found invalid pointerf for %s", GetName() );
+        return;
+    }
+
+    if ( ptrToDelete->pubHandle >= m_queue.size() )
+    {
+        RIDEHAL_ERROR( "(Should not be here) %s index out of range", GetName() );
+        return;
+    }
+
+    __atomic_store_n( &m_queue[ptrToDelete->pubHandle].dirty, false, __ATOMIC_RELAXED );
+
+    RIDEHAL_DEBUG( "Marked %s buffer %llu available", GetName(), ptrToDelete->pubHandle );
+}
+
+RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+                                       uint32_t width, uint32_t height,
+                                       RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage )
+{
+    RideHalError_e ret = Init( name, pLogger, number );
+
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    {
+        RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
+        ret = sharedBuffer.Allocate( width, height, format, usage );
+        RIDEHAL_DEBUG( "%s image[%u] %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
+                       GetName(), width, height, idx, sharedBuffer.size, sharedBuffer.data(),
+                       sharedBuffer.buffer.dmaHandle, ret );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_bIsInited = true;
+    }
+
+    return ret;
+}
+
+RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+                                       uint32_t batchSize, uint32_t width, uint32_t height,
+                                       RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage )
+{
+    RideHalError_e ret = Init( name, pLogger, number );
+
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    {
+        RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
+        ret = sharedBuffer.Allocate( batchSize, width, height, format, usage );
+        RIDEHAL_DEBUG( "%s image[%u] %u %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
+                       GetName(), batchSize, width, height, idx, sharedBuffer.size,
+                       sharedBuffer.data(), sharedBuffer.buffer.dmaHandle, ret );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_bIsInited = true;
+    }
+
+    return ret;
+}
+
+RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+                                       RideHal_ImageProps_t &imageProps,
+                                       RideHal_BufferUsage_e usage )
+{
+    RideHalError_e ret = Init( name, pLogger, number );
+
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    {
+        RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
+        ret = sharedBuffer.Allocate( &imageProps, usage );
+        RIDEHAL_DEBUG( "%s image[%u] allocated with size=%u data=%p handle=%llu ret=%d\n",
+                       GetName(), idx, sharedBuffer.size, sharedBuffer.data(),
+                       sharedBuffer.buffer.dmaHandle, ret );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_bIsInited = true;
+    }
+
+    return ret;
+}
+
+RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+                                       RideHal_TensorProps_t &tensorProps,
+                                       RideHal_BufferUsage_e usage )
+{
+    RideHalError_e ret = Init( name, pLogger, number );
+
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    {
+        RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
+        ret = sharedBuffer.Allocate( &tensorProps, usage );
+        RIDEHAL_DEBUG( "%s tensor[%u] allocated with size=%u data=%p handle=%llu ret=%d\n",
+                       GetName(), idx, sharedBuffer.size, sharedBuffer.data(),
+                       sharedBuffer.buffer.dmaHandle, ret );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_bIsInited = true;
+    }
+
+    return ret;
+}
+
+SharedBufferPool::~SharedBufferPool()
+{
+    for ( uint32_t idx = 0; idx < m_queue.size(); idx++ )
+    {
+        /* It's safe to call Free without Allocate, just ignore the return error */
+        RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
+        (void) sharedBuffer.Free();
+    }
+}
+
+}   // namespace sample
+}   // namespace ridehal
