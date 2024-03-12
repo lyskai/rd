@@ -5,6 +5,7 @@ add_subdirectory(C2D)
 add_subdirectory(Camera)
 add_subdirectory(common)
 add_subdirectory(VideoEncoder)
+add_subdirectory(Remap)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES} PARENT_SCOPE )
 set( GTEST_RIDEHAL_INCLUDES ${GTEST_RIDEHAL_INCLUDES} PARENT_SCOPE )
