@@ -14,12 +14,13 @@
 #include <thread>
 #include <vector>
 
-#include "ride/hal/Logger.hpp"
-#include "ride/hal/Types.hpp"
+#include "ridehal/common/Logger.hpp"
+#include "ridehal/common/SharedBuffer.hpp"
+#include "ridehal/common/Types.hpp"
 
-using namespace ride::hal;
+using namespace ridehal::common;
 
-ride::hal::RideHal_ImageFormat_e ConvertToTensorDataType( const std::string &formatStr );
+RideHal_ImageFormat_e ConvertToTensorDataType( const std::string &formatStr );
 float GetFormatDepthSize( RideHal_ImageFormat_e format );
 uint32_t ConvertToC2DFormatType( RideHal_ImageFormat_e format );
 
@@ -65,8 +66,8 @@ private:
 
     std::array<uint32_t, 2> m_InputResolution;
     std::array<uint32_t, 2> m_OutputResolution;
-    ride::hal::RideHal_ImageFormat_e m_InputFormat;
-    ride::hal::RideHal_ImageFormat_e m_OutputFormat;
+    RideHal_ImageFormat_e m_InputFormat;
+    RideHal_ImageFormat_e m_OutputFormat;
     std::array<uint32_t, 4> m_ROI;
     uint32_t m_Align = 1;
 

@@ -4,11 +4,10 @@
 #include "gtest/gtest.h"
 #include <stdio.h>
 
-#include "ride/hal/C2D.hpp"
-#include "ride/hal/Types.hpp"
+#include "ridehal/component/C2D.hpp"
 
-using namespace ride::hal;
-using namespace ride::hal::component;
+using namespace ridehal::common;
+using namespace ridehal::component;
 
 #define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
 

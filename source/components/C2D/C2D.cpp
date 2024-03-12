@@ -8,19 +8,16 @@
 #include <vector>
 
 #include "C2D_Impl.hpp"
-#include "ride/hal/C2D.hpp"
+#include "ridehal/component/C2D.hpp"
 
 #define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
 
 std::vector<std::unique_ptr<C2DImpl>> g_Impls;
 
-namespace ride
-{
-namespace hal
+namespace ridehal
 {
 namespace component
 {
-using namespace ride::hal;
 
 C2D::C2D() {}
 
@@ -184,5 +181,4 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
 }
 
 }   // namespace component
-}   // namespace hal
-}   // namespace ride
+}   // namespace ridehal

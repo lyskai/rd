@@ -4,10 +4,10 @@
 #include "gtest/gtest.h"
 #include <stdio.h>
 
-#include "ride/hal/ComponentIF.hpp"
-#include "ride/hal/ExecutorIF.hpp"
+#include "ridehal/component/ComponentIF.hpp"
 
-using namespace ride::hal;
+using namespace ridehal::common;
+using namespace ridehal::component;
 
 typedef struct
 {

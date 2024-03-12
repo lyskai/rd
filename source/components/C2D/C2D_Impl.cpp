@@ -7,8 +7,6 @@
 
 #include "C2D_Impl.hpp"
 
-using namespace ride::hal;
-
 #define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
 
 RideHal_ImageFormat_e GetDataType( const std::string &formatStr )

@@ -16,9 +16,7 @@ extern "C"
 #include "fastrpc_api.h"
 }
 
-namespace ride
-{
-namespace hal
+namespace ridehal
 {
 namespace libs
 {
@@ -70,7 +68,6 @@ private:
 
 }   // namespace FadasIface
 }   // namespace libs
-}   // namespace hal
-}   // namespace ride
+}   // namespace ridehal
 
 #endif   // _QRIDE_FADAS_SRV_HPP_

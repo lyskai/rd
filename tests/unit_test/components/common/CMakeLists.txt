@@ -2,7 +2,7 @@
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 add_executable( gtest_ComponentIF gtest_ComponentIF.cpp )
-target_link_libraries( gtest_ComponentIF GTest::Main Ride::Hal::Component::Common )
+target_link_libraries( gtest_ComponentIF GTest::Main RideHalComponentCommon )
 install(TARGETS gtest_ComponentIF DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}

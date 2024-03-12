@@ -4,9 +4,7 @@
 
 #include <rpcmem.h>
 
-namespace ride
-{
-namespace hal
+namespace ridehal
 {
 namespace libs
 {
@@ -311,5 +309,4 @@ void FadasSrv::DeRegBuf( Core coreId, void *ptr )
 
 }   // namespace FadasIface
 }   // namespace libs
-}   // namespace hal
-}   // namespace ride
+}   // namespace ridehal

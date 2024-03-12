@@ -3,7 +3,7 @@
 
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 
-set( TARGET_LIBRARIES Ride::Hal::Component::Common Ride::Hal::BufferManager )
+set( TARGET_LIBRARIES RideHalComponentCommon )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     find_package(pmem)
@@ -21,16 +21,14 @@ set( COMPONENT_C2D_SOURCES
     C2D_Impl.cpp
 )
 
-add_library( RideHalComponentC2D STATIC ${COMPONENT_C2D_SOURCES} )
+add_library( RideHalC2D STATIC ${COMPONENT_C2D_SOURCES} )
 
-set_property( TARGET RideHalComponentC2D PROPERTY LINKER_LANGUAGE CXX )
-set_property( TARGET RideHalComponentC2D PROPERTY POSITION_INDEPENDENT_CODE ON )
+set_property( TARGET RideHalC2D PROPERTY LINKER_LANGUAGE CXX )
+set_property( TARGET RideHalC2D PROPERTY POSITION_INDEPENDENT_CODE ON )
 
-target_include_directories( RideHalComponentC2D PUBLIC ${HEADERS_DIR} )
-target_include_directories( RideHalComponentC2D PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
+target_include_directories( RideHalC2D PUBLIC ${HEADERS_DIR} )
+target_include_directories( RideHalC2D PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} )
 
-target_link_libraries( RideHalComponentC2D PUBLIC ${TARGET_LIBRARIES} )
+target_link_libraries( RideHalC2D PUBLIC ${TARGET_LIBRARIES} )
 
-add_library(Ride::Hal::Component::C2D ALIAS RideHalComponentC2D)
-install( TARGETS RideHalComponentC2D DESTINATION lib )
-
+install( TARGETS RideHalC2D DESTINATION lib )
