@@ -122,7 +122,8 @@ public:
     QnnRuntime();
     ~QnnRuntime();
 
-    RideHalError_e Init( const char *pName, const QnnRuntime_Config_t *pConfig, Logger *pLogger );
+    RideHalError_e Init( const char *pName, const QnnRuntime_Config_t *pConfig,
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
     RideHalError_e GetInputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
     RideHalError_e GetOutputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
 

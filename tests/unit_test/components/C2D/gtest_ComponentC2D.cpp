@@ -32,7 +32,7 @@ TEST( C2D, SANITY_C2DConvertYUV2NV12 )
 
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    ret = C2DObj.Init( pName, pC2DConfig, nullptr );
+    ret = C2DObj.Init( pName, pC2DConfig );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Start();

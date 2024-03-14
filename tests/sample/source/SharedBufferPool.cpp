@@ -12,20 +12,20 @@ namespace sample
 
 SharedBufferPool::SharedBufferPool() {}
 
-RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number )
+RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    ret = LoggerIF::Init( name.c_str(), pLogger );
+    (void) RIDEHAL_LOGGER_INIT( name.c_str(), level );
+
+    m_name = name;
+    m_queue.resize( number );
+    memset( m_queue.data(), 0, m_queue.size() * sizeof( SharedBufferInfo ) );
+    RIDEHAL_DEBUG( "Pool %s inited with queue size %u", m_name.c_str(), number );
+    for ( uint32_t idx = 0; idx < number; idx++ )
     {
-        m_queue.resize( number );
-        memset( m_queue.data(), 0, m_queue.size() * sizeof( SharedBufferInfo ) );
-        RIDEHAL_DEBUG( "Pool %s inited with queue size %u", GetName(), number );
-        for ( uint32_t idx = 0; idx < number; idx++ )
-        {
-            m_queue[idx].sharedBuffer.pubHandle = idx;
-            m_queue[idx].dirty = false;
-        }
+        m_queue[idx].sharedBuffer.pubHandle = idx;
+        m_queue[idx].dirty = false;
     }
 
     return ret;
@@ -35,7 +35,7 @@ std::shared_ptr<SharedBuffer_t> SharedBufferPool::Get()
 {
     if ( false == m_bIsInited )
     {
-        RIDEHAL_ERROR( "(Should not be here) %s pool is not inited", GetName() );
+        RIDEHAL_ERROR( "(Should not be here) %s pool is not inited", m_name.c_str() );
         return nullptr;
     }
 
@@ -47,12 +47,12 @@ std::shared_ptr<SharedBuffer_t> SharedBufferPool::Get()
 
     if ( it == m_queue.end() )
     {
-        RIDEHAL_ERROR( "(Should not be here) All buffer are in use. Pool name %s", GetName() );
+        RIDEHAL_ERROR( "(Should not be here) All buffer are in use. Pool name %s", m_name.c_str() );
         return nullptr;
     }
     __atomic_store_n( &it->dirty, true, __ATOMIC_RELAXED );
 
-    RIDEHAL_DEBUG( "Marked %s buffer %u in use", GetName(), idx );
+    RIDEHAL_DEBUG( "Marked %s buffer %u in use", m_name.c_str(), idx );
 
     std::shared_ptr<SharedBuffer_t> ptr( &it->sharedBuffer,
                                          [&]( SharedBuffer_t *p ) { Deleter( p ); } );
@@ -64,33 +64,33 @@ void SharedBufferPool::Deleter( SharedBuffer_t *ptrToDelete )
 {
     if ( !ptrToDelete )
     {
-        RIDEHAL_ERROR( "(Should not be here) Found invalid pointerf for %s", GetName() );
+        RIDEHAL_ERROR( "(Should not be here) Found invalid pointerf for %s", m_name.c_str() );
         return;
     }
 
     if ( ptrToDelete->pubHandle >= m_queue.size() )
     {
-        RIDEHAL_ERROR( "(Should not be here) %s index out of range", GetName() );
+        RIDEHAL_ERROR( "(Should not be here) %s index out of range", m_name.c_str() );
         return;
     }
 
     __atomic_store_n( &m_queue[ptrToDelete->pubHandle].dirty, false, __ATOMIC_RELAXED );
 
-    RIDEHAL_DEBUG( "Marked %s buffer %llu available", GetName(), ptrToDelete->pubHandle );
+    RIDEHAL_DEBUG( "Marked %s buffer %llu available", m_name.c_str(), ptrToDelete->pubHandle );
 }
 
-RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        uint32_t width, uint32_t height,
                                        RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage )
 {
-    RideHalError_e ret = Init( name, pLogger, number );
+    RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( width, height, format, usage );
         RIDEHAL_DEBUG( "%s image[%u] %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
-                       GetName(), width, height, idx, sharedBuffer.size, sharedBuffer.data(),
+                       m_name.c_str(), width, height, idx, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 
@@ -102,18 +102,18 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32
     return ret;
 }
 
-RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        uint32_t batchSize, uint32_t width, uint32_t height,
                                        RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage )
 {
-    RideHalError_e ret = Init( name, pLogger, number );
+    RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( batchSize, width, height, format, usage );
         RIDEHAL_DEBUG( "%s image[%u] %u %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
-                       GetName(), batchSize, width, height, idx, sharedBuffer.size,
+                       m_name.c_str(), batchSize, width, height, idx, sharedBuffer.size,
                        sharedBuffer.data(), sharedBuffer.buffer.dmaHandle, ret );
     }
 
@@ -125,18 +125,18 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32
     return ret;
 }
 
-RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        RideHal_ImageProps_t &imageProps,
                                        RideHal_BufferUsage_e usage )
 {
-    RideHalError_e ret = Init( name, pLogger, number );
+    RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( &imageProps, usage );
         RIDEHAL_DEBUG( "%s image[%u] allocated with size=%u data=%p handle=%llu ret=%d\n",
-                       GetName(), idx, sharedBuffer.size, sharedBuffer.data(),
+                       m_name.c_str(), idx, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 
@@ -148,18 +148,18 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32
     return ret;
 }
 
-RideHalError_e SharedBufferPool::Init( std::string name, Logger *pLogger, uint32_t number,
+RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        RideHal_TensorProps_t &tensorProps,
                                        RideHal_BufferUsage_e usage )
 {
-    RideHalError_e ret = Init( name, pLogger, number );
+    RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( &tensorProps, usage );
         RIDEHAL_DEBUG( "%s tensor[%u] allocated with size=%u data=%p handle=%llu ret=%d\n",
-                       GetName(), idx, sharedBuffer.size, sharedBuffer.data(),
+                       m_name.c_str(), idx, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 

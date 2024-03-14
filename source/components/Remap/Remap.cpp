@@ -603,9 +603,11 @@ RideHalError_e Remap::Stop()
     return ret;
 }
 
-RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Logger *pLogger )
+RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Logger_Level_e level )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    ret = ComponentIF::Init( pName, level );
 
     if ( nullptr != pConfig )
     {

@@ -104,15 +104,15 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
         }
     }
 
-    RIDEHAL_VERBOSE( "PlaneDef for image %ux%u format %s\n", width, height,
-                     s_rideHalFormatToString[format] );
+    RIDEHAL_LOG_VERBOSE( "PlaneDef for image %ux%u format %s\n", width, height,
+                         s_rideHalFormatToString[format] );
     for ( i = 0; ( i < numPlanes ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
     {
         planeDef.nPlaneIndex = i + 1;
         status = PDQueryPlaneDef( eColorFormat, nUsage, &frameRes, &planeDef, 0 );
         if ( PD_OK == status )
         {
-            RIDEHAL_VERBOSE(
+            RIDEHAL_LOG_VERBOSE(
                     " plane %u: nMinStride = %u, nMaxstride = %u nStrideMultiples = %u,\n"
                     "  nActualStride = %u nMinPlaneBufHeight = %u, nHeightMultiples = %u,\n"
                     "  nActualPlaneBufHeight = %u nActualBufSizeAlignment =%u,\n"

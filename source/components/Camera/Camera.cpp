@@ -101,7 +101,7 @@ Camera::~Camera() {}
 
 /// @brief init the Camera object
 /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-RideHalError_e Camera::Init( char *pName, Camera_Config_t config, Logger *pLogger )
+RideHalError_e Camera::Init( char *pName, Camera_Config_t config, Logger_Level_e level )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
@@ -117,7 +117,7 @@ RideHalError_e Camera::Init( char *pName, Camera_Config_t config, Logger *pLogge
     m_colorFormat = config.format;
 
 
-    ret = ComponentIF::Init( pName, pLogger );
+    ret = ComponentIF::Init( pName, level );
     if ( RIDE_HAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "ComponentIF::Init failed" );

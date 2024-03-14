@@ -20,11 +20,11 @@ public:
     ComponentIFTest() {}
     ~ComponentIFTest() {}
     RideHalError_e Init( const char *pName, const ComponentIFTest_Config_t *pConfig,
-                         Logger *pLogger )
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR )
     {
         RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-        ret = ComponentIF::Init( pName, pLogger );
+        ret = ComponentIF::Init( pName );
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
             // DO real initialize using pConfig.
@@ -99,6 +99,11 @@ public:
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
+            ret = ComponentIF::Deinit();
+        }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
             m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
         }
 
@@ -112,23 +117,26 @@ TEST( ComponentIF, SANITY_ComponentIF )
     ComponentIFTest_Config_t config = { 10 };
     RideHalError_e ret;
 
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+    for ( int i = 0; i < 3; i++ )
+    {
+        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
 
-    ret = cifTest.Init( "test", &config, nullptr );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
+        ret = cifTest.Init( "test", &config );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
 
-    ret = cifTest.Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, cifTest.GetState() );
+        ret = cifTest.Start();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, cifTest.GetState() );
 
-    ret = cifTest.Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
+        ret = cifTest.Stop();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
 
-    ret = cifTest.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+        ret = cifTest.Deinit();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+    }
 }
 
 #ifndef GTEST_RIDEHAL

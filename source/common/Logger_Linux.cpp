@@ -9,6 +9,11 @@ namespace ridehal
 namespace common
 {
 
+typedef struct
+{
+    std::string name;
+} Logger_HandleContext_t;
+
 static int s_rideHalLoggerLevelToJournalPriotity[] = {
         LOG_DEBUG,   /* LOGGER_LEVEL_VERBOSE */
         LOG_INFO,    /* LOGGER_LEVEL_DEBUG */
@@ -17,33 +22,50 @@ static int s_rideHalLoggerLevelToJournalPriotity[] = {
         LOG_ERR      /* LOGGER_LEVEL_ERROR */
 };
 
-void Logger::Logger_DefaultCallback( const void *pPriv, Logger_Level_e level, const char *pFormat,
-                                     va_list args )
+void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
+                         va_list args )
 {
     std::string strFmt;
     int priority = s_rideHalLoggerLevelToJournalPriotity[level];
-    const char *pName = (const char *) pPriv;
-    strFmt = std::string( pName ) + " : " + std::string( pFormat );
+    Logger_HandleContext_t *pContext = (Logger_HandleContext_t *) hHandle;
+    strFmt = pContext->name + " : " + std::string( pFormat );
     vsyslog( priority, strFmt.c_str(), args );
 }
 
-RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )
+RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
+                                      Logger_Handle_t *pHandle )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( nullptr == pName )
+    if ( ( nullptr == pName ) || ( nullptr == pHandle ) )
     {
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
     else
     {
-        m_name = pName;
-        m_callback = Logger_DefaultCallback;
-        m_pPriv = (void *) m_name.c_str();
-        m_level = DecideLoggerLevel( pName, level );
+        Logger_HandleContext_t *pContext = new Logger_HandleContext_t;
+        if ( nullptr != pContext )
+        {
+            pContext->name = pName;
+            (void) level;
+            *pHandle = (Logger_Handle_t) pContext;
+        }
+        else
+        {
+            ret = RIDE_HAL_ERROR_NORES;
+        }
     }
 
     return ret;
+}
+
+void Logger::DefaultDestory( Logger_Handle_t hHandle )
+{
+    Logger_HandleContext_t *pContext = (Logger_HandleContext_t *) hHandle;
+    if ( nullptr != pContext )
+    {
+        delete pContext;
+    }
 }
 
 }   // namespace common

@@ -9,7 +9,6 @@ set( COMMON_SOURCES
     Image.cpp
     Tensor.cpp
     Logger.cpp
-    LoggerIF.cpp
 )
 
 set( TARGET_LIBRARIES )

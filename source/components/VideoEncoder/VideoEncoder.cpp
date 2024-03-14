@@ -26,10 +26,10 @@ VideoEncoder::VideoEncoder() {}
 VideoEncoder::~VideoEncoder() {}
 
 RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_t *pConfig,
-                                   Logger *pLogger )
+                                   Logger_Level_e level )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    ret = ComponentIF::Init( pName, pLogger );
+    ret = ComponentIF::Init( pName, level );
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
 

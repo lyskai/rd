@@ -57,7 +57,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder )
 
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
-    ret = veTest.Init( "testVideoEncoder", &config, nullptr );
+    ret = veTest.Init( "testVideoEncoder", &config );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
 

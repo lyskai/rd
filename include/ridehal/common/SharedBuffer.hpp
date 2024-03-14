@@ -4,7 +4,6 @@
 #ifndef _RIDE_HAL_SHARED_BUFFER_HPP_
 #define _RIDE_HAL_SHARED_BUFFER_HPP_
 
-#include "ridehal/common/LoggerIF.hpp"
 #include "ridehal/common/Types.hpp"
 
 namespace ridehal
@@ -112,14 +111,6 @@ public:
 private:
     /// @brief Initialize the shared buffer variables
     void Init();
-
-    /// @brief Log a message
-    /// @param level the message log level
-    /// @param pFormat the message format
-    /// @param ... variable arguments
-    /// @return void
-    void Log( Logger_Level_e level, const char *pFormat, ... );
-
 } RideHal_SharedBuffer_t;
 
 /// @brief Allocate the DMA memory

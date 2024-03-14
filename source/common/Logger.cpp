@@ -9,23 +9,70 @@ namespace ridehal
 namespace common
 {
 
-Logger::Logger() {}
+Logger_Log_t Logger::s_logFnc = Logger::DefaultLog;
+Logger_Create_t Logger::s_createFnc = Logger::DefaultCreate;
+Logger_Destory_t Logger::s_destoryFnc = Logger::DefaultDestory;
+
+std::mutex Logger::s_Lock;
+Logger Logger::s_defaultLogger;
+
+Logger::Logger() : m_hHandle( nullptr ) {}
 
 Logger::~Logger() {}
 
-RideHalError_e Logger::Init( Logger_Callback_t callback, const void *pPriv, Logger_Level_e level )
+RideHalError_e Logger::Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
+                              Logger_Destory_t destoryFnc )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( nullptr == callback )
+    if ( ( DefaultLog == s_logFnc ) && ( DefaultCreate == s_createFnc ) &&
+         ( DefaultDestory == s_destoryFnc ) )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        // only alow to setup once when the default function pointers are used
+        s_logFnc = logFnc;
+        s_createFnc = createFnc;
+        s_destoryFnc = destoryFnc;
+
+        ret = s_defaultLogger.Init( "RIHDEHAL" );
     }
     else
     {
-        m_callback = callback;
-        m_pPriv = pPriv;
-        m_level = level;
+        ret = RIDE_HAL_ERROR_FAIL;
+    }
+
+    return ret;
+}
+
+Logger &Logger::GetDefault()
+{
+    if ( nullptr == s_defaultLogger.m_hHandle )
+    {
+        std::lock_guard<std::mutex> l( s_Lock );
+        // the mutext lock is need to ensure the 2 more threads reach here at the same time, thus
+        // the first thread that call this API do the default logger initialization. The second
+        // thread Init call will get error RIDE_HAL_ERROR_STATE as it was already initialized.
+        (void) s_defaultLogger.Init( "RIHDEHAL" );
+    }
+
+    return s_defaultLogger;
+}
+
+RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( nullptr == pName )
+    {
+        ret = RIDE_HAL_ERROR_NULL_PTR;
+    }
+    else if ( m_hHandle != nullptr )
+    {
+        ret = RIDE_HAL_ERROR_STATE;
+    }
+    else
+    {
+        m_level = DecideLoggerLevel( pName, level );
+        ret = s_createFnc( pName, m_level, &m_hHandle );
     }
 
     return ret;
@@ -35,20 +82,36 @@ void Logger::Log( Logger_Level_e level, const char *pFormat, ... )
 {
     va_list args;
 
-    if ( ( level >= m_level ) && ( nullptr != m_callback ) )
+    if ( ( level >= m_level ) && ( nullptr != m_hHandle ) )
     {
         va_start( args, pFormat );
-        m_callback( m_pPriv, level, pFormat, args );
+        s_logFnc( m_hHandle, level, pFormat, args );
         va_end( args );
     }
 }
 
 void Logger::Log( Logger_Level_e level, const char *pFormat, va_list args )
 {
-    if ( ( level >= m_level ) && ( nullptr != m_callback ) )
+    if ( ( level >= m_level ) && ( nullptr != m_hHandle ) )
     {
-        m_callback( m_pPriv, level, pFormat, args );
+        s_logFnc( m_hHandle, level, pFormat, args );
     }
+}
+
+RideHalError_e Logger::Deinit()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( m_hHandle == nullptr )
+    {
+        ret = RIDE_HAL_ERROR_STATE;
+    }
+    else
+    {
+        s_destoryFnc( m_hHandle );
+    }
+
+    return ret;
 }
 
 Logger_Level_e Logger::DecideLoggerLevel( std::string name, Logger_Level_e level )
@@ -56,8 +119,12 @@ Logger_Level_e Logger::DecideLoggerLevel( std::string name, Logger_Level_e level
     Logger_Level_e loggerLevel = level;
     std::string envName = name + "_RIDEHAL_LOG_LEVEL";
     char *envValue = getenv( envName.c_str() );
+    if ( nullptr == envValue )
+    {
+        envValue = getenv( "RIDEHAL_LOG_LEVEL" );
+    }
 
-    if ( envValue != NULL )
+    if ( nullptr != envValue )
     {
         std::string strEnv = envValue;
         if ( strEnv == "VERBOSE" )

@@ -7,7 +7,7 @@
 #include <map>
 #include <mutex>
 
-#include "ridehal/common/LoggerIF.hpp"
+#include "ridehal/common/Logger.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
 #include "ridehal/common/Types.hpp"
 
@@ -19,13 +19,17 @@ namespace common
 /// @brief Buffer Manager
 ///
 /// Manage the allocated DMA buffer
-class BufferManager : public LoggerIF
+class BufferManager
 {
-    friend struct RideHal_SharedBuffer;
-
 public:
     BufferManager();
     ~BufferManager();
+
+    /// @brief Initialize the buffer manager
+    /// @param pName the buffer manager unique instance name
+    /// @param level the logger message level
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Register the allocated shared buffer to the buffer manager
     /// @param pSharedBuffer the allocated shared buffer
@@ -54,7 +58,9 @@ private:
     uint64_t m_IDAllocator = 0;
 
 private:
-    static BufferManager s_defaultBufferManager;
+    RIDEHAL_DECLARE_LOGGER();
+    static std::mutex s_Lock;
+    static BufferManager *s_pDefaultBufferManager;
 };
 
 }   // namespace common

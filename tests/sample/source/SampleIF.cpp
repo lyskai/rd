@@ -12,10 +12,17 @@ RideHalError_e SampleIF::Init( std::string name )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    ret = LoggerIF::Init( name.c_str() );
+    m_name = name;
+    ret = RIDEHAL_LOGGER_INIT( name.c_str(), LOGGER_LEVEL_INFO );
 
     return ret;
 }
+
+const char *SampleIF::GetName()
+{
+    return m_name.c_str();
+}
+
 
 std::string SampleIF::Get( SampleConfig_t &config, std::string key, std::string defaultV )
 {

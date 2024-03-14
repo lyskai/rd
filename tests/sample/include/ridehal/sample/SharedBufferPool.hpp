@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 
-#include "ridehal/common/LoggerIF.hpp"
+#include "ridehal/common/Logger.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
 #include "ridehal/common/Types.hpp"
 
@@ -27,7 +27,7 @@ typedef struct
     uint64_t pubHandle;
 } SharedBuffer_t;
 
-class SharedBufferPool : public LoggerIF
+class SharedBufferPool
 {
 public:
     SharedBufferPool();
@@ -35,24 +35,25 @@ public:
 
     std::shared_ptr<SharedBuffer_t> Get();
 
-    RideHalError_e Init( std::string name, Logger *pLogger, uint32_t number, uint32_t width,
+    RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number, uint32_t width,
                          uint32_t height, RideHal_ImageFormat_e format,
                          RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
 
-    RideHalError_e Init( std::string name, Logger *pLogger, uint32_t number, uint32_t batchSize,
-                         uint32_t width, uint32_t height, RideHal_ImageFormat_e format,
+    RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
+                         uint32_t batchSize, uint32_t width, uint32_t height,
+                         RideHal_ImageFormat_e format,
                          RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
 
-    RideHalError_e Init( std::string name, Logger *pLogger, uint32_t number,
+    RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_ImageProps_t &imageProps,
                          RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
 
-    RideHalError_e Init( std::string name, Logger *pLogger, uint32_t number,
+    RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_TensorProps_t &tensorProps,
                          RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
 
 private:
-    RideHalError_e Init( std::string name, Logger *pLogger, uint32_t number );
+    RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number );
     void Deleter( SharedBuffer_t *ptrToDelete );
 
     struct SharedBufferInfo
@@ -61,6 +62,8 @@ private:
         int dirty;
     };
 
+    RIDEHAL_DECLARE_LOGGER();
+    std::string m_name;
     std::vector<SharedBufferInfo> m_queue;
     bool m_bIsInited = false;
 };

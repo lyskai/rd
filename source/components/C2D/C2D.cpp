@@ -23,11 +23,11 @@ C2D::C2D() {}
 
 C2D::~C2D() {}
 
-RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger *pLogger )
+RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger_Level_e level )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    // ret = ComponentIF::Init( pName, pLogger );
+    ret = ComponentIF::Init( pName, level );
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {

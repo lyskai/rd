@@ -56,7 +56,7 @@ TEST( Remap, SANITY_RemapGeneral )
             RemapConfig.outputWidth * RemapConfig.outputHeight * RemapConfig.numOfInputs;
     uint8_t *outputData = (uint8_t *) outputs[0].data();
 
-    ret = RemapObj.Init( pName, pRemapConfig, nullptr );
+    ret = RemapObj.Init( pName, pRemapConfig );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = RemapObj.Start();

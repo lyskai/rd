@@ -68,7 +68,7 @@ RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config 
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_imagePool.Init( name, GetLogger(), m_poolSize, m_width, m_height,
+        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_width, m_height,
                                 RIDE_HAL_IMAGE_FORMAT_NV12, RIDE_HAL_BUFFER_USAGE_CAMERA );
     }
 

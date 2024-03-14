@@ -57,7 +57,8 @@ public:
 
     /// @brief init the Camera object
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( char *pName, Camera_Config_t config, Logger *pLogger = nullptr );
+    RideHalError_e Init( char *pName, Camera_Config_t config,
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the Camera object
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure

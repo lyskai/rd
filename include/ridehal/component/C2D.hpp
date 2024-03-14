@@ -60,9 +60,9 @@ public:
 
     /// @brief Initialize the component
     /// @param name the component unique instance name
-    /// @param pLogger the logger used by the component to log messages
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( const char *pName, const C2D_Config_t *pConfig, Logger *pLogger );
+    RideHalError_e Init( const char *pName, const C2D_Config_t *pConfig,
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the C2D executor
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure

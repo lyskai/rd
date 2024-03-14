@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#include "ridehal/Buffer.hpp"
-#include "ridehal/BufferManager.hpp"
+#include "ridehal/common/BufferManager.hpp"
+#include "ridehal/common/SharedBuffer.hpp"
 
 #include <fcntl.h>
 #include <linux/dma-heap.h>

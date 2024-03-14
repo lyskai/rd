@@ -8,7 +8,7 @@
 #include <string>
 #include <thread>
 
-#include "ridehal/common/LoggerIF.hpp"
+#include "ridehal/common/Logger.hpp"
 #include "ridehal/common/Types.hpp"
 #include "ridehal/sample/DataBroker.hpp"
 #include "ridehal/sample/DataTypes.hpp"
@@ -26,7 +26,7 @@ typedef std::map<std::string, std::string> SampleConfig_t;
 /// @brief ridehal::sample::SampleIF
 ///
 /// Sample Interface that to demonstate how to use the RideHal component
-class SampleIF : public LoggerIF
+class SampleIF
 {
 public:
     SampleIF() = default;
@@ -50,6 +50,8 @@ public:
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Deinit() = 0;
 
+    const char *GetName();
+
 protected:
     RideHalError_e Init( std::string name );
     std::string Get( SampleConfig_t &config, std::string key, std::string defaultV );
@@ -58,6 +60,10 @@ protected:
     float Get( SampleConfig_t &config, std::string key, float defaultV );
     RideHal_ImageFormat_e Get( SampleConfig_t &config, std::string key,
                                RideHal_ImageFormat_e defaultV );
+
+protected:
+    std::string m_name;
+    RIDEHAL_DECLARE_LOGGER();
 };   // class SampleIF
 
 }   // namespace sample

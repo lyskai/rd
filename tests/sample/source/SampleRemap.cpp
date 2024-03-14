@@ -191,7 +191,8 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
         imgProp.numPlanes = 1;
         imgProp.extraPadding = 0;
 
-        ret = m_imagePool.Init( name, GetLogger(), m_poolSize, imgProp, RIDE_HAL_BUFFER_USAGE_HTP );
+        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
+                                RIDE_HAL_BUFFER_USAGE_HTP );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )

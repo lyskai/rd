@@ -160,17 +160,5 @@ RideHalError_e RideHal_SharedBuffer::Free()
 
     return ret;
 }
-
-void RideHal_SharedBuffer::Log( Logger_Level_e level, const char *pFormat, ... )
-{
-    va_list args;
-    BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
-    if ( nullptr != pBufferManager )
-    {
-        va_start( args, pFormat );
-        pBufferManager->Log( (Logger_Level_e) level, pFormat, args );
-        va_end( args );
-    }
-}
 }   // namespace common
 }   // namespace ridehal

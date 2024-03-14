@@ -1,10 +1,8 @@
-// Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-// Confidential & Proprietary.
-
 #ifndef _RIDE_HAL_LOGGER_HPP_
 #define _RIDE_HAL_LOGGER_HPP_
 
 #include "ridehal/common/Types.hpp"
+#include <mutex>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string>
@@ -13,6 +11,57 @@ namespace ridehal
 {
 namespace common
 {
+
+#ifndef DISABLE_RIDEHAL_LOG
+#define RIDEHAL_DECLARE_LOGGER() Logger m_logger
+
+#define RIDEHAL_LOGGER_INIT( pName, level ) m_logger.Init( pName, level )
+#define RIDEHAL_LOGGER_DEINIT() m_logger.Deinit()
+
+#define RIDEHAL_LOGGER_LOG( logger, level, format, ... )                                           \
+    ( logger ).Log( level, format, ##__VA_ARGS__ )
+
+#define RIDEHAL_VERBOSE( format, ... )                                                             \
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_VERBOSE, format, ##__VA_ARGS__ )
+#define RIDEHAL_DEBUG( format, ... )                                                               \
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
+#define RIDEHAL_INFO( format, ... )                                                                \
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
+#define RIDEHAL_WARN( format, ... )                                                                \
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
+#define RIDEHAL_ERROR( format, ... )                                                               \
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_ERROR, format, ##__VA_ARGS__ )
+
+#define RIDEHAL_LOG_VERBOSE( format, ... )                                                         \
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_VERBOSE, format, ##__VA_ARGS__ )
+#define RIDEHAL_LOG_DEBUG( format, ... )                                                           \
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
+#define RIDEHAL_LOG_INFO( format, ... )                                                            \
+    RIDEHAL_LOGGER_LOGLog( Logger::GetDefault(), LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
+#define RIDEHAL_LOG_WARN( format, ... )                                                            \
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
+#define RIDEHAL_LOG_ERROR( format, ... )                                                           \
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_ERROR, format, ##__VA_ARGS__ )
+#else
+#define RIDEHAL_DECLARE_LOGGER()
+
+#define RIDEHAL_LOGGER_INIT( pName, level ) RIDE_HAL_ERROR_NONE
+#define RIDEHAL_LOGGER_DEINIT() RIDE_HAL_ERROR_NONE
+
+#define RIDEHAL_LOGGER_LOG( logger, level, format, ... )
+
+#define RIDEHAL_VERBOSE( format, ... )
+#define RIDEHAL_DEBUG( format, ... )
+#define RIDEHAL_INFO( format, ... )
+#define RIDEHAL_WARN( format, ... )
+#define RIDEHAL_ERROR( format, ... )
+
+#define RIDEHAL_LOG_VERBOSE( format, ... )
+#define RIDEHAL_LOG_DEBUG( format, ... )
+#define RIDEHAL_LOG_INFO( format, ... )
+#define RIDEHAL_LOG_WARN( format, ... )
+#define RIDEHAL_LOG_ERROR( format, ... )
+#endif
 
 /// @brief The message log level
 typedef enum
@@ -24,8 +73,15 @@ typedef enum
     LOGGER_LEVEL_ERROR      /// The level for the error message
 } Logger_Level_e;
 
-typedef void ( *Logger_Callback_t )( const void *pPriv, Logger_Level_e level, const char *pFormat,
-                                     va_list args );
+typedef void *Logger_Handle_t;
+
+typedef void ( *Logger_Log_t )( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
+                                va_list args );
+
+typedef RideHalError_e ( *Logger_Create_t )( const char *pName, Logger_Level_e level,
+                                             Logger_Handle_t *pHandle );
+
+typedef void ( *Logger_Destory_t )( Logger_Handle_t hHandle );
 
 /// @brief ridehal::Logger
 ///
@@ -36,44 +92,62 @@ public:
     Logger();
     ~Logger();
 
-    /// @brief Initialize the logger with the default callback implemented
+    /// @brief Initialize the logger
     /// @param pName the name of the logger
     /// @param level the message log level
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
-    /// @brief Initialize the logger with a customized callback and a private parameter
-    /// @param callback the logger callback
-    /// @param pPriv the private parameter when invoke the callback
-    /// @param level the message log level
+    /// @brief deinitialize the logger
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( Logger_Callback_t callback, const void *pPriv,
-                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
+    RideHalError_e Deinit();
 
-    /// @brief Log a message
+    /// @brief Logger a message
     /// @param level the message log level
     /// @param pFormat the message format
     /// @param ... variable arguments
     /// @return void
     void Log( Logger_Level_e level, const char *pFormat, ... );
 
-    /// @brief Log a message
+    /// @brief Logger a message
     /// @param level the message log level
     /// @param pFormat the message format
     /// @param args variable arguments
     /// @return void
     void Log( Logger_Level_e level, const char *pFormat, va_list args );
 
-private:
-    Logger_Level_e DecideLoggerLevel( std::string name, Logger_Level_e level );
-    static void Logger_DefaultCallback( const void *pPriv, Logger_Level_e level,
-                                        const char *pFormat, va_list args );
+    /// @brief Setup the logger backend fuction pointers
+    /// @param logFnc the function pointer that do log
+    /// @param createFnc the function pointer that do create the implementation related handle
+    /// @param destoryFnc the function pointer that do destroy the implementation related handle
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    static RideHalError_e Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
+                                 Logger_Destory_t destoryFnc );
+
+    /// @brief Get a default RideHal logger
+    /// @return void
+    static Logger &GetDefault();
 
 private:
-    std::string m_name; /* used to store the name of the logger when use API Init(name) */
-    const void *m_pPriv = nullptr;
-    Logger_Callback_t m_callback = nullptr;
+    Logger_Level_e DecideLoggerLevel( std::string name, Logger_Level_e level );
+
+    static void DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
+                            va_list args );
+    static RideHalError_e DefaultCreate( const char *pName, Logger_Level_e level,
+                                         Logger_Handle_t *pHandle );
+    static void DefaultDestory( Logger_Handle_t hHandle );
+
+private:
+    Logger_Handle_t m_hHandle = nullptr;
     Logger_Level_e m_level = LOGGER_LEVEL_ERROR;
+
+    static Logger_Log_t s_logFnc;
+    static Logger_Create_t s_createFnc;
+    static Logger_Destory_t s_destoryFnc;
+
+    static std::mutex s_Lock;
+    static Logger s_defaultLogger;
+
 };   // class ComponentIF
 
 }   // namespace common

@@ -138,7 +138,8 @@ public:
 
     /// @brief Init the video encoder
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( const char *pName, const VideoEncoder_Config_t *pConfig, Logger *pLogger );
+    RideHalError_e Init( const char *pName, const VideoEncoder_Config_t *pConfig,
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the video encoder
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure

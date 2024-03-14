@@ -87,9 +87,10 @@ public:
     /// @brief Initialize the remap pipeline
     /// @param pName the remap unique instance name
     /// @param pConfig the remap configuration paramaters
-    /// @param pLogger the logger used by the remap to log messages
+    /// @param level the logger message level
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( const char *pName, const Remap_Config_t *pConfig, Logger *pLogger );
+    RideHalError_e Init( const char *pName, const Remap_Config_t *pConfig,
+                         Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the remap pipeline
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure

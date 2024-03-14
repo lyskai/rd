@@ -300,11 +300,11 @@ RideHalError_e QnnRuntime::LoadOpPackages( std::string opPackgesTxtPath )
 }
 
 RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *pConfig,
-                                 Logger *pLogger )
+                                 Logger_Level_e level )
 {
-    m_Name = pName;
-    m_pLogger = pLogger;
-    pLogger->Init( pName );
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    ret = ComponentIF::Init( pName, level );
+
     m_BackendId = pConfig->backendId;
     m_BackendCoreId = pConfig->backendCoreId;
     auto modelPath = pConfig->modelPath;

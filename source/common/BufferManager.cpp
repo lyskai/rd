@@ -2,6 +2,7 @@
 // Confidential & Proprietary.
 
 #include "ridehal/common/BufferManager.hpp"
+#include <stdio.h>
 
 namespace ridehal
 {
@@ -9,18 +10,38 @@ namespace common
 {
 
 
-BufferManager BufferManager::s_defaultBufferManager;
+std::mutex BufferManager::s_Lock;
+static BufferManager s_dftBufMgr;
+BufferManager *BufferManager::s_pDefaultBufferManager = nullptr;
 
-BufferManager::BufferManager()
-{
-    (void) LoggerIF::Init( "BUFMGR" );
-}
+BufferManager::BufferManager() {}
 
 BufferManager::~BufferManager() {}
 
+RideHalError_e BufferManager::Init( const char *pName, Logger_Level_e level )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    ret = RIDEHAL_LOGGER_INIT( pName, level );
+    if ( RIDE_HAL_ERROR_NONE != ret )
+    {
+        printf( "WARINING: failed to init logger for BUFMGR %s: ret = %d\n", pName, ret );
+    }
+    ret = RIDE_HAL_ERROR_NONE; /* ignore logger init error */
+
+    return ret;
+}
+
 BufferManager *BufferManager::GetDefaultBufferManager()
 {
-    return &s_defaultBufferManager;
+    std::lock_guard<std::mutex> l( s_Lock );
+    if ( nullptr == s_pDefaultBufferManager )
+    {
+        s_pDefaultBufferManager = &s_dftBufMgr;
+        (void) s_dftBufMgr.Init( "BUFMGR" );
+    }
+
+    return s_pDefaultBufferManager;
 }
 
 RideHalError_e BufferManager::Register( RideHal_SharedBuffer_t *pSharedBuffer )

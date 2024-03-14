@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include "ridehal/common/LoggerIF.hpp"
+#include "ridehal/common/Logger.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
 #include "ridehal/common/Types.hpp"
 
@@ -20,7 +20,7 @@ namespace component
 /// @brief ridehal::ComponentIF
 ///
 /// Component Interface
-class ComponentIF : public LoggerIF
+class ComponentIF
 {
 public:
     ComponentIF() = default;
@@ -36,20 +36,26 @@ public:
 
     /// @brief deinitialize the component
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    virtual RideHalError_e Deinit() = 0;
+    virtual RideHalError_e Deinit();
 
     /// @brief get the current state of the component
     /// @return the current state of the component
     RideHal_ComponentState_t GetState();
 
+    /// @brief get the name of the component
+    /// @return the name of the component
+    const char *GetName();
+
 protected:
     /// @brief Initialize the component
     /// @param pName the component unique instance name
-    /// @param pLogger the logger used by the component to log messages
+    /// @param level the logger message level
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( const char *pName, Logger *pLogger = nullptr );
+    RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
 protected:
+    std::string m_name;
+    RIDEHAL_DECLARE_LOGGER();
     RideHal_ComponentState_t m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
 
 };   // class ComponentIF
