@@ -9,6 +9,10 @@ set( CAMERA_SOURCES
 
 set( TARGET_LIBRARIES RideHalComponentCommon qcxclient qcxosal )
 
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
+    list( APPEND TARGET_LIBRARIES qcxplatform )
+endif()
+
 add_library( RideHalCamera STATIC ${CAMERA_SOURCES} )
 
 set_property( TARGET RideHalCamera PROPERTY LINKER_LANGUAGE CXX )

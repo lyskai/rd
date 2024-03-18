@@ -9,15 +9,21 @@ set( COMPONENT_VIDEOENCODER_SOURCES
 
 set( TARGET_LIBRARIES RideHalComponentCommon )
 
-find_package(vidc)
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
+    find_package(vidc)
     list( APPEND TARGET_LIBRARIES vidc )
 endif()
 
-if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
+    list( APPEND TARGET_LIBRARIES vidc vidc_client mmosal )
 endif()
 
 add_library( RideHalVideoEncoder STATIC ${COMPONENT_VIDEOENCODER_SOURCES} )
+
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
+target_include_directories( RideHalVideoEncoder PUBLIC ${CMAKE_SYSROOT}/usr/include/mm-osal/include )
+target_compile_definitions( RideHalVideoEncoder PUBLIC _VIDC_LRH_LINUX_ )
+endif()
 
 set_property( TARGET RideHalVideoEncoder PROPERTY LINKER_LANGUAGE CXX )
 set_property( TARGET RideHalVideoEncoder PROPERTY POSITION_INDEPENDENT_CODE ON )

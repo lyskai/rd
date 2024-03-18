@@ -7,7 +7,11 @@
 #include "ridehal/component/ComponentIF.hpp"
 #include <MMSignal.h>
 #include <atomic>
+#ifndef _VIDC_LRH_LINUX_
 #include <ioctlClient.h>
+#else
+#include <vidc_client.h>
+#endif
 #include <map>
 #include <mutex>
 #include <queue>
