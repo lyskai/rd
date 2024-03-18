@@ -75,13 +75,27 @@ typedef enum
 
 typedef void *Logger_Handle_t;
 
+/// @brief A callback to log a message
+/// @param hHandle the customer used log system handle
+/// @param level the message log level
+/// @param pFormat the message format
+/// @param args variable arguments
+/// @return void
 typedef void ( *Logger_Log_t )( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
                                 va_list args );
 
+/// @brief A callback to create the customer used log system handle
+/// @param pName the name of the logger
+/// @param level the message log level
+/// @param pHandle [out] the pointer to return the created customer used log system handle
+/// @return RIDE_HAL_ERROR_NONE on success, others on failure
 typedef RideHalError_e ( *Logger_Create_t )( const char *pName, Logger_Level_e level,
                                              Logger_Handle_t *pHandle );
 
-typedef void ( *Logger_Destory_t )( Logger_Handle_t hHandle );
+/// @brief A callback to destroy the customer used log system handle
+/// @param hHandle the customer used log system handle
+/// @return void
+typedef void ( *Logger_Destroy_t )( Logger_Handle_t hHandle );
 
 /// @brief ridehal::Logger
 ///
@@ -122,13 +136,17 @@ public:
     /// @param destoryFnc the function pointer that do destroy the implementation related handle
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     static RideHalError_e Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
-                                 Logger_Destory_t destoryFnc );
+                                 Logger_Destroy_t destoryFnc );
 
     /// @brief Get a default RideHal logger
     /// @return void
     static Logger &GetDefault();
 
 private:
+    /// @brief Decide the logger actual level used
+    /// @param pName the name of the logger
+    /// @param level the message log level
+    /// @return The actual level used
     Logger_Level_e DecideLoggerLevel( std::string name, Logger_Level_e level );
 
     static void DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
@@ -143,12 +161,12 @@ private:
 
     static Logger_Log_t s_logFnc;
     static Logger_Create_t s_createFnc;
-    static Logger_Destory_t s_destoryFnc;
+    static Logger_Destroy_t s_destroyFnc;
 
     static std::mutex s_Lock;
     static Logger s_defaultLogger;
 
-};   // class ComponentIF
+};   // class Logger
 
 }   // namespace common
 }   // namespace ridehal

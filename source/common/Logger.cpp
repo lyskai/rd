@@ -11,7 +11,7 @@ namespace common
 
 Logger_Log_t Logger::s_logFnc = Logger::DefaultLog;
 Logger_Create_t Logger::s_createFnc = Logger::DefaultCreate;
-Logger_Destory_t Logger::s_destoryFnc = Logger::DefaultDestory;
+Logger_Destroy_t Logger::s_destroyFnc = Logger::DefaultDestory;
 
 std::mutex Logger::s_Lock;
 Logger Logger::s_defaultLogger;
@@ -21,17 +21,17 @@ Logger::Logger() : m_hHandle( nullptr ) {}
 Logger::~Logger() {}
 
 RideHalError_e Logger::Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
-                              Logger_Destory_t destoryFnc )
+                              Logger_Destroy_t destoryFnc )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     if ( ( DefaultLog == s_logFnc ) && ( DefaultCreate == s_createFnc ) &&
-         ( DefaultDestory == s_destoryFnc ) )
+         ( DefaultDestory == s_destroyFnc ) )
     {
         // only alow to setup once when the default function pointers are used
         s_logFnc = logFnc;
         s_createFnc = createFnc;
-        s_destoryFnc = destoryFnc;
+        s_destroyFnc = destoryFnc;
 
         ret = s_defaultLogger.Init( "RIHDEHAL" );
     }
@@ -108,7 +108,8 @@ RideHalError_e Logger::Deinit()
     }
     else
     {
-        s_destoryFnc( m_hHandle );
+        s_destroyFnc( m_hHandle );
+        m_hHandle = nullptr;
     }
 
     return ret;

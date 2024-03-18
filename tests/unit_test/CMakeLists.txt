@@ -19,6 +19,7 @@ endif()
 
 add_subdirectory(buffer)
 add_subdirectory(components)
+add_subdirectory(logger)
 
 add_executable( gtest_RideHal ${GTEST_RIDEHAL_SOURCES} )
 target_link_libraries( gtest_RideHal ${GTEST_RIDEHAL_LIBS} )
