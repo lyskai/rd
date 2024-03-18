@@ -13,6 +13,10 @@ set( GTEST_RIDEHAL_SOURCES gtest_RideHal.cpp )
 set( GTEST_RIDEHAL_INCLUDES ${PROJECT_SOURCE_DIR}/include )
 set( GTEST_RIDEHAL_LIBS GTest::Main RideHal )
 
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
+    add_link_options("-lregex") # gtest main need this
+endif()
+
 add_subdirectory(buffer)
 add_subdirectory(components)
 

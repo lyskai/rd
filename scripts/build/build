@@ -1,0 +1,45 @@
+#!/bin/bash
+# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+# Confidential & Proprietary.
+#
+# This is a sample script for running local builds with rideware-toolchain.
+# Run it from the ridehal source directory like this:
+#   ./scripts/build/build <target>
+# 
+# Where targets are:
+#   aarch64-qos222
+#   aarch64-hgy
+
+target=$1
+
+if [ -z "${TOOLCHAIN_VERSION}" ] ; then
+  echo "TOOLCHAIN_VERSION not set"
+  export TOOLCHAIN_VERSION="latest"
+fi
+
+if [ -z "${TOOLCHAIN_REGISTRY}" ] ; then
+  echo "TOOLCHAIN_REGISTRY not set"
+  echo "Build running locally"
+  export TOOLCHAIN_REGISTRY="rideware-toolchain-aarch64-fusion"
+fi
+
+echo "Tool chain repository"
+echo "$TOOLCHAIN_REGISTRY:$TOOLCHAIN_VERSION"
+
+# Exit with error
+die() {
+    echo "$1"
+    exit 1
+}	
+
+usage() {
+    echo "$0 <target>"
+    echo "targets-list: aarch64-qos222, aarch64-hgy"
+    exit 1
+}
+
+# Target to build
+[ "$target" = "" ] && usage
+
+docker run -t -u $(id -u):$(id -g) --volume $(pwd):/build \
+    $TOOLCHAIN_REGISTRY:${TOOLCHAIN_VERSION} /build/scripts/build/build-target.sh $target /build
