@@ -30,6 +30,7 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
 
     return ret;
 }
+
 RideHalError_e ComponentIF::Deinit()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
@@ -40,6 +41,8 @@ RideHalError_e ComponentIF::Deinit()
         printf( "WARINING: failed to deinit logger for component %s: ret = %d\n", GetName(), ret );
     }
     ret = RIDE_HAL_ERROR_NONE; /* ignore logger init error */
+
+    m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
 
     return ret;
 }

@@ -85,7 +85,7 @@ public:
     /// @param flags the DMA buffer flags
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Allocate( const RideHal_TensorProps_t *pTensorProps,
-                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_CAMERA,
+                             RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_HTP,
                              RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     /// @brief Free the DMA memory

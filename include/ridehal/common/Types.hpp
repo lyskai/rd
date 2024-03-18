@@ -155,10 +155,16 @@ typedef struct
 /// @brief RideHal Component state
 typedef enum
 {
-    RIDE_HAL_COMPONENT_STATE_INITIAL = 0,   ///< the initial state
-    RIDE_HAL_COMPONENT_STATE_READY,         ///< the ready state
-    RIDE_HAL_COMPONENT_STATE_RUNNING,       ///< the running state
-    RIDE_HAL_COMPONENT_STATE_ERROR,         ///< the error state
+    RIDE_HAL_COMPONENT_STATE_INITIAL = 0,    ///< the initial state
+    RIDE_HAL_COMPONENT_STATE_INITIALIZING,   ///< the state druing initializing
+    RIDE_HAL_COMPONENT_STATE_READY,          ///< the ready state
+    RIDE_HAL_COMPONENT_STATE_STATING,        ///< the starting state
+    RIDE_HAL_COMPONENT_STATE_RUNNING,        ///< the running state
+    RIDE_HAL_COMPONENT_STATE_STOPING,        ///< the stoping state
+    RIDE_HAL_COMPONENT_STATE_ERROR,          ///< the error state
+    RIDE_HAL_COMPONENT_STATE_PAUSING,        ///< the pausing state
+    RIDE_HAL_COMPONENT_STATE_PAUSE,          ///< the paused state
+    RIDE_HAL_COMPONENT_STATE_RESUMING,       ///< the resuming state
     RIDE_HAL_COMPONENT_STATE_MAX
 } RideHal_ComponentState_t;
 

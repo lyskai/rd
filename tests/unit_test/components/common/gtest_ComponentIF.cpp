@@ -102,11 +102,6 @@ public:
             ret = ComponentIF::Deinit();
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
-        {
-            m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
-        }
-
         return ret;
     }
 };
