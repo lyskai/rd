@@ -256,5 +256,7 @@ RideHalError_e SampleRemap::Deinit()
     return ret;
 }
 
+REGISTER_SAMPLE( Remap, SampleRemap );
+
 }   // namespace sample
 }   // namespace ridehal

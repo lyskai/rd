@@ -23,6 +23,19 @@ namespace sample
 
 typedef std::map<std::string, std::string> SampleConfig_t;
 
+class SampleIF;
+
+typedef SampleIF *( *Sample_CreateFunction_t )();
+
+#define REGISTER_SAMPLE( name, class_name )                                                        \
+    static SampleIF *CreatSample##name() { return new class_name(); }                              \
+    class Register##class_name                                                                     \
+    {                                                                                              \
+    public:                                                                                        \
+        Register##class_name() { SampleIF::RegisterSample( #name, CreatSample##name ); }           \
+    };                                                                                             \
+    const Register##class_name g_register##name;
+
 /// @brief ridehal::sample::SampleIF
 ///
 /// Sample Interface that to demonstate how to use the RideHal component
@@ -52,6 +65,16 @@ public:
 
     const char *GetName();
 
+    /// @brief create a RideHal sample from type name
+    /// @param name the sample type name
+    /// @return the sample pointer on success, nullptr on failure
+    static SampleIF *Create( std::string name );
+
+    /// @brief register a RideHal sample
+    /// @param name the sample type name
+    /// @param createFnc the function to create the sample
+    static void RegisterSample( std::string name, Sample_CreateFunction_t createFnc );
+
 protected:
     RideHalError_e Init( std::string name );
     std::string Get( SampleConfig_t &config, std::string key, std::string defaultV );
@@ -64,6 +87,9 @@ protected:
 protected:
     std::string m_name;
     RIDEHAL_DECLARE_LOGGER();
+
+private:
+    static std::map<std::string, Sample_CreateFunction_t> s_SampleMap;
 };   // class SampleIF
 
 }   // namespace sample

@@ -197,5 +197,7 @@ RideHalError_e SampleDataReader::Deinit()
     return ret;
 }
 
+REGISTER_SAMPLE( DataReader, SampleDataReader );
+
 }   // namespace sample
 }   // namespace ridehal

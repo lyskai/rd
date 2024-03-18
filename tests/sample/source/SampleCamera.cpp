@@ -83,5 +83,7 @@ RideHalError_e SampleCamera::Deinit()
     return ret;
 }
 
+REGISTER_SAMPLE( Camera, SampleCamera );
+
 }   // namespace sample
 }   // namespace ridehal

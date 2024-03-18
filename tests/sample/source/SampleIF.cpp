@@ -2,11 +2,43 @@
 // Confidential & Proprietary.
 
 #include "ridehal/sample/SampleIF.hpp"
+#include <assert.h>
 
 namespace ridehal
 {
 namespace sample
 {
+
+std::map<std::string, Sample_CreateFunction_t> SampleIF::s_SampleMap;
+
+SampleIF *SampleIF::Create( std::string name )
+{
+    SampleIF *sample = nullptr;
+
+    auto it = s_SampleMap.find( name );
+    if ( it != s_SampleMap.end() )
+    {
+        Sample_CreateFunction_t createFnc = it->second;
+        sample = createFnc();
+    }
+
+    return sample;
+}
+
+void SampleIF::RegisterSample( std::string name, Sample_CreateFunction_t createFnc )
+{
+    auto it = s_SampleMap.find( name );
+    if ( it == s_SampleMap.end() )
+    {
+        s_SampleMap[name] = createFnc;
+        printf( "register sample type %s\n", name.c_str() );
+    }
+    else
+    {
+        printf( "sample %s is already registered\n", name.c_str() );
+        assert( 0 );
+    }
+}
 
 RideHalError_e SampleIF::Init( std::string name )
 {
@@ -22,7 +54,6 @@ const char *SampleIF::GetName()
 {
     return m_name.c_str();
 }
-
 
 std::string SampleIF::Get( SampleConfig_t &config, std::string key, std::string defaultV )
 {

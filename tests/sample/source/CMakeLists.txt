@@ -7,9 +7,9 @@ set( HEADERS_DIR
 )
 
 set( RIDEHAL_SAMPLE_SOURCES
+    SampleIF.cpp
     SampleCamera.cpp
     SampleDataReader.cpp
-    SampleIF.cpp
     SampleRemap.cpp
     SharedBufferPool.cpp
 )
@@ -26,7 +26,7 @@ else()
   list( APPEND TARGET_LIBRARIES TinyViz )
 endif()
 
-add_library( RideHalSample STATIC ${RIDEHAL_SAMPLE_SOURCES} )
+add_library( RideHalSample SHARED ${RIDEHAL_SAMPLE_SOURCES} )
 
 set_property( TARGET RideHalSample PROPERTY LINKER_LANGUAGE CXX )
 set_property( TARGET RideHalSample PROPERTY POSITION_INDEPENDENT_CODE ON )
@@ -37,3 +37,4 @@ target_link_libraries( RideHalSample PUBLIC ${TARGET_LIBRARIES} )
 
 target_compile_definitions( RideHalSample PUBLIC ${RIDEHAL_SAMPLE_DEFINITIONS} )
 
+install(TARGETS RideHalSample DESTINATION lib)

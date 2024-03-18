@@ -132,5 +132,7 @@ RideHalError_e SampleTinyViz::Deinit()
     return ret;
 }
 
+REGISTER_SAMPLE( TinyViz, SampleTinyViz );
+
 }   // namespace sample
 }   // namespace ridehal

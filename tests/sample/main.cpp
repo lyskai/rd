@@ -27,34 +27,11 @@ void SignalHandler( int signal )
     CV.notify_one();
 }
 
-
-SampleIF *CreateCamera()
-{
-    return new SampleCamera();
-}
-
-SampleIF *CreateDataReader()
-{
-    return new SampleDataReader();
-}
-
-SampleIF *CreateRemap()
-{
-    return new SampleRemap();
-}
-
-#ifdef WITH_TINYVIZ
-SampleIF *CreateTinyViz()
-{
-    return new SampleTinyViz();
-}
-#endif
-
 typedef struct
 {
     std::string name;
     SampleConfig_t config;
-    SampleIF *( *create )();
+    std::string type;
 } PipelineConfig_t;
 
 int Usage( const char *program, int error )
@@ -125,29 +102,7 @@ int main( int argc, char *argv[] )
             case 't':
             {
                 PipelineConfig_t &config = pipelineConfigs.back();
-                if ( std::string( "camera" ) == optarg )
-                {
-                    config.create = CreateCamera;
-                }
-                else if ( std::string( "remap" ) == optarg )
-                {
-                    config.create = CreateRemap;
-                }
-#ifdef WITH_TINYVIZ
-                else if ( std::string( "tinyviz" ) == optarg )
-                {
-                    config.create = CreateTinyViz;
-                }
-#endif
-                else if ( std::string( "datareader" ) == optarg )
-                {
-                    config.create = CreateDataReader;
-                }
-                else
-                {
-                    printf( "invalid sample type %s for %s\n", optarg, config.name.c_str() );
-                    return -1;
-                }
+                config.type = optarg;
                 break;
             }
             case 'k':
@@ -177,7 +132,7 @@ int main( int argc, char *argv[] )
 
     for ( auto &config : pipelineConfigs )
     {
-        SampleIF *pSample = config.create();
+        SampleIF *pSample = SampleIF::Create( config.type );
         if ( nullptr != pSample )
         {
             ret = pSample->Init( config.name, config.config );
@@ -194,7 +149,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-            printf( "Create %s failed\n", config.name.c_str() );
+            printf( "Create %s with type %s failed\n", config.name.c_str(), config.type.c_str() );
             return -1;
         }
     }
