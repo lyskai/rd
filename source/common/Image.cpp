@@ -113,13 +113,16 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
         if ( PD_OK == status )
         {
             RIDEHAL_LOG_VERBOSE(
-                    " plane %u: nMinStride = %u, nMaxstride = %u nStrideMultiples = %u,\n"
-                    "  nActualStride = %u nMinPlaneBufHeight = %u, nHeightMultiples = %u,\n"
-                    "  nActualPlaneBufHeight = %u nActualBufSizeAlignment =%u,\n"
-                    "  nBufAddrAlignment = %u nPlaneBufSize = %u, nPlanePaddingSize = %u\n",
-                    i, planeDef.nMinStride, planeDef.nMaxstride, planeDef.nStrideMultiples,
-                    planeDef.nActualStride, planeDef.nMinPlaneBufHeight, planeDef.nHeightMultiples,
-                    planeDef.nActualPlaneBufHeight, planeDef.nActualBufSizeAlignment,
+                    " plane %u: nMinStride = %u, nMaxstride = %u nStrideMultiples = %u", i,
+                    planeDef.nMinStride, planeDef.nMaxstride, planeDef.nStrideMultiples );
+            RIDEHAL_LOG_VERBOSE(
+                    "   nActualStride = %u nMinPlaneBufHeight = %u, nHeightMultiples = %u",
+                    planeDef.nActualStride, planeDef.nMinPlaneBufHeight,
+                    planeDef.nHeightMultiples );
+            RIDEHAL_LOG_VERBOSE( "   nActualPlaneBufHeight = %u nActualBufSizeAlignment =%u,",
+                                 planeDef.nActualPlaneBufHeight, planeDef.nActualBufSizeAlignment );
+            RIDEHAL_LOG_VERBOSE(
+                    "   nBufAddrAlignment = %u nPlaneBufSize = %u, nPlanePaddingSize = %u",
                     planeDef.nBufAddrAlignment, planeDef.nPlaneBufSize,
                     planeDef.nPlanePaddingSize );
             this->imgProps.stride[i] = planeDef.nActualStride;
