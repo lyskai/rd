@@ -125,12 +125,17 @@ public:
     RideHalError_e Init( const char *pName, const QnnRuntime_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
     RideHalError_e GetInputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
+    RideHalError_e GetInputInfos( std::vector<RideHal_TensorProps_t> &infos );
     RideHalError_e GetOutputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
+    RideHalError_e GetOutputInfos( std::vector<RideHal_TensorProps_t> &infos );
+
 
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs );
 
     RideHalError_e Deinit() final;
+    RideHalError_e Start() final { return RideHalError_e::RIDE_HAL_ERROR_NONE; };
+    RideHalError_e Stop() final { return RideHalError_e::RIDE_HAL_ERROR_NONE; };
 
 private:
     RideHalError_e CreateFromModelSo( std::string modelPath );
