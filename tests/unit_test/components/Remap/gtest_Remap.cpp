@@ -21,15 +21,17 @@ TEST( Remap, SANITY_RemapGeneral )
     RemapConfig.processor = REMAP_PROCESSOR_CPU;
     RemapConfig.numOfInputs = 1;
     RemapConfig.inputConfigs[0].inputFormat = RIDE_HAL_IMAGE_FORMAT_RGB888;
-    RemapConfig.inputConfigs[0].inputWidth = 200;
-    RemapConfig.inputConfigs[0].inputHeight = 200;
+    RemapConfig.inputConfigs[0].inputWidth = 256;
+    RemapConfig.inputConfigs[0].inputHeight = 256;
+    RemapConfig.inputConfigs[0].mapWidth = 128;
+    RemapConfig.inputConfigs[0].mapHeight = 128;
     RemapConfig.inputConfigs[0].ROI.x = 0;
     RemapConfig.inputConfigs[0].ROI.y = 0;
-    RemapConfig.inputConfigs[0].ROI.width = 200;
-    RemapConfig.inputConfigs[0].ROI.height = 200;
+    RemapConfig.inputConfigs[0].ROI.width = 128;
+    RemapConfig.inputConfigs[0].ROI.height = 128;
     RemapConfig.outputFormat = RIDE_HAL_IMAGE_FORMAT_RGB888;
-    RemapConfig.outputWidth = 100;
-    RemapConfig.outputHeight = 100;
+    RemapConfig.outputWidth = 128;
+    RemapConfig.outputHeight = 128;
     RemapConfig.bEnableUndistortion = false;
     RemapConfig.bEnableNormalize = false;
 
@@ -40,11 +42,18 @@ TEST( Remap, SANITY_RemapGeneral )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     size_t inputSize =
-            RemapConfig.inputConfigs[0].inputWidth * RemapConfig.inputConfigs[0].inputHeight;
+            RemapConfig.inputConfigs[0].inputWidth * RemapConfig.inputConfigs[0].inputHeight * 3;
     uint8_t *inputData = (uint8_t *) inputs[0].data();
+
     for ( int i = 0; i < inputSize; i++ )
     {
-        inputData[i] = i;
+        inputData[i] = i % 128;
+    }
+
+    printf( "inputData is: \n" );
+    for ( int i = 0; i < 10; i++ )
+    {
+        printf( "i = %d, data = %d \n", i, inputData[i] );
     }
 
     RideHal_SharedBuffer_t outputs[1];
@@ -53,7 +62,7 @@ TEST( Remap, SANITY_RemapGeneral )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     size_t outputSize =
-            RemapConfig.outputWidth * RemapConfig.outputHeight * RemapConfig.numOfInputs;
+            RemapConfig.outputWidth * RemapConfig.outputHeight * RemapConfig.numOfInputs * 3;
     uint8_t *outputData = (uint8_t *) outputs[0].data();
 
     ret = RemapObj.Init( pName, pRemapConfig );
@@ -64,6 +73,12 @@ TEST( Remap, SANITY_RemapGeneral )
 
     ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, outputs, 1 );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    printf( "outputData is: \n" );
+    for ( int i = 0; i < 10; i++ )
+    {
+        printf( "i = %d, data = %d \n", i, outputData[i] );
+    }
 
     ret = RemapObj.Stop();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
