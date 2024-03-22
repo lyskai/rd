@@ -37,7 +37,7 @@ namespace common
 #define RIDEHAL_LOG_DEBUG( format, ... )                                                           \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
 #define RIDEHAL_LOG_INFO( format, ... )                                                            \
-    RIDEHAL_LOGGER_LOGLog( Logger::GetDefault(), LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
 #define RIDEHAL_LOG_WARN( format, ... )                                                            \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
 #define RIDEHAL_LOG_ERROR( format, ... )                                                           \

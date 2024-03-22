@@ -10,7 +10,8 @@
 using namespace ridehal::common;
 using namespace ridehal::component;
 
-#define RUNTIME_SECOND ( 5 )
+#define RUNTIME_SECOND ( 3 )
+#define BUFFFER_COUNT (5)
 
 const char *pDumpPath = "/tmp/camera_frame.bin";
 
@@ -18,7 +19,7 @@ using namespace ridehal;
 
 std::FILE *g_Dumpfile = nullptr;
 
-int DumpFrame( Camera_Frame_t *pFrame, const char *path )
+int DumpFrame( CameraFrame_t *pFrame, const char *path )
 {
     int ret = 0;
 
@@ -38,12 +39,14 @@ int DumpFrame( Camera_Frame_t *pFrame, const char *path )
     return ret;
 }
 
-void FrameCallBack( Camera_Frame_t *pFrame, void *pPrivData )
+void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
 {
     RideHalError_e ret;
 
+#if 0
     printf( "FrameCallBack Index: %d stream id: %d, pPrivData: %p\n", pFrame->frameIndex,
             pFrame->streamId, pPrivData );
+#endif
     Camera *pCamera = (Camera *) pPrivData;
 
 #ifdef DUMPFRAME
@@ -70,12 +73,11 @@ TEST( Camera, SANITY_QcarCam )
     camConfig.inputId = 0;
     camConfig.width = 1928;
     camConfig.height = 1208;
-    camConfig.bufCnt = 5;
+    camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
 
     ret = pCamera->Init( componentName, camConfig );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
 
     ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
@@ -89,10 +91,59 @@ TEST( Camera, SANITY_QcarCam )
     ret = pCamera->Stop();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-#if 1   // deinit crash
     ret = pCamera->Deinit();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-#endif
+
+    delete pCamera;
+}
+
+TEST( Camera, SetBuffer_QcarCam )
+{
+    RideHalError_e ret;
+    Camera *pCamera = new Camera;
+
+    char componentName[20] = "Camera";
+    Camera_Config_t camConfig;
+    camConfig.isAllocator = false;
+    camConfig.requestMode = false;
+    camConfig.inputId = 0;
+    camConfig.width = 1928;
+    camConfig.height = 1208;
+    camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    RideHal_SharedBuffer_t *pSharedBuffer = new RideHal_SharedBuffer_t[BUFFFER_COUNT];
+
+    for (int i = 0; i < BUFFFER_COUNT; i ++)
+    {
+        ret = pSharedBuffer[i].Allocate( camConfig.width, camConfig.height, camConfig.format);
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
+
+    ret = pCamera->Init( componentName, camConfig );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = pCamera->SetBuffer( pSharedBuffer, BUFFFER_COUNT );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = pCamera->Start();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    // sanity test to run few seconds and then stop
+    sleep( RUNTIME_SECOND );
+
+    ret = pCamera->Stop();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = pCamera->Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    for (int i = 0; i < BUFFFER_COUNT; i ++)
+    {
+        ret = pSharedBuffer[i].Free();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
 
     delete pCamera;
 }

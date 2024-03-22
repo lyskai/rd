@@ -20,10 +20,10 @@ typedef struct
     uint64_t timestampQGPTP; /* Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
     uint32_t streamId;
     uint32_t frameIndex;
-} Camera_Frame_t;
+} CameraFrame_t;
 
 /// @brief callback for camera frame done
-typedef void ( *RideHal_CamFrameCallback_t )( Camera_Frame_t *pFrame, void *pPrivData );
+typedef void ( *RideHal_CamFrameCallback_t )( CameraFrame_t *pFrame, void *pPrivData );
 
 // @brief callback for camera event
 typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void *pPayload,
@@ -91,7 +91,7 @@ public:
     /// @brief resuest a new camera frame
     /// @param pFrame the frame to request from camera
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e RequestFrame( Camera_Frame_t *pFrame );
+    RideHalError_e RequestFrame( CameraFrame_t *pFrame );
 
     /// @brief resuest a new camera frame
     /// @param pBuffer a list of buffers to be set to camera
@@ -115,7 +115,7 @@ private:
 
     RideHalError_e FreeBuffer();
 
-    Camera_Frame_t *GetFrame();
+    CameraFrame_t *GetFrame();
 
     static QCarCamRet_e QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t eventId,
                                         const QCarCamEventPayload_t *pPayload, void *pPrivateData );
@@ -130,7 +130,7 @@ private:
     void *m_pAppPriv = nullptr;
     RideHal_CamEventCallback_t m_EventCallback = nullptr;
     RideHal_CamFrameCallback_t m_FrameCallback = nullptr;
-    Camera_Frame_t *m_pCameraFrames = nullptr;
+    CameraFrame_t *m_pCameraFrames = nullptr;
     QCarCamBuffer_t *m_pQcarcamBuffer = nullptr;
     QCarCamBufferList_t m_qcarcamBuffers;
     QCarCamHndl_t m_QcarCamHndl;
