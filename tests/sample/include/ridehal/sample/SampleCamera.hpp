@@ -4,7 +4,11 @@
 #ifndef _RIDE_HAL_SAMPLE_CAMERA_HPP_
 #define _RIDE_HAL_SAMPLE_CAMERA_HPP_
 
+#include "ridehal/component/Camera.hpp"
 #include "ridehal/sample/SampleIF.hpp"
+
+using namespace ridehal::common;
+using namespace ridehal::component;
 
 namespace ridehal
 {
@@ -39,14 +43,19 @@ public:
     RideHalError_e Deinit();
 
 private:
-    int m_inputId;
-    uint32_t m_width;
-    uint32_t m_height;
+    void FrameCallBack( CameraFrame_t *pFrame );
+    void EventCallBack( const uint32_t eventId, const void *pPayload );
+    static void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData );
+    static void EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivData );
+
+private:
+    Camera m_camera;
+    Camera_Config_t m_camConfig;
 
     std::string m_topicName;
 
     DataPublisher<CamFrames_t> m_pub;
-
+    uint64_t m_frameId = 0;
 };   // class SampleCamera
 
 }   // namespace sample
