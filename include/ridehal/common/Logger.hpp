@@ -19,29 +19,30 @@ namespace common
 #define RIDEHAL_LOGGER_DEINIT() m_logger.Deinit()
 
 #define RIDEHAL_LOGGER_LOG( logger, level, format, ... )                                           \
-    ( logger ).Log( level, format, ##__VA_ARGS__ )
+    ( logger ).Log( level, "%s:%d " format, __FILE__, __LINE__, ##__VA_ARGS__ )
 
 #define RIDEHAL_VERBOSE( format, ... )                                                             \
-    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_VERBOSE, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_VERBOSE, "VERBOSE: " format, ##__VA_ARGS__ )
 #define RIDEHAL_DEBUG( format, ... )                                                               \
-    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_DEBUG, "DEBUG: " format, ##__VA_ARGS__ )
 #define RIDEHAL_INFO( format, ... )                                                                \
-    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_INFO, "INFO:" format, ##__VA_ARGS__ )
 #define RIDEHAL_WARN( format, ... )                                                                \
-    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_WARN, "WARN: " format, ##__VA_ARGS__ )
 #define RIDEHAL_ERROR( format, ... )                                                               \
-    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_ERROR, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_ERROR, "ERROR: " format, ##__VA_ARGS__ )
 
 #define RIDEHAL_LOG_VERBOSE( format, ... )                                                         \
-    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_VERBOSE, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_VERBOSE, "VERBOSE: " format,            \
+                        ##__VA_ARGS__ )
 #define RIDEHAL_LOG_DEBUG( format, ... )                                                           \
-    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_DEBUG, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_DEBUG, "DEBUG: " format, ##__VA_ARGS__ )
 #define RIDEHAL_LOG_INFO( format, ... )                                                            \
-    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_INFO, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_INFO, "INFO:" format, ##__VA_ARGS__ )
 #define RIDEHAL_LOG_WARN( format, ... )                                                            \
-    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_WARN, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_WARN, "WARN: " format, ##__VA_ARGS__ )
 #define RIDEHAL_LOG_ERROR( format, ... )                                                           \
-    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_ERROR, format, ##__VA_ARGS__ )
+    RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_ERROR, "ERROR: " format, ##__VA_ARGS__ )
 #else
 #define RIDEHAL_DECLARE_LOGGER()
 
