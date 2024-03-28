@@ -72,10 +72,13 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
     if ( ( 0 == batchSize ) || ( 0 == width ) || ( 0 == height ) ||
          ( format >= RIDE_HAL_IMAGE_FORMAT_MAX ) )
     {
+        RIDEHAL_LOG_ERROR( "invalid args: batchSize=%u, width=%u, height=%u, format=%d", batchSize,
+                           width, height, format );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( nullptr != this->buffer.pData )
     {
+        RIDEHAL_LOG_ERROR( "buffer is already allocated" );
         ret = RIDE_HAL_ERROR_EXISTS;
     }
     else
@@ -89,6 +92,9 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
         if ( ( PD_OK != status ) || ( 0 == numPlanes ) ||
              ( numPlanes > RIDE_HAL_NUM_IMAGE_PLANES ) )
         {
+            RIDEHAL_LOG_ERROR(
+                    "failed to query plane numbers for image width=%u, height=%u, format=%d: %d",
+                    width, height, format, status );
             ret = RIDE_HAL_ERROR_FAIL;
         }
         else
@@ -137,12 +143,18 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
             {
                 if ( 0 != planeDef.nPlanePaddingSize )
                 {
+                    RIDEHAL_LOG_ERROR( "plane %d padding size %u != 0 for image width=%u, "
+                                       "height=%u, format=%d",
+                                       i, planeDef.nPlanePaddingSize, width, height, format );
                     ret = RIDE_HAL_ERROR_UNSUPPORTED;
                 }
             }
         }
         else
         {
+            RIDEHAL_LOG_ERROR(
+                    "failed to query plane def for image width=%u, height=%u, format=%d: %d", width,
+                    height, format, status );
             ret = RIDE_HAL_ERROR_FAIL;
         }
     }
@@ -176,24 +188,30 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
 
     if ( nullptr == pImgProps )
     {
+        RIDEHAL_LOG_ERROR( "pImgProps is nullptr" );
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
     else if ( ( 0 == pImgProps->batchSize ) || ( 0 == pImgProps->width ) ||
               ( 0 == pImgProps->height ) )
     {
+        RIDEHAL_LOG_ERROR( "invalid args: batchSize=%u, width=%u, height=%u", pImgProps->batchSize,
+                           pImgProps->width, pImgProps->height );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( ( pImgProps->format >= RIDE_HAL_IMAGE_FORMAT_MAX ) &&
               ( pImgProps->format < RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MIN ) )
     {
+        RIDEHAL_LOG_ERROR( "invalid args: format=%d", pImgProps->format );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( pImgProps->format >= RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MAX )
     {
+        RIDEHAL_LOG_ERROR( "invalid args: format=%d", pImgProps->format );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( nullptr != this->buffer.pData )
     {
+        RIDEHAL_LOG_ERROR( "buffer is already allocated" );
         ret = RIDE_HAL_ERROR_EXISTS;
     }
     else
@@ -202,6 +220,9 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
         { /* check properties for uncompressed image */
             if ( s_rideHalFormatToNumPlanes[pImgProps->format] != pImgProps->numPlanes )
             {
+                RIDEHAL_LOG_ERROR(
+                        "plane number %u != expected %u for format %d", pImgProps->numPlanes,
+                        s_rideHalFormatToNumPlanes[pImgProps->format], pImgProps->format );
                 ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
             }
         }
@@ -209,6 +230,7 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
         { /* check properties for compressed image */
             if ( 0 == pImgProps->compressedSize )
             {
+                RIDEHAL_LOG_ERROR( "invalid compressedSize" );
                 ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
             }
         }
@@ -223,12 +245,19 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
             for ( i = 0; ( i < pImgProps->numPlanes ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
             {
                 div = s_rideHalFormatToHeightDividerPerPlanes[pImgProps->format][i];
-                if ( ( pImgProps->width * bpp ) < pImgProps->stride[i] )
+                if ( ( pImgProps->width * bpp ) > pImgProps->stride[i] )
                 {
+                    RIDEHAL_LOG_ERROR( "given stride %u(<%u) too small for plane %u for format %d",
+                                       pImgProps->stride[i], pImgProps->width * bpp, i,
+                                       pImgProps->format );
                     ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
                 }
-                else if ( ( pImgProps->height * bpp ) < pImgProps->actualHeight[i] )
+                else if ( ( pImgProps->height / div ) > pImgProps->actualHeight[i] )
                 {
+                    RIDEHAL_LOG_ERROR(
+                            "given actual height %u(<%u) too small for plane %u for format %d",
+                            pImgProps->actualHeight[i], pImgProps->height / div, i,
+                            pImgProps->format );
                     ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
                 }
                 else
@@ -269,18 +298,23 @@ RideHalError_e RideHal_SharedBuffer::GetSharedBuffer( RideHal_SharedBuffer_t *pS
 
     if ( nullptr == this->buffer.pData )
     {
+        RIDEHAL_LOG_ERROR( "image not allocated" );
         ret = RIDE_HAL_ERROR_INVALID_BUF;
     }
     else if ( RIDE_HAL_BUFFER_TYPE_IMAGE != this->type )
     {
+        RIDEHAL_LOG_ERROR( "buffer type %d is not image", this->type );
         ret = RIDE_HAL_ERROR_UNSUPPORTED;
     }
     else if ( batchOffset >= this->imgProps.batchSize )
     {
+        RIDEHAL_LOG_ERROR( "buffer batch offset %u(>=%u) out of range", batchOffset,
+                           this->imgProps.batchSize );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( ( batchOffset + batchSize ) >= this->imgProps.batchSize )
     {
+        RIDEHAL_LOG_ERROR( "buffer batch size %u out of range", batchSize );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
     else

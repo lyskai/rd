@@ -23,7 +23,8 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
         ret = RIDEHAL_LOGGER_INIT( pName, level );
         if ( RIDE_HAL_ERROR_NONE != ret )
         {
-            printf( "WARINING: failed to create logger for component %s: ret = %d\n", pName, ret );
+            fprintf( stderr, "WARINING: failed to create logger for component %s: ret = %d\n",
+                     pName, ret );
         }
         ret = RIDE_HAL_ERROR_NONE;
     }
@@ -38,7 +39,8 @@ RideHalError_e ComponentIF::Deinit()
     ret = RIDEHAL_LOGGER_DEINIT();
     if ( RIDE_HAL_ERROR_NONE != ret )
     {
-        printf( "WARINING: failed to deinit logger for component %s: ret = %d\n", GetName(), ret );
+        fprintf( stderr, "WARINING: failed to deinit logger for component %s: ret = %d\n",
+                 GetName(), ret );
     }
     ret = RIDE_HAL_ERROR_NONE; /* ignore logger init error */
 

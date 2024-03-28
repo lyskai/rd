@@ -29,6 +29,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
 
     if ( ( nullptr == pData ) || ( nullptr == pDmaHandle ) )
     {
+        RIDEHAL_LOG_ERROR( "DmaAllocate with pData or pDmaHandle is nullptr" );
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
 
@@ -47,6 +48,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         }
         else
         {
+            RIDEHAL_LOG_ERROR( "DmaAllocate with invalid usage: %d", usage );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
     }
@@ -57,6 +59,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
                                      NULL );
         if ( nullptr == *pData )
         {
+            RIDEHAL_LOG_ERROR( "DmaAllocate allocate failed" );
             ret = RIDE_HAL_ERROR_NORES;
         }
         else
@@ -72,10 +75,10 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
 {
     int rc = 0;
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
 
     if ( nullptr == pData )
     {
+        RIDEHAL_LOG_ERROR( "DmaFree with pData is nullptr" );
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
     else
@@ -83,6 +86,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
         rc = pmem_free( pData );
         if ( 0 != rc )
         {
+            RIDEHAL_LOG_ERROR( "DmaFree failed to do free for buffer %p: %d", pData, rc );
             ret = RIDE_HAL_ERROR_ACCES;
         }
     }

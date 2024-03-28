@@ -67,6 +67,7 @@ RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
             }
             else
             {
+                fprintf( stderr, "ERROR: failed to create slog2 %s: %d\n", pName, rv );
                 ret = RIDE_HAL_ERROR_FAIL;
             }
         }

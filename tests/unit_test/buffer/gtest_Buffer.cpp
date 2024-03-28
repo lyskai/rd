@@ -112,6 +112,31 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     ASSERT_EQ( 2160, sharedBuffer.imgProps.actualHeight[0] );
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+
+    imgProp.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    imgProp.batchSize = 1;
+    imgProp.width = 1920;
+    imgProp.height = 1024;
+    imgProp.stride[0] = 1920;
+    imgProp.actualHeight[0] = 1024;
+    imgProp.stride[1] = 1920;
+    imgProp.actualHeight[1] = 512;
+    imgProp.numPlanes = 2;
+    imgProp.extraPadding = 0;
+    ret = sharedBuffer.Allocate( &imgProp );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_NE( nullptr, sharedBuffer.data() );
+    ASSERT_EQ( 0, sharedBuffer.offset );
+    std::generate( (uint8_t *) sharedBuffer.data(),
+                   (uint8_t *) sharedBuffer.data() + sharedBuffer.size, std::rand );
+    ASSERT_EQ( sharedBuffer.buffer.size, sharedBuffer.size );
+    ASSERT_EQ( 1920 * 1024 * 3 / 2, sharedBuffer.size );
+    ASSERT_EQ( 2, sharedBuffer.imgProps.numPlanes );
+    ASSERT_EQ( 1920 * 1, sharedBuffer.imgProps.stride[0] );
+    ASSERT_EQ( 1024, sharedBuffer.imgProps.actualHeight[0] );
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 }
 
 TEST( Buffer, SANITY_CompressedImageAllocateByProps )

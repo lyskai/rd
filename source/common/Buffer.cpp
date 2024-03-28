@@ -83,10 +83,12 @@ RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_
 
     if ( nullptr == pBufferManager )
     {
+        RIDEHAL_LOG_ERROR( "Failed to get buffer manager" );
         ret = RIDE_HAL_ERROR_STATE;
     }
     else if ( nullptr != this->buffer.pData )
     {
+        RIDEHAL_LOG_ERROR( "buffer is already allocated" );
         ret = RIDE_HAL_ERROR_EXISTS;
     }
     else

@@ -15,21 +15,16 @@ typedef struct
 
 static char s_LoggerMsg[1024] = { 0 };
 
-static const char *s_rideHalLoggerLevelToName[] = {
-        "VERBOSE", /* LOGGER_LEVEL_VERBOSE */
-        "DEBUG",   /* LOGGER_LEVEL_DEBUG */
-        "INFO",    /* LOGGER_LEVEL_INFO */
-        "WARN",    /* LOGGER_LEVEL_WARN */
-        "ERROR"    /* LOGGER_LEVEL_ERROR */
-};
+#define MSG_PREFIX( name, b )                                                                      \
+    std::string( #name ) + " " + std::string( __FILE__ ) + ":" + std::to_string( __LINE__ - b ) +  \
+            " "
 
 static void UserLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
                      va_list args )
 {
     int len = 0;
     Logger_HandleContextUser_t *pContext = (Logger_HandleContextUser_t *) hHandle;
-    len = snprintf( s_LoggerMsg, sizeof( s_LoggerMsg ), "%s %s: ", pContext->name.c_str(),
-                    s_rideHalLoggerLevelToName[level] );
+    len = snprintf( s_LoggerMsg, sizeof( s_LoggerMsg ), "%s ", pContext->name.c_str() );
     (void) vsnprintf( &s_LoggerMsg[len], sizeof( s_LoggerMsg ) - len, pFormat, args );
 }
 
@@ -72,13 +67,15 @@ static void UserLoggerHandleDestroy( Logger_Handle_t hHandle )
 
 static void TestDefaultLogger()
 {
+    std::string rst;
     /* default logger level is ERROR */
     RIDEHAL_LOG_WARN( "A warn messgae is ignored", (uint32_t) 1234, 1.23431 );
     ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
     s_LoggerMsg[0] = '\0';
 
     RIDEHAL_LOG_ERROR( "A Fatal error: %.2f", 1.2345 );
-    ASSERT_EQ( std::string( "RIHDEHAL ERROR: A Fatal error: 1.23" ), std::string( s_LoggerMsg ) );
+    rst = MSG_PREFIX( RIHDEHAL, 1 ) + std::string( "ERROR: A Fatal error: 1.23" );
+    ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
     s_LoggerMsg[0] = '\0';
 }
 
@@ -97,38 +94,43 @@ public:
 
     void TestLoggerVerbose()
     {
+        std::string rst;
         RIDEHAL_VERBOSE( "a=%d", 1234 );
-        ASSERT_EQ( std::string( "Test VERBOSE: a=1234" ), std::string( s_LoggerMsg ) );
+        rst = MSG_PREFIX( Test, 1 ) + std::string( "VERBOSE: a=1234" );
+        ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_VERBOSE( "str=%s a=%d", "hello world", 1234 );
-        ASSERT_EQ( std::string( "Test VERBOSE: str=hello world a=1234" ),
-                   std::string( s_LoggerMsg ) );
+        rst = MSG_PREFIX( Test, 1 ) + std::string( "VERBOSE: str=hello world a=1234" );
+        ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_INFO( "a=%u c=%.3f", (uint32_t) 1234, 1.23431 );
-        ASSERT_EQ( std::string( "Test INFO: a=1234 c=1.234" ), std::string( s_LoggerMsg ) );
+        rst = MSG_PREFIX( Test, 1 ) + std::string( "INFO: a=1234 c=1.234" );
+        ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_ERROR( "A Fatal error: 0x%x", 0xdeadbeef );
-        ASSERT_EQ( std::string( "Test ERROR: A Fatal error: 0xdeadbeef" ),
-                   std::string( s_LoggerMsg ) );
+        rst = MSG_PREFIX( Test, 1 ) + std::string( "ERROR: A Fatal error: 0xdeadbeef" );
+        ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
     }
 
     void TestLoggerInfo()
     {
+        std::string rst;
         RIDEHAL_DEBUG( "a debug message is ignored" );
         ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_INFO( "a=%u c=%.3f", (uint32_t) 1234, 1.23431 );
-        ASSERT_EQ( std::string( "Test INFO: a=1234 c=1.234" ), std::string( s_LoggerMsg ) );
+        rst = MSG_PREFIX( Test, 1 ) + std::string( "INFO: a=1234 c=1.234" );
+        ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_ERROR( "A Fatal error: 0x%x", 0xdeadbeef );
-        ASSERT_EQ( std::string( "Test ERROR: A Fatal error: 0xdeadbeef" ),
-                   std::string( s_LoggerMsg ) );
+        rst = MSG_PREFIX( Test, 1 ) + std::string( "ERROR: A Fatal error: 0xdeadbeef" );
+        ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
     }
 

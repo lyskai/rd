@@ -29,6 +29,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
 
     if ( ( nullptr == pData ) || ( nullptr == pDmaHandle ) )
     {
+        RIDEHAL_LOG_ERROR( "DmaAllocate with pData or pDmaHandle is nullptr" );
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
 
@@ -46,6 +47,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         devFd = dmabufheap_init( heapType );
         if ( devFd < 0 )
         {
+            RIDEHAL_LOG_ERROR( "DmaAllocate failed to do dmabuf heap init: %d", devFd );
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
     }
@@ -55,6 +57,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         rc = dmabufheap_alloc( devFd, size, 0, &fd );
         if ( rc < 0 )
         {
+            RIDEHAL_LOG_ERROR( "DmaAllocate failed to do dmabuf heap alloc: %d", rc );
             ret = RIDE_HAL_ERROR_NORES;
         }
     }
@@ -69,6 +72,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         }
         else
         {
+            RIDEHAL_LOG_ERROR( "DmaAllocate failed to mmap" );
             ret = RIDE_HAL_ERROR_FAIL;
             close( fd );
         }
@@ -90,6 +94,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
 
     if ( nullptr == pData )
     {
+        RIDEHAL_LOG_ERROR( "DmaFree with pData is nullptr" );
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
 
@@ -98,6 +103,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
         rc = munmap( pData, size );
         if ( 0 != rc )
         {
+            RIDEHAL_LOG_ERROR( "DmaFree failed to do munmap for buffer %p: %d", pData, rc );
             ret = RIDE_HAL_ERROR_ACCES;
         }
     }
@@ -107,6 +113,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
         rc = close( static_cast<int>( pDmaHandle ) );
         if ( 0 != rc )
         {
+            RIDEHAL_LOG_ERROR( "DmaFree failed to close buffer %" PRIu64 ": %d", pDmaHandle, rc );
             ret = RIDE_HAL_ERROR_FAIL;
         }
     }

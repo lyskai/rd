@@ -53,7 +53,7 @@ public:
     static BufferManager *GetDefaultBufferManager();
 
 private:
-    std::mutex m_Lock;
+    std::mutex m_lock;
     std::map<uint64_t, RideHal_SharedBuffer_t> m_bufferMap;
     uint64_t m_IDAllocator = 0;
 
