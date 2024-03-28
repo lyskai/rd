@@ -5,6 +5,7 @@
 #define _RIDE_HAL_VIDEO_ENCODER_HPP_
 
 #include "ridehal/component/ComponentIF.hpp"
+#include <vidc_ioctl.h>
 #ifndef _VIDC_LRH_LINUX_
 #include <ioctlClient.h>
 #else
@@ -85,7 +86,8 @@ typedef struct
     bool bInputDynamicMode;
     bool bOutputDynamicMode;
     VideoEncoder_RateControlMode_e rateControlMode;
-    RideHal_ImageFormat_e format;
+    RideHal_ImageFormat_e inFormat;    // uncompressed type
+    RideHal_ImageFormat_e outFormat;   // compressed type
 } VideoEncoder_Config_t;
 
 /// @brief The VideoEncoder on-the-fly command
@@ -98,19 +100,22 @@ typedef struct
 /// @brief The VideoEncoder Input Frame
 typedef struct
 {
-    RideHal_SharedBuffer_t inputBuffer;
+    RideHal_SharedBuffer_t sharedBuffer;
+    uint16_t frameIndex;
     uint64_t timestampNs;   // frame data's timestamp.
     void *appMarkData;      // frame data's mark data, this data will be copied to corresponding
                             // output compressed frame's VideoEncoder_OutputFrame_t. API won't touch
                             // this data, only copy it.
-    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmd;   // use to send on-the-fly command to encoder, like
+    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmd;   // use to send on-the-fly commands to encoder, like
                                                // intra refresh, bps reset and so on.
+    uint32_t numCmd;                           // number of on-the-fly commands
 } VideoEncoder_InputFrame_t;
 
 /// @brief The VideoEncoder Output Frame
 typedef struct
 {
-    RideHal_SharedBuffer_t outputBuffer;
+    RideHal_SharedBuffer_t sharedBuffer;
+    uint16_t frameIndex;
     uint64_t timestampNs;
     void *appMarkData;
     uint32_t frameFlag;   // indicate whether some error occurred during encoding this frame, like
@@ -122,10 +127,8 @@ typedef struct
 {
     ioctl_session_t *ioHandle;
     VideoEncoder_State_e state;
-    vidc_buffer_info_type **vidcInputBufferInfo;
-    vidc_buffer_info_type **vidcOutputBufferInfo;
-    vidc_frame_data_type **vidcInputFrameInfo;
-    vidc_frame_data_type **vidcOutputFrameInfo;
+    vidc_buffer_info_type *vidcInputBufferInfo;
+    vidc_buffer_info_type *vidcOutputBufferInfo;
     vidc_session_codec_type sessionCodec;
     vidc_frame_size_type frameSize;
     vidc_frame_rate_type frameRate;
@@ -134,8 +137,6 @@ typedef struct
     vidc_plane_def_type planeDefUV;
     vidc_buffer_reqmnts_type inputBufferReq;
     vidc_buffer_reqmnts_type outputBufferReq;
-    uint32_t numInputBufferReq;
-    uint32_t numOutputBufferReq;
     uint32_t vidcInputBufferSize;
     uint32_t vidcOutputBufferSize;
     vidc_rate_control_mode_type rateControl;
@@ -150,11 +151,9 @@ typedef struct
 #define DEFAULT_NUM_P_BET_2I 30
 #define DEFAULT_NUM_B_BET_2I 0
 #define DEFAULT_IDR_PERIOD 1
-#define DEFAULT_CODEC VIDC_CODEC_HEVC
-#define DEFAULT_PROFILE VIDC_PROFILE_HEVC_MAIN10
-#define DEFAULT_LEVEL VIDC_LEVEL_HEVC_4
-#define DEFAULT_INPUT_BUFFER_REQ 8
-#define DEFAULT_OUTPUT_BUFFER_REQ 8
+
+#define MAX_BUFFER_REQ 64
+#define MIN_BUFFER_REQ 2
 
 #define MAX_DEV_CMD_BUFFER_SIZE 256
 #define WAIT_TIMEOUT_1_SEC 1000
@@ -181,7 +180,7 @@ public:
     /// @brief Init the video encoder
     /// @param pName the video encoder unique instance name
     /// @param pConfig pointer to the video config information
-    /// @param pLogger the logger used by the video encoder to log messages
+    /// @param level the log level used by the video encoder, default is error
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, const VideoEncoder_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
@@ -208,6 +207,16 @@ public:
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e SubmitOutputFrame( const VideoEncoder_OutputFrame_t *pOutputFrame );
 
+    /// @brief get video input list to submit input in non-dynamic mode
+    /// @param pInputList pointer to hold the video buffer list
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e GetInputBufferList( VideoEncoder_InputFrame_t **pInputList );
+
+    /// @brief get video output list to submit output in non-dynamic mode
+    /// @param pOutputList pointer to hold the video buffer list
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e GetOutputBufferList( VideoEncoder_OutputFrame_t **pOutputList );
+
     /// @brief set config dynamically to VIDC driver
     /// @param pCmd pointer to the video config information
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
@@ -232,12 +241,8 @@ private:
     int32_t SetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
                             uint32_t nPktSize, uint8_t *pPkt );
     int32_t WaitForState( VideoEncoder_State_e expectedState );
-    void FreeFrameData( vidc_frame_data_type ***pFrameData, int32_t frameCnt );
-    int32_t AllocateFrameData( vidc_frame_data_type ***pFrameData, int32_t frameCnt );
-    int32_t AllocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_info_type ***pBufInfo,
+    int32_t AllocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_info_type **pBufInfo,
                             vidc_buffer_type bufferType, int32_t bufCntMin, int32_t bufSize );
-    int32_t FillBuffer( uint16_t bufIndex );
-    int32_t FillBuffer( const RideHal_SharedBuffer_t *pOutputBuffer );
     int32_t GetInputInformation( void );
     int32_t GetInputBufferRequirement( void );
     int32_t GetOutputBufferRequirement( void );
@@ -247,29 +252,30 @@ private:
     vidc_color_format_type GetVidcFormat( RideHal_ImageFormat_e );
     bool Teardown(); /* release all the resources */
 
-    VideoEncoder_InFrameCallback_t m_InputDoneCb = nullptr;
-    VideoEncoder_OutFrameCallback_t m_OutputDoneCb = nullptr;
-    VideoEncoder_EventCallback_t m_EventCb = nullptr;
+    VideoEncoder_InFrameCallback_t m_inputDoneCb = nullptr;
+    VideoEncoder_OutFrameCallback_t m_outputDoneCb = nullptr;
+    VideoEncoder_EventCallback_t m_eventCb = nullptr;
     void *m_pAppPriv = nullptr;
 
-    VidcEncoderData_t m_VidcEncoderData{};
-    ioctl_callback_t m_IoctlCb = { 0 };
+    VidcEncoderData_t m_vidcEncoderData{};
+    ioctl_callback_t m_ioctlCb = { 0 };
 
-    uint32_t m_Width = 0;
-    uint32_t m_Height = 0;
-    uint32_t m_BitRate = 0;
-    uint32_t m_FrameRate = 0;
-    bool m_InputDynamicMode = true;
-    bool m_OutputDynamicMode = true;
-    RideHal_ImageFormat_e m_Format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    uint32_t m_width = 0;
+    uint32_t m_height = 0;
+    uint32_t m_bitRate = 0;
+    uint32_t m_frameRate = 0;
+    uint32_t m_numInputBufferReq = 8;
+    uint32_t m_numOutputBufferReq = 8;
+    bool m_bInputDynamicMode = true;
+    bool m_bOutputDynamicMode = true;
+    RideHal_ImageFormat_e m_inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    RideHal_ImageFormat_e m_outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
 
-    std::mutex m_Mutex;
-    std::map<uint16_t, VideoEncoder_InputFrame_t> m_InputFrameMap; /* store input in dynamic mode */
-    std::map<uint16_t, VideoEncoder_OutputFrame_t>
-            m_OutputFrameMap;                             /* store output in dynamic mode */
-    std::vector<VideoEncoder_InputFrame_t> m_InputList;   /* store input in nondynamic mode*/
-    std::vector<VideoEncoder_OutputFrame_t> m_OutputList; /* store output */
-    std::queue<uint16_t> m_AvailableInputQueue;           /* store available input index */
+    std::mutex m_mutex;
+
+    VideoEncoder_InputFrame_t *m_inputList;     /* store input */
+    VideoEncoder_OutputFrame_t *m_outputList;   /* store output */
+    std::queue<uint16_t> m_availableInputQueue; /* store available input index in non-dynamic mode*/
 };
 
 }   // namespace component

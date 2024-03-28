@@ -5,7 +5,6 @@
 #include <condition_variable>
 #include <malloc.h>
 #include <stdio.h>
-#include <vidc_ioctl.h>
 
 #include "ridehal/common/Types.hpp"
 #include "ridehal/component/VideoEncoder.hpp"
@@ -64,7 +63,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     config.numOutputBufferReq = 4;
     config.frameRate = 30;
     config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
-    config.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
     config.bInputDynamicMode = true;
     config.bOutputDynamicMode = true;
 
@@ -91,31 +91,41 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     VideoEncoder_InputFrame_t inputFrame;
-    sharedBuffer = &inputFrame.inputBuffer;
-    ret = sharedBuffer->Allocate( 176, 144, RIDE_HAL_IMAGE_FORMAT_NV12 );
+    sharedBuffer = &inputFrame.sharedBuffer;
+    ret = sharedBuffer->Allocate( config.width, config.height, config.inFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    VideoEncoder_OutputFrame_t outputFrame1;
-    VideoEncoder_OutputFrame_t outputFrame2;
-    sharedBuffer = &outputFrame1.outputBuffer;
-    ret = sharedBuffer->Allocate( 92160 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    VideoEncoder_OutputFrame_t *outputFrame =
+            new VideoEncoder_OutputFrame_t[config.numOutputBufferReq];
 
-    sharedBuffer = &outputFrame2.outputBuffer;
-    ret = sharedBuffer->Allocate( 92160 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
-    ret = veTest.SubmitOutputFrame( &outputFrame1 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
-    ret = veTest.SubmitOutputFrame( &outputFrame2 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    for ( int i = 0; i < config.numOutputBufferReq; i++ )
+    {
+        sharedBuffer = &outputFrame[i].sharedBuffer;
+        RideHal_ImageProps_t imgProps;
+        imgProps.batchSize = 1;
+        imgProps.width = config.width;
+        imgProps.height = config.height;
+        imgProps.compressedSize = 92160;
+        imgProps.format = config.outFormat;
+        ret = sharedBuffer->Allocate( &imgProps );
+        // ret = sharedBuffer->Allocate( 92160 );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        outputFrame[i].frameIndex = i;
+        ret = veTest.SubmitOutputFrame( &outputFrame[i] );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
 
     inputFrame.timestampNs = 0;
     inputFrame.appMarkData = nullptr;
     onTheFlyCmd.propID = VIDEO_ENCODER_PROP_BITRATE;
     onTheFlyCmd.pValue = 32000;
-    inputFrame.onTheFlyCmd = &onTheFlyCmd;
+    inputFrame.numCmd = 2;
+    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmds = new VideoEncoder_OnTheFlyCmd_t[2];
+    onTheFlyCmds[0].propID = VIDEO_ENCODER_PROP_BITRATE;
+    onTheFlyCmds[0].pValue = 32000;
+    onTheFlyCmds[1].propID = VIDEO_ENCODER_PROP_FRAME_RATE;
+    onTheFlyCmds[1].pValue = 20;
+    inputFrame.onTheFlyCmd = onTheFlyCmds;
 
     ret = veTest.SubmitInputFrame( &inputFrame );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
@@ -125,7 +135,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     s_InCondVar.wait( inLock );
 
     // compare input buffer
-    auto rc = memcmp( &inputFrame, &s_sharedInputFrame, sizeof( VideoEncoder_InputFrame_t ) );
+    auto rc = memcmp( &inputFrame.sharedBuffer, &s_sharedInputFrame.sharedBuffer,
+                      sizeof( RideHal_SharedBuffer_t ) );
     ASSERT_EQ( 0, rc );
 
     // wait outputdone siganl
@@ -156,7 +167,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     config.numOutputBufferReq = 4;
     config.frameRate = 30;
     config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
-    config.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
 
@@ -176,16 +188,22 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
-    VideoEncoder_InputFrame_t inputFrame;
-    sharedBuffer = &inputFrame.inputBuffer;
-    ret = sharedBuffer->Allocate( 176, 144, RIDE_HAL_IMAGE_FORMAT_NV12 );
+    VideoEncoder_InputFrame_t *inputFrame = nullptr;
+    ret = veTest.GetInputBufferList( &inputFrame );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    inputFrame.timestampNs = 0;
-    inputFrame.appMarkData = nullptr;
-    inputFrame.onTheFlyCmd = nullptr;
-    ret = veTest.SubmitInputFrame( &inputFrame );
+    VideoEncoder_OutputFrame_t *outputFrame = nullptr;
+    ret = veTest.GetOutputBufferList( &outputFrame );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    if ( nullptr != inputFrame )
+    {
+        inputFrame[0].timestampNs = 0;
+        inputFrame[0].appMarkData = nullptr;
+        inputFrame[0].onTheFlyCmd = nullptr;
+        ret = veTest.SubmitInputFrame( &inputFrame[0] );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
 
     // wait inputdone siganl
     std::unique_lock<std::mutex> inLock( s_inMutex );
