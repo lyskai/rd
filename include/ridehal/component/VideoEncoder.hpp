@@ -11,9 +11,8 @@
 #else
 #include <vidc_client.h>
 #endif
-#include <map>
-#include <mutex>
-#include <queue>
+
+#include <boost/lockfree/queue.hpp>
 #include <sys/uio.h>
 #include <vidc_types.h>
 
@@ -85,6 +84,8 @@ typedef struct
     uint32_t numOutputBufferReq;
     bool bInputDynamicMode;
     bool bOutputDynamicMode;
+    RideHal_SharedBuffer_t *inputBufferList = nullptr;    // set input buffer in non-dynamic mode
+    RideHal_SharedBuffer_t *outputBufferList = nullptr;   // set output buffer in non-dynamic mode
     VideoEncoder_RateControlMode_e rateControlMode;
     RideHal_ImageFormat_e inFormat;    // uncompressed type
     RideHal_ImageFormat_e outFormat;   // compressed type
@@ -101,21 +102,20 @@ typedef struct
 typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
-    uint16_t frameIndex;
     uint64_t timestampNs;   // frame data's timestamp.
     void *appMarkData;      // frame data's mark data, this data will be copied to corresponding
                             // output compressed frame's VideoEncoder_OutputFrame_t. API won't touch
                             // this data, only copy it.
-    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmd;   // use to send on-the-fly commands to encoder, like
-                                               // intra refresh, bps reset and so on.
-    uint32_t numCmd;                           // number of on-the-fly commands
+    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmd =
+            nullptr;   // use to send on-the-fly commands to encoder, like
+                       // intra refresh, bps reset and so on.
+    uint32_t numCmd;   // number of on-the-fly commands
 } VideoEncoder_InputFrame_t;
 
 /// @brief The VideoEncoder Output Frame
 typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
-    uint16_t frameIndex;
     uint64_t timestampNs;
     void *appMarkData;
     uint32_t frameFlag;   // indicate whether some error occurred during encoding this frame, like
@@ -127,8 +127,6 @@ typedef struct
 {
     ioctl_session_t *ioHandle;
     VideoEncoder_State_e state;
-    vidc_buffer_info_type *vidcInputBufferInfo;
-    vidc_buffer_info_type *vidcOutputBufferInfo;
     vidc_session_codec_type sessionCodec;
     vidc_frame_size_type frameSize;
     vidc_frame_rate_type frameRate;
@@ -151,6 +149,8 @@ typedef struct
 #define DEFAULT_NUM_P_BET_2I 30
 #define DEFAULT_NUM_B_BET_2I 0
 #define DEFAULT_IDR_PERIOD 1
+#define DEFAULT_BIT_RATE 64000
+#define DEFAULT_FRAME_RATE 30
 
 #define MAX_BUFFER_REQ 64
 #define MIN_BUFFER_REQ 2
@@ -163,7 +163,7 @@ typedef void ( *VideoEncoder_InFrameCallback_t )( const VideoEncoder_InputFrame_
 typedef void ( *VideoEncoder_OutFrameCallback_t )( const VideoEncoder_OutputFrame_t *pOutputFrame,
                                                    void *pPrivData );
 typedef void ( *VideoEncoder_EventCallback_t )( const VideoEncoder_EventType_e eventId,
-                                                const void *pPayload, void *pPrivData );
+                                                const void *pEvent, void *pPrivData );
 
 
 /**
@@ -207,15 +207,18 @@ public:
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e SubmitOutputFrame( const VideoEncoder_OutputFrame_t *pOutputFrame );
 
-    /// @brief get video input list to submit input in non-dynamic mode
-    /// @param pInputList pointer to hold the video buffer list
+    /// @brief get video input buffers to submit input in non-dynamic mode
+    /// @param pInputList pointer to hold the video input buffer list
+    /// @param size size of pInputList
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetInputBufferList( VideoEncoder_InputFrame_t **pInputList );
+    RideHalError_e GetInputBuffers( RideHal_SharedBuffer_t *pInputList, uint32_t size );
 
-    /// @brief get video output list to submit output in non-dynamic mode
-    /// @param pOutputList pointer to hold the video buffer list
+    /// @brief get video output buffers to submit output in non-dynamic mode
+    /// @param pOutputList pointer to hold the video output buffer list
+    /// @param size size of pOutputList
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetOutputBufferList( VideoEncoder_OutputFrame_t **pOutputList );
+    RideHalError_e GetOutputBuffers( RideHal_SharedBuffer_t *pOutputList, uint32_t size );
+
 
     /// @brief set config dynamically to VIDC driver
     /// @param pCmd pointer to the video config information
@@ -241,7 +244,7 @@ private:
     int32_t SetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
                             uint32_t nPktSize, uint8_t *pPkt );
     int32_t WaitForState( VideoEncoder_State_e expectedState );
-    int32_t AllocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_info_type **pBufInfo,
+    int32_t AllocateBuffer( ioctl_session_t *ioHandle, RideHal_SharedBuffer_t *bufferList,
                             vidc_buffer_type bufferType, int32_t bufCntMin, int32_t bufSize );
     int32_t GetInputInformation( void );
     int32_t GetInputBufferRequirement( void );
@@ -250,7 +253,7 @@ private:
     int32_t FreeInputBuffer( void );
     void PrintEncoderConfig( void );
     vidc_color_format_type GetVidcFormat( RideHal_ImageFormat_e );
-    bool Teardown(); /* release all the resources */
+    int32_t Teardown(); /* release all the resources */
 
     VideoEncoder_InFrameCallback_t m_inputDoneCb = nullptr;
     VideoEncoder_OutFrameCallback_t m_outputDoneCb = nullptr;
@@ -271,11 +274,12 @@ private:
     RideHal_ImageFormat_e m_inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
     RideHal_ImageFormat_e m_outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
 
-    std::mutex m_mutex;
-
-    VideoEncoder_InputFrame_t *m_inputList;     /* store input */
-    VideoEncoder_OutputFrame_t *m_outputList;   /* store output */
-    std::queue<uint16_t> m_availableInputQueue; /* store available input index in non-dynamic mode*/
+    VideoEncoder_InputFrame_t *m_inputList;   /* store input */
+    VideoEncoder_OutputFrame_t *m_outputList; /* store output */
+    boost::lockfree::queue<uint16_t, boost::lockfree::fixed_sized<false>>
+            m_availableInputQueue; /* store available input index*/
+    boost::lockfree::queue<uint16_t, boost::lockfree::fixed_sized<false>>
+            m_availableOutputQueue; /* store available output index*/
 };
 
 }   // namespace component

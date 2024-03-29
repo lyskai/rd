@@ -25,31 +25,32 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
     {
         m_width = pConfig->width;
         m_height = pConfig->height;
-        m_bitRate = pConfig->bitRate;
-        m_frameRate = pConfig->frameRate;
-        m_inFormat = pConfig->inFormat;
-        m_outFormat = pConfig->outFormat;
-        m_bInputDynamicMode = pConfig->bInputDynamicMode;
-        m_bOutputDynamicMode = pConfig->bOutputDynamicMode;
+        if ( ( 0 == m_width ) || ( 0 == m_height ) )
+        {
+            RIDEHAL_ERROR( "m_width %" PRIu32 " m_height%" PRIu32 " should not be zero!", m_width,
+                           m_height );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+        m_bitRate = pConfig->bitRate ? pConfig->bitRate : DEFAULT_BIT_RATE;
+        m_frameRate = pConfig->frameRate ? pConfig->frameRate : DEFAULT_FRAME_RATE;
 
         m_vidcEncoderData.rateControl = (vidc_rate_control_mode_type) pConfig->rateControlMode;
         if ( VIDC_RATE_CONTROL_UNUSED == m_vidcEncoderData.rateControl )
         {
-            RIDEHAL_ERROR( "rate control mode: %d not supported!", (int) pConfig->rateControlMode );
+            RIDEHAL_ERROR( "rate control mode: 0x%x not supported!", pConfig->rateControlMode );
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
 
+        m_inFormat = pConfig->inFormat;
         m_vidcEncoderData.colorFormatConfig.buf_type = VIDC_BUFFER_INPUT;
         m_vidcEncoderData.colorFormatConfig.color_format = GetVidcFormat( m_inFormat );
         if ( VIDC_COLOR_FORMAT_UNUSED == m_vidcEncoderData.colorFormatConfig.color_format )
         {
-            RIDEHAL_ERROR( "input format: %d not supported!", (int) m_inFormat );
+            RIDEHAL_ERROR( "input format: %d not supported!", m_inFormat );
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
-    }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
+        m_outFormat = pConfig->outFormat;
         if ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat )
         {
             m_vidcEncoderData.codec = VIDC_CODEC_HEVC;
@@ -64,22 +65,23 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         }
         else
         {
-            RIDEHAL_ERROR( "output format: %d not supported!", (int) m_outFormat );
+            RIDEHAL_ERROR( "output format: %d not supported!", m_outFormat );
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
 
+        m_bInputDynamicMode = pConfig->bInputDynamicMode;
+        m_bOutputDynamicMode = pConfig->bOutputDynamicMode;
+
         m_vidcEncoderData.sessionCodec.session = VIDC_SESSION_ENCODE;
         m_vidcEncoderData.sessionCodec.codec = m_vidcEncoderData.codec;
-    }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
         if ( pConfig->numInputBufferReq > MAX_BUFFER_REQ ||
              pConfig->numInputBufferReq < MIN_BUFFER_REQ )
         {
-            RIDEHAL_ERROR( "numInputBufferReq: %d too small or too large! MIN_BUFFER_REQ %d, "
-                           "MAX_BUFFER_REQ %d ",
-                           (int) pConfig->numInputBufferReq, MIN_BUFFER_REQ, MAX_BUFFER_REQ );
+            RIDEHAL_ERROR( "numInputBufferReq: %" PRIu32
+                           " too small or too large! (MIN_BUFFER_REQ %d, "
+                           "MAX_BUFFER_REQ %d) ",
+                           pConfig->numInputBufferReq, MIN_BUFFER_REQ, MAX_BUFFER_REQ );
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
         else
@@ -90,16 +92,30 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         if ( pConfig->numOutputBufferReq > MAX_BUFFER_REQ ||
              pConfig->numOutputBufferReq < MIN_BUFFER_REQ )
         {
-            RIDEHAL_ERROR( "numOutputBufferReq: %d too small or too large! MIN_BUFFER_REQ %d, "
-                           "MAX_BUFFER_REQ %d ",
-                           (int) pConfig->numOutputBufferReq, MIN_BUFFER_REQ, MAX_BUFFER_REQ );
+            RIDEHAL_ERROR( "numOutputBufferReq: %" PRIu32
+                           " too small or too large! (MIN_BUFFER_REQ %d, "
+                           "MAX_BUFFER_REQ %d) ",
+                           pConfig->numOutputBufferReq, MIN_BUFFER_REQ, MAX_BUFFER_REQ );
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
         else
         {
             m_numOutputBufferReq = pConfig->numOutputBufferReq;
         }
+
+        if ( true == m_bInputDynamicMode && nullptr != pConfig->inputBufferList )
+        {
+            RIDEHAL_ERROR( "should not provide inputbuffer in config in dynamic mode!" );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        if ( true == m_bOutputDynamicMode && nullptr != pConfig->outputBufferList )
+        {
+            RIDEHAL_ERROR( "should not provide outputbuffer in config in dynamic mode!" );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
     }
+
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
@@ -112,7 +128,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             RIDEHAL_ERROR( "Failed to open vidc device!" );
             Teardown();
-            ret = RIDE_HAL_ERROR_NULL_PTR;
+            ret = RIDE_HAL_ERROR_FAIL;
         }
     }
 
@@ -395,7 +411,8 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         else
         {
             RIDEHAL_DEBUG( "Allocating %" PRIu32 " input buffers", m_numInputBufferReq );
-            rc = AllocateBuffer( m_vidcEncoderData.ioHandle, &m_vidcEncoderData.vidcInputBufferInfo,
+
+            rc = AllocateBuffer( m_vidcEncoderData.ioHandle, pConfig->inputBufferList,
                                  VIDC_BUFFER_INPUT, m_numInputBufferReq,
                                  m_vidcEncoderData.vidcInputBufferSize );
             if ( 0 != rc )
@@ -441,9 +458,9 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             RIDEHAL_DEBUG( "Allocating %" PRIu32 " output buffers", m_numOutputBufferReq );
 
-            rc = AllocateBuffer( m_vidcEncoderData.ioHandle,
-                                 &m_vidcEncoderData.vidcOutputBufferInfo, VIDC_BUFFER_OUTPUT,
-                                 m_numOutputBufferReq, m_vidcEncoderData.vidcOutputBufferSize );
+            rc = AllocateBuffer( m_vidcEncoderData.ioHandle, pConfig->outputBufferList,
+                                 VIDC_BUFFER_OUTPUT, m_numOutputBufferReq,
+                                 m_vidcEncoderData.vidcOutputBufferSize );
             if ( 0 != rc )
             {
                 RIDEHAL_ERROR( "Failed to allocate output buffers!" );
@@ -486,7 +503,7 @@ RideHalError_e VideoEncoder::Start()
 
     if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
-        RIDEHAL_ERROR( "Init Not ready!" );
+        RIDEHAL_ERROR( "can not Start since Init Not ready!" );
         Teardown();
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -511,19 +528,23 @@ RideHalError_e VideoEncoder::Start()
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret && false == m_bOutputDynamicMode )
+    if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        for ( uint32_t counter = 0; counter < m_numOutputBufferReq; counter++ )
+        for ( uint16_t counter = 0; counter < m_numOutputBufferReq; counter++ )
         {
-            ret = SubmitOutputFrame( &m_outputList[counter] );
+            m_availableOutputQueue.push( counter );
+            if ( false == m_bOutputDynamicMode )
+            {
+                ret = SubmitOutputFrame( &m_outputList[counter] );
+            }
         }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        for ( uint16_t i = 0; i < m_numInputBufferReq; i++ )
+        for ( uint16_t counter = 0; counter < m_numOutputBufferReq; counter++ )
         {
-            m_availableInputQueue.push( i );
+            m_availableInputQueue.push( counter );
         }
     }
 
@@ -564,8 +585,9 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         inputBuffer = &pInputFrame->sharedBuffer;
-        bufferInfo.buf_addr = (uint8_t *) inputBuffer->buffer.pData;
-        if ( m_availableInputQueue.empty() )
+        bufferInfo.buf_addr = (uint8_t *) inputBuffer->data();
+        bool val = m_availableInputQueue.pop( frameIndex );
+        if ( false == val )
         {
             RIDEHAL_ERROR( "No empty input buffer available!" );
             Teardown();
@@ -573,40 +595,16 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
         }
         else
         {
-            frameIndex = m_availableInputQueue.front();
+            m_inputList[frameIndex] = *pInputFrame;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        if ( false == m_bInputDynamicMode )
-        {
-            if ( frameIndex != pInputFrame->frameIndex )
-            {
-                RIDEHAL_ERROR( "available frameIndex %d not match with pInputFrame->frameIndex %d!",
-                               (int) frameIndex, (int) pInputFrame->frameIndex );
-                Teardown();
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-            }
-            else
-            {
-                m_availableInputQueue.pop();
-            }
-        }
-        else
-        {
-            m_inputList[frameIndex] = *pInputFrame;
-            m_inputList[frameIndex].frameIndex = frameIndex;
-            m_availableInputQueue.pop();
-        }
-    }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         if ( VIDC_COLOR_FORMAT_UNUSED == GetVidcFormat( inputBuffer->imgProps.format ) )
         {
-            RIDEHAL_ERROR( "unsupported input frame format %d",
-                           (int) inputBuffer->imgProps.format );
+            RIDEHAL_ERROR( "unsupported input frame format %d", inputBuffer->imgProps.format );
             Teardown();
             ret = RIDE_HAL_ERROR_UNSUPPORTED;
         }
@@ -631,8 +629,8 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
         convertedSize = m_vidcEncoderData.vidcInputBufferSize;
         if ( (size_t) convertedSize > inputBuffer->size && true == m_bInputDynamicMode )
         {
-            RIDEHAL_ERROR( "inputBuffer size %d is smaller than vidcInputBufferSize %d",
-                           (int) inputBuffer->size, (int) m_vidcEncoderData.vidcInputBufferSize );
+            RIDEHAL_ERROR( "inputBuffer size %zu is smaller than vidcInputBufferSize %" PRIu32,
+                           inputBuffer->size, m_vidcEncoderData.vidcInputBufferSize );
             Teardown();
             ret = RIDE_HAL_ERROR_INVALID_BUF;
         }
@@ -656,8 +654,8 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
             bufferInfo.buf_size = inputBuffer->size;
         }
 
-        RIDEHAL_DEBUG( "input-start: frameIndex %d timestampNs %" PRIu64
-                       " addr 0x%x handle 0x%x size %d",
+        RIDEHAL_DEBUG( "input-start: frameIndex %" PRIu16 " timestampNs %" PRIu64
+                       " buf_addr 0x%x handle 0x%x buf_size %" PRIu32,
                        frameIndex, pInputFrame->timestampNs, bufferInfo.buf_addr,
                        inputBuffer->buffer.dmaHandle, bufferInfo.buf_size );
 
@@ -729,38 +727,40 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
     {
         RIDEHAL_DEBUG( "SubmitOutputFrame begin" );
         outputBuffer = &pOutputFrame->sharedBuffer;
-        frameIndex = pOutputFrame->frameIndex;
-        if ( frameIndex < 0 || frameIndex >= m_numOutputBufferReq )
+        bool val = m_availableOutputQueue.pop( frameIndex );
+        if ( false == val )
         {
-            RIDEHAL_ERROR( "output frameIndex = %" PRIu64 " is invalid", frameIndex );
+            RIDEHAL_ERROR( "No empty output buffer available!" );
             Teardown();
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDE_HAL_ERROR_NORES;
+        }
+        else
+        {
+            m_outputList[frameIndex] = *pOutputFrame;
         }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        if ( true == m_bOutputDynamicMode )
-        {
-            m_outputList[frameIndex] = *pOutputFrame;
-        }
-
         memset( &frameData, 0, sizeof( vidc_frame_data_type ) );
         frameData.buf_type = VIDC_BUFFER_OUTPUT;
-        frameData.frame_addr = (uint8_t *) outputBuffer->buffer.pData;
-        frameData.alloc_len = outputBuffer->size;
+        frameData.frame_addr = (uint8_t *) outputBuffer->data();
+        frameData.alloc_len = outputBuffer->buffer.size;
         frameData.frame_handle = (pmem_handle_t) outputBuffer->buffer.dmaHandle;
         frameData.frm_clnt_data = frameIndex;
-        RIDEHAL_DEBUG(
-                "FillBuffer, frameIndex=%" PRId32
-                ", frameData.frame_addr=0x%x frameData.frame_handle=0x%x outputBuffer->size %d",
-                frameIndex, frameData.frame_addr, frameData.frame_handle, outputBuffer->size );
+
+        RIDEHAL_DEBUG( "FillBuffer, frameIndex=%" PRIu16
+                       ", frameData.frame_addr=0x%x frameData.frame_handle=0x%x "
+                       "frameData.alloc_len %" PRIu32 " outputBuffer->size %" PRIu32,
+                       frameIndex, frameData.frame_addr, frameData.frame_handle,
+                       frameData.alloc_len, outputBuffer->size );
 
         rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_FILL_OUTPUT_BUFFER,
                            (uint8_t *) ( &frameData ), sizeof( vidc_frame_data_type ), nullptr, 0 );
         if ( 0 != rc )
         {
-            RIDEHAL_ERROR( "SubmitOutputFrame FillBuffer %d failed", (int) frameIndex );
+            RIDEHAL_ERROR( "SubmitOutputFrame FillBuffer %" PRIu16 " failed rc 0x%x", frameIndex,
+                           rc );
             Teardown();
             ret = RIDE_HAL_ERROR_FAIL;
         }
@@ -804,9 +804,14 @@ RideHalError_e VideoEncoder::Stop()
         if ( 0 != WaitForState( VIDEO_ENCODER_STATE_IDLE ) )
         {
             RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
+            Teardown();
+            ret = RIDE_HAL_ERROR_TIMEOUT;
         }
-        RIDEHAL_DEBUG( "Stopped vidc" );
-        m_state = RIDE_HAL_COMPONENT_STATE_READY;
+        else
+        {
+            RIDEHAL_DEBUG( "Stopped vidc" );
+            m_state = RIDE_HAL_COMPONENT_STATE_READY;
+        }
     }
 
     return ret;
@@ -824,8 +829,8 @@ RideHalError_e VideoEncoder::Deinit()
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         RIDEHAL_DEBUG( "Deiniting vidc" );
-        bool rc = Teardown();
-        if ( false == rc )
+        int32_t rc = Teardown();
+        if ( 0 != rc )
         {
             RIDEHAL_ERROR( "release source failed" );
             ret = RIDE_HAL_ERROR_FAIL;
@@ -841,38 +846,83 @@ RideHalError_e VideoEncoder::Deinit()
     return ret;
 }
 
-RideHalError_e VideoEncoder::GetInputBufferList( VideoEncoder_InputFrame_t **pInputList )
+RideHalError_e VideoEncoder::GetInputBuffers( RideHal_SharedBuffer_t *pInputList, uint32_t size )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    RIDEHAL_DEBUG( "GetInputBufferList" );
+
+    RIDEHAL_DEBUG( "GetInputBuffers" );
+
     if ( nullptr != m_inputList )
     {
-        *pInputList = m_inputList;
+        if ( nullptr == pInputList )
+        {
+            RIDEHAL_ERROR( "pInputList is null pointer!" );
+            ret = RIDE_HAL_ERROR_NULL_PTR;
+        }
+        else
+        {
+            if ( size == m_numOutputBufferReq )
+            {
+                for ( int i = 0; i < m_numInputBufferReq; i++ )
+                {
+                    pInputList[i] = m_inputList[i].sharedBuffer;
+                }
+            }
+            else
+            {
+                RIDEHAL_ERROR( "the provided array sie %" PRIu32
+                               " too small to hold all buffer infos!",
+                               size );
+                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            }
+        }
     }
     else
     {
         RIDEHAL_ERROR( "input buffer is not ready!" );
-        Teardown();
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
+
     return ret;
 }
 
-RideHalError_e VideoEncoder::GetOutputBufferList( VideoEncoder_OutputFrame_t **pOutputList )
+RideHalError_e VideoEncoder::GetOutputBuffers( RideHal_SharedBuffer_t *pOutputList, uint32_t size )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    RIDEHAL_DEBUG( "GetOutputBufferList" );
+
+    RIDEHAL_DEBUG( "GetOutputBuffers" );
+
     if ( nullptr != m_outputList )
     {
-        *pOutputList = m_outputList;
-        RIDEHAL_DEBUG( "pOutputList %p", pOutputList );
+        if ( nullptr == pOutputList )
+        {
+            RIDEHAL_ERROR( "pOutputList is null pointer!" );
+            ret = RIDE_HAL_ERROR_NULL_PTR;
+        }
+        else
+        {
+            if ( size == m_numOutputBufferReq )
+            {
+                for ( int i = 0; i < m_numOutputBufferReq; i++ )
+                {
+                    pOutputList[i] = m_outputList[i].sharedBuffer;
+                }
+            }
+            else
+            {
+                RIDEHAL_ERROR( "the provided array sie %" PRIu32
+                               " too small to hold all buffer infos!",
+                               size );
+                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            }
+        }
     }
     else
     {
         RIDEHAL_ERROR( "output buffer is not ready!" );
-        Teardown();
         ret = RIDE_HAL_ERROR_NULL_PTR;
     }
+
     return ret;
 }
 
@@ -901,7 +951,7 @@ RideHalError_e VideoEncoder::Configure( const VideoEncoder_OnTheFlyCmd_t *pCmd )
         switch ( pCmd->propID )
         {
             case VIDEO_ENCODER_PROP_BITRATE:
-                RIDEHAL_DEBUG( "Setting VIDC_I_TARGET_BITRATE" );
+                RIDEHAL_DEBUG( "Setting VIDC_I_TARGET_BITRATE %" PRIu32, m_bitRate );
                 m_bitRate = pCmd->pValue;
                 m_vidcEncoderData.bitrate.target_bitrate = m_bitRate;
                 rc = SetDrvProperty( m_vidcEncoderData.ioHandle, VIDC_I_TARGET_BITRATE,
@@ -916,8 +966,8 @@ RideHalError_e VideoEncoder::Configure( const VideoEncoder_OnTheFlyCmd_t *pCmd )
                 break;
             case VIDEO_ENCODER_PROP_FRAME_RATE:
                 m_frameRate = pCmd->pValue;
-                RIDEHAL_DEBUG( "Setting VIDC_I_FRAME_RATE.VIDC_BUFFER_OUTPUT %d",
-                               (int) m_frameRate );
+                RIDEHAL_DEBUG( "Setting VIDC_I_FRAME_RATE.VIDC_BUFFER_OUTPUT %" PRIu32,
+                               m_frameRate );
                 m_vidcEncoderData.frameRate.buf_type = VIDC_BUFFER_OUTPUT;
                 m_vidcEncoderData.frameRate.fps_numerator = m_frameRate;
                 m_vidcEncoderData.frameRate.fps_denominator = 1;
@@ -932,7 +982,7 @@ RideHalError_e VideoEncoder::Configure( const VideoEncoder_OnTheFlyCmd_t *pCmd )
                 }
                 break;
             default:
-                RIDEHAL_ERROR( "propID %d not supported", (int) pCmd->propID );
+                RIDEHAL_ERROR( "propID %d not supported", pCmd->propID );
                 Teardown();
                 ret = RIDE_HAL_ERROR_UNSUPPORTED;
                 break;
@@ -964,8 +1014,9 @@ RideHalError_e VideoEncoder::RegisterCallback( VideoEncoder_InFrameCallback_t in
     return ret;
 }
 
-bool VideoEncoder::Teardown()
+int32_t VideoEncoder::Teardown()
 {
+    int32_t rc = 0;
     if ( VIDEO_ENCODER_STATE_EXECUTING ==
          m_vidcEncoderData.state )   // call from VideoEncoder::Init or Start
     {
@@ -973,14 +1024,22 @@ bool VideoEncoder::Teardown()
         device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_STOP, nullptr, 0, nullptr, 0 );
         if ( 0 != WaitForState( VIDEO_ENCODER_STATE_IDLE ) )
         {
+            rc = -1;
             RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
         }
-        RIDEHAL_DEBUG( "Releasing vidc resources!" );
-        device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_RELEASE_RESOURCES, nullptr, 0, nullptr,
-                      0 );
-        if ( 0 != WaitForState( VIDEO_ENCODER_STATE_LOADED ) )
+        else
         {
-            RIDEHAL_ERROR( "WaitForState.STATE_LOADED.fail!" );
+            RIDEHAL_DEBUG( "Stopped vidc" );
+            m_state = RIDE_HAL_COMPONENT_STATE_READY;
+
+            RIDEHAL_DEBUG( "Releasing vidc resources!" );
+            device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_RELEASE_RESOURCES, nullptr, 0,
+                          nullptr, 0 );
+            if ( 0 != WaitForState( VIDEO_ENCODER_STATE_LOADED ) )
+            {
+                rc = -1;
+                RIDEHAL_ERROR( "WaitForState.STATE_LOADED.fail!" );
+            }
         }
     }
     else if ( VIDEO_ENCODER_STATE_IDLE ==
@@ -991,28 +1050,32 @@ bool VideoEncoder::Teardown()
                       0 );
         if ( 0 != WaitForState( VIDEO_ENCODER_STATE_LOADED ) )
         {
+            rc = -1;
             RIDEHAL_ERROR( "WaitForState.STATE_LOADED.fail!" );
         }
     }
 
-    if ( 0 != FreeInputBuffer() )
+    if ( 0 == rc && VIDEO_ENCODER_STATE_LOADED == m_vidcEncoderData.state )
     {
-        RIDEHAL_ERROR( "Failed to free input buffers!" );
-    }
-    if ( 0 != FreeOutputBuffer() )
-    {
-        RIDEHAL_ERROR( "Failed to free output buffers!" );
+        if ( 0 != FreeInputBuffer() )
+        {
+            RIDEHAL_ERROR( "Failed to free input buffers!" );
+        }
+
+        if ( 0 != FreeOutputBuffer() )
+        {
+            RIDEHAL_ERROR( "Failed to free output buffers!" );
+        }
+
+        if ( m_vidcEncoderData.ioHandle )
+        {
+            device_close( m_vidcEncoderData.ioHandle );
+        }
+
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
     }
 
-    if ( nullptr != m_inputList ) free( m_inputList );
-    if ( nullptr != m_outputList ) free( m_outputList );
-
-    if ( m_vidcEncoderData.ioHandle )
-    {
-        device_close( m_vidcEncoderData.ioHandle );
-    }
-
-    return true;
+    return rc;
 }
 
 void VideoEncoder::PrintEncoderConfig()
@@ -1020,7 +1083,7 @@ void VideoEncoder::PrintEncoderConfig()
     RIDEHAL_DEBUG( "EncoderConfig: FrameWidth = %" PRIu32, m_width );
     RIDEHAL_DEBUG( "EncoderConfig: FrameHeight = %" PRIu32, m_height );
     RIDEHAL_DEBUG( "EncoderConfig: InFPS = %" PRIu32, m_frameRate );
-    RIDEHAL_DEBUG( "EncoderConfig: RateControl = 0x % x ", m_vidcEncoderData.rateControl );
+    RIDEHAL_DEBUG( "EncoderConfig: RateControl = 0x%x ", m_vidcEncoderData.rateControl );
     RIDEHAL_DEBUG( "EncoderConfig: BitRate = %" PRIu32, m_vidcEncoderData.bitrate.target_bitrate );
     if ( VIDC_CODEC_HEVC == m_vidcEncoderData.codec )
     {
@@ -1056,7 +1119,7 @@ vidc_color_format_type VideoEncoder::GetVidcFormat( RideHal_ImageFormat_e format
             ret = VIDC_COLOR_FORMAT_NV12_P010;
             break;
         default:
-            RIDEHAL_ERROR( "format %d not supported", (int) format );
+            RIDEHAL_ERROR( "format %d not supported", format );
             ret = VIDC_COLOR_FORMAT_UNUSED;
             break;
     }
@@ -1072,10 +1135,10 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
     switch ( pEvent->event_type )
     {
         case VIDC_EVT_RESP_FLUSH_INPUT_DONE:
-            m_eventCb( VIDEO_ENCODER_EVENT_FLUSH_INPUT_DONE, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_FLUSH_INPUT_DONE, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_INPUT_RECONFIG:
-            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_RESP_INPUT_DONE:
             pFrameData = &pEvent->payload.frame_data;
@@ -1084,7 +1147,7 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
             {
                 RIDEHAL_ERROR( "input frameIndex = %" PRIu64 " is invalid",
                                pFrameData->frm_clnt_data );
-                m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+                m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             }
             else
             {
@@ -1098,8 +1161,9 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
         case VIDC_EVT_RESP_OUTPUT_DONE:
             pFrameData = &pEvent->payload.frame_data;
 
-            RIDEHAL_DEBUG( "encode-done: frameIndex %u timestamp %lu size %u frameType %lu "
-                           "pFrameData %p frame_addr %p flag 0x %x ",
+            RIDEHAL_DEBUG( "encode-done: frameIndex %" PRIu64 " timestamp %" PRIu64
+                           " size %u frameType %" PRIu64 " "
+                           "pFrameData %p frame_addr %p flag 0x%x ",
                            pFrameData->frm_clnt_data, pFrameData->timestamp, pFrameData->data_len,
                            pFrameData->frame_type, pFrameData, pFrameData->frame_addr,
                            pFrameData->flags );
@@ -1111,28 +1175,30 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
                 {
                     RIDEHAL_ERROR( "output frameIndex = %" PRIu64 " is invalid",
                                    pFrameData->frm_clnt_data );
-                    m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+                    m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
                 }
                 else
                 {
                     auto outputFrame = &m_outputList[pFrameData->frm_clnt_data];
                     RIDEHAL_DEBUG( "Encoded frame is ready - calling callback!" );
-                    if ( outputFrame->sharedBuffer.buffer.pData == pFrameData->frame_addr )
+                    if ( (uint8_t *) outputFrame->sharedBuffer.data() == pFrameData->frame_addr )
                     {
                         outputFrame->appMarkData = (void *) pFrameData->mark_data;
+                        outputFrame->sharedBuffer.size = pFrameData->data_len;
                         outputFrame->frameType = (VideoEncoder_FrameType_e) pFrameData->frame_type;
                         outputFrame->timestampNs =
                                 pFrameData->timestamp * 1000;   // convert us to ns
                         outputFrame->frameFlag = pFrameData->flags;
                         m_outputDoneCb( outputFrame, m_pAppPriv );
+                        m_availableOutputQueue.push( pFrameData->frm_clnt_data );
                     }
                     else
                     {
                         RIDEHAL_ERROR( "output bufIndex = %" PRIu64
-                                       " frame_addr %p is not match with buffer pData %p",
+                                       " frame_addr %p is not match with buffer data %p",
                                        pFrameData->frm_clnt_data, pFrameData->frame_addr,
-                                       outputFrame->sharedBuffer.buffer.pData );
-                        m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+                                       (uint8_t *) outputFrame->sharedBuffer.data() );
+                        m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
                     }
                 }
             }
@@ -1144,19 +1210,19 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
 
             break;
         case VIDC_EVT_RESP_FLUSH_OUTPUT_DONE:
-            m_eventCb( VIDEO_ENCODER_EVENT_FLUSH_OUTPUT_DONE, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_FLUSH_OUTPUT_DONE, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_OUTPUT_RECONFIG:
-            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_INFO_OUTPUT_RECONFIG:
-            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_ERR_HWFATAL:
-            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_ERR_CLIENTFATAL:
-            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_RESP_START:
             m_vidcEncoderData.state = VIDEO_ENCODER_STATE_EXECUTING;
@@ -1177,7 +1243,7 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
             m_vidcEncoderData.state = VIDEO_ENCODER_STATE_LOADED;
             break;
         case VIDC_EVT_RELEASE_BUFFER_REFERENCE:
-            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, &pEvent->payload, m_pAppPriv );
+            m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         default:
             break;
@@ -1260,30 +1326,24 @@ int32_t VideoEncoder::WaitForState( VideoEncoder_State_e expectedState )
     return rc;
 }
 
-int32_t VideoEncoder::AllocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_info_type **pBufInfo,
+int32_t VideoEncoder::AllocateBuffer( ioctl_session_t *ioHandle, RideHal_SharedBuffer_t *bufferList,
                                       vidc_buffer_type bufferType, int32_t bufCntMin,
                                       int32_t bufSize )
 {
     int32_t rc = 0;
     int32_t i = 0;
     int32_t nMsgSize = sizeof( vidc_buffer_info_type );
-    *pBufInfo = (vidc_buffer_info_type *) malloc( sizeof( vidc_buffer_info_type ) * bufCntMin );
-    if ( nullptr == *pBufInfo )
-    {
-        RIDEHAL_ERROR( "AllocateBuffer failed!" );
-        rc = -1;
-    }
-    else
-    {
-        vidc_buffer_info_type *pBuf = *pBufInfo;
-        vidc_buffer_info_type buf_info = { VIDC_BUFFER_UNUSED, 0 };
-        RIDEHAL_DEBUG( "*pBufInfo=%p bufCntMin=%" PRId32, *pBufInfo, bufCntMin );
-        for ( i = 0; i < bufCntMin; i++ )
-        {
-            memset( &pBuf[i], 0, sizeof( vidc_buffer_info_type ) );
 
-            RideHal_SharedBuffer_t sharedBuffer;
-            if ( VIDC_BUFFER_INPUT == bufferType )
+    RIDEHAL_DEBUG( "bufSize=%" PRId32 " bufCntMin=%" PRId32, bufSize, bufCntMin );
+    for ( i = 0; i < bufCntMin; i++ )
+    {
+        vidc_buffer_info_type buf_info = { VIDC_BUFFER_UNUSED, 0 };
+        memset( &buf_info, 0, sizeof( vidc_buffer_info_type ) );
+
+        RideHal_SharedBuffer_t sharedBuffer;
+        if ( VIDC_BUFFER_INPUT == bufferType )
+        {
+            if ( nullptr == bufferList )
             {
                 auto ret = sharedBuffer.Allocate( m_width, m_height, m_inFormat );
                 if ( RIDE_HAL_ERROR_NONE != ret )
@@ -1294,11 +1354,21 @@ int32_t VideoEncoder::AllocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_inf
                 else
                 {
                     m_inputList[i].sharedBuffer = sharedBuffer;
-                    m_inputList[i].frameIndex = i;
-                    RIDEHAL_DEBUG( "m_inputList[%" PRId32 "] %p", i, m_inputList[i] );
+                    RIDEHAL_DEBUG( "m_inputList[%" PRId32 "].sharedBuffer 0x%x", i,
+                                   &m_inputList[i].sharedBuffer );
                 }
             }
-            else if ( VIDC_BUFFER_OUTPUT == bufferType )
+            else
+            {
+                sharedBuffer = bufferList[i];
+                m_inputList[i].sharedBuffer = bufferList[i];
+                RIDEHAL_DEBUG( "m_inputList[%" PRId32 "].sharedBuffer 0x%x", i,
+                               &m_inputList[i].sharedBuffer );
+            }
+        }
+        else if ( VIDC_BUFFER_OUTPUT == bufferType )
+        {
+            if ( nullptr == bufferList )
             {
                 RideHal_ImageProps_t imgProps;
                 imgProps.batchSize = 1;
@@ -1315,48 +1385,53 @@ int32_t VideoEncoder::AllocateBuffer( ioctl_session_t *ioHandle, vidc_buffer_inf
                 else
                 {
                     m_outputList[i].sharedBuffer = sharedBuffer;
-                    m_outputList[i].frameIndex = i;
-                    RIDEHAL_DEBUG( "m_outputList[%" PRId32 "] %p", i, m_outputList[i] );
+                    RIDEHAL_DEBUG( "m_outputList[%" PRId32 "].sharedBuffer 0x%x", i,
+                                   &m_outputList[i].sharedBuffer );
                 }
             }
-
-            if ( 0 == rc )
+            else
             {
-                pBuf[i].buf_addr = (uint8_t *) sharedBuffer.data();
+                sharedBuffer = bufferList[i];
+                m_outputList[i].sharedBuffer = bufferList[i];
+                RIDEHAL_DEBUG( "m_outputList[%" PRId32 "].sharedBuffer 0x%x", i,
+                               &m_outputList[i].sharedBuffer );
+            }
+        }
+
+        if ( 0 == rc )
+        {
+            buf_info.buf_addr = (uint8_t *) sharedBuffer.data();
 #if defined( __QNXNTO__ )
-                pBuf[i].buf_handle = (pmem_handle_t) sharedBuffer.buffer.dmaHandle;
+            buf_info.buf_handle = (pmem_handle_t) sharedBuffer.buffer.dmaHandle;
 #else
-                pBuf[i].buf_handle =
-                        (int) reinterpret_cast<uint64_t>( sharedBuffer.buffer.dmaHandle );
+            buf_info.buf_handle = (int) reinterpret_cast<uint64_t>( sharedBuffer.buffer.dmaHandle );
 #endif
-                if ( nullptr == pBuf[i].buf_addr )
+            if ( nullptr == buf_info.buf_addr )
+            {
+                RIDEHAL_ERROR( "AllocateBuffer (allocPmem) failed for index=%" PRId32, i );
+            }
+            else
+            {
+                buf_info.buf_type = bufferType;
+                buf_info.contiguous = true;
+                buf_info.buf_size = bufSize;
+                // register it before lookup in future for local allocation
+                RIDEHAL_DEBUG( "AllocateBuffer [%" PRId32 "]: buf_addr = 0x%x, buf_handle = 0x%x, "
+                               "buf_size = %d",
+                               i, buf_info.buf_addr, buf_info.buf_handle, bufSize );
+                rc = device_ioctl( ioHandle, VIDC_IOCTL_SET_BUFFER, (uint8_t *) ( &buf_info ),
+                                   nMsgSize, nullptr, 0 );
+                if ( 0 != rc )
                 {
-                    RIDEHAL_ERROR( "AllocateBuffer (allocPmem) failed for index=%" PRId32, i );
-                }
-                else
-                {
-                    pBuf[i].buf_type = bufferType;
-                    pBuf[i].contiguous = true;
-                    pBuf[i].buf_size = bufSize;
-                    memcpy( &buf_info, &pBuf[i], sizeof( vidc_buffer_info_type ) );
-                    // register it before lookup in future for local allocation
-                    RIDEHAL_DEBUG( "AllocateBuffer [%d]: buf_addr = 0x%x, buf_handle = 0x%x, "
-                                   "buf_size = %d",
-                                   i, pBuf[i].buf_addr, pBuf[i].buf_handle, bufSize );
-                    rc = device_ioctl( ioHandle, VIDC_IOCTL_SET_BUFFER, (uint8_t *) ( &buf_info ),
-                                       nMsgSize, nullptr, 0 );
-                    if ( 0 != rc )
-                    {
-                        RIDEHAL_ERROR(
-                                " AllocateBuffer VIDC_IOCTL_SET_BUFFER failed. Index=%" PRId32
-                                " rc=0x%x",
-                                i, rc );
-                        break;
-                    }
+                    RIDEHAL_ERROR( " AllocateBuffer VIDC_IOCTL_SET_BUFFER failed. Index=%" PRId32
+                                   " rc=0x%x",
+                                   i, rc );
+                    break;
                 }
             }
         }
     }
+
     return rc;
 }
 
@@ -1519,14 +1594,15 @@ int32_t VideoEncoder::FreeOutputBuffer()
     int32_t rc = 0;
     vidc_buffer_info_type outbuf = { VIDC_BUFFER_UNUSED, 0 };
 
-    if ( nullptr != m_vidcEncoderData.vidcOutputBufferInfo )
+    if ( nullptr != m_outputList && false == m_bOutputDynamicMode )
     {
-        for ( i = 0; i < m_numOutputBufferReq; i++ )
+        for ( uint32_t i = 0; i < m_numOutputBufferReq; i++ )
         {
-            memcpy( &outbuf, &m_vidcEncoderData.vidcOutputBufferInfo[i],
-                    sizeof( vidc_buffer_info_type ) );
-
-            outbuf.buf_addr = m_vidcEncoderData.vidcOutputBufferInfo[i].buf_addr;
+            outbuf.buf_addr = (uint8_t *) m_outputList[i].sharedBuffer.data();
+            outbuf.buf_handle = (pmem_handle_t) m_outputList[i].sharedBuffer.buffer.dmaHandle;
+            outbuf.buf_type = VIDC_BUFFER_OUTPUT;
+            outbuf.contiguous = true;
+            outbuf.buf_size = m_outputList[i].sharedBuffer.size;
             if ( VIDC_ERR_NONE != device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_FREE_BUFFER,
                                                 (uint8_t *) ( &outbuf ),
                                                 sizeof( vidc_buffer_info_type ), nullptr, 0 ) )
@@ -1537,10 +1613,9 @@ int32_t VideoEncoder::FreeOutputBuffer()
             }
         }
 
-        RIDEHAL_DEBUG( "FreeOutputBufferInfo" );
-        vidc_buffer_info_type *pBufInfo = m_vidcEncoderData.vidcOutputBufferInfo;
-        free( pBufInfo );
-        m_vidcEncoderData.vidcOutputBufferInfo = nullptr;
+        RIDEHAL_DEBUG( "Free m_outputList" );
+        free( m_outputList );
+        m_outputList = nullptr;
     }
 
     return rc;
@@ -1551,13 +1626,15 @@ int32_t VideoEncoder::FreeInputBuffer()
     int32_t rc = 0;
     vidc_buffer_info_type inbuf = { VIDC_BUFFER_UNUSED, 0 };
 
-    if ( nullptr != m_vidcEncoderData.vidcInputBufferInfo )
+    if ( nullptr != m_inputList && false == m_bInputDynamicMode )
     {
         for ( uint32_t i = 0; i < m_numInputBufferReq; i++ )
         {
-            memcpy( &inbuf, &m_vidcEncoderData.vidcInputBufferInfo[i],
-                    sizeof( vidc_buffer_info_type ) );
-            inbuf.buf_addr = m_vidcEncoderData.vidcInputBufferInfo[i].buf_addr;
+            inbuf.buf_addr = (uint8_t *) m_inputList[i].sharedBuffer.data();
+            inbuf.buf_handle = (pmem_handle_t) m_inputList[i].sharedBuffer.buffer.dmaHandle;
+            inbuf.buf_type = VIDC_BUFFER_INPUT;
+            inbuf.contiguous = true;
+            inbuf.buf_size = m_inputList[i].sharedBuffer.size;
             if ( VIDC_ERR_NONE != device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_FREE_BUFFER,
                                                 (uint8_t *) ( &inbuf ),
                                                 sizeof( vidc_buffer_info_type ), nullptr, 0 ) )
@@ -1568,10 +1645,9 @@ int32_t VideoEncoder::FreeInputBuffer()
             }
         }
 
-        RIDEHAL_DEBUG( "FreeInputBufferInfo" );
-        vidc_buffer_info_type *pBufInfo = m_vidcEncoderData.vidcInputBufferInfo;
-        free( pBufInfo );
-        m_vidcEncoderData.vidcInputBufferInfo = nullptr;
+        RIDEHAL_DEBUG( "Free m_inputList" );
+        free( m_inputList );
+        m_inputList = nullptr;
     }
 
     return rc;

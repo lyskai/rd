@@ -20,6 +20,8 @@ static std::condition_variable s_OutCondVar;
 static VideoEncoder_InputFrame_t s_sharedInputFrame;
 static VideoEncoder_OutputFrame_t s_sharedOutputFrame;
 
+static uint64_t g_timestamp = 0;
+
 void OnInputDoneCb( const VideoEncoder_InputFrame_t *pInputFrame, void *pPrivData )
 {
     s_sharedInputFrame = *pInputFrame;
@@ -34,7 +36,7 @@ void OnOutputDoneCb( const VideoEncoder_OutputFrame_t *pOutputFrame, void *pPriv
     s_OutCondVar.notify_one();
 }
 
-void EventCb( const VideoEncoder_EventType_e eventId, const void *pPayload, void *pPrivData )
+void EventCb( const VideoEncoder_EventType_e eventId, const void *pEvent, void *pPrivData )
 {
     printf( "EventCb return \n" );
     switch ( eventId )
@@ -67,6 +69,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
     config.bInputDynamicMode = true;
     config.bOutputDynamicMode = true;
+    config.inputBufferList = nullptr;
+    config.outputBufferList = nullptr;
 
     RideHalError_e ret;
     RideHal_SharedBuffer_t *sharedBuffer = nullptr;
@@ -110,7 +114,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
         ret = sharedBuffer->Allocate( &imgProps );
         // ret = sharedBuffer->Allocate( 92160 );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-        outputFrame[i].frameIndex = i;
         ret = veTest.SubmitOutputFrame( &outputFrame[i] );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
@@ -157,6 +160,9 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
 
 TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
 {
+    RideHalError_e ret;
+    uint32_t i = 0;
+
     VideoEncoder veTest;
     VideoEncoder_Config_t config;
     config.width = 176;
@@ -171,8 +177,23 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
+    config.inputBufferList = nullptr;
 
-    RideHalError_e ret;
+    RideHal_SharedBuffer_t *outBufferList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
+    for ( i = 0; i < config.numOutputBufferReq; i++ )
+    {
+        RideHal_ImageProps_t imgProps;
+        imgProps.batchSize = 1;
+        imgProps.width = config.width;
+        imgProps.height = config.height;
+        imgProps.compressedSize = 92160;
+        imgProps.format = config.outFormat;
+        ret = outBufferList[i].Allocate( &imgProps );
+        // ret = sharedBuffer->Allocate( 92160 );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
+    config.outputBufferList = outBufferList;
+
     RideHal_SharedBuffer_t *sharedBuffer = nullptr;
 
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
@@ -188,21 +209,29 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
-    VideoEncoder_InputFrame_t *inputFrame = nullptr;
-    ret = veTest.GetInputBufferList( &inputFrame );
+    RideHal_SharedBuffer_t *inputList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
+
+    ret = veTest.GetInputBuffers( inputList, config.numInputBufferReq );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    VideoEncoder_OutputFrame_t *outputFrame = nullptr;
-    ret = veTest.GetOutputBufferList( &outputFrame );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
-    if ( nullptr != inputFrame )
+    for ( i = 0; i < config.numInputBufferReq; i++ )
     {
-        inputFrame[0].timestampNs = 0;
-        inputFrame[0].appMarkData = nullptr;
-        inputFrame[0].onTheFlyCmd = nullptr;
-        ret = veTest.SubmitInputFrame( &inputFrame[0] );
+        VideoEncoder_InputFrame_t inputFrame;
+        inputFrame.sharedBuffer = inputList[i];
+        inputFrame.timestampNs = g_timestamp;
+        inputFrame.appMarkData = nullptr;
+        ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        g_timestamp += 33333;
+    }
+
+    RideHal_SharedBuffer_t *outputList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
+    ret = veTest.GetOutputBuffers( outputList, config.numOutputBufferReq );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    for ( i = 0; i < config.numOutputBufferReq; i++ )
+    {
+        printf( "outputList[%d].data(): 0x%x\n", i, outputList[i].data() );
     }
 
     // wait inputdone siganl
