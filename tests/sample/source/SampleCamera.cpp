@@ -23,7 +23,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         uint32_t streamId = ( pSharedBuffer->pubHandle >> 32 ) & 0xFFFFFFFFul;
         uint32_t frameIndex = pSharedBuffer->pubHandle & 0xFFFFFFFFul;
-        m_camera.ReleaseFrame( streamId, frameIndex );
+        m_camera.ReleaseFrame( frameIndex );
         delete pSharedBuffer;
     } );
 
@@ -100,7 +100,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_camera.Init( (char *) name.c_str(), m_camConfig );
+        ret = m_camera.Init( (char *) name.c_str(), &m_camConfig );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )

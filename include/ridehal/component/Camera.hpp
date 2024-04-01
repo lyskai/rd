@@ -20,6 +20,7 @@ typedef struct
     uint64_t timestampQGPTP; /* Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
     uint32_t streamId;
     uint32_t frameIndex;
+    uint32_t flags;
 } CameraFrame_t;
 
 /// @brief callback for camera frame done
@@ -34,6 +35,7 @@ typedef struct Camera_Config
 {
     bool isAllocator;
     bool requestMode;
+    uint32_t streamId;
     uint32_t inputId;
     uint32_t width;
     uint32_t height;
@@ -57,7 +59,7 @@ public:
 
     /// @brief init the Camera object
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Init( char *pName, Camera_Config_t config,
+    RideHalError_e Init( char *pName, const Camera_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the Camera object
@@ -82,10 +84,9 @@ public:
     RideHalError_e Resume();
 
     /// @brief release a camera frame
-    /// @param streamId camera stream index
     /// @param frameIndex index of the frame
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e ReleaseFrame( uint32_t streamId, uint32_t frameIndex );
+    RideHalError_e ReleaseFrame( uint32_t frameIndex );
 
     // TODO
     /// @brief resuest a new camera frame
@@ -115,26 +116,29 @@ private:
 
     RideHalError_e FreeBuffer();
 
-    CameraFrame_t *GetFrame();
+    CameraFrame_t *GetFrame(const QCarCamFrameInfo_t *pFrameInfo);
 
     static QCarCamRet_e QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t eventId,
                                         const QCarCamEventPayload_t *pPayload, void *pPrivateData );
 
     bool m_bIsAllocator;
+    bool m_bRequestMode;
+    uint32_t m_nStreamId;
     uint32_t m_nBufCnt;
     uint32_t m_nWidth;
     uint32_t m_nHeight;
     uint32_t m_nInputId;
     uint32_t m_nCurrentBufIdx;
+    uint32_t m_nRequestId;
     RideHal_ImageFormat_e m_colorFormat;
     void *m_pAppPriv = nullptr;
+    pthread_mutex_t m_hInputMutex;
     RideHal_CamEventCallback_t m_EventCallback = nullptr;
     RideHal_CamFrameCallback_t m_FrameCallback = nullptr;
     CameraFrame_t *m_pCameraFrames = nullptr;
     QCarCamBuffer_t *m_pQcarcamBuffer = nullptr;
     QCarCamBufferList_t m_qcarcamBuffers;
     QCarCamHndl_t m_QcarCamHndl;
-    Camera_Config_t m_Config = { 0 };
 };   // class Camera
 
 }   // namespace component
