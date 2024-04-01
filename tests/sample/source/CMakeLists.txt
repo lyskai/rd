@@ -10,7 +10,9 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleIF.cpp
     SampleCamera.cpp
     SampleDataReader.cpp
+    SampleRecorder.cpp
     SampleRemap.cpp
+    SampleVideoEncoder.cpp
     SharedBufferPool.cpp
 )
 
