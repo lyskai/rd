@@ -1,22 +1,17 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
-
+#ifndef QRIDE_STACK_TINYVIZ_HPP
+#define QRIDE_STACK_TINYVIZ_HPP
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-
-#include <hogl/area.hpp>
 
 #include "CamInfo.hpp"
 #include "HelpWindow.hpp"
 #include "TinyVizIF.hpp"
 
-#ifndef QRIDE_STACK_TINYVIZ_HPP
-#define QRIDE_STACK_TINYVIZ_HPP
+#include "ridehal/common/Logger.hpp"
+
+using namespace ridehal::common;
 
 namespace QRide
 {
@@ -31,7 +26,8 @@ public:
     TinyViz &operator=( const TinyViz & ) = delete;
     ~TinyViz() override = default;
 
-    bool init( PixelFormat ) override;
+    bool init( PixelFormat format = PixelFormat::YUY2, uint32_t winW = 1920,
+               uint32_t winH = 1024 ) override;
     bool start() override;
     bool stop() override;
 
@@ -44,13 +40,10 @@ public:
     bool addData( const std::string camName, DataTypes::RoadObjects & ) override;
     bool addData( const std::string camName, DataTypes::TrafficSign & ) override;
 #endif
-    void registerExitCB( ExitCBFunc f ) override { m_ExitCBFunc = f; }
 
 private:
     bool isCamSelected( size_t id );
     void rendererThread();
-    void eventThread();
-    bool pollSDLEvent();
     void setAllCamActive();
     void printRendererInfo( SDL_Renderer *ren );
     bool renderBlack( SDL_Renderer *ren, SDL_Texture *tex2M, size_t idx );
@@ -73,8 +66,8 @@ private:
     NumTextCollect m_NumTextures;
 
     SDL_Window *m_Win = nullptr;
-    // int m_WindowW=1200, m_WindowH=900;
-    int m_WindowW = 1920, m_WindowH = 1080;
+
+    uint32_t m_WindowW = 1920, m_WindowH = 1080;
     int m_WindowCol = 1;
     int m_WindowRow = 1;
 
@@ -86,15 +79,11 @@ private:
     bool m_Stop = false;
     bool m_ShowHelp = false;
     bool m_PauseRenderer = false;
-    bool m_EnableCamFPSCap = false;
-
-    size_t m_CamPitch = 1920 * 2;
+    bool m_EnableCamFPSCap = true;
 
     std::unique_ptr<std::thread> m_RendererThread;
-    std::unique_ptr<std::thread> m_EventThread;
 
-    ExitCBFunc m_ExitCBFunc;
-    hogl::area *m_HoglArea = nullptr;
+    RIDEHAL_DECLARE_LOGGER();
 };
 
 }   // namespace Stack

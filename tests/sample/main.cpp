@@ -47,37 +47,8 @@ int Usage( const char *program, int error )
     return error;
 }
 
-#ifdef WITH_TINYVIZ
-#include <hogl/engine.hpp>
-#include <hogl/format-basic.hpp>
-#include <hogl/format-raw.hpp>
-#include <hogl/mask.hpp>
-#include <hogl/output-file.hpp>
-#include <hogl/output-null.hpp>
-#include <hogl/output-pipe.hpp>
-#include <hogl/output-stderr.hpp>
-#include <hogl/output-stdout.hpp>
-#include <hogl/platform.hpp>
-#include <hogl/timesource.hpp>
-#include <hogl/tls.hpp>
-void init_hogl()
-{
-    static hogl::format *format;
-    static hogl::output *output;
-    format = new hogl::format_basic( "fast1" );
-    output = new hogl::output_stdout( *format );
-    hogl::engine::options opts = hogl::engine::default_options;
-    opts.default_mask = hogl::mask( ".*:.*(INFO|WARN|ERROR|FATAL|DROPMARK|TSOFULLMARK)", 0 );
-    hogl::activate( *output, opts );
-}
-#endif
-
-
 int main( int argc, char *argv[] )
 {
-#ifdef WITH_TINYVIZ
-    init_hogl();
-#endif
     RideHalError_e ret;
     std::vector<SampleIF *> samples;
 

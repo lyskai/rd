@@ -1,9 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-
 #include "ridehal/sample/SampleCamera.hpp"
-
+#include <time.h>
 
 namespace ridehal
 {
@@ -12,7 +11,6 @@ namespace sample
 
 SampleCamera::SampleCamera() {}
 SampleCamera ::~SampleCamera() {}
-
 
 void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 {
@@ -32,6 +30,12 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
     frame.frameId = m_frameId++;
     frame.buffer = buffer;
     frame.timestamp = pFrame->timestamp;
+    if ( 0 == frame.timestamp )
+    {
+        struct timespec ts;
+        clock_gettime( CLOCK_MONOTONIC, &ts );
+        frame.timestamp = ts.tv_sec * 1000000000 + ts.tv_nsec;
+    }
     frames.frames.push_back( frame );
     m_pub.Publish( frames );
 }

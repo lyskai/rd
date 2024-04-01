@@ -1,13 +1,18 @@
 //  Copyright 2020 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
+#ifndef QRIDE_STACK_TINYVIZ_IF_HPP
+#define QRIDE_STACK_TINYVIZ_IF_HPP
 
-#include <hogl/area.hpp>
+#include <list>
+#include <map>
+#include <mutex>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "ridehal/sample/DataTypes.hpp"
 
-#ifndef QRIDE_STACK_TINYVIZ_IF_HPP
-#define QRIDE_STACK_TINYVIZ_IF_HPP
+using namespace ridehal::sample;
 
 namespace QRide
 {
@@ -27,10 +32,12 @@ public:
         YUY2,
         UYVY,
         NV12,
-        YV12
+        YV12,
+        RGB
     };
 
-    virtual bool init( PixelFormat format = PixelFormat::YUY2 ) = 0;
+    virtual bool init( PixelFormat format = PixelFormat::YUY2, uint32_t winW = 1920,
+                       uint32_t winH = 1024 ) = 0;
     virtual bool start() = 0;
     virtual bool stop() = 0;
 
@@ -43,13 +50,7 @@ public:
     virtual bool addData( const std::string camName, DataTypes::RoadObjects & ) = 0;
     virtual bool addData( const std::string camName, DataTypes::TrafficSign & ) = 0;
 #endif
-
-    using ExitCBFunc = std::function<void()>;
-    virtual void registerExitCB( ExitCBFunc ) = 0;
 };
-
-std::unique_ptr<TinyVizIF> CreateTinyVizInstance();
-
 }   // namespace Stack
 }   // namespace QRide
 

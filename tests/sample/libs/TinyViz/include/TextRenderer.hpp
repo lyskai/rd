@@ -11,7 +11,6 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "Macros.hpp"
-#include <hogl/area.hpp>
 
 namespace QRide
 {
@@ -39,7 +38,6 @@ private:
     int m_Height = 0;
     SDL_Color m_Color = COLOR_WHITE;
     std::string m_Text;
-    hogl::area *m_HoglArea = nullptr;
 };
 
 class NumTextCollect
@@ -48,7 +46,7 @@ public:
     NumTextCollect() = default;
     bool init( uint32_t range, SDL_Renderer &ren, TTF_Font &font );
     bool release();
-    TextInfo *getTextInfo( uint32_t idx, hogl::area *area );
+    TextInfo *getTextInfo( uint32_t idx );
 
 private:
     std::vector<TextInfo> m_NumTextInfos;

@@ -27,11 +27,13 @@ target_include_directories(TinyViz PUBLIC
 
 target_link_libraries(TinyViz 
     ${SDL2_LIBRARIES}
-    hogl
+    RideHalCommon
 )
 
 target_include_directories(TinyViz PUBLIC ${HEADERS_DIR})
 
 set_property( TARGET TinyViz PROPERTY LINKER_LANGUAGE CXX )
 set_property( TARGET TinyViz PROPERTY POSITION_INDEPENDENT_CODE ON )
+
+install(TARGETS TinyViz DESTINATION lib)
 

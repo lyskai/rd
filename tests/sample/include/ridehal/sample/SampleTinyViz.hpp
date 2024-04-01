@@ -3,7 +3,6 @@
 
 #ifndef _RIDE_HAL_SAMPLE_TINYVIZ_HPP_
 #define _RIDE_HAL_SAMPLE_TINYVIZ_HPP_
-
 #include "TinyViz.hpp"
 #include "ridehal/sample/SampleIF.hpp"
 
@@ -48,6 +47,10 @@ private:
 private:
     uint32_t m_width;
     uint32_t m_height;
+    TinyVizIF::PixelFormat m_format;
+
+    uint32_t m_winW;
+    uint32_t m_winH;
 
     std::string m_topicName;
 

@@ -24,7 +24,6 @@ if( NOT TARGET TinyViz )
   message(INFO "build sample without TinyViz")
 else()
   list( APPEND RIDEHAL_SAMPLE_SOURCES SampleTinyViz.cpp )
-  list( APPEND RIDEHAL_SAMPLE_DEFINITIONS WITH_TINYVIZ )
   list( APPEND TARGET_LIBRARIES TinyViz )
 endif()
 

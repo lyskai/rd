@@ -1,20 +1,17 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#include <iostream>
-//#include <algorithm> // for_each
-//#include <fstream>
 #include <cmath>
+#include <iostream>
 #include <unistd.h>
 
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_thread.h>
 
-#include <hogl/post.hpp>
-
 #include "CamInfo.hpp"
 #include "HelpWindow.hpp"
 #include "TinyViz.hpp"
+#include <array>
 #include <chrono>
 #include <unistd.h>
 
@@ -32,9 +29,12 @@ std::unique_ptr<TinyVizIF> CreateTinyVizInstance()
     return std::make_unique<TinyViz>();
 }
 
-bool TinyViz::init( PixelFormat pixelFormat )
+bool TinyViz::init( PixelFormat pixelFormat, uint32_t winW, uint32_t winH )
 {
-    m_HoglArea = hogl::add_area( "TINY_VIZ" );
+    RIDEHAL_LOGGER_INIT( "TINYVIZ", LOGGER_LEVEL_INFO );
+
+    m_WindowW = winW;
+    m_WindowH = winH;
 
     switch ( pixelFormat )
     {
@@ -50,15 +50,17 @@ bool TinyViz::init( PixelFormat pixelFormat )
         case PixelFormat::YV12:
             m_PixelFormat = SDL_PIXELFORMAT_YV12;
             break;
+        case PixelFormat::RGB:
+            m_PixelFormat = SDL_PIXELFORMAT_RGB888;
+            break;
         default:
-            hogl::post( m_HoglArea, m_HoglArea->ERROR, "Found unsupported pixel format %s",
-                        static_cast<int>( pixelFormat ) );
+            RIDEHAL_ERROR( "Found unsupported pixel format %d", static_cast<int>( pixelFormat ) );
             return false;
     }
 
     if ( SDL_Init( SDL_INIT_VIDEO ) != 0 )
     {
-        hogl::post( m_HoglArea, m_HoglArea->ERROR, "SDL_Init Error: %s", SDL_GetError() );
+        RIDEHAL_ERROR( "SDL_Init Error: %s", SDL_GetError() );
         return false;
     }
 
@@ -73,11 +75,11 @@ bool TinyViz::init( PixelFormat pixelFormat )
 
 bool TinyViz::start()
 {
-    m_Win = SDL_CreateWindow( "QRide TinyViz", 100, 100, m_WindowW, m_WindowH,
+    m_Win = SDL_CreateWindow( "QRide TinyViz", 0, 0, m_WindowW, m_WindowH,
                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED );
     if ( !m_Win )
     {
-        hogl::post( m_HoglArea, m_HoglArea->ERROR, "SDL_CreateWindow Error: %s", SDL_GetError() );
+        RIDEHAL_ERROR( "SDL_CreateWindow Error: %s", SDL_GetError() );
         return false;
     }
 
@@ -85,15 +87,12 @@ bool TinyViz::start()
 
     // workaround: to wait for renderer initialization ( segfault otherwise )
     sleep( 2 );
-
-    m_EventThread = std::make_unique<std::thread>( &TinyViz::eventThread, this );
     return true;
 }
 
 bool TinyViz::stop()
 {
     m_Stop = true;
-    if ( m_EventThread ) m_EventThread->join();
     if ( m_RendererThread ) m_RendererThread->join();
 
     m_CamInfoMap.clear();
@@ -102,59 +101,43 @@ bool TinyViz::stop()
     TTF_Quit();
     SDL_Quit();
 
-    hogl::post( m_HoglArea, m_HoglArea->INFO, "TinyViz stopped" );
+    RIDEHAL_INFO( "TinyViz stopped" );
+    RIDEHAL_LOGGER_DEINIT();
 
     return true;
 }
 
 bool TinyViz::addCamera( const std::string camName, uint32_t width, uint32_t height )
 {
-    uint32_t pitch = 0;
-
-    switch ( m_PixelFormat )
-    {
-        case SDL_PIXELFORMAT_YUY2:
-        case SDL_PIXELFORMAT_UYVY:
-            pitch = width * 2;
-            break;
-
-        case SDL_PIXELFORMAT_NV12:
-        case SDL_PIXELFORMAT_YV12:
-            pitch = width;   // Y pitch, UV pitch is 1/2
-            break;
-    }
-
-    m_CamInfoMap.emplace( camName, CamInfo( camName, width, height, pitch ) );
+    m_CamInfoMap.emplace( camName, CamInfo( camName, width, height ) );
     m_CamNameList.push_back( camName );
 
     // Give it an initial black background frame
     auto &camInfo = m_CamInfoMap[camName];
 
-    hogl::post( m_HoglArea, m_HoglArea->INFO, "Added camera %s. resolution %ux%u", camName, width,
-                height );
+    RIDEHAL_INFO( "Added camera %s. resolution %ux%u", camName.c_str(), width, height );
 
     return true;
 }
 
 bool TinyViz::addData( const std::string camName, CamFrame_t &data )
 {
-    hogl::post( m_HoglArea, m_HoglArea->DEBUG,
-                "Adding camFrame for %s. pubHandle %" PRIu64 ", timestamp %" PRIu64, camName,
-                data.buffer->pubHandle, data.timestamp );
+    RIDEHAL_DEBUG( "Adding camFrame for %s. pubHandle %" PRIu64 ", timestamp %" PRIu64, camName,
+                   data.buffer->pubHandle, data.timestamp );
 
     auto &camInfo = m_CamInfoMap[camName];
     std::lock_guard<std::mutex> camInfoGuard( *camInfo.mutex );
     updateFPS( camName, camInfo.camPTSs, data.timestamp );
 
-    camInfo.CamFrame = std::move( data );
+    camInfo.camFrame = std::move( data );
     camInfo.setActive();
     return true;
 }
 #if 0
 bool TinyViz::addData( const std::string camName, DataTypes::LaneBoundary &data )
 {
-    hogl::post( m_HoglArea, m_HoglArea->DEBUG, "Adding lane boundary for %s. timestamp %" PRIu64,
-                camName, data.timestamp );
+    RIDEHAL_DEBUG( "Adding lane boundary for %s. timestamp %" PRIu64,
+                camName.c_str(), data.timestamp );
 
     auto &camInfo = m_CamInfoMap[camName];
     std::lock_guard<std::mutex> guard( *camInfo.mutex );
@@ -179,8 +162,8 @@ bool TinyViz::addData( const std::string camName, DataTypes::RoadSurface & )
 
 bool TinyViz::addData( const std::string camName, DataTypes::RoadObjects &data )
 {
-    hogl::post( m_HoglArea, m_HoglArea->DEBUG, "Adding road obj for %s. timestamp %" PRIu64,
-                camName, data.timestamp );
+    RIDEHAL_DEBUG( "Adding road obj for %s. timestamp %" PRIu64,
+                camName.c_str(), data.timestamp );
 
     auto &camInfo = m_CamInfoMap[camName];
     std::lock_guard<std::mutex> guard( *camInfo.mutex );
@@ -193,8 +176,8 @@ bool TinyViz::addData( const std::string camName, DataTypes::RoadObjects &data )
 
 bool TinyViz::addData( const std::string camName, DataTypes::TrafficSign &data )
 {
-    hogl::post( m_HoglArea, m_HoglArea->DEBUG, "Adding traffic sign for %s. timestamp %" PRIu64,
-                camName, data.timestamp );
+    RIDEHAL_DEBUG( "Adding traffic sign for %s. timestamp %" PRIu64,
+                camName.c_str(), data.timestamp );
 
     auto &camInfo = m_CamInfoMap[camName];
     std::lock_guard<std::mutex> guard( *camInfo.mutex );
@@ -225,7 +208,7 @@ void TinyViz::rendererThread()
             SDL_CreateRenderer( m_Win, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
     if ( !ren )
     {
-        hogl::post( m_HoglArea, m_HoglArea->ERROR, "SDL_CreateRenderer Error %s", SDL_GetError() );
+        RIDEHAL_ERROR( "SDL_CreateRenderer Error %s", SDL_GetError() );
         return;
     }
 
@@ -239,8 +222,7 @@ void TinyViz::rendererThread()
             SDL_CreateTexture( ren, m_PixelFormat, SDL_TEXTUREACCESS_TARGET, TexWidth, TexHeight );
     if ( !tex2M )
     {
-        hogl::post( m_HoglArea, m_HoglArea->ERROR, "SDL_CreateTextureFromSurface Error: %s",
-                    SDL_GetError() );
+        RIDEHAL_ERROR( "SDL_CreateTextureFromSurface Error: %s", SDL_GetError() );
         return;
     }
 
@@ -306,7 +288,7 @@ void TinyViz::rendererThread()
         float cost = (float) std::chrono::duration_cast<std::chrono::microseconds>( end - start )
                              .count() /
                      1000.0;
-        hogl::post( m_HoglArea, m_HoglArea->DEBUG, "render cost %.2f ms", cost );
+        RIDEHAL_DEBUG( "render cost %.2f ms", cost );
         m_LastRenderFPS = m_LastRenderFPS * 7 / 8 + 1000 / ( cost + 33 ) / 8;
         // TODO: mutex unlock
 
@@ -325,161 +307,7 @@ void TinyViz::rendererThread()
     SDL_DestroyTexture( tex2M );
     SDL_DestroyRenderer( ren );
 
-    hogl::post( m_HoglArea, m_HoglArea->DEBUG, "TinyViz thread exited" );
-}
-
-void TinyViz::eventThread()
-{
-    while ( !m_Stop && pollSDLEvent() )
-    {
-        usleep( 10 );
-    }
-
-    m_Stop = true;
-}
-
-bool TinyViz::pollSDLEvent()
-{
-    SDL_Event event;
-#if 0
-    if ( 0 == access( "/tmp/M", F_OK ) )
-    {
-        event.type = SDL_KEYUP;
-        event.key.keysym.sym = SDLK_m;
-        if ( 0 == unlink( "/tmp/M" ) )
-        {
-            hogl::post( m_HoglArea, m_HoglArea->ERROR, "failed to remove M" );
-        }
-    }
-    else if ( 0 == access( "/tmp/I", F_OK ) )
-    {
-        event.type = SDL_KEYUP;
-        event.key.keysym.sym = SDLK_i;
-        if ( 0 == unlink( "/tmp/I" ) )
-        {
-            hogl::post( m_HoglArea, m_HoglArea->ERROR, "failed to remove I" );
-        }
-    }
-    else if ( 0 == access( "/tmp/TAB", F_OK ) )
-    {
-        event.type = SDL_KEYUP;
-        event.key.keysym.sym = SDLK_TAB;
-        if ( 0 == unlink( "/tmp/TAB" ) )
-        {
-            hogl::post( m_HoglArea, m_HoglArea->ERROR, "failed to remove TAB" );
-        }
-    }
-    else
-#endif
-    {
-        if ( !SDL_WaitEventTimeout( &event, 500 ) ) return true;
-    }
-
-    switch ( event.type )
-    {
-        case SDL_KEYUP:
-            if ( event.key.keysym.sym == SDLK_ESCAPE || event.key.keysym.sym == SDLK_q )
-            {
-                hogl::post( m_HoglArea, m_HoglArea->INFO, "Closing windows." );
-                if ( nullptr != m_ExitCBFunc )
-                {
-                    m_ExitCBFunc();
-                }
-                return false;
-            }
-            else if ( event.key.keysym.sym == SDLK_f )
-            {
-                // in 16.04 SDL full screen toggle has issue, might messed up the XWindow
-                // disable this feature for now
-                break;
-
-                bool IsFullscreen = SDL_GetWindowFlags( m_Win ) & SDL_WINDOW_FULLSCREEN;
-
-                SDL_SetWindowFullscreen( m_Win, IsFullscreen ? 0 : SDL_WINDOW_FULLSCREEN );
-                SDL_ShowCursor( IsFullscreen );
-            }
-            else if ( event.key.keysym.sym == SDLK_i )
-            {
-                m_EnableCamFPSCap = !m_EnableCamFPSCap;
-                if ( m_EnableCamFPSCap )
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "Enabled CamFPSCap" );
-                else
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "Disabled CamFPSCap" );
-
-                setAllCamActive();
-            }
-            else if ( event.key.keysym.sym == SDLK_SPACE )
-            {
-                m_PauseRenderer = !m_PauseRenderer;
-                if ( m_PauseRenderer ) hogl::post( m_HoglArea, m_HoglArea->INFO, "Pause renderer" );
-                else
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "Resume renderer" );
-
-                setAllCamActive();
-            }
-            else if ( event.key.keysym.sym == SDLK_F1 )
-            {
-                m_ShowHelp = !m_ShowHelp;
-                if ( m_ShowHelp ) hogl::post( m_HoglArea, m_HoglArea->INFO, "Show help window" );
-                else
-                {
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "Hide HELP window" );
-                }
-                setAllCamActive();
-            }
-            else if ( event.key.keysym.sym == SDLK_m )
-            {
-                m_WindowCol = m_WindowCol == 1 ? 2 : 1;
-                m_WindowRow = m_WindowRow == 1 ? m_CamNameList.size() / 2 : 1;
-                if ( m_WindowCol == 1 )
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "switch to single-view camera [ %d ]",
-                                (int) m_ActiveCamIDX );
-                else
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "switch to multi-view [ %d ]",
-                                m_ActiveMultiViewIDX );
-
-                setAllCamActive();
-            }
-            else if ( event.key.keysym.sym == SDLK_TAB )
-            {
-                // TODO: mutex lock
-                if ( m_WindowCol == 1 )
-                {
-                    m_ActiveCamIDX =
-                            ( m_ActiveCamIDX == m_CamNameList.size() - 1 ) ? 0 : m_ActiveCamIDX + 1;
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "switch to single-view camera [ %d ]",
-                                (int) m_ActiveCamIDX );
-                }
-                else
-                {
-                    m_ActiveMultiViewIDX = 1 - m_ActiveMultiViewIDX;
-                    hogl::post( m_HoglArea, m_HoglArea->INFO, "switch to multi-view [ %d ]",
-                                (int) m_ActiveMultiViewIDX );
-                }
-
-                setAllCamActive();
-                // TODO: mutex unlock
-            }
-            return true;
-        case SDL_QUIT:
-            hogl::post( m_HoglArea, m_HoglArea->INFO, "Window closed" );
-            return false;
-        case SDL_WINDOWEVENT:
-            Uint32 windowID = SDL_GetWindowID( m_Win );
-            if ( event.window.windowID != windowID ) break;
-            switch ( event.window.event )
-            {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    m_WindowW = event.window.data1;
-                    m_WindowH = event.window.data2;
-
-                    setAllCamActive();
-                    break;
-            }
-            break;
-    }
-
-    return true;
+    RIDEHAL_DEBUG( "TinyViz thread exited" );
 }
 
 void TinyViz::setAllCamActive()
@@ -492,45 +320,42 @@ void TinyViz::printRendererInfo( SDL_Renderer *ren )
     SDL_RendererInfo rendererInfo;
     if ( SDL_GetRendererInfo( ren, &rendererInfo ) )
     {
-        hogl::post( m_HoglArea, m_HoglArea->ERROR, "SDL_GetRenererInfo Error %s", SDL_GetError() );
+        RIDEHAL_ERROR( "SDL_GetRenererInfo Error %s", SDL_GetError() );
         return;
     }
 
     bool printRendererInfo = false;
     if ( printRendererInfo )
     {
-        hogl::post( m_HoglArea, m_HoglArea->INFO,
-                    "SDK_RendererInfo: name: %s, "
-                    "renderer driver: %s"
-                    "software: %d"
-                    "accelerated: %d"
-                    "presentvsync: %d",
-                    rendererInfo.name, SDL_GetCurrentVideoDriver(),
-                    ( rendererInfo.flags & SDL_RENDERER_SOFTWARE ),
-                    ( rendererInfo.flags & SDL_RENDERER_ACCELERATED ),
-                    ( rendererInfo.flags & SDL_RENDERER_PRESENTVSYNC ) );
+        RIDEHAL_INFO( "SDK_RendererInfo: name: %s, "
+                      "renderer driver: %s"
+                      "software: %d"
+                      "accelerated: %d"
+                      "presentvsync: %d",
+                      rendererInfo.name, SDL_GetCurrentVideoDriver(),
+                      ( rendererInfo.flags & SDL_RENDERER_SOFTWARE ),
+                      ( rendererInfo.flags & SDL_RENDERER_ACCELERATED ),
+                      ( rendererInfo.flags & SDL_RENDERER_PRESENTVSYNC ) );
     }
 
-    hogl::post( m_HoglArea, m_HoglArea->INFO, "Available video driver: " );
+    RIDEHAL_INFO( "Available video driver: " );
     for ( int idx = 0; idx < SDL_GetNumVideoDrivers(); idx++ )
     {
         std::string isSelected =
                 std::string( SDL_GetVideoDriver( idx ) ) == SDL_GetCurrentVideoDriver()
                         ? " (selected)"
                         : "";
-        hogl::post( m_HoglArea, m_HoglArea->INFO, "%d%s: %s", idx, isSelected,
-                    SDL_GetVideoDriver( idx ) );
+        RIDEHAL_INFO( "%d%s: %s", idx, isSelected, SDL_GetVideoDriver( idx ) );
     }
 
-    hogl::post( m_HoglArea, m_HoglArea->INFO, "Available renderer driver: " );
+    RIDEHAL_INFO( "Available renderer driver: " );
     for ( int idx = 0; idx < SDL_GetNumRenderDrivers(); idx++ )
     {
         SDL_RendererInfo rendererInfoByIdx;
         SDL_GetRenderDriverInfo( idx, &rendererInfoByIdx );
         std::string isSelected =
                 std::string( rendererInfoByIdx.name ) == rendererInfo.name ? " (selected)" : "";
-        hogl::post( m_HoglArea, m_HoglArea->INFO, "%d%s: %s", idx, isSelected,
-                    rendererInfoByIdx.name );
+        RIDEHAL_INFO( "%d%s: %s", idx, isSelected, rendererInfoByIdx.name );
     }
 }
 
@@ -564,25 +389,23 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
                                    camInfo.height );
         if ( !tex2M )
         {
-            hogl::post( m_HoglArea, m_HoglArea->ERROR, "SDL_CreateTextureFromSurface Error: %s",
-                        SDL_GetError() );
+            RIDEHAL_ERROR( "SDL_CreateTextureFromSurface Error: %s", SDL_GetError() );
             return false;
         }
         camInfo.tex2M = tex2M;
     }
 
-    auto pts = camInfo.CamFrame.timestamp;
+    auto pts = camInfo.camFrame.timestamp;
     {
         std::lock_guard<std::mutex> guard( *camInfo.mutex );
-        if ( !camInfo.CamFrame.buffer )
+        if ( nullptr == camInfo.data() )
         {
-            hogl::post( m_HoglArea, m_HoglArea->DEBUG,
-                        "display buffer is not yet available. Skipped one frame." );
+            RIDEHAL_DEBUG( "display buffer is not yet available. Skipped one frame." );
             return false;
         }
 
-        auto &imgBuf = camInfo.CamFrame.buffer->sharedBuffer;
-        SDL_UpdateTexture( tex2M, nullptr, imgBuf.data(), imgBuf.imgProps.stride[0] );
+
+        SDL_UpdateTexture( tex2M, nullptr, camInfo.data(), camInfo.stride() );
     }
 
     if ( camInfo.lastFPSUpdate < pts - NSEC_PER_SEC / 2 )
@@ -671,7 +494,7 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
 void TinyViz::renderFPS( SDL_Renderer *ren, const SDL_Rect &DestR, uint32_t xShfit, float &fps )
 {
     // The FPS texture is pre-calculated with 400 entries
-    auto *fpsTexture = m_NumTextures.getTextInfo( fps * 10, m_HoglArea );
+    auto *fpsTexture = m_NumTextures.getTextInfo( fps * 10 );
     if ( !fpsTexture ) return;
 
     // render fps
@@ -692,14 +515,12 @@ void TinyViz::updateFPS( const std::string &camName, std::deque<uint64_t> &queue
     if ( queue.empty() || queue[queue.size() - 1] != timestamp ) queue.push_back( timestamp );
     if ( queue.size() > 100 ) queue.pop_front();
 
-    hogl::post( m_HoglArea, m_HoglArea->DEBUG,
-                "Updated %s FPS info. queue size now %zu. timestamp:[%" PRIu64 ", %" PRIu64 "]",
-                camName, queue.size(), queue[queue.size() - 1], queue[0] );
+    RIDEHAL_DEBUG( "Updated %s FPS info. queue size now %zu. timestamp:[%" PRIu64 ", %" PRIu64 "]",
+                   camName, queue.size(), queue[queue.size() - 1], queue[0] );
 }
 
 void TinyViz::updateFPS( CamInfo &camInfo )
 {
-#if 0
     constexpr size_t SIZE = 4;
     std::array<const std::deque<uint64_t> *, SIZE> queues{ &camInfo.camPTSs, &camInfo.lanPTSs,
                                                            &camInfo.rosPTSs, &camInfo.tfsPTSs };
@@ -713,12 +534,10 @@ void TinyViz::updateFPS( CamInfo &camInfo )
                                    : queue.size() / ( ( queue[queue.size() - 1] - queue[0] ) /
                                                       static_cast<double>( NSEC_PER_SEC ) );
 
-        hogl::post( m_HoglArea, m_HoglArea->DEBUG,
-                    "%s: queue size:%zu, timestamp (%" PRIu64 ", %" PRIu64 "), ", camInfo.camName,
-                    queue.size(), queue.empty() ? 0 : queue[queue.size() - 1],
-                    queue.empty() ? 0 : queue[0] );
+        RIDEHAL_DEBUG( "%s: queue size:%zu, timestamp (%" PRIu64 ", %" PRIu64 "), ",
+                       camInfo.camName, queue.size(), queue.empty() ? 0 : queue[queue.size() - 1],
+                       queue.empty() ? 0 : queue[0] );
     }
-#endif
 }
 
 template<class DataType>
@@ -742,15 +561,14 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
         auto &payload = l.payload();
         if ( payload.vertexCount > payload.MAX_VERTEX_SIZE )
         {
-            hogl::post( m_HoglArea, m_HoglArea->ERROR,
-                        "Found invalid vertexCount at renderBB(). Max:%zu. vertexCount: %u",
-                        payload.MAX_VERTEX_SIZE, payload.vertexCount );
+            RIDEHAL_ERROR( "Found invalid vertexCount at renderBB(). Max:%zu. vertexCount: %u",
+                           payload.MAX_VERTEX_SIZE, payload.vertexCount );
             continue;
         }
 
-        hogl::post( m_HoglArea, m_HoglArea->DEBUG, "renderBB: box %u vertexCount: %u : %f %f %f %f",
-                    closeLoop, payload.vertexCount, payload.vertices[0], payload.vertices[1],
-                    payload.vertices[2], payload.vertices[3] );
+        RIDEHAL_DEBUG( "renderBB: box %u vertexCount: %u : %f %f %f %f", closeLoop,
+                       payload.vertexCount, payload.vertices[0], payload.vertices[1],
+                       payload.vertices[2], payload.vertices[3] );
 
         std::vector<SDL_Point> points;
         for ( size_t p = 0; p < payload.vertexCount; p += 2 )

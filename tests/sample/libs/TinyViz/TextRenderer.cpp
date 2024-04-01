@@ -3,31 +3,23 @@
 
 #include "TextRenderer.hpp"
 
-#include <hogl/post.hpp>
-
 namespace QRide
 {
 namespace Stack
 {
 
-TextInfo::TextInfo()
-{
-    m_HoglArea = hogl::add_area( "TINY_VIZ_TEXTINFO" );
-}
+TextInfo::TextInfo() {}
 
 TextInfo::TextInfo( std::string const &_text, SDL_Color _color )
     : m_Color( _color ),
       m_Text( _text )
-{
-    m_HoglArea = hogl::add_area( "TINY_VIZ_TEXTINFO" );
-}
+{}
 
 bool TextInfo::init( SDL_Renderer *ren, TTF_Font *font )
 {
 
     if ( !ren || !font )
     {
-        hogl::post( m_HoglArea, m_HoglArea->ERROR, "InitText() Found nullptr" );
         return false;
     }
     m_Surface = TTF_RenderText_Solid( font, m_Text.c_str(), m_Color );
@@ -69,13 +61,11 @@ bool NumTextCollect::release()
     return true;
 }
 
-TextInfo *NumTextCollect::getTextInfo( uint32_t idx, hogl::area *area )
+TextInfo *NumTextCollect::getTextInfo( uint32_t idx )
 {
     // the last entry is the over-boundary warning
     if ( idx >= m_NumTextInfos.size() - 1 )
     {
-        hogl::post( area, area->ERROR, "NumTextCollect getTexture() index %u out-of-bound",
-                    m_NumTextInfos.size() );
         return &m_NumTextInfos[m_NumTextInfos.size() - 1];
     }
 

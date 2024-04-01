@@ -4,13 +4,12 @@
 #ifndef QRIDE_STACK_TINYVIZ_CAM_INFO_HPP
 #define QRIDE_STACK_TINYVIZ_CAM_INFO_HPP
 
-#include <deque>
-#include <mutex>
-#include <vector>
-
 #include "TextRenderer.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
 #include "ridehal/sample/DataTypes.hpp"
+#include <deque>
+#include <mutex>
+#include <vector>
 
 using namespace ridehal::sample;
 
@@ -23,7 +22,7 @@ class CamInfo
 {
 public:
     CamInfo();   // dummy constructor is needed for map initialization
-    CamInfo( std::string _camName, uint32_t width, uint32_t height, uint32_t pitch );
+    CamInfo( std::string _camName, uint32_t width, uint32_t height );
     CamInfo( const CamInfo &copy ) = default;
     CamInfo( CamInfo &&copy ) = default;
     CamInfo &operator=( const CamInfo &copy ) = default;
@@ -39,12 +38,12 @@ public:
 
     uint8_t *data();
     size_t size();
+    uint32_t stride();
 
     std::string camName;
     SDL_Color color;
     uint32_t width = 1920;
     uint32_t height = 1020;
-    uint32_t pitch = 1920 * 2;
 
     // text
     TextInfo camNameText;
@@ -63,7 +62,7 @@ public:
     // For protecting display buffer & bbBoxes
     // wrap with unique_ptr is needed for map initialization (mutex is not move-able)
     std::unique_ptr<std::mutex> mutex;
-    CamFrame_t CamFrame;
+    CamFrame_t camFrame;
 
     SDL_Texture *tex2M = nullptr;
 

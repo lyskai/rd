@@ -3,3 +3,5 @@ build*
 bld-*
 run-*
 *.tar*
+hexagon_Release_*
+prebuilt
