@@ -1,6 +1,11 @@
 # Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
+if( NOT TARGET RideHalQnnRuntime )
+    message( INFO "build gtest without QNN" )
+    return()
+endif()
+
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 add_executable( gtest_QnnRuntime gtest_QnnRuntime.cpp )
 target_include_directories( gtest_QnnRuntime PUBLIC ${HEADERS_DIR} )
