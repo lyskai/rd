@@ -6,6 +6,11 @@
 #include <mutex>
 #include <sys/slog2.h>
 
+
+#ifndef RIDEHAL_LOG_MSG_MAX_LEN
+#define RIDEHAL_LOG_MSG_MAX_LEN 256
+#endif
+
 namespace ridehal
 {
 namespace common
@@ -27,11 +32,30 @@ static std::map<std::string, Logger_Handle_t> s_slog2Map;
 void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
                          va_list args )
 {
-    char msg[256];
+    char msg[RIDEHAL_LOG_MSG_MAX_LEN];
     slog2_buffer_t hBuffer = (slog2_buffer_t) hHandle;
+    int len = 0;
+    int rc;
 
-    vsnprintf( msg, sizeof( msg ), pFormat, args );
-    (void) slog2c( hBuffer, 0, s_rideHalLoggerLevelToSlog2Level[level], msg );
+    len = vsnprintf( msg, sizeof( msg ), pFormat, args );
+    len += snprintf( &msg[len], sizeof( msg ) - len, "\n" );
+    if ( len <= sizeof( msg ) )
+    {
+        // NOTE: always use SLOG2_INFO level as observed that the DEBUG/VERBOSE message are lost,
+        // and this is a workaround
+        // rc = slog2f( hBuffer, 0, s_rideHalLoggerLevelToSlog2Level[level], msg );
+        (void) s_rideHalLoggerLevelToSlog2Level;
+        rc = slog2f( hBuffer, 0, SLOG2_INFO, msg );
+        if ( 0 != rc )
+        {
+            fprintf( stderr, "slog2c error=%d: %s", rc, msg );
+        }
+    }
+    else
+    {
+        fprintf( stderr, "message too long: " );
+        fprintf( stderr, msg );
+    }
 }
 
 RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
@@ -60,7 +84,7 @@ RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
             bufferConfig.buffer_config[0].num_pages = 32;
 
             int rv = slog2_register( &bufferConfig, &hBuffer, SLOG2_TRY_REUSE_BUFFER_SET );
-            if ( 0 == rv )
+            if ( ( 0 == rv ) && ( nullptr != hBuffer ) )
             {
                 *pHandle = (Logger_Handle_t) hBuffer;
                 s_slog2Map[pName] = (Logger_Handle_t) hBuffer;
