@@ -69,9 +69,9 @@ std::string SampleIF::Get( SampleConfig_t &config, std::string key, std::string 
     return ret;
 }
 
-int SampleIF::Get( SampleConfig_t &config, std::string key, int defaultV )
+int32_t SampleIF::Get( SampleConfig_t &config, std::string key, int32_t defaultV )
 {
-    int ret = defaultV;
+    int32_t ret = defaultV;
     auto it = config.find( key );
     if ( it != config.end() )
     {
@@ -146,6 +146,42 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
     }
 
     RIDEHAL_DEBUG( "Get config %s = %f\n", key.c_str(), ret );
+    return ret;
+}
+
+RideHal_ProcessorType_e SampleIF::Get( SampleConfig_t &config, std::string key,
+                                       RideHal_ProcessorType_e defaultV )
+{
+    RideHal_ProcessorType_e ret = defaultV;
+
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        std::string processor = it->second;
+        if ( "dsp0" == processor )
+        {
+            ret = RIDE_HAL_PROCESSOR_HTP0;
+        }
+        else if ( "dsp1" == processor )
+        {
+            ret = RIDE_HAL_PROCESSOR_HTP1;
+        }
+        else if ( "cpu" == processor )
+        {
+            ret = RIDE_HAL_PROCESSOR_CPU;
+        }
+        else if ( "gpu" == processor )
+        {
+            ret = RIDE_HAL_PROCESSOR_GPU;
+        }
+        else
+        {
+            ret = RIDE_HAL_PROCESSOR_MAX;
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %d\n", key.c_str(), ret );
+
     return ret;
 }
 

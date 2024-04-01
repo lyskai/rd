@@ -51,6 +51,8 @@ private:
 private:
     std::string m_dataPath;
 
+    RideHal_ImageFormat_e m_format;
+    uint32_t m_fps;
     uint32_t m_width;
     uint32_t m_height;
     uint32_t m_poolSize = 4;

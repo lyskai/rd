@@ -25,47 +25,39 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    std::string processor = Get( config, "processor", "dsp0" );
-    if ( "dsp0" == processor )
+    float quantScale = Get( config, "quant_scale", 0.0186584480106831f );
+    int32_t quantOffset = Get( config, "quant_offset", 114 );
+
+    m_config.processor =
+            (Remap_ProcessorType_t) Get( config, "processor", RIDE_HAL_PROCESSOR_HTP0 );
+    if ( (Remap_ProcessorType_t) RIDE_HAL_PROCESSOR_MAX == m_config.processor )
     {
-        m_config.processor = REMAP_PROCESSOR_DSP0;
-    }
-    else if ( "dsp1" == processor )
-    {
-        m_config.processor = REMAP_PROCESSOR_DSP1;
-    }
-    else if ( "cpu" == processor )
-    {
-        m_config.processor = REMAP_PROCESSOR_CPU;
-    }
-    else
-    {
-        RIDEHAL_ERROR( "invalid processor %s\n", processor.c_str() );
+        RIDEHAL_ERROR( "invalid processor %s\n", Get( config, "processor", "" ).c_str() );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputWidth = Get( config, "output_width", 0 );
+    m_config.outputWidth = Get( config, "output_width", 1152 );
     if ( 0 == m_config.outputWidth )
     {
         RIDEHAL_ERROR( "invalid output_width\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputHeight = Get( config, "output_height", 0 );
+    m_config.outputHeight = Get( config, "output_height", 800 );
     if ( 0 == m_config.outputHeight )
     {
         RIDEHAL_ERROR( "invalid output_height\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputFormat = Get( config, "output_format", RIDE_HAL_IMAGE_FORMAT_MAX );
+    m_config.outputFormat = Get( config, "output_format", RIDE_HAL_IMAGE_FORMAT_RGB888 );
     if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_config.outputFormat )
     {
         RIDEHAL_ERROR( "invalid output_format\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.numOfInputs = Get( config, "batch_size", 0 );
+    m_config.numOfInputs = Get( config, "batch_size", 1 );
     if ( 0 == m_config.numOfInputs )
     {
         RIDEHAL_ERROR( "invalid batch_size\n" );
@@ -74,7 +66,8 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
 
     for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
     {
-        m_config.inputConfigs[i].inputWidth = Get( config, "input_width" + std::to_string( i ), 0 );
+        m_config.inputConfigs[i].inputWidth =
+                Get( config, "input_width" + std::to_string( i ), 1920 );
         if ( 0 == m_config.inputConfigs[i].inputWidth )
         {
             RIDEHAL_ERROR( "invalid input_width%u\n", i );
@@ -82,7 +75,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].inputHeight =
-                Get( config, "input_height" + std::to_string( i ), 0 );
+                Get( config, "input_height" + std::to_string( i ), 1024 );
         if ( 0 == m_config.inputConfigs[i].inputHeight )
         {
             RIDEHAL_ERROR( "invalid input_height%u\n", i );
@@ -90,7 +83,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].inputFormat =
-                Get( config, "input_format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_MAX );
+                Get( config, "input_format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_UYVY );
         if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_config.inputConfigs[i].inputFormat )
         {
             RIDEHAL_ERROR( "invalid input_format%u\n", i );
@@ -114,14 +107,14 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].ROI.x = Get( config, "roi_x" + std::to_string( i ), 0 );
-        if ( 0 == m_config.inputConfigs[i].ROI.width )
+        if ( m_config.inputConfigs[i].ROI.x >= m_config.inputConfigs[i].mapWidth )
         {
             RIDEHAL_ERROR( "invalid roi_x%u\n", i );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
 
         m_config.inputConfigs[i].ROI.y = Get( config, "roi_y" + std::to_string( i ), 0 );
-        if ( 0 == m_config.inputConfigs[i].ROI.height )
+        if ( m_config.inputConfigs[i].ROI.y >= m_config.inputConfigs[i].mapHeight )
         {
             RIDEHAL_ERROR( "invalid roi_y%u\n", i );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
@@ -142,6 +135,26 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
             RIDEHAL_ERROR( "invalid roi_height%u\n", i );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
+
+        m_config.bEnableUndistortion = false;
+        m_config.bEnableNormalize = true;
+        m_config.normlzR.sub = 123.675;
+        m_config.normlzR.mul = 1.f / 58.395;
+        m_config.normlzR.add = 0.f;
+        m_config.normlzG.sub = 116.28;
+        m_config.normlzG.mul = 1.f / 57.12;
+        m_config.normlzG.add = 0.f;
+        m_config.normlzB.sub = 103.53;
+        m_config.normlzB.mul = 1.f / 57.375;
+        m_config.normlzB.add = 0.f;
+
+
+        m_config.normlzR.add = m_config.normlzR.add / quantScale + quantOffset;
+        m_config.normlzR.mul = m_config.normlzR.mul / quantScale;
+        m_config.normlzG.add = m_config.normlzG.add / quantScale + quantOffset;
+        m_config.normlzG.mul = m_config.normlzG.mul / quantScale;
+        m_config.normlzB.add = m_config.normlzB.add / quantScale + quantOffset;
+        m_config.normlzB.mul = m_config.normlzB.mul / quantScale;
     }
 
     m_poolSize = Get( config, "pool_size", 4 );
@@ -197,7 +210,7 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        // TODO: call remap Init
+        ret = m_remap.Init( name.c_str(), &m_config );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -216,22 +229,54 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
 RideHalError_e SampleRemap::Start()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    m_stop = false;
-    m_thread = std::thread( &SampleRemap::ThreadMain, this );
+
+    ret = m_remap.Start();
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_stop = false;
+        m_thread = std::thread( &SampleRemap::ThreadMain, this );
+    }
+
     return ret;
 }
 
 void SampleRemap::ThreadMain()
 {
-    int ret;
+    RideHalError_e ret;
     while ( false == m_stop )
     {
         CamFrames_t frames;
         ret = m_sub.Receive( frames );
         if ( 0 == ret )
         {
-            RIDEHAL_DEBUG( "receive frameId %llu, timestamp %llu\n", frames.frames[0].frameId,
-                           frames.frames[0].timestamp );
+            RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n",
+                           frames.frames[0].frameId, frames.frames[0].timestamp );
+            std::shared_ptr<SharedBuffer_t> buffer = m_imagePool.Get();
+            if ( nullptr != buffer )
+            {
+                std::vector<RideHal_SharedBuffer_t> inputs;
+                for ( auto &frame : frames.frames )
+                {
+                    inputs.push_back( frame.buffer->sharedBuffer );
+                }
+
+                ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer, 1 );
+                if ( RIDE_HAL_ERROR_NONE == ret )
+                {
+                    CamFrames_t outFrames;
+                    CamFrame_t frame;
+                    frame.buffer = buffer;
+                    frame.frameId = frames.frames[0].frameId;
+                    frame.timestamp = frames.frames[0].timestamp;
+                    outFrames.frames.push_back( frame );
+                    m_pub.Publish( outFrames );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "remap failed for %" PRIu64 " : %d", frames.frames[0].frameId,
+                                   ret );
+                }
+            }
         }
     }
 }
@@ -246,12 +291,16 @@ RideHalError_e SampleRemap::Stop()
         m_thread.join();
     }
 
+    ret = m_remap.Stop();
+
     return ret;
 }
 
 RideHalError_e SampleRemap::Deinit()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    ret = m_remap.Deinit();
 
     return ret;
 }

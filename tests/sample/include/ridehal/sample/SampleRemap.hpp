@@ -58,8 +58,9 @@ private:
     bool m_stop;
 
     DataSubscriber<CamFrames_t> m_sub;
-    DataPublisher<Tensors_t> m_pub;
+    DataPublisher<CamFrames_t> m_pub;
 
+    Remap m_remap;
 };   // class SampleRemap
 
 }   // namespace sample
