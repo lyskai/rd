@@ -255,46 +255,26 @@ RideHalError_e QnnRuntime::CreateFromBinary( std::string binPath )
     return RideHalError_e::RIDE_HAL_ERROR_NONE;
 }
 
-RideHalError_e QnnRuntime::LoadOpPackages( std::string opPackgesTxtPath )
+RideHalError_e QnnRuntime::LoadOpPackages( const std::vector<QnnRuntime_UdoPackage_t> &udoPackages )
 {
-    const size_t pathIdx = 0;
-    const size_t interfaceProviderIdx = 1;
-    std::vector<std::string> opPackagePaths;
-    std::ifstream is( opPackgesTxtPath );
-    std::string path;
-    while ( is >> path )
+    for ( auto const &udoPackage : udoPackages )
     {
-        opPackagePaths.push_back( path );
-    }
-
-    for ( auto const &opPackagePath : opPackagePaths )
-    {
-        std::vector<std::string> opPackage;
-        split( opPackage, opPackagePath, ':' );
-        QNN_DEBUG( "%s: opPackagePath: %s", m_Name.c_str(), opPackagePath.c_str() );
-        if ( opPackage.size() != 2 )
-        {
-            QNN_ERROR( "%s: Malformed opPackageString provided: %s", m_Name.c_str(),
-                       opPackagePath.c_str() );
-            return RideHalError_e::RIDE_HAL_ERROR_FAIL;
-        }
         if ( nullptr == m_QnnFunctionPointers.qnnInterface.backendRegisterOpPackage )
         {
             QNN_ERROR( "%s: backendRegisterOpPackageFnHandle is nullptr.", m_Name.c_str() );
+            std::cout << "backendRegisterOpPackageFnHandle is nullptr." << std::endl;
             return RideHalError_e::RIDE_HAL_ERROR_FAIL;
         }
         if ( QNN_BACKEND_NO_ERROR != m_QnnFunctionPointers.qnnInterface.backendRegisterOpPackage(
-                                             m_BackendHandle, (char *) opPackage[pathIdx].c_str(),
-                                             (char *) opPackage[interfaceProviderIdx].c_str(),
-                                             nullptr ) )
+                                             m_BackendHandle, (char *) udoPackage.udoLibPath,
+                                             (char *) udoPackage.interfaceProvider, nullptr ) )
         {
             QNN_ERROR( "%s: Could not register Op Package: %s and interface provider: %s",
-                       m_Name.c_str(), opPackage[pathIdx].c_str(),
-                       opPackage[interfaceProviderIdx].c_str() );
+                       m_Name.c_str(), udoPackage.udoLibPath, udoPackage.interfaceProvider );
             return RideHalError_e::RIDE_HAL_ERROR_FAIL;
         }
         QNN_INFO( "%s: Registered Op Package: %s and interface provider: %s", m_Name.c_str(),
-                  opPackage[pathIdx].c_str(), opPackage[interfaceProviderIdx].c_str() );
+                  udoPackage.udoLibPath, udoPackage.interfaceProvider );
     }
     return RideHalError_e::RIDE_HAL_ERROR_NONE;
 }
@@ -321,8 +301,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         m_LoadFromCachedBinary = true;
     }
-    std::cout << "m_LoadFromCachedBinary: " << m_LoadFromCachedBinary << std::endl << std::flush;
-    std::cout << "binPath: " << binPath << std::endl << std::flush;
     if ( m_BackendId < (int) QNN_BACKEND_NUM )
     {
         auto statusCode = dynamicloadutil::getQnnFunctionPointers(
@@ -342,7 +320,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     else
     {
         QNN_ERROR( "%s: invalid backend id %d", m_Name.c_str(), m_BackendId );
-        std::cout << "invalid backend id" << std::endl << std::flush;
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
@@ -350,7 +327,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
          m_QnnFunctionPointers.qnnInterface.logCreate( QnnLog_Callback, logLevel, &m_LogHandle ) )
     {
         QNN_WARN( "%s: Unable to initialize logging in the backend.", m_Name.c_str() );
-        std::cout << "Unable to initialize logging in the backend." << std::endl << std::flush;
     }
 
 
@@ -359,7 +335,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
     {
         QNN_ERROR( "%s: Error initializing QNN System Function Pointers", m_Name.c_str() );
-        std::cout << "Error initializing QNN System Function Pointers" << std::endl << std::flush;
     }
 
     if ( nullptr == m_QnnFunctionPointers.qnnSystemInterface.systemContextCreate ||
@@ -367,7 +342,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
          nullptr == m_QnnFunctionPointers.qnnSystemInterface.systemContextFree )
     {
         QNN_ERROR( "%s: QNN System function pointers are not populated.", m_Name.c_str() );
-        std::cout << "QNN System function pointers are not populated" << std::endl << std::flush;
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
@@ -375,7 +349,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
          m_QnnFunctionPointers.qnnSystemInterface.systemContextCreate( &m_SystemContext ) )
     {
         QNN_ERROR( "%s: Could not create system handle.", m_Name.c_str() );
-        std::cout << "Could not create system handle" << std::endl << std::flush;
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
@@ -385,7 +358,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         QNN_ERROR( "%s: Could not initialize backend due to error = %d", m_Name.c_str(),
                    returnStatus );
-        std::cout << "Could not initialize backend due to errore" << std::endl << std::flush;
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
@@ -395,7 +367,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         QNN_ERROR( "%s: Could not get backend version due to error = %d", m_Name.c_str(),
                    returnStatus );
-        std::cout << "Could not get backend version due to error" << std::endl << std::flush;
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
@@ -411,7 +382,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         QNN_ERROR( "%s: Could not get platform information due to error = %d", m_Name.c_str(),
                    returnStatus );
-        std::cout << "Could not get platform information due to error" << std::endl << std::flush;
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
@@ -447,7 +417,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                 {
                     QNN_ERROR( "%s: invalid backend core id = %d", m_Name.c_str(),
                                m_BackendCoreId );
-                    std::cout << "invalid backend core id" << std::endl << std::flush;
 
                     return RideHalError_e::RIDE_HAL_ERROR_FAIL;
                 }
@@ -471,27 +440,29 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             {
                 QNN_ERROR( "%s: Could not create device due to error = %d", m_Name.c_str(),
                            returnStatus );
-                std::cout << "Could not create device due to error" << std::endl << std::flush;
                 return RideHalError_e::RIDE_HAL_ERROR_FAIL;
             }
         }
         else
         {
             QNN_ERROR( "%s: invalid backend device id = %d", m_Name.c_str(), deviceId );
-            std::cout << "invalid backend device id" << std::endl << std::flush;
             return RideHalError_e::RIDE_HAL_ERROR_FAIL;
         }
     }
 
-    // std::string opPackgesTxtPath = modelPath + "/OpPackges.txt";
-    // if ( 0 == access( opPackgesTxtPath.c_str(), F_OK ) )
-    // {
-    //     if ( false == LoadOpPackages( opPackgesTxtPath ) )
-    //     {
-    //         std::cout << "fail to load package" << std::endl << std::flush;
-    //         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
-    //     }
-    // }
+    if ( pConfig->udoPackages.size() > 0 )
+    {
+        RideHalError_e ret = LoadOpPackages( pConfig->udoPackages );
+        if ( RideHalError_e::RIDE_HAL_ERROR_NONE != ret )
+        {
+            QNN_ERROR( "%s: fail to load package", m_Name.c_str() );
+            return ret;
+        }
+    }
+    else
+    {
+        QNN_INFO( "No opPackage!" );
+    }
 
     if ( QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP == m_BackendId )
     {   // set up context priority
@@ -504,18 +475,20 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( !m_LoadFromCachedBinary )
     {
-        if ( false == CreateFromModelSo( modelPath ) )
+        RideHalError_e ret = CreateFromModelSo( modelPath );
+        if ( RideHalError_e::RIDE_HAL_ERROR_NONE != ret )
         {
-            std::cout << "fail to create from model so" << std::endl << std::flush;
-            return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            QNN_ERROR( "%s: fail to create fron model so", m_Name.c_str() );
+            return ret;
         }
     }
     else
     {
-        if ( false == CreateFromBinary( binPath ) )
+        RideHalError_e ret = CreateFromBinary( binPath );
+        if ( RideHalError_e::RIDE_HAL_ERROR_NONE != ret )
         {
-            std::cout << "fail to create from binary" << std::endl << std::flush;
-            return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            QNN_ERROR( "%s: fail to create from binary", m_Name.c_str() );
+            return ret;
         }
     }
 

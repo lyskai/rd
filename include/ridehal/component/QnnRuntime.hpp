@@ -53,10 +53,17 @@ typedef struct
 
 typedef struct
 {
+    const char *interfaceProvider;
+    const char *udoLibPath;
+} QnnRuntime_UdoPackage_t;
+
+typedef struct
+{
     std::string modelPath;
     int backendId;
     int backendCoreId = 0;
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;
+    std::vector<QnnRuntime_UdoPackage_t> udoPackages;
 } QnnRuntime_Config_t;
 
 typedef struct
@@ -140,7 +147,7 @@ public:
 private:
     RideHalError_e CreateFromModelSo( std::string modelPath );
     RideHalError_e CreateFromBinary( std::string binPath );
-    RideHalError_e LoadOpPackages( std::string opPackgesTxtPath );
+    RideHalError_e LoadOpPackages( const std::vector<QnnRuntime_UdoPackage_t> &udoPackages );
 
     Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
                                      const Qnn_Tensor_t &tensor );
