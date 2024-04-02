@@ -1189,8 +1189,8 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
                         outputFrame->timestampNs =
                                 pFrameData->timestamp * 1000;   // convert us to ns
                         outputFrame->frameFlag = pFrameData->flags;
-                        m_outputDoneCb( outputFrame, m_pAppPriv );
                         m_availableOutputQueue.push( pFrameData->frm_clnt_data );
+                        m_outputDoneCb( outputFrame, m_pAppPriv );
                     }
                     else
                     {
