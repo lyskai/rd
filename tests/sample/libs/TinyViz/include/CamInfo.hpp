@@ -8,6 +8,8 @@
 #include "ridehal/common/SharedBuffer.hpp"
 #include "ridehal/sample/DataTypes.hpp"
 #include <deque>
+#include <list>
+#include <map>
 #include <mutex>
 #include <vector>
 
@@ -66,11 +68,8 @@ public:
 
     SDL_Texture *tex2M = nullptr;
 
-#if 0
-    std::map<uint64_t, std::list<QRide::Stack::DataTypes::LaneBoundary>> laneBoundaryQueue;
-    std::map<uint64_t, std::list<QRide::Stack::DataTypes::RoadObjects>> roadObjectQueue;
-    std::map<uint64_t, std::list<QRide::Stack::DataTypes::TrafficSign>> trafficSignQueue;
-#endif
+    std::map<uint64_t, std::list<Road2DObjects_t>> roadObjectQueue;
+
 private:
     size_t inactiveCount = 0;
 };

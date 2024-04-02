@@ -210,6 +210,11 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
+        ret = SampleIF::Init( (RideHal_ProcessorType_e) m_config.processor );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
         ret = m_remap.Init( name.c_str(), &m_config );
     }
 
@@ -247,7 +252,7 @@ void SampleRemap::ThreadMain()
     {
         CamFrames_t frames;
         ret = m_sub.Receive( frames );
-        if ( 0 == ret )
+        if ( RIDE_HAL_ERROR_NONE == ret )
         {
             RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n",
                            frames.frames[0].frameId, frames.frames[0].timestamp );
@@ -260,6 +265,9 @@ void SampleRemap::ThreadMain()
                     inputs.push_back( frame.buffer->sharedBuffer );
                 }
 
+                bool locked = false;
+                ret = SampleIF::Lock();
+                locked = ( RIDE_HAL_ERROR_NONE == ret );
                 ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer, 1 );
                 if ( RIDE_HAL_ERROR_NONE == ret )
                 {
@@ -275,6 +283,10 @@ void SampleRemap::ThreadMain()
                 {
                     RIDEHAL_ERROR( "remap failed for %" PRIu64 " : %d", frames.frames[0].frameId,
                                    ret );
+                }
+                if ( true == locked )
+                {
+                    SampleIF::Unlock();
                 }
             }
         }

@@ -8,6 +8,7 @@ set( HEADERS_DIR
 
 set( RIDEHAL_SAMPLE_SOURCES
     SampleIF.cpp
+    SamplePostProcCenternet.cpp
     SampleCamera.cpp
     SampleDataReader.cpp
     SampleRecorder.cpp
@@ -25,6 +26,17 @@ if( NOT TARGET TinyViz )
 else()
   list( APPEND RIDEHAL_SAMPLE_SOURCES SampleTinyViz.cpp )
   list( APPEND TARGET_LIBRARIES TinyViz )
+endif()
+
+if( NOT TARGET RideHalQnnRuntime )
+  message(INFO "build sample without QnnRuntime")
+else()
+  list( APPEND RIDEHAL_SAMPLE_SOURCES SampleQnn.cpp )
+endif()
+
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
+  #list( APPEND RIDEHAL_SAMPLE_DEFINITIONS WITH_RSM_V2 )
+  #list( APPEND TARGET_LIBRARIES rsm_client )
 endif()
 
 add_library( RideHalSample SHARED ${RIDEHAL_SAMPLE_SOURCES} )

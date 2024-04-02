@@ -49,7 +49,7 @@ static uint32_t s_rideHalFormatToHeightDividerPerPlanes
 static const char *s_rideHalFormatToString[RIDE_HAL_IMAGE_FORMAT_MAX] = {
         "RGB888", /* RIDE_HAL_IMAGE_FORMAT_RGB888 */
         "BGR888", /* RIDE_HAL_IMAGE_FORMAT_BGR888 */
-        "UYVU",   /* RIDE_HAL_IMAGE_FORMAT_UYVY */
+        "UYVY",   /* RIDE_HAL_IMAGE_FORMAT_UYVY */
         "NV12",   /* RIDE_HAL_IMAGE_FORMAT_NV12 */
         "P010"    /* RIDE_HAL_IMAGE_FORMAT_P010 */
 };

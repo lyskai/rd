@@ -52,6 +52,22 @@ $homedir/bundle-runtime.py --sysroot "$TOOLCHAIN_SYSROOT" \
     --outdir $destdir/opt/ridehal/lib/runtime \
     $(find $destdir -wholename \*/bin/\* -o -name \*.so\*)
 
+if [ -f $QNN_SDK_ROOT/lib/aarch64-qnx/libQnnHtp.so ];  then
+# Install QNN Runtime dependencies
+case $target in
+aarch64-qos222)
+    cp -vf $QNN_SDK_ROOT/lib/aarch64-qnx/libQnn* $destdir/opt/ridehal/lib
+    cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
+    cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
+    ;;
+aarch64-hgy)
+    cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
+    cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
+    cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
+    ;;
+esac
+fi
+
 # Create run-time package
 echo "Generating $pkgname"
 tar -C $topdir --xform="s/run/pkg/" --exclude="*.a" --use-compress-program=pigz -cf $pkgname run-$target

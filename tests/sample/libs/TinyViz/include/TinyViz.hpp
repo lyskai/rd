@@ -33,13 +33,7 @@ public:
 
     bool addCamera( const std::string camName, uint32_t camW, uint32_t camH ) override;
     bool addData( const std::string camName, CamFrame_t & ) override;
-#if 0
-    bool addData( const std::string camName, DataTypes::LaneBoundary & ) override;
-    bool addData( const std::string camName, DataTypes::RoadDelimiter & ) override;
-    bool addData( const std::string camName, DataTypes::RoadSurface & ) override;
-    bool addData( const std::string camName, DataTypes::RoadObjects & ) override;
-    bool addData( const std::string camName, DataTypes::TrafficSign & ) override;
-#endif
+    bool addData( const std::string camName, Road2DObjects_t & ) override;
 
 private:
     bool isCamSelected( size_t id );
@@ -53,11 +47,10 @@ private:
     void updateFPS( const std::string &camName, std::deque<uint64_t> &queue, uint64_t timestamp );
     void updateFPS( CamInfo &camInfo );
 
-    template<class DataType>
     void renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
-                   std::map<uint64_t, std::list<DataType>> &queue, SDL_Renderer *ren,
+                   std::map<uint64_t, std::list<Road2DObjects_t>> &queue, SDL_Renderer *ren,
                    const SDL_Rect &DestR, const float scaleX, const float scaleY,
-                   const SDL_Color &color, const bool closeLoop );
+                   const SDL_Color &color );
 
     std::map<std::string, CamInfo> m_CamInfoMap;
     std::vector<std::string> m_CamNameList;

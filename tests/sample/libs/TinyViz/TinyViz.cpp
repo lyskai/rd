@@ -122,8 +122,8 @@ bool TinyViz::addCamera( const std::string camName, uint32_t width, uint32_t hei
 
 bool TinyViz::addData( const std::string camName, CamFrame_t &data )
 {
-    RIDEHAL_DEBUG( "Adding camFrame for %s. pubHandle %" PRIu64 ", timestamp %" PRIu64, camName,
-                   data.buffer->pubHandle, data.timestamp );
+    RIDEHAL_DEBUG( "Adding frame for %s %" PRIu64 ", timestamp %" PRIu64, camName.c_str(),
+                   data.frameId, data.timestamp );
 
     auto &camInfo = m_CamInfoMap[camName];
     std::lock_guard<std::mutex> camInfoGuard( *camInfo.mutex );
@@ -133,37 +133,12 @@ bool TinyViz::addData( const std::string camName, CamFrame_t &data )
     camInfo.setActive();
     return true;
 }
-#if 0
-bool TinyViz::addData( const std::string camName, DataTypes::LaneBoundary &data )
+
+
+bool TinyViz::addData( const std::string camName, Road2DObjects_t &data )
 {
-    RIDEHAL_DEBUG( "Adding lane boundary for %s. timestamp %" PRIu64,
-                camName.c_str(), data.timestamp );
-
-    auto &camInfo = m_CamInfoMap[camName];
-    std::lock_guard<std::mutex> guard( *camInfo.mutex );
-    updateFPS( camName, camInfo.lanPTSs, data.timestamp );
-
-    auto &entry = camInfo.laneBoundaryQueue[data.timestamp];
-    entry.emplace_back( std::move( data ) );
-    return true;
-}
-
-bool TinyViz::addData( const std::string camName, DataTypes::RoadDelimiter & )
-{
-    // TODO
-    return true;
-}
-
-bool TinyViz::addData( const std::string camName, DataTypes::RoadSurface & )
-{
-    // TODO
-    return true;
-}
-
-bool TinyViz::addData( const std::string camName, DataTypes::RoadObjects &data )
-{
-    RIDEHAL_DEBUG( "Adding road obj for %s. timestamp %" PRIu64,
-                camName.c_str(), data.timestamp );
+    RIDEHAL_DEBUG( "Adding road objects for %s frame %" PRIu64 ".timestamp %" PRIu64,
+                   camName.c_str(), data.frameId, data.timestamp );
 
     auto &camInfo = m_CamInfoMap[camName];
     std::lock_guard<std::mutex> guard( *camInfo.mutex );
@@ -173,21 +148,6 @@ bool TinyViz::addData( const std::string camName, DataTypes::RoadObjects &data )
     entry.emplace_back( std::move( data ) );
     return true;
 }
-
-bool TinyViz::addData( const std::string camName, DataTypes::TrafficSign &data )
-{
-    RIDEHAL_DEBUG( "Adding traffic sign for %s. timestamp %" PRIu64,
-                camName.c_str(), data.timestamp );
-
-    auto &camInfo = m_CamInfoMap[camName];
-    std::lock_guard<std::mutex> guard( *camInfo.mutex );
-    updateFPS( camName, camInfo.tfsPTSs, data.timestamp );
-
-    auto &entry = camInfo.trafficSignQueue[data.timestamp];
-    entry.push_back( data );
-    return true;
-}
-#endif
 
 bool TinyViz::isCamSelected( size_t id )
 {
@@ -429,25 +389,12 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
         float scaleX = static_cast<float>( m_WindowW ) / camInfo.width / m_WindowRow;
         float scaleY = static_cast<float>( m_WindowH ) / camInfo.height / m_WindowCol;
 
-#if 0
         auto widow = 2.5 * camInfo.lastCamFPS /
-                     ( ( camInfo.lastLanFPS > 0 ) ? camInfo.lastLanFPS : camInfo.lastCamFPS );
+                     ( ( camInfo.lastRodFPS > 0 ) ? camInfo.lastRodFPS : camInfo.lastCamFPS );
         auto historyWindow = NSEC_PER_SEC / m_LastRenderFPS * widow;
-        renderBB( pts, historyWindow, camInfo.laneBoundaryQueue, ren, DestR, scaleX, scaleY,
-                  QRide::Stack::COLOR_GREEN, false );
-
-        widow = 2.5 * camInfo.lastCamFPS /
-                ( ( camInfo.lastRodFPS > 0 ) ? camInfo.lastRodFPS : camInfo.lastCamFPS );
-        historyWindow = NSEC_PER_SEC / m_LastRenderFPS * widow;
         renderBB( pts, historyWindow, camInfo.roadObjectQueue, ren, DestR, scaleX, scaleY,
-                  QRide::Stack::COLOR_RED, true );
+                  QRide::Stack::COLOR_RED );
 
-        widow = 2.5 * camInfo.lastCamFPS /
-                ( ( camInfo.lastTfsFPS > 0 ) ? camInfo.lastTfsFPS : camInfo.lastCamFPS );
-        historyWindow = NSEC_PER_SEC / m_LastRenderFPS * widow;
-        renderBB( pts, historyWindow, camInfo.trafficSignQueue, ren, DestR, scaleX, scaleY,
-                  QRide::Stack::COLOR_YELLOW, true );
-#endif
         // render status bar
         SDL_Rect statusBarR = DestR;
         statusBarR.h = 25;
@@ -540,11 +487,10 @@ void TinyViz::updateFPS( CamInfo &camInfo )
     }
 }
 
-template<class DataType>
 void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
-                        std::map<uint64_t, std::list<DataType>> &queue, SDL_Renderer *ren,
+                        std::map<uint64_t, std::list<Road2DObjects_t>> &queue, SDL_Renderer *ren,
                         const SDL_Rect &DestR, const float scaleX, const float scaleY,
-                        const SDL_Color &color, const bool closeLoop )
+                        const SDL_Color &color )
 {
     // move to the closest entry
     while ( queue.size() >= 2 && std::next( queue.begin() )->first <= targetPTS )
@@ -558,38 +504,41 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
     auto &mapItem = *queue.begin();
     for ( auto &l : mapItem.second )
     {
-        auto &payload = l.payload();
-        if ( payload.vertexCount > payload.MAX_VERTEX_SIZE )
+        auto &objs = l.objs;
+        for ( auto &obj : objs )
         {
-            RIDEHAL_ERROR( "Found invalid vertexCount at renderBB(). Max:%zu. vertexCount: %u",
-                           payload.MAX_VERTEX_SIZE, payload.vertexCount );
-            continue;
-        }
+            std::vector<SDL_Point> points;
 
-        RIDEHAL_DEBUG( "renderBB: box %u vertexCount: %u : %f %f %f %f", closeLoop,
-                       payload.vertexCount, payload.vertices[0], payload.vertices[1],
-                       payload.vertices[2], payload.vertices[3] );
-
-        std::vector<SDL_Point> points;
-        for ( size_t p = 0; p < payload.vertexCount; p += 2 )
-        {
             SDL_Point point;
-            point.x = payload.vertices[p] * scaleX + DestR.x;
-            point.y = payload.vertices[p + 1] * scaleY + DestR.y;
-            points.push_back( point );
-        }
-        if ( closeLoop && payload.vertexCount >= 2 )
-        {
-            SDL_Point point;
-            point.x = payload.vertices[0] * scaleX + DestR.x;
-            point.y = payload.vertices[1] * scaleY + DestR.y;
-            points.push_back( point );
-        }
 
-        glLineWidth( 4 / m_WindowCol );
-        SDL_SetRenderDrawColor( ren, color.r, color.g, color.b, color.a );
-        SDL_RenderDrawLines( ren, &points[0], points.size() );
-        glLineWidth( 1 );
+            point.x = obj.topX * scaleX + DestR.x;
+            point.y = obj.topY * scaleY + DestR.y;
+            points.push_back( point );
+
+            point.x = obj.topX * scaleX + DestR.x;
+            point.y = obj.bottomY * scaleY + DestR.y;
+            points.push_back( point );
+
+            point.x = obj.bottomX * scaleX + DestR.x;
+            point.y = obj.bottomY * scaleY + DestR.y;
+            points.push_back( point );
+
+            point.x = obj.bottomX * scaleX + DestR.x;
+            point.y = obj.topY * scaleY + DestR.y;
+            points.push_back( point );
+
+            point.x = obj.topX * scaleX + DestR.x;
+            point.y = obj.topY * scaleY + DestR.y;
+            points.push_back( point );
+
+            RIDEHAL_DEBUG( "class=%d score=%.3f points=[%.3f %.3f %.3f %.3f]", obj.classId,
+                           obj.prob, obj.topX, obj.topY, obj.bottomX, obj.bottomY );
+
+            glLineWidth( 4 / m_WindowCol );
+            SDL_SetRenderDrawColor( ren, color.r, color.g, color.b, color.a );
+            SDL_RenderDrawLines( ren, &points[0], points.size() );
+            glLineWidth( 1 );
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-# Build scripts for RideHal
+# Launch scripts for RideHal
 
 ## How to Run the RideHal package
 

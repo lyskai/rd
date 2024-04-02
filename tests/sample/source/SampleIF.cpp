@@ -11,6 +11,8 @@ namespace sample
 
 std::map<std::string, Sample_CreateFunction_t> SampleIF::s_SampleMap;
 
+std::mutex SampleIF::s_locks[RIDE_HAL_PROCESSOR_MAX];
+
 SampleIF *SampleIF::Create( std::string name )
 {
     SampleIF *sample = nullptr;
@@ -46,6 +48,99 @@ RideHalError_e SampleIF::Init( std::string name )
 
     m_name = name;
     ret = RIDEHAL_LOGGER_INIT( name.c_str(), LOGGER_LEVEL_INFO );
+
+    return ret;
+}
+
+RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+#if defined( WITH_RSM_V2 )
+    if ( processor <= RIDE_HAL_PROCESSOR_HTP1 )
+    {
+        memset( &m_acquireCmdV2, 0, sizeof( m_acquireCmdV2 ) );
+        m_acquireCmdV2.resource = (rsm_resource_group) processor;
+        m_acquireCmdV2.priority = QUEUE_PRIORITY_DEFAULT;
+        m_acquireCmdV2.configure.priority = REQUEST_PRIORITY_DEFAULT;
+        m_acquireCmdV2.duration_us = 1000000;
+        m_acquireCmdV2.timeout_us = 0;
+        int rc = rsm_register_v2( &m_handle );
+        if ( 0 != rc )
+        {
+            RIDEHAL_ERROR( "rsm init failed: %d", rc );
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+    }
+    else
+#endif
+    if ( processor < RIDE_HAL_PROCESSOR_MAX )
+    {
+        m_processor = processor;
+    }
+    else
+    {
+        RIDEHAL_ERROR( "invalid processor %d", processor );
+        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+    }
+
+    return ret;
+}
+
+RideHalError_e SampleIF::Lock()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+#if defined( WITH_RSM_V2 )
+    if ( m_processor <= RIDE_HAL_PROCESSOR_HTP1 )
+    {
+        int rc = rsm_acquire_v2( m_handle, &m_acquireCmdV2, &m_acquireRspV2 );
+        if ( 0 != rc )
+        {
+            RIDEHAL_ERROR( "rsm acquire failed: %d", rc );
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+    }
+    else
+#endif
+    if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
+    {
+        s_locks[m_processor].lock();
+    }
+    else
+    {
+        RIDEHAL_ERROR( "the processor lock not ready" );
+        ret = RIDE_HAL_ERROR_STATE;
+    }
+
+    return ret;
+}
+
+RideHalError_e SampleIF::Unlock()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+#if defined( WITH_RSM_V2 )
+    if ( m_processor <= RIDE_HAL_PROCESSOR_HTP1 )
+    {
+        int rc = rsm_release_v2( m_handle, m_acquireRspV2.token );
+        if ( 0 != rc )
+        {
+            RIDEHAL_ERROR( "rsm release failed: %d", rc );
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+    }
+    else
+#endif
+    if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
+    {
+        s_locks[m_processor].unlock();
+    }
+    else
+    {
+        RIDEHAL_ERROR( "the processor lock not ready" );
+        ret = RIDE_HAL_ERROR_STATE;
+    }
 
     return ret;
 }

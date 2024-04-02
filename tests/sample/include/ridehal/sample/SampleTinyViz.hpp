@@ -43,6 +43,7 @@ public:
 private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
     void ThreadMain();
+    void ObjThreadMain();
 
 private:
     uint32_t m_width;
@@ -53,11 +54,14 @@ private:
     uint32_t m_winH;
 
     std::string m_topicName;
+    std::string m_objTopicName;
 
     std::thread m_thread;
+    std::thread m_objThread;
     bool m_stop;
 
     DataSubscriber<CamFrames_t> m_sub;
+    DataSubscriber<Road2DObjects_t> m_objSub;
 
     TinyViz m_tinyViz;
 

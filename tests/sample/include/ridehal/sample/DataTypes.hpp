@@ -42,6 +42,23 @@ typedef struct
     uint64_t timestamp;
 } Tensors_t;
 
+typedef struct
+{
+    int classId;
+    float prob;
+    float topX;
+    float topY;
+    float bottomX;
+    float bottomY;
+} Road2DObject_t;
+
+typedef struct
+{
+    std::vector<Road2DObject_t> objs;
+    uint64_t frameId;
+    uint64_t timestamp;
+} Road2DObjects_t;
+
 }   // namespace sample
 }   // namespace ridehal
 

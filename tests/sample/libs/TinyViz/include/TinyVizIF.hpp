@@ -43,13 +43,7 @@ public:
 
     virtual bool addCamera( const std::string camName, uint32_t width, uint32_t height ) = 0;
     virtual bool addData( const std::string camName, CamFrame_t & ) = 0;
-#if 0
-    virtual bool addData( const std::string camName, DataTypes::LaneBoundary & ) = 0;
-    virtual bool addData( const std::string camName, DataTypes::RoadDelimiter & ) = 0;
-    virtual bool addData( const std::string camName, DataTypes::RoadSurface & ) = 0;
-    virtual bool addData( const std::string camName, DataTypes::RoadObjects & ) = 0;
-    virtual bool addData( const std::string camName, DataTypes::TrafficSign & ) = 0;
-#endif
+    virtual bool addData( const std::string camName, Road2DObjects_t & ) = 0;
 };
 }   // namespace Stack
 }   // namespace QRide
