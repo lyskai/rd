@@ -87,16 +87,16 @@ public:
 
 
 private:
-    std::vector<std::array<uint32_t, 2>> m_InputResolutions;
-    std::vector<RideHal_ImageFormat_e> m_InputFormats;
-    std::vector<size_t> m_InputSizes;
-    std::array<uint32_t, 2> m_OutputResolution;
-    RideHal_ImageFormat_e m_OutputFormat;
-    size_t m_OutputSize = 0;
-    std::vector<std::array<uint32_t, 4>> m_ROIs;
-    uint32_t m_BatchSize = 1;
-    uint32_t m_Align = 1;
-    uint32_t m_Stride = 0;
+    std::vector<std::array<uint32_t, 2>> m_inputResolutions;
+    std::vector<RideHal_ImageFormat_e> m_inputFormats;
+    std::vector<size_t> m_inputSizes;
+    std::array<uint32_t, 2> m_outputResolution;
+    RideHal_ImageFormat_e m_outputFormat;
+    size_t m_outputSize = 0;
+    std::vector<std::array<uint32_t, 4>> m_rois;
+    uint32_t m_batchSize = 1;
+    uint32_t m_align = 1;
+    uint32_t m_stride = 0;
 
 };   // class C2D
 

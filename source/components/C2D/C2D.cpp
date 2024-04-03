@@ -28,48 +28,52 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     ret = ComponentIF::Init( pName, level );
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDE_HAL_ERROR_NONE != ret )
     {
-        m_BatchSize = pConfig->batchSize;
+        RIDEHAL_ERROR( "ComponentIF::Init failed" );
+    }
+
+    else
+    {
+        m_batchSize = pConfig->batchSize;
 
         /* Initialize input parameters */
-        for ( uint32_t i = 0; i < m_BatchSize; i++ )
+        for ( uint32_t i = 0; i < m_batchSize; i++ )
         {
             std::array<uint32_t, 2> inputRes;
             inputRes[0] = pConfig->inputConfigs[i].inputResolution.width;
             inputRes[1] = pConfig->inputConfigs[i].inputResolution.height;
-            m_InputResolutions.push_back( inputRes );
-            m_InputFormats.push_back( pConfig->inputConfigs[i].inputFormat );
-            size_t inputSize = ( size_t )( m_InputResolutions[i][0] * m_InputResolutions[i][1] *
-                                           GetFormatDepthSize( m_InputFormats[i] ) );
-            m_InputSizes.push_back( inputSize );
+            m_inputResolutions.push_back( inputRes );
+            m_inputFormats.push_back( pConfig->inputConfigs[i].inputFormat );
+            size_t inputSize = (size_t) ( m_inputResolutions[i][0] * m_inputResolutions[i][1] *
+                                          GetFormatDepthSize( m_inputFormats[i] ) );
+            m_inputSizes.push_back( inputSize );
 
             std::array<uint32_t, 4> inputROI;
             inputROI[0] = pConfig->inputConfigs->ROI.topX;
             inputROI[1] = pConfig->inputConfigs->ROI.topY;
             inputROI[2] = pConfig->inputConfigs->ROI.width;
             inputROI[3] = pConfig->inputConfigs->ROI.height;
-            m_ROIs.push_back( inputROI );
+            m_rois.push_back( inputROI );
         }
 
         /* Initialize output parameters */
-        m_OutputResolution[0] = pConfig->outputResolution.width;
-        m_OutputResolution[1] = pConfig->outputResolution.height;
-        m_OutputFormat = pConfig->outputFormat;
-        uint32_t stride = m_OutputResolution[0] * GetFormatDepthSize( m_OutputFormat );
-        m_Stride = ALIGN_S( stride, m_Align );
-        m_OutputSize = ( size_t )( m_Stride * m_OutputResolution[1] * m_BatchSize );
+        m_outputResolution[0] = pConfig->outputResolution.width;
+        m_outputResolution[1] = pConfig->outputResolution.height;
+        m_outputFormat = pConfig->outputFormat;
+        uint32_t stride = m_outputResolution[0] * GetFormatDepthSize( m_outputFormat );
+        m_stride = ALIGN_S( stride, m_align );
+        m_outputSize = (size_t) ( m_stride * m_outputResolution[1] * m_batchSize );
 
         /* Initialize C2DImpl parameters */
-        for ( uint32_t i = 0; i < m_BatchSize; i++ )
+        for ( uint32_t i = 0; i < m_batchSize; i++ )
         {
             std::unique_ptr<C2DImpl> c2dImpl = std::make_unique<C2DImpl>();
-            ret = c2dImpl->init( m_InputResolutions[i], m_InputFormats[i], m_OutputResolution,
-                                 m_OutputFormat, m_ROIs[i], m_Align );
+            ret = c2dImpl->init( m_inputResolutions[i], m_inputFormats[i], m_outputResolution,
+                                 m_outputFormat, m_rois[i], m_align );
             if ( ret != RIDE_HAL_ERROR_NONE )
             {
-                // RIDEHAL_ERROR( "Failed to initialize C2DImpl for input %u\n", i );
+                RIDEHAL_ERROR( "Failed to initialize C2DImpl for input %u\n", i );
                 return ret;
             }
             g_Impls.push_back( std::move( c2dImpl ) );
@@ -77,7 +81,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
 
         /* Complete initialization */
         m_state = RIDE_HAL_COMPONENT_STATE_READY;
-        // RIDEHAL_INFO( "Component C2D is initialized\n" );
+        RIDEHAL_INFO( "Component C2D is initialized\n" );
     }
 
     return ret;
@@ -95,7 +99,7 @@ RideHalError_e C2D::Start()
     {
         // DO start
         m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
-        // RIDEHAL_INFO( "Component C2D start to run\n" );
+        RIDEHAL_INFO( "Component C2D start to run\n" );
     }
 
     return ret;
@@ -114,7 +118,7 @@ RideHalError_e C2D::Stop()
     {
         // DO stop
         m_state = RIDE_HAL_COMPONENT_STATE_READY;
-        // RIDEHAL_INFO( "Component C2D is stopped\n" );
+        RIDEHAL_INFO( "Component C2D is stopped\n" );
     }
 
     return ret;
@@ -129,17 +133,31 @@ RideHalError_e C2D::Deinit()
         ret = RIDE_HAL_ERROR_STATE;
     }
 
+    /* Deinitialize C2DImpl vector */
+    for ( uint32_t i = 0; i < m_batchSize; i++ )
+    {
+        ret = g_Impls[i]->deInit();
+        if ( RIDE_HAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "g_Impls %u is deinitialized\n", i );
+        }
+    }
+
+    /* Complete initialization */
+    m_state = RIDE_HAL_COMPONENT_STATE_READY;
+    RIDEHAL_INFO( "Component C2D is initialized\n" );
+
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         // DO deinit
-        m_InputResolutions.clear();
-        m_InputFormats.clear();
-        m_InputSizes.clear();
-        m_ROIs.clear();
+        m_inputResolutions.clear();
+        m_inputFormats.clear();
+        m_inputSizes.clear();
+        m_rois.clear();
         g_Impls.clear();
 
         m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
-        // RIDEHAL_INFO( "Component C2D is deinitialized\n" );
+        RIDEHAL_INFO( "Component C2D is deinitialized\n" );
     }
 
     return ret;
@@ -150,29 +168,29 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( numInputs != m_BatchSize )
+    if ( numInputs != m_batchSize )
     {
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-        // RIDEHAL_ERROR( "batch size not correct: %u != %u\n", m_BatchSize, numInputs );
+        RIDEHAL_ERROR( "batch size not correct: %u != %u\n", m_batchSize, numInputs );
         return ret;
     }
 
     for ( size_t i = 0; i < numInputs; i++ )
     {
         void *inputDataPtr = pInputs[i].data();
-        void *outputDataPtr = (void *) ( (uintptr_t) pOutputs[i].data() + i * m_OutputSize );
-        if ( m_InputFormats[i] != pInputs[i].imgProps.format )
+        void *outputDataPtr = (void *) ( (uintptr_t) pOutputs[i].data() + i * m_outputSize );
+        if ( m_inputFormats[i] != pInputs[i].imgProps.format )
         {
             ret = RIDE_HAL_ERROR_TYPE;
-            // RIDEHAL_ERROR( "Input %u format not correct, expected: %d , input: %d\n ", i,
-            //    (int) m_InputFormats[i], (int) pInputs[i].imgProps.format );
+            RIDEHAL_ERROR( "Input %u format not correct, expected: %d , input: %d\n ", i,
+                           (int) m_inputFormats[i], (int) pInputs[i].imgProps.format );
             return ret;
         }
 
         ret = g_Impls[i]->draw( inputDataPtr, outputDataPtr );
         if ( ret != RIDE_HAL_ERROR_NONE )
         {
-            // RIDEHAL_ERROR( "Failed to draw blit objects for input %U\n: ", i );
+            RIDEHAL_ERROR( "Failed to draw blit objects for input %U\n: ", i );
             return ret;
         }
     }
@@ -182,3 +200,4 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
 
 }   // namespace component
 }   // namespace ridehal
+

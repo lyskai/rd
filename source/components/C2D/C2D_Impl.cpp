@@ -78,6 +78,9 @@ uint32_t GetC2DFormatType( RideHal_ImageFormat_e format )
         case RIDE_HAL_IMAGE_FORMAT_RGB888:
             c2dFormat = C2D_RGB_FORMAT( C2D_COLOR_FORMAT_888_RGB | C2D_FORMAT_SWAP_ENDIANNESS );
             break;
+        case RIDE_HAL_IMAGE_FORMAT_BGR888:
+            c2dFormat = C2D_RGB_FORMAT( C2D_COLOR_FORMAT_888_RGB );
+            break;
         default:
             break;
     }
@@ -86,26 +89,7 @@ uint32_t GetC2DFormatType( RideHal_ImageFormat_e format )
 
 C2DImpl::C2DImpl() {}
 
-C2DImpl::~C2DImpl()
-{
-    if ( m_SourceDef )
-    {
-        free( m_SourceDef );
-    }
-    if ( m_TargetDef )
-    {
-        free( m_TargetDef );
-    }
-
-    if ( 0 != m_SourceSurface )
-    {
-        c2dDestroySurface( m_SourceSurface );
-    }
-    if ( 0 != m_TargetSurface )
-    {
-        c2dDestroySurface( m_TargetSurface );
-    }
-}
+C2DImpl::~C2DImpl() {}
 
 RideHalError_e C2DImpl::init( std::array<uint32_t, 2> &inputResolution,
                               RideHal_ImageFormat_e inputFormat,
@@ -115,114 +99,158 @@ RideHalError_e C2DImpl::init( std::array<uint32_t, 2> &inputResolution,
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    m_InputFormat = inputFormat;
-    m_InputResolution = inputResolution;
-    m_OutputFormat = outputFormat;
-    m_OutputResolution = outputResolution;
-    m_ROI = roi;
-    m_Align = align;
+    m_inputFormat = inputFormat;
+    m_inputResolution = inputResolution;
+    m_outputFormat = outputFormat;
+    m_outputResolution = outputResolution;
+    m_roi = roi;
+    m_align = align;
 
-    /* create source surface */
-    ret = createSurface( m_SourceDef, &m_SourceSurface, inputFormat, inputResolution, true );
-    if ( RIDE_HAL_ERROR_NONE != ret )
+    /* allocate shared buffer for input buffer */
+    ret = m_inputBuffer.Allocate( m_inputResolution[0], m_inputResolution[1], m_inputFormat );
+    if ( ret != RIDE_HAL_ERROR_NONE )
     {
-        // RIDEHAL_ERROR( "Failed to create surface for source\n" );
+        // RIDEHAL_ERROR( "Failed to allocate shared dma buffer for image\n" );
+        std::cout << "Failed to allocate memory for input buffer" << std::endl;
         return ret;
     }
-    if ( nullptr == m_SourceDef )
+
+    /* allocate shared buffer for output buffer */
+    ret = m_outputBuffer.Allocate( m_outputResolution[0], m_outputResolution[1], m_outputFormat );
+    if ( ret != RIDE_HAL_ERROR_NONE )
+    {
+        // RIDEHAL_ERROR( "Failed to allocate shared dma buffer for image\n" );
+        std::cout << "Failed to allocate memory for output buffer" << std::endl;
+        return ret;
+    }
+
+    /* create source surface */
+    m_sourceDef = createSurface( &m_sourceSurface, m_inputFormat, &m_inputBuffer, m_inputResolution,
+                                 true );
+    if ( nullptr == m_sourceDef )
     {
         ret = RIDE_HAL_ERROR_NULL_PTR;
         // RIDEHAL_ERROR( "Source surface is null\n" );
+        std::cout << "Source surface is null" << std::endl;
         return ret;
     }
 
     /* create target surface */
-    ret = createSurface( m_TargetDef, &m_TargetSurface, outputFormat, outputResolution, false );
-    if ( RIDE_HAL_ERROR_NONE != ret )
-    {
-        // RIDEHAL_ERROR( "Failed to create surface for target\n" );
-        return ret;
-    }
-    if ( nullptr == m_TargetDef )
+    m_targetDef = createSurface( &m_targetSurface, m_outputFormat, &m_outputBuffer,
+                                 m_outputResolution, false );
+    if ( nullptr == m_targetDef )
     {
         ret = RIDE_HAL_ERROR_NULL_PTR;
         // RIDEHAL_ERROR( "Target surface is null\n" );
+        std::cout << "Target surface is null" << std::endl;
         return ret;
     }
 
-    /* allocate shared buffer for input image */
-    ret = m_SharedBuffer.Allocate( inputResolution[0], inputResolution[1], inputFormat );
-    if ( ret != RIDE_HAL_ERROR_NONE )
+    m_c2dObject.surface_id = m_sourceSurface;   // blit from source
+    if ( ( m_roi[0] != 0 ) || ( m_roi[1] != 0 ) || ( m_roi[2] != 0 ) || ( m_roi[3] != 0 ) )
     {
-        // RIDEHAL_ERROR( "Failed to allocate shared dma buffer for image\n" );
-        return ret;
-    }
-
-    m_C2dObject.surface_id = m_SourceSurface;   // blit from source
-    if ( ( m_ROI[0] != 0 ) || ( m_ROI[1] != 0 ) || ( m_ROI[2] != 0 ) || ( m_ROI[3] != 0 ) )
-    {
-        m_C2dObject.source_rect.height = m_ROI[3] << 16;
-        m_C2dObject.source_rect.width = m_ROI[2] << 16;
-        m_C2dObject.source_rect.x = m_ROI[0] << 16;
-        m_C2dObject.source_rect.y = m_ROI[1] << 16;
+        m_c2dObject.source_rect.height = m_roi[3] << 16;
+        m_c2dObject.source_rect.width = m_roi[2] << 16;
+        m_c2dObject.source_rect.x = m_roi[0] << 16;
+        m_c2dObject.source_rect.y = m_roi[1] << 16;
     }
     else
     {
-        m_C2dObject.source_rect.height = inputResolution[1] << 16;
-        m_C2dObject.source_rect.width = inputResolution[0] << 16;
-        m_C2dObject.source_rect.x = 0 << 16;
-        m_C2dObject.source_rect.y = 0 << 16;
+        m_c2dObject.source_rect.height = inputResolution[1] << 16;
+        m_c2dObject.source_rect.width = inputResolution[0] << 16;
+        m_c2dObject.source_rect.x = 0 << 16;
+        m_c2dObject.source_rect.y = 0 << 16;
     }
 
-    m_C2dObject.config_mask = C2D_SOURCE_RECT_BIT;
-    m_C2dObject.config_mask |= C2D_NO_BILINEAR_BIT;
-    m_C2dObject.config_mask |= C2D_NO_ANTIALIASING_BIT;
+    m_c2dObject.config_mask = C2D_SOURCE_RECT_BIT;
+    m_c2dObject.config_mask |= C2D_NO_BILINEAR_BIT;
+    m_c2dObject.config_mask |= C2D_NO_ANTIALIASING_BIT;
+    return ret;
+}
+
+RideHalError_e C2DImpl::deInit()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( m_sourceDef )
+    {
+        free( m_sourceDef );
+    }
+    if ( m_targetDef )
+    {
+        free( m_targetDef );
+    }
+
+    if ( 0 != m_sourceSurface )
+    {
+        c2dDestroySurface( m_sourceSurface );
+    }
+    if ( 0 != m_targetSurface )
+    {
+        c2dDestroySurface( m_targetSurface );
+    }
+
+    ret = m_inputBuffer.Free();
+    if ( ret != RIDE_HAL_ERROR_NONE )
+    {
+        std::cout << "Failed to free input buffer" << std::endl;
+    }
+    ret = m_outputBuffer.Free();
+    if ( ret != RIDE_HAL_ERROR_NONE )
+    {
+        std::cout << "Failed to free output buffer" << std::endl;
+    }
+
     return ret;
 }
 
 RideHalError_e C2DImpl::draw( void *input, void *output )
 {
-    RideHalError_e ret = updateSurface( m_SourceDef, m_SourceSurface, input, m_InputFormat,
-                                        m_InputResolution, true );
+    RideHalError_e ret = updateSurface( m_sourceDef, m_sourceSurface, input, m_inputFormat,
+                                        m_inputResolution, true );
     if ( ret != RIDE_HAL_ERROR_NONE )
     {
         // RIDEHAL_ERROR( "Failed to update source surface\n" );
+        std::cout << "Failed to update source surface" << std::endl;
         return ret;
     }
 
-    ret = updateSurface( m_TargetDef, m_TargetSurface, output, m_OutputFormat, m_OutputResolution,
+    ret = updateSurface( m_targetDef, m_targetSurface, output, m_outputFormat, m_outputResolution,
                          false );
     if ( ret != RIDE_HAL_ERROR_NONE )
     {
         // RIDEHAL_ERROR( "Failed to update target surface\n" );
+        std::cout << "Failed to update target surface" << std::endl;
         return ret;
     }
 
-    auto c2dStatus = c2dDraw( m_TargetSurface, C2D_TARGET_ROTATE_0, 0, 0, 0, &m_C2dObject, 1 );
+    auto c2dStatus = c2dDraw( m_targetSurface, C2D_TARGET_ROTATE_0, 0, 0, 0, &m_c2dObject, 1 );
     if ( C2D_STATUS_OK != c2dStatus )
     {
 
         ret = RIDE_HAL_ERROR_FAIL;
         // RIDEHAL_ERROR( "Failed to draw: %d\n", c2dStatus );
+        std::cout << "Failed to draw, status =  " << c2dStatus << std::endl;
         return ret;
     }
 
-    c2dStatus = c2dFinish( m_TargetSurface );
+    c2dStatus = c2dFinish( m_targetSurface );
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
         // RIDEHAL_ERROR( "Failed to finish: %d\n", c2dStatus );
+        std::cout << "Failed to finish, status =  " << c2dStatus << std::endl;
         return ret;
     }
 
     return ret;
 }
 
-RideHalError_e C2DImpl::createYUVSurface( void *surface, uint32_t *surfaceId,
-                                          RideHal_ImageFormat_e format,
-                                          std::array<uint32_t, 2> &resolution, bool isSource )
+void *C2DImpl::createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                                 RideHal_SharedBuffer_t *buffer,
+                                 std::array<uint32_t, 2> &resolution, bool isSource )
 {
-    surface = nullptr;
+    void *surface = nullptr;
     uint32_t width = resolution[0];
     uint32_t height = resolution[1];
     uint32_t bytesPerPixel = 1;
@@ -240,7 +268,7 @@ RideHalError_e C2DImpl::createYUVSurface( void *surface, uint32_t *surfaceId,
     {
         memset( surfaceDef, 0, sizeof( C2D_YUV_SURFACE_DEF ) );
 
-        surfaceDef->plane0 = m_SharedBuffer.data();
+        surfaceDef->plane0 = buffer->data();
         surfaceDef->format = GetC2DFormatType( format );
         surfaceDef->height = height;
         surfaceDef->width = width;
@@ -264,9 +292,11 @@ RideHalError_e C2DImpl::createYUVSurface( void *surface, uint32_t *surfaceId,
         if ( C2D_STATUS_OK != c2dStatus )
         {
             free( surfaceDef );
-            // RIDEHAL_ERROR( "Failed to create %s YUV surface for format %d resoultion %d x %d:
-            // %d\n",
-            //    isSource ? "source" : "target", (int) format, width, height, (int) ret );
+            // RIDEHAL_ERROR(
+            //         "Failed to create %s YUV surface for format %d resoultion %d x %d:% d\n ",
+            //         isSource ? "source" : "target", (int) format, width, height, (int) ret );
+            std::cout << "Failed to create"
+                      << " YUV surface, c2dStatus wrong" << std::endl;
         }
         else
         { /* create surface successfully */
@@ -278,16 +308,17 @@ RideHalError_e C2DImpl::createYUVSurface( void *surface, uint32_t *surfaceId,
         free( surfaceDef );
         ret = RIDE_HAL_ERROR_NULL_PTR;
         // RIDEHAL_ERROR( "Failed to allocate memory for YUV surfaceDef\n" );
-        return ret;
+        std::cout << "Failed to allocate memory for YUV surfaceDef" << std::endl;
+        return surface;
     }
-    return ret;
+    return surface;
 }
 
-RideHalError_e C2DImpl::createRGBSurface( void *surface, uint32_t *surfaceId,
-                                          RideHal_ImageFormat_e format,
-                                          std::array<uint32_t, 2> &resolution, bool isSource )
+void *C2DImpl::createRGBSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                                 RideHal_SharedBuffer_t *buffer,
+                                 std::array<uint32_t, 2> &resolution, bool isSource )
 {
-    surface = nullptr;
+    void *surface = nullptr;
     uint32_t width = resolution[0];
     uint32_t height = resolution[1];
     uint32_t stride = width * 3;
@@ -296,7 +327,7 @@ RideHalError_e C2DImpl::createRGBSurface( void *surface, uint32_t *surfaceId,
     if ( false == isSource )
     {
         /* only do this for RGB output */
-        stride = ALIGN_S( stride, m_Align );
+        stride = ALIGN_S( stride, m_align );
     }
 
     C2D_RGB_SURFACE_DEF *surfaceDef =
@@ -305,7 +336,7 @@ RideHalError_e C2DImpl::createRGBSurface( void *surface, uint32_t *surfaceId,
     {
         memset( surfaceDef, 0, sizeof( C2D_RGB_SURFACE_DEF ) );
 
-        surfaceDef->buffer = m_SharedBuffer.data();
+        surfaceDef->buffer = buffer->data();
         surfaceDef->format = GetC2DFormatType( format );
         surfaceDef->height = height;
         surfaceDef->width = width;
@@ -318,9 +349,11 @@ RideHalError_e C2DImpl::createRGBSurface( void *surface, uint32_t *surfaceId,
         if ( C2D_STATUS_OK != c2dStatus )
         {
             free( surfaceDef );
-            // RIDEHAL_ERROR( "Failed to create %s RGB surface for format %d resoultion %dx%d:
-            // %d\n",
-            //    isSource ? "source" : "target", (int) format, width, height, (int) ret );
+            // RIDEHAL_ERROR( "Failed to create %s RGB surface for format %d resoultion %dx%d: % d\n
+            //                ", isSource ? " source "  : " target ", (int) format, width, height,
+            //                (int) ret );
+            std::cout << "Failed to create"
+                      << " RGB surface" << std::endl;
         }
         else
         { /* create surface successfully */
@@ -332,36 +365,44 @@ RideHalError_e C2DImpl::createRGBSurface( void *surface, uint32_t *surfaceId,
         free( surfaceDef );
         ret = RIDE_HAL_ERROR_NULL_PTR;
         // RIDEHAL_ERROR( "Failed to allocate memory for RGB surfaceDef\n" );
-        return ret;
+        std::cout << "Failed to allocate memory for RGB surfaceDef" << std::endl;
+        return surface;
     }
-    return ret;
+    return surface;
 }
 
-RideHalError_e C2DImpl::createSurface( void *surface, uint32_t *surfaceId,
-                                       RideHal_ImageFormat_e format,
-                                       std::array<uint32_t, 2> &resolution, bool isSource )
+void *C2DImpl::createSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                              RideHal_SharedBuffer_t *buffer, std::array<uint32_t, 2> &resolution,
+                              bool isSource )
 {
+    void *surface = nullptr;
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     switch ( format )
     {
-        case RIDE_HAL_IMAGE_FORMAT_RGB888:
-            ret = createRGBSurface( surface, surfaceId, format, resolution, isSource );
+        case RIDE_HAL_IMAGE_FORMAT_RGB888: /* no break */
+        case RIDE_HAL_IMAGE_FORMAT_BGR888:
+            surface = createRGBSurface( surfaceId, format, buffer, resolution, isSource );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
                 // RIDEHAL_ERROR( "Failed to create RGB Surface\n" );
+                std::cout << "Failed to create RGB Surface" << std::endl;
             }
             break;
         case RIDE_HAL_IMAGE_FORMAT_UYVY:
-            ret = createYUVSurface( surface, surfaceId, format, resolution, isSource );
+        case RIDE_HAL_IMAGE_FORMAT_NV12:
+        case RIDE_HAL_IMAGE_FORMAT_P010:
+            surface = createYUVSurface( surfaceId, format, buffer, resolution, isSource );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
                 // RIDEHAL_ERROR( "Failed to create YUV Surface\n" );
+                std::cout << "Failed to create YUV Surface" << std::endl;
             }
             break;
         default:
+            std::cout << "Unsupported image format" << std::endl;
             break;
     }
-    return ret;
+    return surface;
 }
 
 RideHalError_e C2DImpl::updateYUVSurface( C2D_YUV_SURFACE_DEF *surfaceDef, uint32_t surfaceId,
@@ -382,13 +423,15 @@ RideHalError_e C2DImpl::updateYUVSurface( C2D_YUV_SURFACE_DEF *surfaceDef, uint3
     surfaceDef->plane1 = (void *) ( (uint8_t *) surfaceDef->plane0 + stride * height );
     auto c2dStatus = c2dUpdateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
-            ( C2D_SURFACE_TYPE )( C2D_SURFACE_YUV_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
+            (C2D_SURFACE_TYPE) ( C2D_SURFACE_YUV_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
         // RIDEHAL_ERROR( "Failed to update %s YUV surface: %d\n", isSource ? "source" : "target",
-        //    (int) ret );
-        //    return ret;
+        //                (int) ret );
+        std::cout << "Failed to update"
+                  << " YUV surface" << std::endl;
+        return ret;
     }
     return ret;
 }
@@ -402,13 +445,15 @@ RideHalError_e C2DImpl::updateRGBSurface( C2D_RGB_SURFACE_DEF *surfaceDef, uint3
     surfaceDef->buffer = ptr;
     auto c2dStatus = c2dUpdateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
-            ( C2D_SURFACE_TYPE )( C2D_SURFACE_RGB_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
+            (C2D_SURFACE_TYPE) ( C2D_SURFACE_RGB_HOST | C2D_SURFACE_WITH_PHYS ), surfaceDef );
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
         // RIDEHAL_ERROR( "Failed to update %s RGB surface: %d\n", isSource ? "source" : "target",
-        //    (int) ret );
-        //    return ret;
+        //                (int) ret );
+        std::cout << "Failed to update"
+                  << " YUV surface" << std::endl;
+        return ret;
     }
     return ret;
 }
@@ -426,6 +471,7 @@ RideHalError_e C2DImpl::updateSurface( void *surfaceDef, uint32_t surfaceId, voi
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
                 // RIDEHAL_ERROR( "Failed to update RGB Surface\n" );
+                std::cout << "Failed to update RGB Surface" << std::endl;
             }
             break;
         default:
@@ -434,8 +480,10 @@ RideHalError_e C2DImpl::updateSurface( void *surfaceDef, uint32_t surfaceId, voi
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
                 // RIDEHAL_ERROR( "Failed to update YUV Surface\n" );
+                std::cout << "Failed to update YUV Surface" << std::endl;
             }
             break;
     }
     return ret;
 }
+
