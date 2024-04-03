@@ -19,5 +19,5 @@ target_link_libraries(FadasIface PUBLIC FadasIfaceStub fadas)
 add_library(Ride::Hal::Libs::FadasIface ALIAS FadasIface)
 install(TARGETS FadasIface DESTINATION lib)
 
-#install(FILES prebuilt/dsp/libFadasIface_skel.so DESTINATION lib/dsp)
+install(FILES prebuilt/dsp/libFadasIface_skel.so DESTINATION lib/dsp)
 
