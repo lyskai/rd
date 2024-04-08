@@ -306,6 +306,11 @@ RideHalError_e RideHal_SharedBuffer::GetSharedBuffer( RideHal_SharedBuffer_t *pS
         RIDEHAL_LOG_ERROR( "buffer type %d is not image", this->type );
         ret = RIDE_HAL_ERROR_UNSUPPORTED;
     }
+    else if ( nullptr == pSharedBuffer )
+    {
+        RIDEHAL_LOG_ERROR( "pSharedBuffer is nullptr" );
+        ret = RIDE_HAL_ERROR_NULL_PTR;
+    }
     else if ( batchOffset >= this->imgProps.batchSize )
     {
         RIDEHAL_LOG_ERROR( "buffer batch offset %u(>=%u) out of range", batchOffset,
@@ -328,6 +333,79 @@ RideHalError_e RideHal_SharedBuffer::GetSharedBuffer( RideHal_SharedBuffer_t *pS
         pSharedBuffer->imgProps.batchSize = batchSize;
         pSharedBuffer->size = batchSize * singleImageSize;
         pSharedBuffer->offset = batchOffset * singleImageSize;
+    }
+
+    return ret;
+}
+
+RideHalError_e RideHal_SharedBuffer::ImageToTensor( RideHal_SharedBuffer *pSharedBuffer )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( nullptr == pSharedBuffer )
+    {
+        RIDEHAL_LOG_ERROR( "pSharedBuffer is nullptr" );
+        ret = RIDE_HAL_ERROR_NULL_PTR;
+    }
+    else if ( nullptr == this->buffer.pData )
+    {
+        RIDEHAL_LOG_ERROR( "image not allocated" );
+        ret = RIDE_HAL_ERROR_INVALID_BUF;
+    }
+    else if ( RIDE_HAL_BUFFER_TYPE_IMAGE != this->type )
+    {
+        RIDEHAL_LOG_ERROR( "buffer type %d is not image", this->type );
+        ret = RIDE_HAL_ERROR_UNSUPPORTED;
+    }
+    else if ( ( RIDE_HAL_IMAGE_FORMAT_RGB888 == this->imgProps.format ) ||
+              ( RIDE_HAL_IMAGE_FORMAT_BGR888 == this->imgProps.format ) ||
+              ( RIDE_HAL_IMAGE_FORMAT_UYVY == this->imgProps.format ) )
+    { /* for image format with just 1 plane */
+        if ( this->imgProps.stride[0] !=
+             ( this->imgProps.width * s_rideHalFormatToBytesPerPixel[this->imgProps.format] ) )
+        {
+            RIDEHAL_LOG_ERROR(
+                    "image with format %d with extra padding along width is not supported to be "
+                    "converted to tensor: stride=%u width=%u",
+                    this->imgProps.format, this->imgProps.stride[0], this->imgProps.width );
+            ret = RIDE_HAL_ERROR_UNSUPPORTED;
+        }
+        else if ( ( this->imgProps.batchSize > 1 ) &&
+                  ( this->imgProps.actualHeight[0] != this->imgProps.height ) )
+        {
+            RIDEHAL_LOG_ERROR( "image with format %d with extra padding along height is not "
+                               "supported to be "
+                               "converted to tensor: actualHeight=%u height=%u",
+                               this->imgProps.format, this->imgProps.actualHeight[0],
+                               this->imgProps.height );
+            ret = RIDE_HAL_ERROR_UNSUPPORTED;
+        }
+        else
+        {
+            /* OK */
+        }
+    }
+    else
+    {
+        RIDEHAL_LOG_ERROR( "image with format %d is not supported to be converted to tensor",
+                           this->imgProps.format );
+        ret = RIDE_HAL_ERROR_UNSUPPORTED;
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        pSharedBuffer->buffer = this->buffer;
+        pSharedBuffer->offset = this->offset;
+        pSharedBuffer->type = RIDE_HAL_BUFFER_TYPE_TENSOR;
+        pSharedBuffer->tensorProps.type = RIDE_HAL_TENSOR_TYPE_UINT8;
+        pSharedBuffer->tensorProps.numDims = 4;
+        pSharedBuffer->tensorProps.dims[0] = this->imgProps.batchSize;
+        pSharedBuffer->tensorProps.dims[1] = this->imgProps.height;
+        pSharedBuffer->tensorProps.dims[2] = this->imgProps.width;
+        pSharedBuffer->tensorProps.dims[3] = s_rideHalFormatToBytesPerPixel[this->imgProps.format];
+        pSharedBuffer->size = this->imgProps.batchSize * this->imgProps.height *
+                              this->imgProps.width *
+                              s_rideHalFormatToBytesPerPixel[this->imgProps.format];
     }
 
     return ret;

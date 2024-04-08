@@ -12,6 +12,7 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
 {
     RideHal_SharedBuffer_t sharedBuffer;
     RideHal_SharedBuffer_t sharedBufferM;
+    RideHal_SharedBuffer_t sharedBufferTs;
 
     /* testing allocate image for UYVY */
     auto ret = sharedBuffer.Allocate( 3840, 2160, RIDE_HAL_IMAGE_FORMAT_UYVY );
@@ -25,6 +26,18 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_EQ( 1, sharedBuffer.imgProps.numPlanes );
     ASSERT_LE( 3840 * 2, sharedBuffer.imgProps.stride[0] );
     ASSERT_LE( 2160, sharedBuffer.imgProps.actualHeight[0] );
+
+    ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret ); /* supported as padding is 0 */
+    ASSERT_EQ( 0, sharedBufferTs.offset );
+    ASSERT_LE( 3840 * 2160 * 2, sharedBufferTs.size );
+    ASSERT_EQ( RIDE_HAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
+    ASSERT_EQ( 4, sharedBufferTs.tensorProps.numDims );
+    ASSERT_EQ( 1, sharedBufferTs.tensorProps.dims[0] );
+    ASSERT_EQ( 2160, sharedBufferTs.tensorProps.dims[1] );
+    ASSERT_EQ( 3840, sharedBufferTs.tensorProps.dims[2] );
+    ASSERT_EQ( 2, sharedBufferTs.tensorProps.dims[3] );
+
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
@@ -42,6 +55,8 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_LE( 2160, sharedBuffer.imgProps.actualHeight[0] );
     ASSERT_LE( 3840, sharedBuffer.imgProps.stride[1] );
     ASSERT_LE( 2160 / 2, sharedBuffer.imgProps.actualHeight[1] );
+    ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
+    ASSERT_EQ( RIDE_HAL_ERROR_UNSUPPORTED, ret ); /* not supported as format */
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
@@ -81,6 +96,17 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_EQ( 1, sharedBufferM.imgProps.numPlanes );
     ASSERT_LE( 1024, sharedBufferM.imgProps.stride[0] );
     ASSERT_LE( 768, sharedBufferM.imgProps.actualHeight[0] );
+
+    ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( 0, sharedBufferTs.offset );
+    ASSERT_LE( 1024 * 768 * 3 * 7, sharedBufferTs.size );
+    ASSERT_EQ( RIDE_HAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
+    ASSERT_EQ( 4, sharedBufferTs.tensorProps.numDims );
+    ASSERT_EQ( 7, sharedBufferTs.tensorProps.dims[0] );
+    ASSERT_EQ( 768, sharedBufferTs.tensorProps.dims[1] );
+    ASSERT_EQ( 1024, sharedBufferTs.tensorProps.dims[2] );
+    ASSERT_EQ( 3, sharedBufferTs.tensorProps.dims[3] );
 
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );

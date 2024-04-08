@@ -93,7 +93,7 @@ public:
     RideHalError_e Free();
 
     /// @brief Get the shared buffer information
-    /// @param sharedBuffer pointer to hold the shared buffer information for
+    /// @param pSharedBuffer pointer to hold the shared buffer information for
     /// the image batches specified by batchOffset and batchSize
     /// @param batchOffset the image batch offset
     /// @param batchSize the image batch size
@@ -106,6 +106,10 @@ public:
     /// @return the valid buffer virtual address
     void *data() const { return (void *) ( (uintptr_t) buffer.pData + offset ); }
 
+    /// @brief Convert the shared buffer type from image to tensor
+    /// @param pSharedBuffer pointer to hold the shared buffer information for
+    /// the tensor that converted from the image
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e ImageToTensor( RideHal_SharedBuffer *pSharedBuffer );
 
 private:

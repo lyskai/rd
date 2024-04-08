@@ -149,7 +149,16 @@ void SampleQnn::ThreadMain()
             std::vector<std::shared_ptr<SharedBuffer_t>> outputBuffers;
             for ( auto &frame : frames.frames )
             {
-                inputs.push_back( frame.buffer->sharedBuffer );
+                RideHal_SharedBuffer_t sharedBuffer;
+                ret = frame.buffer->sharedBuffer.ImageToTensor( &sharedBuffer );
+                if ( RIDE_HAL_ERROR_NONE != ret )
+                {
+                    RIDEHAL_ERROR( "QNN failed to do image to tensor convert for frameId %" PRIu64
+                                   ": ret = %d",
+                                   frames.frames[0].frameId, ret );
+                    break;
+                }
+                inputs.push_back( sharedBuffer );
             }
 
             for ( size_t i = 0; ( i < m_outputInfos.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
