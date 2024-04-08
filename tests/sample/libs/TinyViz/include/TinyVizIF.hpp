@@ -1,7 +1,7 @@
-//  Copyright 2020 Qualcomm Technologies, Inc. All rights reserved.
+//  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-#ifndef QRIDE_STACK_TINYVIZ_IF_HPP
-#define QRIDE_STACK_TINYVIZ_IF_HPP
+#ifndef RIDEHAL_SAMPLE_TINYVIZ_IF_HPP
+#define RIDEHAL_SAMPLE_TINYVIZ_IF_HPP
 
 #include <list>
 #include <map>
@@ -14,9 +14,9 @@
 
 using namespace ridehal::sample;
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 class TinyVizIF
@@ -27,25 +27,15 @@ public:
     TinyVizIF &operator=( const TinyVizIF & ) = delete;
     virtual ~TinyVizIF() = default;
 
-    enum class PixelFormat
-    {
-        YUY2,
-        UYVY,
-        NV12,
-        YV12,
-        RGB
-    };
-
-    virtual bool init( PixelFormat format = PixelFormat::YUY2, uint32_t winW = 1920,
-                       uint32_t winH = 1024 ) = 0;
+    virtual bool init( uint32_t winW = 1920, uint32_t winH = 1024 ) = 0;
     virtual bool start() = 0;
     virtual bool stop() = 0;
 
-    virtual bool addCamera( const std::string camName, uint32_t width, uint32_t height ) = 0;
+    virtual bool addCamera( const std::string camName ) = 0;
     virtual bool addData( const std::string camName, CamFrame_t & ) = 0;
     virtual bool addData( const std::string camName, Road2DObjects_t & ) = 0;
 };
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal
 
-#endif   // #ifndef QRIDE_STACK_TINYVIZ_IF_HPP
+#endif   // #ifndef RIDEHAL_SAMPLE_TINYVIZ_IF_HPP

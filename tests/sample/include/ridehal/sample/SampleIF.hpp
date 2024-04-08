@@ -13,6 +13,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <vector>
 
 #if defined( WITH_RSM_V2 )
 #include <rsm_client_v2.h>
@@ -87,6 +88,8 @@ protected:
     RideHalError_e Unlock();
 
     std::string Get( SampleConfig_t &config, std::string key, std::string defaultV );
+    std::vector<std::string> Get( SampleConfig_t &config, std::string key,
+                                  std::vector<std::string> defaultV );
     int32_t Get( SampleConfig_t &config, std::string key, int32_t defaultV );
     uint32_t Get( SampleConfig_t &config, std::string key, uint32_t defaultV );
     float Get( SampleConfig_t &config, std::string key, float defaultV );

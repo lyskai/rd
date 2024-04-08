@@ -13,7 +13,7 @@ Logger_Log_t Logger::s_logFnc = Logger::DefaultLog;
 Logger_Create_t Logger::s_createFnc = Logger::DefaultCreate;
 Logger_Destroy_t Logger::s_destroyFnc = Logger::DefaultDestory;
 
-std::mutex Logger::s_Lock;
+std::mutex Logger::s_lock;
 Logger Logger::s_defaultLogger;
 
 Logger::Logger() : m_hHandle( nullptr ) {}
@@ -47,7 +47,7 @@ Logger &Logger::GetDefault()
 {
     if ( nullptr == s_defaultLogger.m_hHandle )
     {
-        std::lock_guard<std::mutex> l( s_Lock );
+        std::lock_guard<std::mutex> l( s_lock );
         // the mutext lock is need to ensure the 2 more threads reach here at the same time, thus
         // the first thread that call this API do the default logger initialization. The second
         // thread Init call will get error RIDE_HAL_ERROR_STATE as it was already initialized.

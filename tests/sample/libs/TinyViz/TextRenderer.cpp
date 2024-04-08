@@ -3,9 +3,9 @@
 
 #include "TextRenderer.hpp"
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 TextInfo::TextInfo() {}
@@ -72,5 +72,5 @@ TextInfo *NumTextCollect::getTextInfo( uint32_t idx )
     return &m_NumTextInfos[idx];
 }
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal

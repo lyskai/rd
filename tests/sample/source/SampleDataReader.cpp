@@ -12,6 +12,8 @@ namespace sample
 {
 
 
+std::mutex SampleDataReader::s_lock;
+
 static std::string s_rideHalFormatToStr[RIDE_HAL_IMAGE_FORMAT_MAX] = {
         ".rgb",  /* RIDE_HAL_IMAGE_FORMAT_RGB888 */
         ".bgr",  /* RIDE_HAL_IMAGE_FORMAT_BGR888 */
@@ -118,6 +120,8 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     FILE *file = nullptr;
     size_t length = 0;
 
+    std::lock_guard<std::mutex> l( s_lock );
+
     file = fopen( path.c_str(), "rb" );
     if ( nullptr == file )
     {
@@ -166,17 +170,17 @@ void SampleDataReader::ThreadMain()
     uint64_t frameId = 0;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
-        CamFrame_t frame;
-        auto start = std::chrono::high_resolution_clock::now();
         std::shared_ptr<SharedBuffer_t> buffer = m_imagePool.Get();
         if ( nullptr != buffer )
         {
+            auto start = std::chrono::high_resolution_clock::now();
             std::string path =
                     m_dataPath + "/" + std::to_string( index ) + s_rideHalFormatToStr[m_format];
             ret = LoadImage( buffer, path );
             if ( RIDE_HAL_ERROR_NONE == ret )
             {
+                CamFrames_t frames;
+                CamFrame_t frame;
                 struct timespec ts;
                 clock_gettime( CLOCK_MONOTONIC, &ts );
                 frame.buffer = buffer;
@@ -190,15 +194,19 @@ void SampleDataReader::ThreadMain()
             {
                 index = 0;
             }
+            auto end = std::chrono::high_resolution_clock::now();
+            uint64_t elapsedMs =
+                    std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count();
+            RIDEHAL_DEBUG( "Loading frame %" PRIu64 " cost %" PRIu64 "ms", frameId, elapsedMs );
+            if ( ( 1000 / m_fps ) > elapsedMs )
+            {
+                std::this_thread::sleep_for(
+                        std::chrono::milliseconds( ( 1000 / m_fps ) - elapsedMs ) );
+            }
         }
-        auto end = std::chrono::high_resolution_clock::now();
-        uint64_t elapsedMs =
-                std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count();
-        RIDEHAL_DEBUG( "Loading frame %" PRIu64 " cost %" PRIu64 "ms", frameId, elapsedMs );
-        if ( ( 1000 / m_fps ) > elapsedMs )
-        {
-            std::this_thread::sleep_for(
-                    std::chrono::milliseconds( ( 1000 / m_fps ) - elapsedMs ) );
+        else
+        { /* sleep to wait a buffer to be released */
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1000 / m_fps ) );
         }
     }
 }

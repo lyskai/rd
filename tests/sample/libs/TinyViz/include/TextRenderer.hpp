@@ -1,8 +1,8 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#ifndef QRIDE_STACK_TINYVIZ_TEXT_RENDERER_HPP
-#define QRIDE_STACK_TINYVIZ_TEXT_RENDERER_HPP
+#ifndef RIDEHAL_SAMPLE_TINYVIZ_TEXT_RENDERER_HPP
+#define RIDEHAL_SAMPLE_TINYVIZ_TEXT_RENDERER_HPP
 
 #include <string>
 #include <vector>
@@ -12,9 +12,9 @@
 
 #include "Macros.hpp"
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 class TextInfo
@@ -52,7 +52,7 @@ private:
     std::vector<TextInfo> m_NumTextInfos;
 };
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal
 
-#endif   // #ifndef QRIDE_STACK_TINYVIZ_TEXT_RENDERER_HPP
+#endif   // #ifndef RIDEHAL_SAMPLE_TINYVIZ_TEXT_RENDERER_HPP

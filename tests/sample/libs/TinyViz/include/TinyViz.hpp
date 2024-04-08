@@ -1,7 +1,7 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-#ifndef QRIDE_STACK_TINYVIZ_HPP
-#define QRIDE_STACK_TINYVIZ_HPP
+#ifndef RIDEHAL_SAMPLE_TINYVIZ_HPP
+#define RIDEHAL_SAMPLE_TINYVIZ_HPP
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
@@ -13,9 +13,9 @@
 
 using namespace ridehal::common;
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 class TinyViz : public TinyVizIF
@@ -26,16 +26,16 @@ public:
     TinyViz &operator=( const TinyViz & ) = delete;
     ~TinyViz() override = default;
 
-    bool init( PixelFormat format = PixelFormat::YUY2, uint32_t winW = 1920,
-               uint32_t winH = 1024 ) override;
+    bool init( uint32_t winW = 1920, uint32_t winH = 1024 ) override;
     bool start() override;
     bool stop() override;
 
-    bool addCamera( const std::string camName, uint32_t camW, uint32_t camH ) override;
+    bool addCamera( const std::string camName ) override;
     bool addData( const std::string camName, CamFrame_t & ) override;
     bool addData( const std::string camName, Road2DObjects_t & ) override;
 
 private:
+    uint32_t GetSDLFormat( RideHal_ImageFormat_e format );
     bool isCamSelected( size_t id );
     void rendererThread();
     void setAllCamActive();
@@ -64,8 +64,6 @@ private:
     int m_WindowCol = 1;
     int m_WindowRow = 1;
 
-    uint32_t m_PixelFormat = SDL_PIXELFORMAT_YUY2;
-
     size_t m_ActiveCamIDX = 0;
     size_t m_ActiveMultiViewIDX = 0;
 
@@ -79,7 +77,7 @@ private:
     RIDEHAL_DECLARE_LOGGER();
 };
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal
 
-#endif   // #ifndef QRIDE_STACK_TINYVIZ_HPP
+#endif   // #ifndef RIDEHAL_SAMPLE_TINYVIZ_HPP

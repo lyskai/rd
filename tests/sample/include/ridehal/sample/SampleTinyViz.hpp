@@ -6,8 +6,6 @@
 #include "TinyViz.hpp"
 #include "ridehal/sample/SampleIF.hpp"
 
-using namespace QRide::Stack;
-
 namespace ridehal
 {
 namespace sample
@@ -42,29 +40,25 @@ public:
 
 private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
-    void ThreadMain();
-    void ObjThreadMain();
+    void CamThreadMain( uint32_t idx );
+    void ObjThreadMain( uint32_t idx );
 
 private:
-    uint32_t m_width;
-    uint32_t m_height;
-    TinyVizIF::PixelFormat m_format;
-
     uint32_t m_winW;
     uint32_t m_winH;
 
-    std::string m_topicName;
-    std::string m_objTopicName;
+    std::vector<std::string> m_camNames;
+    std::vector<std::string> m_camTopicNames;
+    std::vector<std::string> m_objTopicNames;
 
-    std::thread m_thread;
-    std::thread m_objThread;
+    std::vector<std::thread *> m_threads;
+
     bool m_stop;
 
-    DataSubscriber<CamFrames_t> m_sub;
-    DataSubscriber<Road2DObjects_t> m_objSub;
+    std::vector<DataSubscriber<CamFrames_t>> m_camSubs;
+    std::vector<DataSubscriber<Road2DObjects_t>> m_objSubs;
 
     TinyViz m_tinyViz;
-
 };   // class SampleTinyViz
 
 }   // namespace sample

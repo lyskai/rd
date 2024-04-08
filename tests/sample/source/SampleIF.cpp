@@ -74,7 +74,7 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
     }
     else
 #endif
-    if ( processor < RIDE_HAL_PROCESSOR_MAX )
+            if ( processor < RIDE_HAL_PROCESSOR_MAX )
     {
         m_processor = processor;
     }
@@ -103,7 +103,7 @@ RideHalError_e SampleIF::Lock()
     }
     else
 #endif
-    if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
+            if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
     {
         s_locks[m_processor].lock();
     }
@@ -132,7 +132,7 @@ RideHalError_e SampleIF::Unlock()
     }
     else
 #endif
-    if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
+            if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
     {
         s_locks[m_processor].unlock();
     }
@@ -160,6 +160,42 @@ std::string SampleIF::Get( SampleConfig_t &config, std::string key, std::string 
     }
 
     RIDEHAL_DEBUG( "Get config %s = %s\n", key.c_str(), ret.c_str() );
+
+    return ret;
+}
+
+std::vector<std::string> SampleIF::Get( SampleConfig_t &config, std::string key,
+                                        std::vector<std::string> defaultV )
+{
+    std::vector<std::string> ret = defaultV;
+    std::string strV = "";
+    std::string::size_type prev_pos = 0, pos = 0;
+
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        strV = it->second;
+
+        while ( ( pos = strV.find( ',', pos ) ) != std::string::npos )
+        {
+            std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
+
+            if ( "" != substring )
+            {
+                ret.push_back( substring );
+            }
+
+            prev_pos = ++pos;
+        }
+
+        std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
+        if ( "" != substring )
+        {
+            ret.push_back( substring );
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %s\n", key.c_str(), strV.c_str() );
 
     return ret;
 }
@@ -240,7 +276,7 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         }
     }
 
-    RIDEHAL_DEBUG( "Get config %s = %f\n", key.c_str(), ret );
+    RIDEHAL_DEBUG( "Get config %s = %d\n", key.c_str(), ret );
     return ret;
 }
 

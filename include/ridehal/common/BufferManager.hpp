@@ -59,7 +59,7 @@ private:
 
 private:
     RIDEHAL_DECLARE_LOGGER();
-    static std::mutex s_Lock;
+    static std::mutex s_lock;
     static BufferManager *s_pDefaultBufferManager;
 };
 

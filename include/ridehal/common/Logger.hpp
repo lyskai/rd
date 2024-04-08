@@ -164,7 +164,7 @@ private:
     static Logger_Create_t s_createFnc;
     static Logger_Destroy_t s_destroyFnc;
 
-    static std::mutex s_Lock;
+    static std::mutex s_lock;
     static Logger s_defaultLogger;
 
 };   // class Logger

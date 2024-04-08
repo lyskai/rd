@@ -5,11 +5,7 @@
 #define _RIDE_HAL_SAMPLE_DATAREADER_HPP_
 
 #include "ridehal/sample/SampleIF.hpp"
-
-#include "ridehal/component/Remap.hpp"
-
-
-using namespace ridehal::component;
+#include <mutex>
 
 namespace ridehal
 {
@@ -64,6 +60,8 @@ private:
     bool m_stop;
 
     DataPublisher<CamFrames_t> m_pub;
+
+    static std::mutex s_lock;
 
 };   // class SampleDataReader
 

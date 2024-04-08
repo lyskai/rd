@@ -10,7 +10,7 @@ namespace ridehal
 namespace common
 {
 
-std::mutex BufferManager::s_Lock;
+std::mutex BufferManager::s_lock;
 static BufferManager s_dftBufMgr;
 BufferManager *BufferManager::s_pDefaultBufferManager = nullptr;
 
@@ -86,7 +86,7 @@ RideHalError_e BufferManager::Init( const char *pName, Logger_Level_e level )
 
 BufferManager *BufferManager::GetDefaultBufferManager()
 {
-    std::lock_guard<std::mutex> l( s_Lock );
+    std::lock_guard<std::mutex> l( s_lock );
     if ( nullptr == s_pDefaultBufferManager )
     {
         s_pDefaultBufferManager = &s_dftBufMgr;

@@ -1,14 +1,14 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#ifndef QRIDE_STACK_TINYVIZ_MACROS_HPP
-#define QRIDE_STACK_TINYVIZ_MACROS_HPP
+#ifndef RIDEHAL_SAMPLE_TINYVIZ_MACROS_HPP
+#define RIDEHAL_SAMPLE_TINYVIZ_MACROS_HPP
 
 #include <SDL2/SDL.h>
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 constexpr SDL_Color COLOR_BLACK = { 0, 0, 0, 0xFF };
@@ -23,7 +23,7 @@ constexpr SDL_Color COLOR_YELLOW = { 0xFF, 0xFF, 0, 0xFF };
 constexpr SDL_Color COLOR_PINK = { 0xFF, 0, 0xFF, 0xFF };
 constexpr SDL_Color COLOR_LIGHTGRAY = { 0xCC, 0xCC, 0xCC, 0xFF };
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal
 
-#endif   // #ifndef QRIDE_STACK_TINYVIZ_MACROS_HPP
+#endif   // #ifndef RIDEHAL_SAMPLE_TINYVIZ_MACROS_HPP

@@ -15,48 +15,46 @@
 #include <chrono>
 #include <unistd.h>
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 using namespace std::chrono_literals;
 constexpr std::chrono::nanoseconds NSEC = 1s;
 constexpr uint64_t NSEC_PER_SEC = NSEC.count();
 
-std::unique_ptr<TinyVizIF> CreateTinyVizInstance()
+uint32_t TinyViz::GetSDLFormat( RideHal_ImageFormat_e format )
 {
-    return std::make_unique<TinyViz>();
+    uint32_t pixelFormat = 0;
+    switch ( format )
+    {
+        case RIDE_HAL_IMAGE_FORMAT_RGB888:
+            pixelFormat = SDL_PIXELFORMAT_RGB888;
+            break;
+        case RIDE_HAL_IMAGE_FORMAT_BGR888:
+            pixelFormat = SDL_PIXELFORMAT_BGR888;
+            break;
+        case RIDE_HAL_IMAGE_FORMAT_UYVY:
+            pixelFormat = SDL_PIXELFORMAT_UYVY;
+            break;
+        case RIDE_HAL_IMAGE_FORMAT_NV12:
+            pixelFormat = SDL_PIXELFORMAT_NV12;
+            break;
+        default:
+            RIDEHAL_ERROR( "Found unsupported pixel format %d", static_cast<int>( format ) );
+            break;
+    }
+
+    return pixelFormat;
 }
 
-bool TinyViz::init( PixelFormat pixelFormat, uint32_t winW, uint32_t winH )
+bool TinyViz::init( uint32_t winW, uint32_t winH )
 {
     RIDEHAL_LOGGER_INIT( "TINYVIZ", LOGGER_LEVEL_INFO );
 
     m_WindowW = winW;
     m_WindowH = winH;
-
-    switch ( pixelFormat )
-    {
-        case PixelFormat::YUY2:
-            m_PixelFormat = SDL_PIXELFORMAT_YUY2;
-            break;
-        case PixelFormat::UYVY:
-            m_PixelFormat = SDL_PIXELFORMAT_UYVY;
-            break;
-        case PixelFormat::NV12:
-            m_PixelFormat = SDL_PIXELFORMAT_NV12;
-            break;
-        case PixelFormat::YV12:
-            m_PixelFormat = SDL_PIXELFORMAT_YV12;
-            break;
-        case PixelFormat::RGB:
-            m_PixelFormat = SDL_PIXELFORMAT_RGB888;
-            break;
-        default:
-            RIDEHAL_ERROR( "Found unsupported pixel format %d", static_cast<int>( pixelFormat ) );
-            return false;
-    }
 
     if ( SDL_Init( SDL_INIT_VIDEO ) != 0 )
     {
@@ -107,15 +105,36 @@ bool TinyViz::stop()
     return true;
 }
 
-bool TinyViz::addCamera( const std::string camName, uint32_t width, uint32_t height )
+bool TinyViz::addCamera( const std::string camName )
 {
-    m_CamInfoMap.emplace( camName, CamInfo( camName, width, height ) );
+    m_CamInfoMap.emplace( camName, CamInfo( camName ) );
     m_CamNameList.push_back( camName );
 
     // Give it an initial black background frame
     auto &camInfo = m_CamInfoMap[camName];
 
-    RIDEHAL_INFO( "Added camera %s. resolution %ux%u", camName.c_str(), width, height );
+    RIDEHAL_INFO( "Added camera %s.", camName.c_str() );
+
+    if ( 1 == m_CamNameList.size() )
+    {
+        m_WindowCol = 1;
+        m_WindowRow = 1;
+    }
+    else if ( m_CamNameList.size() <= 4 )
+    {
+        m_WindowCol = 2;
+        m_WindowRow = 2;
+    }
+    else if ( m_CamNameList.size() <= 9 )
+    {
+        m_WindowCol = 3;
+        m_WindowRow = 3;
+    }
+    else
+    {
+        m_WindowCol = 4;
+        m_WindowRow = 4;
+    }
 
     return true;
 }
@@ -178,9 +197,9 @@ void TinyViz::rendererThread()
     // on the test )
     constexpr size_t TexWidth = 1920;
     constexpr size_t TexHeight = 1020;
-    SDL_Texture *tex2M =
-            SDL_CreateTexture( ren, m_PixelFormat, SDL_TEXTUREACCESS_TARGET, TexWidth, TexHeight );
-    if ( !tex2M )
+    SDL_Texture *tex = SDL_CreateTexture( ren, SDL_PIXELFORMAT_NV12, SDL_TEXTUREACCESS_TARGET,
+                                          TexWidth, TexHeight );
+    if ( !tex )
     {
         RIDEHAL_ERROR( "SDL_CreateTextureFromSurface Error: %s", SDL_GetError() );
         return;
@@ -227,7 +246,7 @@ void TinyViz::rendererThread()
                 if ( ( idx + multiViewIdxShift ) >= m_CamNameList.size() )
                 {
                     // no camera, render black
-                    renderBlack( ren, tex2M, idx );
+                    renderBlack( ren, tex, idx );
                     continue;
                 }
 
@@ -264,7 +283,7 @@ void TinyViz::rendererThread()
     }
     TTF_CloseFont( font );
 
-    SDL_DestroyTexture( tex2M );
+    SDL_DestroyTexture( tex );
     SDL_DestroyRenderer( ren );
 
     RIDEHAL_DEBUG( "TinyViz thread exited" );
@@ -319,7 +338,7 @@ void TinyViz::printRendererInfo( SDL_Renderer *ren )
     }
 }
 
-bool TinyViz::renderBlack( SDL_Renderer *ren, SDL_Texture *tex2M, size_t idx )
+bool TinyViz::renderBlack( SDL_Renderer *ren, SDL_Texture *tex, size_t idx )
 {
     SDL_Rect DestR;
     DestR.w = m_WindowW / m_WindowRow;
@@ -342,20 +361,8 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
 
     if ( !camInfo.isActive() ) return false;
 
-    SDL_Texture *tex2M = camInfo.tex2M;
-    if ( nullptr == tex2M )
-    {
-        tex2M = SDL_CreateTexture( ren, m_PixelFormat, SDL_TEXTUREACCESS_TARGET, camInfo.width,
-                                   camInfo.height );
-        if ( !tex2M )
-        {
-            RIDEHAL_ERROR( "SDL_CreateTextureFromSurface Error: %s", SDL_GetError() );
-            return false;
-        }
-        camInfo.tex2M = tex2M;
-    }
-
-    auto pts = camInfo.camFrame.timestamp;
+    SDL_Texture *tex = nullptr;
+    uint64_t pts = 0;
     {
         std::lock_guard<std::mutex> guard( *camInfo.mutex );
         if ( nullptr == camInfo.data() )
@@ -364,8 +371,22 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
             return false;
         }
 
+        tex = camInfo.tex;
+        if ( nullptr == tex )
+        {
+            tex = SDL_CreateTexture( ren, GetSDLFormat( camInfo.format() ),
+                                     SDL_TEXTUREACCESS_TARGET, camInfo.width(), camInfo.height() );
+            if ( !tex )
+            {
+                RIDEHAL_ERROR( "SDL_CreateTextureFromSurface Error: %s", SDL_GetError() );
+                return false;
+            }
+            camInfo.tex = tex;
+        }
 
-        SDL_UpdateTexture( tex2M, nullptr, camInfo.data(), camInfo.stride() );
+        SDL_UpdateTexture( tex, nullptr, camInfo.data(), camInfo.stride() );
+
+        pts = camInfo.camFrame.timestamp;
     }
 
     if ( camInfo.lastFPSUpdate < pts - NSEC_PER_SEC / 2 )
@@ -379,21 +400,21 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
     DestR.h = m_WindowH / m_WindowCol;
     DestR.x = ( idx % m_WindowRow ) * DestR.w;
     DestR.y = ( idx / m_WindowRow ) * DestR.h;
-    SDL_RenderCopy( ren, tex2M, nullptr, &DestR );
+    SDL_RenderCopy( ren, tex, nullptr, &DestR );
 
     SDL_SetRenderDrawColor( ren, camInfo.color.r, camInfo.color.g, camInfo.color.b,
                             camInfo.color.a );
 
     {
         std::lock_guard<std::mutex> guard( *camInfo.mutex );
-        float scaleX = static_cast<float>( m_WindowW ) / camInfo.width / m_WindowRow;
-        float scaleY = static_cast<float>( m_WindowH ) / camInfo.height / m_WindowCol;
+        float scaleX = static_cast<float>( m_WindowW ) / camInfo.width() / m_WindowRow;
+        float scaleY = static_cast<float>( m_WindowH ) / camInfo.height() / m_WindowCol;
 
         auto widow = 2.5 * camInfo.lastCamFPS /
                      ( ( camInfo.lastRodFPS > 0 ) ? camInfo.lastRodFPS : camInfo.lastCamFPS );
         auto historyWindow = NSEC_PER_SEC / m_LastRenderFPS * widow;
         renderBB( pts, historyWindow, camInfo.roadObjectQueue, ren, DestR, scaleX, scaleY,
-                  QRide::Stack::COLOR_RED );
+                  COLOR_RED );
 
         // render status bar
         SDL_Rect statusBarR = DestR;
@@ -542,5 +563,5 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
     }
 }
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal

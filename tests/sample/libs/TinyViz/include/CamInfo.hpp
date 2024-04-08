@@ -1,8 +1,8 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#ifndef QRIDE_STACK_TINYVIZ_CAM_INFO_HPP
-#define QRIDE_STACK_TINYVIZ_CAM_INFO_HPP
+#ifndef RIDEHAL_SAMPLE_TINYVIZ_CAM_INFO_HPP
+#define RIDEHAL_SAMPLE_TINYVIZ_CAM_INFO_HPP
 
 #include "TextRenderer.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
@@ -15,16 +15,16 @@
 
 using namespace ridehal::sample;
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 class CamInfo
 {
 public:
     CamInfo();   // dummy constructor is needed for map initialization
-    CamInfo( std::string _camName, uint32_t width, uint32_t height );
+    CamInfo( std::string _camName );
     CamInfo( const CamInfo &copy ) = default;
     CamInfo( CamInfo &&copy ) = default;
     CamInfo &operator=( const CamInfo &copy ) = default;
@@ -40,12 +40,13 @@ public:
 
     uint8_t *data();
     size_t size();
+    uint32_t width();
+    uint32_t height();
     uint32_t stride();
+    RideHal_ImageFormat_e format();
 
     std::string camName;
     SDL_Color color;
-    uint32_t width = 1920;
-    uint32_t height = 1020;
 
     // text
     TextInfo camNameText;
@@ -66,7 +67,7 @@ public:
     std::unique_ptr<std::mutex> mutex;
     CamFrame_t camFrame;
 
-    SDL_Texture *tex2M = nullptr;
+    SDL_Texture *tex = nullptr;
 
     std::map<uint64_t, std::list<Road2DObjects_t>> roadObjectQueue;
 
@@ -74,7 +75,7 @@ private:
     size_t inactiveCount = 0;
 };
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal
 
-#endif   // #ifndef QRIDE_STACK_TINYVIZ_CAM_INFO_HPP
+#endif   // #ifndef RIDEHAL_SAMPLE_TINYVIZ_CAM_INFO_HPP

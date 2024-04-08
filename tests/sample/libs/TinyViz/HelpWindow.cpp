@@ -6,9 +6,9 @@
 
 #include "HelpWindow.hpp"
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 bool HelpWindowInfo::init( SDL_Renderer *ren, TTF_Font *font )
@@ -112,5 +112,5 @@ bool HelpWindowInfo::close()
     return true;
 }
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal

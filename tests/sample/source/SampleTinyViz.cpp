@@ -29,51 +29,30 @@ RideHalError_e SampleTinyViz::ParseConfig( SampleConfig_t &config )
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_width = Get( config, "width", 1920 );
-    if ( 0 == m_width )
+    m_camNames = Get( config, "cameras", m_camNames );
+    if ( 0 == m_camNames.size() )
     {
-        RIDEHAL_ERROR( "invalid width = %d\n", m_width );
+        RIDEHAL_ERROR( "invalid cameras\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_height = Get( config, "height", 1024 );
-    if ( 0 == m_height )
+    uint32_t idx = 0;
+    for ( auto camName : m_camNames )
     {
-        RIDEHAL_ERROR( "invalid height = %d\n", m_height );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-    }
+        std::string camTopic = Get( config, "cam_topic" + std::to_string( idx ),
+                                    "/sensor/camera/" + camName + "/raw" );
+        if ( "" == camTopic )
+        {
+            RIDEHAL_ERROR( "no cam_topic for camera %s\n", camName.c_str() );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+        m_camTopicNames.push_back( camTopic );
 
-    auto fstr = Get( config, "format", "nv12" );
-    if ( fstr == "nv12" )
-    {
-        m_format = QRide::Stack::TinyVizIF::PixelFormat::NV12;
-    }
-    else if ( fstr == "uyvy" )
-    {
-        m_format = QRide::Stack::TinyVizIF::PixelFormat::UYVY;
-    }
-    else if ( fstr == "rgb" )
-    {
-        m_format = QRide::Stack::TinyVizIF::PixelFormat::RGB;
-    }
-    else
-    {
-        RIDEHAL_ERROR( "invalid format %s\n", fstr.c_str() );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-    }
+        std::string objTopic = Get( config, "obj_topic" + std::to_string( idx ),
+                                    "/sensor/camera/" + camName + "/objs" );
+        m_objTopicNames.push_back( objTopic );
 
-    m_topicName = Get( config, "topic", "" );
-    if ( "" == m_topicName )
-    {
-        RIDEHAL_ERROR( "no topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-    }
-
-    m_objTopicName = Get( config, "obj_topic", "" );
-    if ( "" == m_objTopicName )
-    {
-        RIDEHAL_ERROR( "no obj topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        idx++;
     }
 
     return ret;
@@ -91,7 +70,7 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        bool bOK = m_tinyViz.init( m_format, m_winW, m_winH );
+        bool bOK = m_tinyViz.init( m_winW, m_winH );
         if ( false == bOK )
         {
             RIDEHAL_ERROR( "init tinyviz failed\n" );
@@ -99,18 +78,34 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
         }
         else
         {
-            m_tinyViz.addCamera( "CAM0", m_width, m_height );
+            for ( auto camName : m_camNames )
+            {
+                m_tinyViz.addCamera( camName );
+            }
         }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_sub.Init( name, m_topicName );
+        m_camSubs.resize( m_camNames.size() );
+        for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
+              idx++ )
+        {
+            ret = m_camSubs[idx].Init( name, m_camTopicNames[idx] );
+        }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_objSub.Init( name, m_objTopicName );
+        m_objSubs.resize( m_camNames.size() );
+        for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
+              idx++ )
+        {
+            if ( "" != m_objTopicNames[idx] )
+            {
+                ret = m_objSubs[idx].Init( name, m_objTopicNames[idx] );
+            }
+        }
     }
 
     return ret;
@@ -125,47 +120,70 @@ RideHalError_e SampleTinyViz::Start()
         ret = RIDE_HAL_ERROR_FAIL;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    m_stop = false;
+    for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
-        m_stop = false;
-        m_thread = std::thread( &SampleTinyViz::ThreadMain, this );
-        m_objThread = std::thread( &SampleTinyViz::ObjThreadMain, this );
+        std::thread *thread = new std::thread( &SampleTinyViz::CamThreadMain, this, idx );
+        if ( nullptr != thread )
+        {
+            m_threads.push_back( thread );
+        }
+        else
+        {
+            ret = RIDE_HAL_ERROR_NORES;
+        }
+        if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( "" != m_objTopicNames[idx] ) )
+        {
+            std::thread *thread = new std::thread( &SampleTinyViz::ObjThreadMain, this, idx );
+            if ( nullptr != thread )
+            {
+                m_threads.push_back( thread );
+            }
+            else
+            {
+                ret = RIDE_HAL_ERROR_NORES;
+            }
+        }
     }
 
     return ret;
 }
 
-void SampleTinyViz::ThreadMain()
+void SampleTinyViz::CamThreadMain( uint32_t idx )
 {
     int ret;
+    std::string camName = m_camNames[idx];
+    auto &camSub = m_camSubs[idx];
+
     while ( false == m_stop )
     {
         CamFrames_t frames;
         CamFrame_t frame;
-        ret = m_sub.Receive( frames );
+        ret = camSub.Receive( frames );
         if ( 0 == ret )
         {
-            std::string camName = "CAM0";
             frame = frames.frames[0];
-            RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n ", frame.frameId,
-                           frame.timestamp );
+            RIDEHAL_DEBUG( "%s receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n ",
+                           camName.c_str(), frame.frameId, frame.timestamp );
             m_tinyViz.addData( camName, frame );
         }
     }
 }
 
-void SampleTinyViz::ObjThreadMain()
+void SampleTinyViz::ObjThreadMain( uint32_t idx )
 {
     int ret;
+    std::string camName = m_camNames[idx];
+    auto &objSub = m_objSubs[idx];
+
     while ( false == m_stop )
     {
         Road2DObjects_t objs;
-        ret = m_objSub.Receive( objs );
+        ret = objSub.Receive( objs );
         if ( 0 == ret )
         {
-            std::string camName = "CAM0";
-            RIDEHAL_DEBUG( "receive objects for frameId %" PRIu64 ", timestamp %" PRIu64 "\n ",
-                           objs.frameId, objs.timestamp );
+            RIDEHAL_DEBUG( "%s receive objects for frameId %" PRIu64 ", timestamp %" PRIu64 "\n ",
+                           camName.c_str(), objs.frameId, objs.timestamp );
             m_tinyViz.addData( camName, objs );
         }
     }
@@ -177,10 +195,15 @@ RideHalError_e SampleTinyViz::Stop()
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     m_stop = true;
-    if ( m_thread.joinable() )
+    for ( auto &th : m_threads )
     {
-        m_thread.join();
+        if ( th->joinable() )
+        {
+            th->join();
+        }
+        delete th;
     }
+    m_threads.clear();
 
     m_tinyViz.stop();
 

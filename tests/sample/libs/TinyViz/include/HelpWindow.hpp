@@ -1,16 +1,16 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#ifndef QRIDE_STACK_TINYVIZ_HELP_WINDOW_HPP
-#define QRIDE_STACK_TINYVIZ_HELP_WINDOW_HPP
+#ifndef RIDEHAL_SAMPLE_TINYVIZ_HELP_WINDOW_HPP
+#define RIDEHAL_SAMPLE_TINYVIZ_HELP_WINDOW_HPP
 
 #include <vector>
 
 #include "TextRenderer.hpp"
 
-namespace QRide
+namespace ridehal
 {
-namespace Stack
+namespace sample
 {
 
 class HelpWindowInfo
@@ -29,7 +29,7 @@ public:
     bool close();
 };
 
-}   // namespace Stack
-}   // namespace QRide
+}   // namespace sample
+}   // namespace ridehal
 
-#endif   // #ifndef QRIDE_STACK_TINYVIZ_HELP_WINDOW_HPP
+#endif   // #ifndef RIDEHAL_SAMPLE_TINYVIZ_HELP_WINDOW_HPP
