@@ -109,10 +109,10 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
         imgProps.batchSize = 1;
         imgProps.width = config.width;
         imgProps.height = config.height;
-        imgProps.compressedSize = 92160;
+        imgProps.compressedSize = 118784;
         imgProps.format = config.outFormat;
         ret = sharedBuffer->Allocate( &imgProps );
-        // ret = sharedBuffer->Allocate( 92160 );
+        // ret = sharedBuffer->Allocate( 118784 );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
         ret = veTest.SubmitOutputFrame( &outputFrame[i] );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
@@ -178,7 +178,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
     config.inputBufferList = nullptr;
-
+    config.outputBufferList = nullptr;
+    /*
     RideHal_SharedBuffer_t *outBufferList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
     for ( i = 0; i < config.numOutputBufferReq; i++ )
     {
@@ -186,13 +187,13 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
         imgProps.batchSize = 1;
         imgProps.width = config.width;
         imgProps.height = config.height;
-        imgProps.compressedSize = 92160;
+        imgProps.compressedSize = 118784;
         imgProps.format = config.outFormat;
         ret = outBufferList[i].Allocate( &imgProps );
-        // ret = sharedBuffer->Allocate( 92160 );
+        // ret = sharedBuffer->Allocate( 118784 );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
-    config.outputBufferList = outBufferList;
+    config.outputBufferList = outBufferList;*/
 
     RideHal_SharedBuffer_t *sharedBuffer = nullptr;
 
