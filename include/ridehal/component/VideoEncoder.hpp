@@ -40,6 +40,95 @@ namespace component
 #define VIDEO_ENCODER_MAX_DEV_CMD_BUFFER_SIZE 256
 #define VIDEO_ENCODER_WAIT_TIMEOUT_1_SEC 1000
 
+#define VIDEO_ENCODER_H264_BP_START 0
+#define VIDEO_ENCODER_H264_HP_START ( VIDEO_ENCODER_H264_BP_START + 17 )
+#define VIDEO_ENCODER_H264_MP_START ( VIDEO_ENCODER_H264_BP_START + 34 )
+#define VIDEO_ENCODER_H265_BP_START ( VIDEO_ENCODER_H264_BP_START + 51 )
+#define VIDEO_ENCODER_H265_HP_START ( VIDEO_ENCODER_H264_BP_START + 65 )
+#define VIDEO_ENCODER_MAX_PROFILE_PARAMS 5
+static const uint32_t ProfileLevelTable[][VIDEO_ENCODER_MAX_PROFILE_PARAMS] = {
+        /*max mb per frame, max mb per sec, max bitrate, level, profile, dpbmbs*/
+        { 99, 1485, 64000, VIDC_LEVEL_H264_1, VIDC_PROFILE_H264_BASELINE },
+        { 99, 1485, 128000, VIDC_LEVEL_H264_1b, VIDC_PROFILE_H264_BASELINE },
+        { 396, 3000, 192000, VIDC_LEVEL_H264_1p1, VIDC_PROFILE_H264_BASELINE },
+        { 396, 6000, 384000, VIDC_LEVEL_H264_1p2, VIDC_PROFILE_H264_BASELINE },
+        { 396, 11880, 768000, VIDC_LEVEL_H264_1p3, VIDC_PROFILE_H264_BASELINE },
+        { 396, 11880, 2000000, VIDC_LEVEL_H264_2, VIDC_PROFILE_H264_BASELINE },
+        { 792, 19800, 4000000, VIDC_LEVEL_H264_2p1, VIDC_PROFILE_H264_BASELINE },
+        { 1620, 20250, 4000000, VIDC_LEVEL_H264_2p2, VIDC_PROFILE_H264_BASELINE },
+        { 1620, 40500, 10000000, VIDC_LEVEL_H264_3, VIDC_PROFILE_H264_BASELINE },
+        { 3600, 108000, 14000000, VIDC_LEVEL_H264_3p1, VIDC_PROFILE_H264_BASELINE },
+        { 5120, 216000, 20000000, VIDC_LEVEL_H264_3p2, VIDC_PROFILE_H264_BASELINE },
+        { 8192, 245760, 20000000, VIDC_LEVEL_H264_4, VIDC_PROFILE_H264_BASELINE },
+        { 8192, 245760, 50000000, VIDC_LEVEL_H264_4p1, VIDC_PROFILE_H264_BASELINE },
+        { 8704, 522240, 50000000, VIDC_LEVEL_H264_4p2, VIDC_PROFILE_H264_BASELINE },
+        { 22080, 589824, 135000000, VIDC_LEVEL_H264_5, VIDC_PROFILE_H264_BASELINE },
+        { 36864, 983040, 240000000, VIDC_LEVEL_H264_5p1, VIDC_PROFILE_H264_BASELINE },
+        /* Please update H264_HP_START accordingly, while adding new element */
+        { 0, 0, 0, 0, 0 },
+        { 99, 1485, 80000, VIDC_LEVEL_H264_1, VIDC_PROFILE_H264_HIGH },
+        { 99, 1485, 200000, VIDC_LEVEL_H264_1b, VIDC_PROFILE_H264_HIGH },
+        { 396, 3000, 300000, VIDC_LEVEL_H264_1p1, VIDC_PROFILE_H264_HIGH },
+        { 396, 6000, 600000, VIDC_LEVEL_H264_1p2, VIDC_PROFILE_H264_HIGH },
+        { 396, 11880, 1200000, VIDC_LEVEL_H264_1p3, VIDC_PROFILE_H264_HIGH },
+        { 396, 11880, 3125000, VIDC_LEVEL_H264_2, VIDC_PROFILE_H264_HIGH },
+        { 792, 19800, 6250000, VIDC_LEVEL_H264_2p1, VIDC_PROFILE_H264_HIGH },
+        { 1620, 20250, 6250000, VIDC_LEVEL_H264_2p2, VIDC_PROFILE_H264_HIGH },
+        { 1620, 40500, 15625000, VIDC_LEVEL_H264_3, VIDC_PROFILE_H264_HIGH },
+        { 3600, 108000, 21875000, VIDC_LEVEL_H264_3p1, VIDC_PROFILE_H264_HIGH },
+        { 5120, 216000, 31250000, VIDC_LEVEL_H264_3p2, VIDC_PROFILE_H264_HIGH },
+        { 8192, 245760, 31250000, VIDC_LEVEL_H264_4, VIDC_PROFILE_H264_HIGH },
+        { 8192, 245760, 62500000, VIDC_LEVEL_H264_4p1, VIDC_PROFILE_H264_HIGH },
+        { 8704, 522240, 62500000, VIDC_LEVEL_H264_4p2, VIDC_PROFILE_H264_HIGH },
+        { 22080, 589824, 168750000, VIDC_LEVEL_H264_5, VIDC_PROFILE_H264_HIGH },
+        { 36864, 983040, 300000000, VIDC_LEVEL_H264_5p1, VIDC_PROFILE_H264_HIGH },
+        /* Please update H264_MP_START accordingly, while adding new element */
+        { 0, 0, 0, 0, 0 },
+        { 99, 1485, 64000, VIDC_LEVEL_H264_1, VIDC_PROFILE_H264_MAIN },
+        { 99, 1485, 128000, VIDC_LEVEL_H264_1b, VIDC_PROFILE_H264_MAIN },
+        { 396, 3000, 192000, VIDC_LEVEL_H264_1p1, VIDC_PROFILE_H264_MAIN },
+        { 396, 6000, 384000, VIDC_LEVEL_H264_1p2, VIDC_PROFILE_H264_MAIN },
+        { 396, 11880, 768000, VIDC_LEVEL_H264_1p3, VIDC_PROFILE_H264_MAIN },
+        { 396, 11880, 2000000, VIDC_LEVEL_H264_2, VIDC_PROFILE_H264_MAIN },
+        { 792, 19800, 4000000, VIDC_LEVEL_H264_2p1, VIDC_PROFILE_H264_MAIN },
+        { 1620, 20250, 4000000, VIDC_LEVEL_H264_2p2, VIDC_PROFILE_H264_MAIN },
+        { 1620, 40500, 10000000, VIDC_LEVEL_H264_3, VIDC_PROFILE_H264_MAIN },
+        { 3600, 108000, 14000000, VIDC_LEVEL_H264_3p1, VIDC_PROFILE_H264_MAIN },
+        { 5120, 216000, 20000000, VIDC_LEVEL_H264_3p2, VIDC_PROFILE_H264_MAIN },
+        { 8192, 245760, 20000000, VIDC_LEVEL_H264_4, VIDC_PROFILE_H264_MAIN },
+        { 8192, 245760, 50000000, VIDC_LEVEL_H264_4p1, VIDC_PROFILE_H264_MAIN },
+        { 8704, 522240, 50000000, VIDC_LEVEL_H264_4p2, VIDC_PROFILE_H264_MAIN },
+        { 22080, 589824, 135000000, VIDC_LEVEL_H264_5, VIDC_PROFILE_H264_MAIN },
+        { 36864, 983040, 240000000, VIDC_LEVEL_H264_5p1, VIDC_PROFILE_H264_MAIN },
+        { 0, 0, 0, 0, 0 },
+        { 36864, 552960, 128000, VIDC_LEVEL_HEVC_1, VIDC_PROFILE_HEVC_MAIN },
+        { 122880, 3686440, 1500000, VIDC_LEVEL_HEVC_2, VIDC_PROFILE_HEVC_MAIN },
+        { 245760, 7372800, 3000000, VIDC_LEVEL_HEVC_21, VIDC_PROFILE_HEVC_MAIN },
+        { 552960, 16588800, 6000000, VIDC_LEVEL_HEVC_3, VIDC_PROFILE_HEVC_MAIN },
+        { 983040, 33177600, 10000000, VIDC_LEVEL_HEVC_31, VIDC_PROFILE_HEVC_MAIN },
+        { 2228224, 66846720, 12000000, VIDC_LEVEL_HEVC_4, VIDC_PROFILE_HEVC_MAIN },
+        { 2228224, 133693440, 20000000, VIDC_LEVEL_HEVC_41, VIDC_PROFILE_HEVC_MAIN },
+        { 8912896, 267386880, 25000000, VIDC_LEVEL_HEVC_5, VIDC_PROFILE_HEVC_MAIN },
+        { 8912896, 534773760, 40000000, VIDC_LEVEL_HEVC_51, VIDC_PROFILE_HEVC_MAIN },
+        { 8912896, 1069547520, 60000000, VIDC_LEVEL_HEVC_52, VIDC_PROFILE_HEVC_MAIN },
+        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN },
+        { 35651584, 2139095040, 120000000, VIDC_LEVEL_HEVC_61, VIDC_PROFILE_HEVC_MAIN },
+        { 35651584, 4278190080, 240000000, VIDC_LEVEL_HEVC_62, VIDC_PROFILE_HEVC_MAIN },
+        { 0, 0, 0, 0, 0 },
+        { 36864, 552960, 128000, VIDC_LEVEL_HEVC_1, VIDC_PROFILE_HEVC_MAIN10 },
+        { 122880, 3686440, 1500000, VIDC_LEVEL_HEVC_2, VIDC_PROFILE_HEVC_MAIN10 },
+        { 245760, 7372800, 3000000, VIDC_LEVEL_HEVC_21, VIDC_PROFILE_HEVC_MAIN10 },
+        { 552960, 16588800, 6000000, VIDC_LEVEL_HEVC_3, VIDC_PROFILE_HEVC_MAIN10 },
+        { 983040, 33177600, 10000000, VIDC_LEVEL_HEVC_31, VIDC_PROFILE_HEVC_MAIN10 },
+        { 2228224, 66846720, 12000000, VIDC_LEVEL_HEVC_4, VIDC_PROFILE_HEVC_MAIN10 },
+        { 2228224, 133693440, 20000000, VIDC_LEVEL_HEVC_41, VIDC_PROFILE_HEVC_MAIN10 },
+        { 8912896, 267386880, 25000000, VIDC_LEVEL_HEVC_5, VIDC_PROFILE_HEVC_MAIN10 },
+        { 8912896, 534773760, 40000000, VIDC_LEVEL_HEVC_51, VIDC_PROFILE_HEVC_MAIN10 },
+        { 8912896, 1069547520, 60000000, VIDC_LEVEL_HEVC_52, VIDC_PROFILE_HEVC_MAIN10 },
+        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN10 },
+        { 35651584, 2139095040, 120000000, VIDC_LEVEL_HEVC_61, VIDC_PROFILE_HEVC_MAIN10 },
+        { 35651584, 4278190080, 240000000, VIDC_LEVEL_HEVC_62, VIDC_PROFILE_HEVC_MAIN10 },
+        { 0, 0, 0, 0, 0 } };
 
 /// @brief This data type list the different rate control mode
 typedef enum
@@ -97,6 +186,7 @@ typedef struct
     uint32_t bitRate;     // bps
     uint32_t gop;         // number of p frames in period
     uint32_t frameRate;   // fps
+    uint32_t profile;
     uint32_t numInputBufferReq;
     uint32_t numOutputBufferReq;
     bool bInputDynamicMode;
@@ -127,7 +217,6 @@ typedef struct
             nullptr;        // use to send on-the-fly commands to encoder, like
                             // intra refresh, bps reset and so on.
     uint32_t numCmd = 0;    // number of on-the-fly commands
-    bool useFlag = false;   // indicate whether sharedBuffer is using by driver or available
 } VideoEncoder_InputFrame_t;
 
 /// @brief The VideoEncoder Output Frame
@@ -139,7 +228,6 @@ typedef struct
     uint32_t frameFlag;   // indicate whether some error occurred during encoding this frame, like
                           // overflow
     VideoEncoder_FrameType_e frameType;   // indicate it's I, P, B, or IDR frame
-    bool useFlag = false;   // indicate whether sharedBuffer is using by driver or available
 } VideoEncoder_OutputFrame_t;
 
 /// @brief Store the data interacted with video core
@@ -248,23 +336,25 @@ private:
     static int DeviceCallback( uint8_t *msg, uint32_t length, void *cdata );
     int DeviceCallback( uint8_t *msg, uint32_t length );
 
-    int32_t GetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
-                            uint32_t nPktSize, uint8_t *pPkt );
-    int32_t SetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
-                            uint32_t nPktSize, uint8_t *pPkt );
-    int32_t WaitForState( VideoEncoder_State_e expectedState );
-    int32_t AllocateBuffer( ioctl_session_t *ioHandle, RideHal_SharedBuffer_t *bufferList,
-                            vidc_buffer_type bufferType, int32_t bufCntMin, int32_t bufSize );
-    int32_t GetInputInformation( void );
-    int32_t GetInputBufferRequirement( void );
-    int32_t GetOutputBufferRequirement( void );
-    int32_t FreeOutputBuffer( void );
-    int32_t FreeInputBuffer( void );
+    RideHalError_e GetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
+                                   uint32_t nPktSize, uint8_t *pPkt );
+    RideHalError_e SetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
+                                   uint32_t nPktSize, uint8_t *pPkt );
+    RideHalError_e WaitForState( VideoEncoder_State_e expectedState );
+    RideHalError_e PrepareBuffer( ioctl_session_t *ioHandle, RideHal_SharedBuffer_t *bufferList,
+                                  vidc_buffer_type bufferType, int32_t bufCntMin, int32_t bufSize );
+    RideHalError_e GetInputInformation( void );
+    RideHalError_e GetInputBufferRequirement( void );
+    RideHalError_e GetOutputBufferRequirement( void );
+    RideHalError_e FreeOutputBuffer( void );
+    RideHalError_e FreeInputBuffer( void );
     void PrintEncoderConfig( void );
     vidc_color_format_type GetVidcFormat( RideHal_ImageFormat_e );
-    int32_t Teardown(); /* release all the resources */
-    int32_t ValidateConfig( const VideoEncoder_Config_t *pConfig );
-    int32_t ValidateBuffer( const RideHal_SharedBuffer_t *pBuffer, vidc_buffer_type bufferType );
+    uint32_t GetVidcLevel( uint32_t );
+    RideHalError_e Teardown(); /* release all the resources */
+    RideHalError_e ValidateConfig( const VideoEncoder_Config_t *pConfig );
+    RideHalError_e ValidateBuffer( const RideHal_SharedBuffer_t *pBuffer,
+                                   vidc_buffer_type bufferType );
 
     VideoEncoder_InFrameCallback_t m_inputDoneCb = nullptr;
     VideoEncoder_OutFrameCallback_t m_outputDoneCb = nullptr;
@@ -279,8 +369,8 @@ private:
     uint32_t m_height = 0;
     uint32_t m_bitRate = 0;
     uint32_t m_frameRate = 0;
-    uint32_t m_numInputBufferReq = 8;
-    uint32_t m_numOutputBufferReq = 8;
+    uint32_t m_numInputBufferReq = 0;
+    uint32_t m_numOutputBufferReq = 0;
     bool m_bInputDynamicMode = true;
     bool m_bOutputDynamicMode = true;
     RideHal_ImageFormat_e m_inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
@@ -291,10 +381,24 @@ private:
     RideHal_SharedBuffer_t *m_outputList =
             nullptr; /* store output buffer that allocated inside videoencoder */
 
+    typedef struct
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        uint64_t timestampNs;
+        void *appMarkData;
+        bool useFlag = false;   // indicate whether sharedBuffer is using by driver or available
+    } VideoEncoder_InputInfo_t;
+
+    typedef struct
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        bool useFlag = false;   // indicate whether sharedBuffer is using by driver or available
+    } VideoEncoder_OutputInfo_t;
+
     std::mutex m_inLock;
-    std::unordered_map<uint64_t, VideoEncoder_InputFrame_t> m_inputMap; /* store input info */
+    std::unordered_map<uint64_t, VideoEncoder_InputInfo_t> m_inputMap; /* store input info */
     std::mutex m_outLock;
-    std::unordered_map<uint64_t, VideoEncoder_OutputFrame_t> m_outputMap; /* store output info */
+    std::unordered_map<uint64_t, VideoEncoder_OutputInfo_t> m_outputMap; /* store output info */
 };
 
 }   // namespace component
