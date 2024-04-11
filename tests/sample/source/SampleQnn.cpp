@@ -71,33 +71,51 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         ret = m_qnn.Init( name.c_str(), &m_config );
     }
 
+    uint32_t inputNum = 0;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_qnn.GetInputInfos( m_inputInfos );
+        ret = m_qnn.GetInputInfos( nullptr, &inputNum );
+    }
+    printf( "inputNum: %d\n", inputNum );
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_inputInfos.resize( inputNum );
+        ret = m_qnn.GetInputInfos( &m_inputInfos[0], &inputNum );
+    }
+
+
+    uint32_t outputNum = 0;
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        ret = m_qnn.GetOutputInfos( nullptr, &outputNum );
+    }
+    printf( "outputNum: %d\n", outputNum );
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_outputInfos.resize( outputNum );
+        ret = m_qnn.GetOutputInfos( &m_outputInfos[0], &outputNum );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_qnn.GetOutputInfos( m_outputInfos );
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        m_tensorPools.resize( m_outputInfos.size() );
+        m_tensorPools.resize( outputNum );
 
         size_t index = 0;
-        for ( auto &info : m_outputInfos )
+        for ( int i = 0; i < outputNum; ++i )
         {
-            RideHal_TensorProps_t props;
-            props.type = (RideHal_TensorType_e) info.dataType;
-            props.numDims = info.dims.size();
-            for ( size_t i = 0; i < props.numDims; i++ )
+            printf( "output i= %d\n", i );
+            printf( "numDims: %d\n", m_outputInfos[i].properties.numDims );
+            printf( "type: %d\n", m_outputInfos[i].properties.type );
+            for ( int ii = 0; ii < m_outputInfos[i].properties.numDims; ++ii )
             {
-                props.dims[i] = info.dims[i];
+                printf( "dims[ii=: %d], dims= %d\n", ii, m_outputInfos[i].properties.dims[ii] );
             }
-            ret = m_tensorPools[index].Init( "Qnn." + name + "." + std::to_string( index ),
-                                             LOGGER_LEVEL_INFO, m_poolSize, props,
-                                             RIDE_HAL_BUFFER_USAGE_HTP );
+
+            ret = m_tensorPools[index].Init(
+                    "Qnn." + name + "." + std::to_string( index ), LOGGER_LEVEL_INFO, m_poolSize,
+                    m_outputInfos[i].properties, RIDE_HAL_BUFFER_USAGE_HTP );
             index += 1;
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
@@ -196,9 +214,9 @@ void SampleQnn::ThreadMain()
                 {
                     Tensor_t tensor;
                     tensor.buffer = buffer;
-                    tensor.name = m_outputInfos[index].name;
-                    tensor.quantScale = m_outputInfos[index].quant_scale;
-                    tensor.quantOffset = m_outputInfos[index].quant_offset;
+                    tensor.name = m_outputInfos[index].pName;
+                    tensor.quantScale = m_outputInfos[index].quantScale;
+                    tensor.quantOffset = m_outputInfos[index].quantOffset;
                     outTensors.tensors.push_back( tensor );
                     index++;
                 }

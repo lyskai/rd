@@ -68,60 +68,12 @@ typedef struct
 
 typedef struct
 {
-    uint8_t *buf;      // buffer base pointer, valid in case of heap memory
-    uint64_t handle;   // Buffer Handle, valid in case of device allocated
-                       // memory such as dma buf
-    size_t size;       // Size of the total buffer
-
-    uint8_t *data;     // = buf + offset
-    uint32_t offset;   // offset within handle
-    uint32_t dataSize;
-    // QBufferType type;   // type of the buffer, see QBufferType
-} QnnRuntime_Buffer_t;
-
-typedef struct
-{
-    enum class Tensor_DataType_t : uint8_t
-    {
-        TENSOR_DATATYPE_UINT8,
-        TENSOR_DATATYPE_UINT16,
-        TENSOR_DATATYPE_FLOAT32,
-        TENSOR_DATATYPE_RAW,
-        TENSOR_DATATYPE_RAW_UYVY,
-        TENSOR_DATATYPE_RAW_NV12,
-        TENSOR_DATATYPE_RAW_P010,
-        TENSOR_DATATYPE_RAW_RGB,
-        TENSOR_DATATYPE_RAW_GRAY,
-        TENSOR_DATATYPE_RAW_OF_MV,     // opticalflow motion vector with paddings accordingly
-        TENSOR_DATATYPE_RAW_OF_CONF,   // opticalflow motion vector confidence with paddings
-                                       // accordingly
-        TENSOR_DATATYPE_UNSPECIFIED
-    };
-
-    std::string name;   // name can be optional
-    Tensor_DataType_t dataType = Tensor_DataType_t::TENSOR_DATATYPE_RAW;
-    // quantization information for DataType::UINT8, can be optional
-    float quant_scale = 1.0;
-    int32_t quant_offset = 0;
-    // For some inference runtime, input and output may combined together,
-    // thus tensors may share one FrameBuffer with proper offset
-    uint32_t offset = 0;
-    uint32_t size;
-    // dims can be optional
-    std::vector<uint32_t> dims;
-
-    std::string shape()
-    {
-        std::stringstream ss;
-        ss << "[ ";
-        for ( auto &dim : dims )
-        {
-            ss << dim << ", ";
-        }
-        ss << "]";
-        return ss.str();
-    }
+    const char *pName;
+    RideHal_TensorProps_t properties;
+    float quantScale;
+    int32_t quantOffset;
 } QnnRuntime_TensorInfo_t;
+
 
 class QnnRuntime : public ComponentIF
 {
@@ -131,10 +83,9 @@ public:
 
     RideHalError_e Init( const char *pName, const QnnRuntime_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
-    RideHalError_e GetInputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
-    RideHalError_e GetInputInfos( std::vector<RideHal_TensorProps_t> &infos );
-    RideHalError_e GetOutputInfos( std::vector<QnnRuntime_TensorInfo_t> &infos );
-    RideHalError_e GetOutputInfos( std::vector<RideHal_TensorProps_t> &infos );
+
+    RideHalError_e GetInputInfos( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
+    RideHalError_e GetOutputInfos( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
 
 
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
@@ -203,7 +154,7 @@ private:
     static uint64_t s_DmaMemInfoMapUseRef[DMA_MEMINFO_MAP_SIZE];
     static std::mutex s_DmaMemInfoMapLock[DMA_MEMINFO_MAP_SIZE];
     static std::map<uint8_t *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
-    QnnRuntime_Perf_t *m_pPerf;
+    QnnRuntime_Perf_t *m_pPerf = nullptr;
 };   // QnnRuntime
 
 }   // namespace component
