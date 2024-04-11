@@ -4,7 +4,7 @@
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 add_executable( gtest_Remap gtest_Remap.cpp )
 target_include_directories( gtest_Remap PUBLIC ${HEADERS_DIR} )
-target_link_libraries( gtest_Remap GTest::Main RideHalComponentCommon RideHalRemap )
+target_link_libraries( gtest_Remap gtest RideHalComponentCommon RideHalRemap )
 install(TARGETS gtest_Remap DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}

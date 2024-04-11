@@ -23,12 +23,18 @@ add_library(TinyViz STATIC
 )
 
 target_include_directories(TinyViz PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include ${SDL2_INCLUDE_DIRS})
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${SDL2_INCLUDE_DIRS}
+    ${CMAKE_PREFIX_PATH}/include
+)
 
 target_link_libraries(TinyViz 
     ${SDL2_LIBRARIES}
+    freetype
     RideHalCommon
 )
+
+target_link_directories(TinyViz PUBLIC ${CMAKE_PREFIX_PATH}/lib)
 
 target_include_directories(TinyViz PUBLIC ${HEADERS_DIR})
 

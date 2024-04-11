@@ -1,8 +1,6 @@
-
 # This builds the skel library
 BUILD_LIBS += libFadasIface_skel
 BUILD_DLLS = libFadasIface_skel
-
 
 # .c files to build into the shared lib
 libFadasIface_skel_C_SRCS += $(V)/FadasIface_skel
@@ -10,17 +8,18 @@ libFadasIface_skel_QAICIDLS += ../src/FadasIface
 libFadasIface_skel_CPP_SRCS += ../src/FadasIfaceCore
 
 INCDIRS+=./include
+INCDIRS+=$(BSP_ROOT)/AMSS/multimedia/fadas/fadas/inc/
 
 ifeq ($(V_ARCH),v73)
 INCDIRS+=$(HEXAGON_SDK_ROOT)/rtos/qurt/computev73/include/qurt
-LIBDIRS+=$(AMSS_ROOT)/../prebuilt_NHLOS/cdsp0/shared_obj/v73
-LIBDIRS+=$(AMSS_ROOT)/multimedia/fadas/fadas/lib/qurt/nsp/v73
-LIBDIRS+=$(AMSS_ROOT)/../prebuilt_NHLOS/cdsp0/lemans/shared_obj
+LIBDIRS+=$(BSP_ROOT)/prebuilt_NHLOS/cdsp0/shared_obj/v73
+LIBDIRS+=$(BSP_ROOT)/AMSS/multimedia/fadas/fadas/lib/qurt/nsp/v73
+LIBDIRS+=$(BSP_ROOT)/prebuilt_NHLOS/cdsp0/lemans/shared_obj
 else
 INCDIRS+=$(HEXAGON_SDK_ROOT)/rtos/qurt/computev68/include/qurt
-LIBDIRS+=$(AMSS_ROOT)/../prebuilt_NHLOS/cdsp0/shared_obj/v68
-LIBDIRS+=$(AMSS_ROOT)/multimedia/fadas/fadas/lib/qurt/nsp/v68
-LIBDIRS+=$(AMSS_ROOT)/../prebuilt_NHLOS/cdsp0/asic_8540/shared_obj
+LIBDIRS+=$(BSP_ROOT)/prebuilt_NHLOS/cdsp0/shared_obj/v68
+LIBDIRS+=$(BSP_ROOT)/AMSS/multimedia/fadas/fadas/lib/qurt/nsp/v68
+LIBDIRS+=$(BSP_ROOT)/prebuilt_NHLOS/cdsp0/asic_8540/shared_obj
 endif
 
 libFadasIface_skel_DLLS += libfadasNsp libworker_pool

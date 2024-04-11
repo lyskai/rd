@@ -9,10 +9,7 @@
 #include <memory>
 #include <unistd.h>
 
-extern "C"
-{
 #include "fadas.h"
-}
 
 #include "ridehal/component/ComponentIF.hpp"
 

@@ -1,10 +1,10 @@
 # Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-find_package(vidc)
+
 add_executable( gtest_VideoEncoder gtest_VideoEncoder.cpp )
 target_link_libraries( 
      gtest_VideoEncoder
-     GTest::Main
+     gtest
      RideHalVideoEncoder
 )
 

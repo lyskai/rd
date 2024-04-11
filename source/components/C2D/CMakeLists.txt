@@ -6,8 +6,7 @@ set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 set( TARGET_LIBRARIES RideHalComponentCommon )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
-    find_package(pmem)
-    list( APPEND TARGET_LIBRARIES c2d30 )
+    list( APPEND TARGET_LIBRARIES c2d30 OSUser GSLUser )
     list( APPEND HEADERS_DIR ${CMAKE_SYSROOT}/usr/include/WF )
 endif()
 

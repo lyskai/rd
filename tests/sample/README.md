@@ -15,7 +15,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     ... \
   -n componentX_name -t componentX_type \
     -k componentX_attr1_name -v componentX_attr1_value \
-    -k componentX_attr2_name -v componentX_attr3_value \
+    -k componentX_attr2_name -v componentX_attr2_value \
 ```
 
 Note: the "-n componentX_name -t componentX_type" must be in the begin for each component, and all the repeated "-k componentX_attr?_name -v componentX_attr?_value" are going to specify the attributes for this component.
@@ -23,7 +23,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | parameter | required | type      | comments |
 |-----------|----------|-----------|----------|
 | -n        | true     | string    | The unique component name |
-| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz] |
+| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the prvious attribute name |
 

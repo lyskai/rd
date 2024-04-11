@@ -1,17 +1,9 @@
 # Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-find_package(GTest REQUIRED)
-
-# Enable GTest
-enable_testing()
-set(CMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
-set(GTEST_TIMEOUT 600)
-include(GoogleTest)
-
 set( GTEST_RIDEHAL_SOURCES gtest_RideHal.cpp )
 set( GTEST_RIDEHAL_INCLUDES ${PROJECT_SOURCE_DIR}/include )
-set( GTEST_RIDEHAL_LIBS GTest::Main RideHal )
+set( GTEST_RIDEHAL_LIBS gtest RideHal )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     add_link_options("-lregex") # gtest main need this

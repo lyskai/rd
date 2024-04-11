@@ -10,8 +10,7 @@ set( COMPONENT_VIDEOENCODER_SOURCES
 set( TARGET_LIBRARIES RideHalComponentCommon )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
-    find_package(vidc)
-    list( APPEND TARGET_LIBRARIES vidc )
+    list( APPEND TARGET_LIBRARIES ioctlClient OSAbstraction )
 endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )

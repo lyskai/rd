@@ -14,9 +14,8 @@ set( COMMON_SOURCES
 set( TARGET_LIBRARIES )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
-    find_package(pmem)
     list( APPEND COMMON_SOURCES Buffer_QNX.cpp Logger_QNX.cpp )
-    list( APPEND TARGET_LIBRARIES pmem fastrpc_pmem apdf slog2 )
+    list( APPEND TARGET_LIBRARIES pmem_client pmemext fastrpc_pmem apdf slog2 )
     list( APPEND HEADERS_DIR ${CMAKE_SYSROOT}/usr/include/WF )
 endif()
 

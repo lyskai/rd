@@ -1,8 +1,7 @@
 # Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-
 add_executable( gtest_Buffer gtest_Buffer.cpp )
-target_link_libraries( gtest_Buffer GTest::Main RideHalCommon )
+target_link_libraries( gtest_Buffer gtest RideHalCommon )
 install(TARGETS gtest_Buffer DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}

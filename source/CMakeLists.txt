@@ -20,7 +20,7 @@ set( TARGET_LIBRARIES
 )
 
 if( NOT TARGET RideHalQnnRuntime )
-  message(INFO "build RideHal without QNN")
+  message(STATUS "build RideHal without QNN")
 else()
   list( APPEND TARGET_LIBRARIES RideHalQnnRuntime )
 endif()

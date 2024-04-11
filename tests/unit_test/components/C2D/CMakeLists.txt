@@ -3,9 +3,8 @@
 
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 
-
 add_executable( gtest_ComponentC2D gtest_ComponentC2D.cpp )
-target_link_libraries( gtest_ComponentC2D GTest::Main RideHalC2D )
+target_link_libraries( gtest_ComponentC2D gtest RideHalC2D )
 install(TARGETS gtest_ComponentC2D DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}
