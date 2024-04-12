@@ -70,7 +70,6 @@ void QnnLog_Callback( const char *fmt, QnnLog_Level_t logLevel, uint64_t timesta
 {
     char msg[512];
 
-    // hogl::area *m_HoglArea = hogl::add_area( "QNN-RUNTIME" );
     Logger_Level_e level = Logger_Level_e::LOGGER_LEVEL_INFO;
     switch ( logLevel )
     {
@@ -95,8 +94,14 @@ void QnnLog_Callback( const char *fmt, QnnLog_Level_t logLevel, uint64_t timesta
     // m_pLogger->Log( level, "%s", msg );
 }
 
-RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelPath )
+RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
 {
+    if ( -1 == access( modelFile.c_str(), F_OK ) )
+    {
+        RIDEHAL_ERROR( "No existing file: %s", modelFile.c_str() );
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+    }
+
     if ( QNN_CONTEXT_NO_ERROR != m_QnnFunctionPointers.qnnInterface.contextCreate(
                                          m_BackendHandle, m_DeviceHandle,
                                          (const QnnContext_Config_t **) m_ContextConfig,
@@ -148,7 +153,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelPath )
                               writtenBufferSize );
 
                 auto dataUtilStatus = tools::datautil::writeBinaryToFile(
-                        modelPath, "program.bin", (uint8_t *) saveBuffer.get(), writtenBufferSize );
+                        modelFile, "program.bin", (uint8_t *) saveBuffer.get(), writtenBufferSize );
                 if ( tools::datautil::StatusCode::SUCCESS != dataUtilStatus )
                 {
                     RIDEHAL_ERROR( "%s: Error while writing binary to file.", m_Name.c_str() );
@@ -161,38 +166,24 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelPath )
     return RideHalError_e::RIDE_HAL_ERROR_NONE;
 }
 
-RideHalError_e QnnRuntime::CreateFromBinary( std::string binPath )
+RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *buffer, uint64_t bufferSize )
 {
-    uint64_t bufferSize{ 0 };
-    std::shared_ptr<uint8_t> buffer{ nullptr };
-    // read serialized binary into a byte buffer
-    tools::datautil::StatusCode status{ tools::datautil::StatusCode::SUCCESS };
-    std::tie( status, bufferSize ) = tools::datautil::getFileSize( binPath );
     if ( 0 == bufferSize )
     {
-        RIDEHAL_ERROR( "%s: Received path to an empty file. Nothing to deserialize.",
-                       m_Name.c_str() );
-        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
-    }
-    buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize], std::default_delete<uint8_t[]>() );
-    if ( !buffer )
-    {
-        RIDEHAL_ERROR( "%s: Failed to allocate memory.", m_Name.c_str() );
+        RIDEHAL_ERROR( "%s: Failed to create binary, Buffer size is 0", m_Name.c_str() );
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
-    status = tools::datautil::readBinaryFromFile(
-            binPath, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
-    if ( status != tools::datautil::StatusCode::SUCCESS )
+    if ( !buffer )
     {
-        RIDEHAL_ERROR( "%s: Failed to read binary data.", m_Name.c_str() );
+        RIDEHAL_ERROR( "%s: Buffer is null.", m_Name.c_str() );
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
     const QnnSystemContext_BinaryInfo_t *binaryInfo{ nullptr };
     Qnn_ContextBinarySize_t binaryInfoSize{ 0 };
     if ( QNN_SUCCESS != m_QnnFunctionPointers.qnnSystemInterface.systemContextGetBinaryInfo(
-                                m_SystemContext, static_cast<void *>( buffer.get() ), bufferSize,
+                                m_SystemContext, static_cast<void *>( buffer ), bufferSize,
                                 &binaryInfo, &binaryInfoSize ) )
     {
         RIDEHAL_ERROR( "%s: Failed to get context binary info", m_Name.c_str() );
@@ -212,8 +203,7 @@ RideHalError_e QnnRuntime::CreateFromBinary( std::string binPath )
 
     if ( m_QnnFunctionPointers.qnnInterface.contextCreateFromBinary(
                  m_BackendHandle, m_DeviceHandle, (const QnnContext_Config_t **) m_ContextConfig,
-                 static_cast<void *>( buffer.get() ), bufferSize, &m_Context,
-                 m_ProfileBackendHandle ) )
+                 static_cast<void *>( buffer ), bufferSize, &m_Context, m_ProfileBackendHandle ) )
     {
         RIDEHAL_ERROR( "%s: Could not create context from binary.", m_Name.c_str() );
         return RideHalError_e::RIDE_HAL_ERROR_FAIL;
@@ -238,6 +228,43 @@ RideHalError_e QnnRuntime::CreateFromBinary( std::string binPath )
     }
 
     return RideHalError_e::RIDE_HAL_ERROR_NONE;
+}
+
+
+RideHalError_e QnnRuntime::CreateFromBinary( std::string modelFile )
+{
+    if ( -1 == access( modelFile.c_str(), F_OK ) )
+    {
+        RIDEHAL_ERROR( "No existing file: %s", modelFile.c_str() );
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+    }
+
+    uint64_t bufferSize{ 0 };
+    std::shared_ptr<uint8_t> buffer{ nullptr };
+    // read serialized binary into a byte buffer
+    tools::datautil::StatusCode status{ tools::datautil::StatusCode::SUCCESS };
+    std::tie( status, bufferSize ) = tools::datautil::getFileSize( modelFile );
+    if ( 0 == bufferSize )
+    {
+        RIDEHAL_ERROR( "%s: Received path to an empty file. Nothing to deserialize.",
+                       m_Name.c_str() );
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+    }
+    buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize], std::default_delete<uint8_t[]>() );
+    if ( !buffer )
+    {
+        RIDEHAL_ERROR( "%s: Failed to allocate memory.", m_Name.c_str() );
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+    }
+
+    status = tools::datautil::readBinaryFromFile(
+            modelFile, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
+    if ( status != tools::datautil::StatusCode::SUCCESS )
+    {
+        RIDEHAL_ERROR( "%s: Failed to read binary data.", m_Name.c_str() );
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+    }
+    return CreateFromBinary( buffer.get(), bufferSize );
 }
 
 RideHalError_e QnnRuntime::LoadOpPackages( const std::vector<QnnRuntime_UdoPackage_t> &udoPackages )
@@ -278,12 +305,8 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     std::string soPath = modelPath + "/program.so";
     std::string binPath = modelPath + "/program.bin";
-    if ( 0 == access( binPath.c_str(), F_OK ) )
-    {
-        m_LoadFromCachedBinary = true;
-    }
-    std::cout << "m_LoadFromCachedBinary: " << m_LoadFromCachedBinary << std::endl << std::flush;
-    std::cout << "binPath: " << binPath << std::endl << std::flush;
+    m_LoadFromCachedBinary = ( pConfig->loadType == LOAD_CONTEXT_BIN_FROM_FILE ||
+                               pConfig->loadType == LOAD_CONTEXT_BIN_FROM_BUFFER );
     if ( m_BackendId < (int) QNN_BACKEND_NUM )
     {
         auto statusCode = dynamicloadutil::getQnnFunctionPointers(
@@ -467,20 +490,38 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         RIDEHAL_INFO( "%s: set context priority = %d", m_Name.c_str(), pConfig->priority );
     }
 
-    if ( !m_LoadFromCachedBinary )
+    switch ( pConfig->loadType )
     {
-        if ( RIDE_HAL_ERROR_NONE != CreateFromModelSo( modelPath ) )
+        case LOAD_SHARED_LIBRARY:
         {
-            std::cout << "fail to create from model so" << std::endl << std::flush;
-            return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            if ( RIDE_HAL_ERROR_NONE != CreateFromModelSo( soPath ) )
+            {
+                std::cout << "fail to create from model so" << std::endl << std::flush;
+                return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            }
+            break;
         }
-    }
-    else
-    {
-        if ( RIDE_HAL_ERROR_NONE != CreateFromBinary( binPath ) )
+        case LOAD_CONTEXT_BIN_FROM_BUFFER:
         {
-            std::cout << "fail to create from binary" << std::endl << std::flush;
-            return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            if ( RIDE_HAL_ERROR_NONE !=
+                 CreateFromBinary( pConfig->contextBuffer, pConfig->contextSize ) )
+            {
+                RIDEHAL_ERROR( "Failed to create from binary buffer %d", pConfig->contextSize );
+                return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            }
+            break;
+            break;
+        }
+
+        case LOAD_CONTEXT_BIN_FROM_FILE:
+        default:
+        {
+            if ( RIDE_HAL_ERROR_NONE != CreateFromBinary( binPath ) )
+            {
+                std::cout << "fail to create from binary" << std::endl << std::flush;
+                return RideHalError_e::RIDE_HAL_ERROR_FAIL;
+            }
+            break;
         }
     }
 
@@ -498,7 +539,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
 QnnRuntime::~QnnRuntime() {}
 
-RideHalError_e QnnRuntime::GetInputInfos( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum )
+RideHalError_e QnnRuntime::GetInputInfo( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum )
 {
     // only update tensor numbers if pInfos is nullptr
     if ( pInfos == nullptr )
@@ -561,10 +602,6 @@ RideHalError_e QnnRuntime::GetInputInfos( QnnRuntime_TensorInfo_t *pInfos, uint3
                 default:
                     break;
             }
-            // QNN_INFO( "%s: input %s: shape = %s, size=%u, scale=%f, offset=%d, type=%x\n",
-            //           m_Name.c_str(), info.name.c_str(), info.shape().c_str(), sz,
-            //           info.quantScale, info.quantOffset, dataType );
-            // *( pInfos + i ) = info;
             pInfos[i].properties = tensorProp;
             ret = RideHalError_e::RIDE_HAL_ERROR_NONE;
         }
@@ -572,7 +609,7 @@ RideHalError_e QnnRuntime::GetInputInfos( QnnRuntime_TensorInfo_t *pInfos, uint3
     }
 }
 
-RideHalError_e QnnRuntime::GetOutputInfos( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum )
+RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum )
 {
     // only update tensor numbers if pInfos is nullptr
     if ( pInfos == nullptr )
@@ -635,10 +672,6 @@ RideHalError_e QnnRuntime::GetOutputInfos( QnnRuntime_TensorInfo_t *pInfos, uint
                 default:
                     break;
             }
-            // QNN_INFO( "%s: input %s: shape = %s, size=%u, scale=%f, offset=%d, type=%x\n",
-            //           m_Name.c_str(), info.name.c_str(), info.shape().c_str(), sz,
-            //           info.quantScale, info.quantOffset, dataType );
-            // *( pInfos + i ) = info;
             pInfos[i].properties = tensorProp;
             ret = RideHalError_e::RIDE_HAL_ERROR_NONE;
         }
@@ -781,7 +814,7 @@ void QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEventId,
     }
 }
 
-void QnnRuntime::GetPerf( QnnRuntime_Perf_t *perf )
+void QnnRuntime::GeneratePerf()
 {
     const QnnProfile_EventId_t *profileEvents{ nullptr };
     uint32_t numEvents{ 0 };
@@ -794,7 +827,7 @@ void QnnRuntime::GetPerf( QnnRuntime_Perf_t *perf )
     RIDEHAL_DEBUG( "ProfileEvents: numEvents: [%u]", numEvents );
     for ( size_t event = 0; event < numEvents; event++ )
     {
-        ExtractProfilingEvent( *( profileEvents + event ), perf );
+        ExtractProfilingEvent( *( profileEvents + event ), &m_perf );
     }
 }
 
@@ -843,7 +876,7 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         }
     }
 
-    if ( ( nullptr != m_pPerf ) && ( nullptr == m_ProfileBackendHandle ) )
+    if ( ( m_bEnabelPerf ) && ( nullptr == m_ProfileBackendHandle ) )
     {
         auto ret = m_QnnFunctionPointers.qnnInterface.profileCreate(
                 m_BackendHandle, QNN_PROFILE_LEVEL_BASIC, &m_ProfileBackendHandle );
@@ -863,15 +896,15 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
     }
     else
     {
-        if ( ( nullptr != m_pPerf ) && ( nullptr != m_ProfileBackendHandle ) )
+        if ( ( m_bEnabelPerf ) && ( nullptr != m_ProfileBackendHandle ) )
         {
-            GetPerf( m_pPerf );
+            GeneratePerf();
         }
     }
     return RideHalError_e::RIDE_HAL_ERROR_NONE;
 }
 
-void QnnRuntime::DeResisterMemory()
+void QnnRuntime::DeRegisterMemory()
 {
     if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
     {
@@ -908,7 +941,7 @@ RideHalError_e QnnRuntime::Deinit()
             s_DmaMemInfoMapUseRef[m_BackendCoreId]--;
             if ( 0 == s_DmaMemInfoMapUseRef[m_BackendCoreId] )
             {
-                DeResisterMemory();
+                DeRegisterMemory();
             }
         }
     }

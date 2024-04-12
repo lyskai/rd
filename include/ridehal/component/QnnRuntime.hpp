@@ -57,9 +57,19 @@ typedef struct
     const char *udoLibPath;
 } QnnRuntime_UdoPackage_t;
 
+typedef enum
+{
+    LOAD_CONTEXT_BIN_FROM_FILE,
+    LOAD_CONTEXT_BIN_FROM_BUFFER,   // cotext encrypted
+    LOAD_SHARED_LIBRARY
+} QnnRuntime_LoadType_e;
+
 typedef struct
 {
+    QnnRuntime_LoadType_e loadType = LOAD_CONTEXT_BIN_FROM_FILE;
     std::string modelPath;
+    uint8_t *contextBuffer;
+    uint64_t contextSize;
     int backendId;
     int backendCoreId = 0;
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;
@@ -81,34 +91,104 @@ public:
     QnnRuntime();
     ~QnnRuntime();
 
+    /// @brief Initialize QnnRuntime component
+    /// @param pName component name
+    /// @param pConfig QnnRuntime configuration
+    /// @param level Logger level
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, const QnnRuntime_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
-    RideHalError_e GetInputInfos( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
-    RideHalError_e GetOutputInfos( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
+    /// @brief Get Input tensor information
+    /// @param pInfos tensor info struct
+    /// @param pNum number of input tensors
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e GetInputInfo( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
 
+    /// @brief Get Input tensor information
+    /// @param pInfos tensor info struct
+    /// @param pNum number of output tensors
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e GetOutputInfo( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
 
+    /// @brief Execute qnn model with input and output buffer
+    /// @param pInputs input shared buffer
+    /// @param numInputs number of input shared buffer
+    /// @param pOutputs output shared buffer
+    /// @param numOutputs number of output shared buffer
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs );
 
+    /// @brief Deinit the QnnRuntime object
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit() final;
+
+    /// @brief Start the QnnRuntime object
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Start() final { return RideHalError_e::RIDE_HAL_ERROR_NONE; };
+
+    /// @brief Stop the QnnRuntime object
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop() final { return RideHalError_e::RIDE_HAL_ERROR_NONE; };
 
+    /// @brief Enable qnn performance calculation
+    void EnablePerf() { m_bEnabelPerf = true; };
+
+    /// @brief Disable qnn performance calculation
+    void DisablePerf() { m_bEnabelPerf = false; };
+
+    /// @brief Get qnn latest performance data
+    /// @return QnnRuntime performance structure
+    QnnRuntime_Perf_t GetPerf() { return m_perf; };
+
 private:
+    /// @brief Create qnn model from .so file
+    /// @param modelPath model path
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e CreateFromModelSo( std::string modelPath );
-    RideHalError_e CreateFromBinary( std::string binPath );
+
+    /// @brief Create qnn model from .bin file
+    /// @param modelPath model path
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e CreateFromBinary( std::string modelPath );
+
+    /// @brief Create qnn model from binary buffer
+    /// @param buffer buffer pointer
+    /// @param bufferSize buffer size
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e CreateFromBinary( uint8_t *buffer, uint64_t bufferSize );
+
+    /// @brief Load customer op package
+    /// @param udoPackages set of udo packages information
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e LoadOpPackages( const std::vector<QnnRuntime_UdoPackage_t> &udoPackages );
 
+    /// @brief Get memory handle for HTP
+    /// @param sharedBuffer shared buffer
+    /// @param tensor Qnn defined tensor
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
                                      const Qnn_Tensor_t &tensor );
+
+    /// @brief Get memory handle
+    /// @param sharedBuffer shared buffer
+    /// @param tensor Qnn defined tensor
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     Qnn_MemHandle_t GetMemHandle( const RideHal_SharedBuffer_t &sharedBuffer,
                                   const Qnn_Tensor_t &tensor );
-    void DeResisterMemory();
+
+    /// @brief DeRegister memory
+    void DeRegisterMemory();
 
 private:
+    /// @brief Extract qnn profiling event
+    /// @param profileEventId profiling event id
+    /// @param perf Qnn performance info
     void ExtractProfilingEvent( QnnProfile_EventId_t profileEventId, QnnRuntime_Perf_t *perf );
-    void GetPerf( QnnRuntime_Perf_t *perf );
+
+    /// @brief Generate qnn performance
+    void GeneratePerf();
 
 private:
     static constexpr size_t CONTEXT_CONFIG_SIZE = 1;
@@ -154,7 +234,8 @@ private:
     static uint64_t s_DmaMemInfoMapUseRef[DMA_MEMINFO_MAP_SIZE];
     static std::mutex s_DmaMemInfoMapLock[DMA_MEMINFO_MAP_SIZE];
     static std::map<uint8_t *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
-    QnnRuntime_Perf_t *m_pPerf = nullptr;
+    QnnRuntime_Perf_t m_perf;
+    bool m_bEnabelPerf = true;
 };   // QnnRuntime
 
 }   // namespace component

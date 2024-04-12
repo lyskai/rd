@@ -74,28 +74,28 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
     uint32_t inputNum = 0;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_qnn.GetInputInfos( nullptr, &inputNum );
+        ret = m_qnn.GetInputInfo( nullptr, &inputNum );
     }
     printf( "inputNum: %d\n", inputNum );
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         m_inputInfos.resize( inputNum );
-        ret = m_qnn.GetInputInfos( &m_inputInfos[0], &inputNum );
+        ret = m_qnn.GetInputInfo( &m_inputInfos[0], &inputNum );
     }
 
 
     uint32_t outputNum = 0;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_qnn.GetOutputInfos( nullptr, &outputNum );
+        ret = m_qnn.GetOutputInfo( nullptr, &outputNum );
     }
     printf( "outputNum: %d\n", outputNum );
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         m_outputInfos.resize( outputNum );
-        ret = m_qnn.GetOutputInfos( &m_outputInfos[0], &outputNum );
+        ret = m_qnn.GetOutputInfo( &m_outputInfos[0], &outputNum );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -105,14 +105,6 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         size_t index = 0;
         for ( int i = 0; i < outputNum; ++i )
         {
-            printf( "output i= %d\n", i );
-            printf( "numDims: %d\n", m_outputInfos[i].properties.numDims );
-            printf( "type: %d\n", m_outputInfos[i].properties.type );
-            for ( int ii = 0; ii < m_outputInfos[i].properties.numDims; ++ii )
-            {
-                printf( "dims[ii=: %d], dims= %d\n", ii, m_outputInfos[i].properties.dims[ii] );
-            }
-
             ret = m_tensorPools[index].Init(
                     "Qnn." + name + "." + std::to_string( index ), LOGGER_LEVEL_INFO, m_poolSize,
                     m_outputInfos[i].properties, RIDE_HAL_BUFFER_USAGE_HTP );
