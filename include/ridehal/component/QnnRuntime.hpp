@@ -142,6 +142,14 @@ public:
     /// @return QnnRuntime performance structure
     QnnRuntime_Perf_t GetPerf() { return m_perf; };
 
+    /// @brief Rigister memory with specific shared buffer
+    /// @param sharedBuffer specific shared buffer
+    void RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedBuffer );
+
+    /// @brief DeRigister memory with specific shared buffer
+    /// @param sharedBuffer specific shared buffer
+    void DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer );
+
 private:
     /// @brief Create qnn model from .so file
     /// @param modelPath model path

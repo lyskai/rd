@@ -679,8 +679,8 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfo_t *pInfos, uint3
     }
 }
 
-Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
-                                             const Qnn_Tensor_t &tensor )
+
+RideHalError_e QnnRuntime::RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedBuffer )
 {
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
@@ -689,13 +689,13 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
     // offset.
     if ( 0 != sharedBuffer.offset )
     {
-        return nullptr;
+        return;
     }
 #endif
 
     if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
     {
-        return nullptr; /* for safety */
+        return; /* for safety */
     }
 
     Qnn_MemHandle_t memHandle = nullptr;
@@ -711,9 +711,22 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
         }
 
         Qnn_MemDescriptor_t desc;
-        desc.memShape.numDim = QNN_TENSOR_GET_RANK( &tensor );
-        desc.memShape.dimSize = QNN_TENSOR_GET_DIMENSIONS( &tensor );
-        desc.dataType = QNN_TENSOR_GET_DATA_TYPE( &tensor );
+        desc.memShape.numDim = sharedBuffer.tensorProps.numDims;
+        desc.memShape.dimSize = sharedBuffer.tensorProps.dims;
+        switch ( sharedBuffer.tensorProps.type )
+        {
+            case RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT8:
+                desc.dataType = QNN_DATATYPE_UFIXED_POINT_8;
+                break;
+            case RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT16:
+                desc.dataType = QNN_DATATYPE_UFIXED_POINT_16;
+                break;
+            case RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_FLOAT32:
+                desc.dataType = QNN_DATATYPE_FLOAT_32;
+                break;
+            default:
+                break;
+        }
 
         int client = 0;   // NOTE: default is 0
         int extDomainId = get_extended_domains_id( domain, client );
@@ -748,6 +761,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
             RIDEHAL_ERROR( "%s: map buffer %p(%d, %u, %u) for core %d, error %d\n", m_Name.c_str(),
                            sharedBuffer.buffer.pData, fd, sharedBuffer.size, sharedBuffer.offset,
                            m_BackendCoreId, ret );
+            return RideHalError_e::RIDE_HAL_ERROR_FAIL;
         }
         else
         {
@@ -766,7 +780,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
         memHandle = info.memHandle;
     }
 
-    return memHandle;
+    return RideHalError_e::RIDE_HAL_ERROR_NONE;
 }
 
 Qnn_MemHandle_t QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t &sharedBuffer,
@@ -929,6 +943,37 @@ void QnnRuntime::DeRegisterMemory()
         }
     }
     s_DmaMemInfoMap[m_BackendCoreId].clear();
+}
+
+void QnnRuntime::DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer )
+{
+    if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
+    {
+        return; /* for safety */
+    }
+
+    constexpr int client = 0;   // NOTE: default is 0
+    int domain = CDSP_DOMAIN_ID;
+    if ( 1 == m_BackendCoreId )
+    {
+        domain = CDSP1_DOMAIN_ID;
+    }
+    int extDomainId = get_extended_domains_id( domain, client );
+
+    std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
+    auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) sharedBuffer.data() );
+    if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
+    {
+        auto ptr = it->first;
+        auto &info = it->second;
+        m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+        if ( m_BackendId == QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP )
+        {
+            remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
+        }
+    }
+
+    s_DmaMemInfoMap[m_BackendCoreId].erase( it );
 }
 
 RideHalError_e QnnRuntime::Deinit()
