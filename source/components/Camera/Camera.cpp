@@ -9,7 +9,8 @@ namespace ridehal
 namespace component
 {
 
-static std::atomic<int> g_nCamInitRefCount(0);
+static int g_nCamInitRefCount = 0;
+static std::mutex g_camInitMutex;
 
 static uint32_t GetNumBitsOfInteger( uint32_t nInteger )
 {
@@ -112,6 +113,7 @@ Camera::Camera()
     QCarCamInit_t qcarcamInit = { 0 };
     qcarcamInit.apiVersion = QCARCAM_VERSION;
 
+    std::lock_guard<std::mutex> guard(g_camInitMutex);
     if (0 == g_nCamInitRefCount)
     {
         if ( QCARCAM_RET_OK != QCarCamInitialize( (const QCarCamInit_t *) &qcarcamInit ) )
@@ -141,6 +143,7 @@ Camera::~Camera()
         m_pCameraInputs = nullptr;
     }
 
+    std::lock_guard<std::mutex> guard(g_camInitMutex);
     if (0 < g_nCamInitRefCount)
     {
         g_nCamInitRefCount --;
