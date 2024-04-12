@@ -77,6 +77,17 @@ void EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivDat
     printf( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
 }
 
+TEST( Camera, Query_QcarCam )
+{
+    RideHalError_e ret;
+    Camera *pCamera = new Camera;
+
+    ret = pCamera->QueryInputs();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    delete pCamera;
+}
+
 TEST( Camera, SANITY_QcarCam )
 {
     RideHalError_e ret;
@@ -87,6 +98,7 @@ TEST( Camera, SANITY_QcarCam )
     camConfig.isAllocator = true;
     camConfig.requestMode = false;
     camConfig.inputId = 0;
+    camConfig.ispUserCase = 3;
     camConfig.width = 1928;
     camConfig.height = 1208;
     camConfig.bufCnt = BUFFFER_COUNT;
@@ -124,6 +136,7 @@ TEST( Camera, SetBuffer_QcarCam )
     camConfig.isAllocator = false;
     camConfig.requestMode = false;
     camConfig.inputId = 0;
+    camConfig.ispUserCase = 3;
     camConfig.width = 1928;
     camConfig.height = 1208;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
@@ -176,6 +189,7 @@ TEST( Camera, PauseResume_QcarCam )
     camConfig.isAllocator = true;
     camConfig.requestMode = false;
     camConfig.inputId = 0;
+    camConfig.ispUserCase = 3;
     camConfig.width = 1928;
     camConfig.height = 1208;
     camConfig.bufCnt = BUFFFER_COUNT;
@@ -223,6 +237,7 @@ TEST( Camera, RequestMode_QcarCam )
     camConfig.isAllocator = true;
     camConfig.requestMode = true;
     camConfig.inputId = 0;
+    camConfig.ispUserCase = 3;
     camConfig.width = 1928;
     camConfig.height = 1208;
     camConfig.bufCnt = BUFFFER_COUNT;

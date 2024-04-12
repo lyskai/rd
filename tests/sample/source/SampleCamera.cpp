@@ -12,7 +12,7 @@ namespace sample
 SampleCamera::SampleCamera() {}
 SampleCamera ::~SampleCamera() {}
 
-void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
+void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, bool requestMode )
 {
     CamFrames_t frames;
     CamFrame_t frame;
@@ -23,7 +23,14 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         uint32_t streamId = ( pSharedBuffer->pubHandle >> 32 ) & 0xFFFFFFFFul;
         uint32_t frameIndex = pSharedBuffer->pubHandle & 0xFFFFFFFFul;
-        m_camera.ReleaseFrame( frameIndex );
+        if (!requestMode)
+        {
+            m_camera.ReleaseFrame( frameIndex );
+        }
+        else
+        {
+            m_camera.RequestFrame(pFrame);
+        }
         delete pSharedBuffer;
     } );
 
@@ -48,7 +55,9 @@ void SampleCamera::EventCallBack( const uint32_t eventId, const void *pPayload )
 void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
 {
     SampleCamera *self = (SampleCamera *) pPrivData;
-    self->FrameCallBack( pFrame );
+    bool requestMode = self->m_camConfig.requestMode;
+
+    self->FrameCallBack( pFrame, requestMode );
 }
 
 void SampleCamera::EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivData )
@@ -85,8 +94,22 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
 
+        int32_t requestMode = Get( config, "requestMode", 0 );
+        if (0 == requestMode)
+        {
+            m_camConfig.requestMode = false;
+        }
+        else if (1 == requestMode)
+        {
+            m_camConfig.requestMode = true;
+        }
+        else
+        {
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+
         m_camConfig.isAllocator = true;
-        m_camConfig.requestMode = false;
+        m_camConfig.ispUserCase = 3;
         m_camConfig.bufCnt = 4;
         m_camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
 

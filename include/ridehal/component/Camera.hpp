@@ -37,6 +37,7 @@ typedef struct Camera_Config
     bool requestMode;
     uint32_t streamId;
     uint32_t inputId;
+    uint32_t ispUserCase;
     uint32_t width;
     uint32_t height;
     uint32_t fps;
@@ -109,6 +110,9 @@ public:
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
 
 
+    /// @brief query camera info and get input ids
+    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    RideHalError_e QueryInputs();
 private:
     QCarCamColorFmt_e GetQcarCamFormat( RideHal_ImageFormat_e colorFormat );
 
@@ -130,15 +134,16 @@ private:
     uint32_t m_nInputId;
     uint32_t m_nCurrentBufIdx;
     uint32_t m_nRequestId;
+    uint32_t m_nCameraInputs;
     RideHal_ImageFormat_e m_colorFormat;
     void *m_pAppPriv = nullptr;
-    pthread_mutex_t m_hInputMutex;
     RideHal_CamEventCallback_t m_EventCallback = nullptr;
     RideHal_CamFrameCallback_t m_FrameCallback = nullptr;
     CameraFrame_t *m_pCameraFrames = nullptr;
     QCarCamBuffer_t *m_pQcarcamBuffer = nullptr;
     QCarCamBufferList_t m_qcarcamBuffers;
     QCarCamHndl_t m_QcarCamHndl;
+    QCarCamInput_t *m_pCameraInputs = nullptr;
 };   // class Camera
 
 }   // namespace component

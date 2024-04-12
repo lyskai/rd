@@ -43,7 +43,7 @@ public:
     RideHalError_e Deinit();
 
 private:
-    void FrameCallBack( CameraFrame_t *pFrame );
+    void FrameCallBack( CameraFrame_t *pFrame, bool RequestMode );
     void EventCallBack( const uint32_t eventId, const void *pPayload );
     static void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData );
     static void EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivData );
