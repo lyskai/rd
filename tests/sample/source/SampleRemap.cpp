@@ -28,9 +28,8 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
     float quantScale = Get( config, "quant_scale", 0.0186584480106831f );
     int32_t quantOffset = Get( config, "quant_offset", 114 );
 
-    m_config.processor =
-            (Remap_ProcessorType_t) Get( config, "processor", RIDE_HAL_PROCESSOR_HTP0 );
-    if ( (Remap_ProcessorType_t) RIDE_HAL_PROCESSOR_MAX == m_config.processor )
+    m_config.processor = Get( config, "processor", RIDE_HAL_PROCESSOR_HTP0 );
+    if ( RIDE_HAL_PROCESSOR_MAX == m_config.processor )
     {
         RIDEHAL_ERROR( "invalid processor %s\n", Get( config, "processor", "" ).c_str() );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
