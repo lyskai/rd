@@ -144,7 +144,7 @@ public:
 
     /// @brief Rigister memory with specific shared buffer
     /// @param sharedBuffer specific shared buffer
-    void RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedBuffer );
+    RideHalError_e RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedBuffer );
 
     /// @brief DeRigister memory with specific shared buffer
     /// @param sharedBuffer specific shared buffer

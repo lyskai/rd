@@ -679,6 +679,96 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfo_t *pInfos, uint3
     }
 }
 
+Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
+                                             const Qnn_Tensor_t &tensor )
+{
+#if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
+        ( QNN_HTP_API_VERSION_MAJOR > 5 )
+#else
+    // #warning QnnRuntime build with old version QNN SDK that do not support DMA buffer with
+    // offset.
+    if ( 0 != sharedBuffer.offset )
+    {
+        return nullptr;
+    }
+#endif
+
+    if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
+    {
+        return nullptr; /* for safety */
+    }
+
+    Qnn_MemHandle_t memHandle = nullptr;
+
+    std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
+    auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) sharedBuffer.data() );
+    if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
+    {
+        int domain = CDSP_DOMAIN_ID;
+        if ( 1 == m_BackendCoreId )
+        {
+            domain = CDSP1_DOMAIN_ID;
+        }
+
+        Qnn_MemDescriptor_t desc;
+        desc.memShape.numDim = QNN_TENSOR_GET_RANK( &tensor );
+        desc.memShape.dimSize = QNN_TENSOR_GET_DIMENSIONS( &tensor );
+        desc.dataType = QNN_TENSOR_GET_DATA_TYPE( &tensor );
+
+        int client = 0;   // NOTE: default is 0
+        int extDomainId = get_extended_domains_id( domain, client );
+#if defined( __QNXNTO__ )
+        remote_register_buf_v2( extDomainId, sharedBuffer.buffer.pData, sharedBuffer.size, 0 );
+#else
+        remote_register_buf_v2( extDomainId, sharedBuffer.buffer.pData, sharedBuffer.size,
+                                (int) sharedBuffer.handle );
+#endif
+        auto fd = rpcmem_to_fd( sharedBuffer.buffer.pData );
+#if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
+        ( QNN_HTP_API_VERSION_MAJOR > 5 )
+        QnnMemHtp_Descriptor_t htpDesc;
+        htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
+        htpDesc.size = sharedBuffer.size;
+        htpDesc.sharedBufferConfig.fd = fd;
+        htpDesc.sharedBufferConfig.offset = sharedBuffer.offset;
+
+        desc.memShape.shapeConfig = nullptr;
+        desc.memType = QNN_MEM_TYPE_CUSTOM;
+        desc.customInfo = &htpDesc;
+#else
+        desc.memShape.shapeConfig = nullptr;
+        desc.memType = QNN_MEM_TYPE_ION;
+        desc.ionInfo.fd = fd;
+#endif
+
+        auto ret =
+                m_QnnFunctionPointers.qnnInterface.memRegister( m_Context, &desc, 1, &memHandle );
+        if ( QNN_SUCCESS != ret )
+        {
+            QNN_ERROR( "%s: map buffer %p(%d, %u, %u) for core %d, error %d\n", m_Name.c_str(),
+                       sharedBuffer.buffer.pData, fd, sharedBuffer.size, sharedBuffer.offset,
+                       m_BackendCoreId, ret );
+        }
+        else
+        {
+            QnnRuntime::DmaMemInfo_t info;
+            info.memHandle = memHandle;
+            info.size = sharedBuffer.size;
+            s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) sharedBuffer.data()] = info;
+            QNN_INFO( "%s: map buffer %p(%d, %u, %u) as %p for core %d", m_Name.c_str(),
+                      sharedBuffer.buffer.pData, fd, sharedBuffer.size, sharedBuffer.offset,
+                      memHandle, m_BackendCoreId );
+        }
+    }
+    else
+    {
+        auto &info = it->second;
+        memHandle = info.memHandle;
+    }
+
+    return memHandle;
+}
+
 
 RideHalError_e QnnRuntime::RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedBuffer )
 {
@@ -689,13 +779,13 @@ RideHalError_e QnnRuntime::RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedB
     // offset.
     if ( 0 != sharedBuffer.offset )
     {
-        return;
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 #endif
 
     if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
     {
-        return; /* for safety */
+        return RideHalError_e::RIDE_HAL_ERROR_FAIL;
     }
 
     Qnn_MemHandle_t memHandle = nullptr;
