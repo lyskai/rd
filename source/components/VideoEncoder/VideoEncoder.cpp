@@ -13,14 +13,145 @@ namespace ridehal
 namespace component
 {
 
+#define VIDEO_ENCODER_DEFAULT_NUM_P_BET_2I 30
+#define VIDEO_ENCODER_DEFAULT_NUM_B_BET_2I 0
+#define VIDEO_ENCODER_DEFAULT_IDR_PERIOD 1
+#define VIDEO_ENCODER_DEFAULT_BIT_RATE 64000
+#define VIDEO_ENCODER_DEFAULT_FRAME_RATE 30
+
+#define VIDEO_ENCODER_MAX_BUFFER_REQ 64
+#define VIDEO_ENCODER_MIN_BUFFER_REQ 2
+#define VIDEO_ENCODER_MAX_DEV_CMD_BUFFER_SIZE 256
+#define VIDEO_ENCODER_WAIT_TIMEOUT_1_SEC 1000
+
+#define ARRAY_SIZE( a ) ( sizeof( a ) / sizeof( a[0] ) )
+
+typedef struct
+{
+    uint32_t maxFrameSize;
+    uint32_t maxSizePerSec;
+    uint32_t maxBitRate;
+    uint32_t level;
+    uint32_t profile;
+} ProfileLevel_t;
+
+typedef struct
+{
+    const ProfileLevel_t *pTable;
+    uint32_t num;
+} ProfileLevelTableRef_t;
+
+static const ProfileLevel_t s_profileLevelH264BaseLineTable[] = {
+        /*max mb per frame, max mb per sec, max bitrate, level, profile*/
+        { 99, 1485, 64000, VIDC_LEVEL_H264_1, VIDC_PROFILE_H264_BASELINE },
+        { 99, 1485, 128000, VIDC_LEVEL_H264_1b, VIDC_PROFILE_H264_BASELINE },
+        { 396, 3000, 192000, VIDC_LEVEL_H264_1p1, VIDC_PROFILE_H264_BASELINE },
+        { 396, 6000, 384000, VIDC_LEVEL_H264_1p2, VIDC_PROFILE_H264_BASELINE },
+        { 396, 11880, 768000, VIDC_LEVEL_H264_1p3, VIDC_PROFILE_H264_BASELINE },
+        { 396, 11880, 2000000, VIDC_LEVEL_H264_2, VIDC_PROFILE_H264_BASELINE },
+        { 792, 19800, 4000000, VIDC_LEVEL_H264_2p1, VIDC_PROFILE_H264_BASELINE },
+        { 1620, 20250, 4000000, VIDC_LEVEL_H264_2p2, VIDC_PROFILE_H264_BASELINE },
+        { 1620, 40500, 10000000, VIDC_LEVEL_H264_3, VIDC_PROFILE_H264_BASELINE },
+        { 3600, 108000, 14000000, VIDC_LEVEL_H264_3p1, VIDC_PROFILE_H264_BASELINE },
+        { 5120, 216000, 20000000, VIDC_LEVEL_H264_3p2, VIDC_PROFILE_H264_BASELINE },
+        { 8192, 245760, 20000000, VIDC_LEVEL_H264_4, VIDC_PROFILE_H264_BASELINE },
+        { 8192, 245760, 50000000, VIDC_LEVEL_H264_4p1, VIDC_PROFILE_H264_BASELINE },
+        { 8704, 522240, 50000000, VIDC_LEVEL_H264_4p2, VIDC_PROFILE_H264_BASELINE },
+        { 22080, 589824, 135000000, VIDC_LEVEL_H264_5, VIDC_PROFILE_H264_BASELINE },
+        { 36864, 983040, 240000000, VIDC_LEVEL_H264_5p1, VIDC_PROFILE_H264_BASELINE } };
+static const ProfileLevel_t s_profileLevelH264HighTable[] = {
+        /*max mb per frame, max mb per sec, max bitrate, level, profile*/
+        { 99, 1485, 80000, VIDC_LEVEL_H264_1, VIDC_PROFILE_H264_HIGH },
+        { 99, 1485, 200000, VIDC_LEVEL_H264_1b, VIDC_PROFILE_H264_HIGH },
+        { 396, 3000, 300000, VIDC_LEVEL_H264_1p1, VIDC_PROFILE_H264_HIGH },
+        { 396, 6000, 600000, VIDC_LEVEL_H264_1p2, VIDC_PROFILE_H264_HIGH },
+        { 396, 11880, 1200000, VIDC_LEVEL_H264_1p3, VIDC_PROFILE_H264_HIGH },
+        { 396, 11880, 3125000, VIDC_LEVEL_H264_2, VIDC_PROFILE_H264_HIGH },
+        { 792, 19800, 6250000, VIDC_LEVEL_H264_2p1, VIDC_PROFILE_H264_HIGH },
+        { 1620, 20250, 6250000, VIDC_LEVEL_H264_2p2, VIDC_PROFILE_H264_HIGH },
+        { 1620, 40500, 15625000, VIDC_LEVEL_H264_3, VIDC_PROFILE_H264_HIGH },
+        { 3600, 108000, 21875000, VIDC_LEVEL_H264_3p1, VIDC_PROFILE_H264_HIGH },
+        { 5120, 216000, 31250000, VIDC_LEVEL_H264_3p2, VIDC_PROFILE_H264_HIGH },
+        { 8192, 245760, 31250000, VIDC_LEVEL_H264_4, VIDC_PROFILE_H264_HIGH },
+        { 8192, 245760, 62500000, VIDC_LEVEL_H264_4p1, VIDC_PROFILE_H264_HIGH },
+        { 8704, 522240, 62500000, VIDC_LEVEL_H264_4p2, VIDC_PROFILE_H264_HIGH },
+        { 22080, 589824, 168750000, VIDC_LEVEL_H264_5, VIDC_PROFILE_H264_HIGH },
+        { 36864, 983040, 300000000, VIDC_LEVEL_H264_5p1, VIDC_PROFILE_H264_HIGH } };
+static const ProfileLevel_t s_profileLevelH264MainTable[] = {
+        /*max mb per frame, max mb per sec, max bitrate, level, profile*/
+        { 99, 1485, 64000, VIDC_LEVEL_H264_1, VIDC_PROFILE_H264_MAIN },
+        { 99, 1485, 128000, VIDC_LEVEL_H264_1b, VIDC_PROFILE_H264_MAIN },
+        { 396, 3000, 192000, VIDC_LEVEL_H264_1p1, VIDC_PROFILE_H264_MAIN },
+        { 396, 6000, 384000, VIDC_LEVEL_H264_1p2, VIDC_PROFILE_H264_MAIN },
+        { 396, 11880, 768000, VIDC_LEVEL_H264_1p3, VIDC_PROFILE_H264_MAIN },
+        { 396, 11880, 2000000, VIDC_LEVEL_H264_2, VIDC_PROFILE_H264_MAIN },
+        { 792, 19800, 4000000, VIDC_LEVEL_H264_2p1, VIDC_PROFILE_H264_MAIN },
+        { 1620, 20250, 4000000, VIDC_LEVEL_H264_2p2, VIDC_PROFILE_H264_MAIN },
+        { 1620, 40500, 10000000, VIDC_LEVEL_H264_3, VIDC_PROFILE_H264_MAIN },
+        { 3600, 108000, 14000000, VIDC_LEVEL_H264_3p1, VIDC_PROFILE_H264_MAIN },
+        { 5120, 216000, 20000000, VIDC_LEVEL_H264_3p2, VIDC_PROFILE_H264_MAIN },
+        { 8192, 245760, 20000000, VIDC_LEVEL_H264_4, VIDC_PROFILE_H264_MAIN },
+        { 8192, 245760, 50000000, VIDC_LEVEL_H264_4p1, VIDC_PROFILE_H264_MAIN },
+        { 8704, 522240, 50000000, VIDC_LEVEL_H264_4p2, VIDC_PROFILE_H264_MAIN },
+        { 22080, 589824, 135000000, VIDC_LEVEL_H264_5, VIDC_PROFILE_H264_MAIN },
+        { 36864, 983040, 240000000, VIDC_LEVEL_H264_5p1, VIDC_PROFILE_H264_MAIN } };
+static const ProfileLevel_t s_profileLevelHevcMainTable[] = {
+        /*max sample per frame, max sample per sec, max bitrate, level, profile*/
+        { 36864, 552960, 128000, VIDC_LEVEL_HEVC_1, VIDC_PROFILE_HEVC_MAIN },
+        { 122880, 3686440, 1500000, VIDC_LEVEL_HEVC_2, VIDC_PROFILE_HEVC_MAIN },
+        { 245760, 7372800, 3000000, VIDC_LEVEL_HEVC_21, VIDC_PROFILE_HEVC_MAIN },
+        { 552960, 16588800, 6000000, VIDC_LEVEL_HEVC_3, VIDC_PROFILE_HEVC_MAIN },
+        { 983040, 33177600, 10000000, VIDC_LEVEL_HEVC_31, VIDC_PROFILE_HEVC_MAIN },
+        { 2228224, 66846720, 12000000, VIDC_LEVEL_HEVC_4, VIDC_PROFILE_HEVC_MAIN },
+        { 2228224, 133693440, 20000000, VIDC_LEVEL_HEVC_41, VIDC_PROFILE_HEVC_MAIN },
+        { 8912896, 267386880, 25000000, VIDC_LEVEL_HEVC_5, VIDC_PROFILE_HEVC_MAIN },
+        { 8912896, 534773760, 40000000, VIDC_LEVEL_HEVC_51, VIDC_PROFILE_HEVC_MAIN },
+        { 8912896, 1069547520, 60000000, VIDC_LEVEL_HEVC_52, VIDC_PROFILE_HEVC_MAIN },
+        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN },
+        { 35651584, 2139095040, 120000000, VIDC_LEVEL_HEVC_61, VIDC_PROFILE_HEVC_MAIN },
+        { 35651584, 4278190080, 240000000, VIDC_LEVEL_HEVC_62, VIDC_PROFILE_HEVC_MAIN } };
+static const ProfileLevel_t s_profileLevelHevcMain10Table[] = {
+        /*max sample per frame, max sample per sec, max bitrate, level, profile*/
+        { 36864, 552960, 128000, VIDC_LEVEL_HEVC_1, VIDC_PROFILE_HEVC_MAIN10 },
+        { 122880, 3686440, 1500000, VIDC_LEVEL_HEVC_2, VIDC_PROFILE_HEVC_MAIN10 },
+        { 245760, 7372800, 3000000, VIDC_LEVEL_HEVC_21, VIDC_PROFILE_HEVC_MAIN10 },
+        { 552960, 16588800, 6000000, VIDC_LEVEL_HEVC_3, VIDC_PROFILE_HEVC_MAIN10 },
+        { 983040, 33177600, 10000000, VIDC_LEVEL_HEVC_31, VIDC_PROFILE_HEVC_MAIN10 },
+        { 2228224, 66846720, 12000000, VIDC_LEVEL_HEVC_4, VIDC_PROFILE_HEVC_MAIN10 },
+        { 2228224, 133693440, 20000000, VIDC_LEVEL_HEVC_41, VIDC_PROFILE_HEVC_MAIN10 },
+        { 8912896, 267386880, 25000000, VIDC_LEVEL_HEVC_5, VIDC_PROFILE_HEVC_MAIN10 },
+        { 8912896, 534773760, 40000000, VIDC_LEVEL_HEVC_51, VIDC_PROFILE_HEVC_MAIN10 },
+        { 8912896, 1069547520, 60000000, VIDC_LEVEL_HEVC_52, VIDC_PROFILE_HEVC_MAIN10 },
+        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN10 },
+        { 35651584, 2139095040, 120000000, VIDC_LEVEL_HEVC_61, VIDC_PROFILE_HEVC_MAIN10 },
+        { 35651584, 4278190080, 240000000, VIDC_LEVEL_HEVC_62, VIDC_PROFILE_HEVC_MAIN10 } };
+
+static const ProfileLevelTableRef_t s_profileLevelTables[] = {
+        { s_profileLevelH264BaseLineTable, ARRAY_SIZE( s_profileLevelH264BaseLineTable ) },
+        { s_profileLevelH264HighTable, ARRAY_SIZE( s_profileLevelH264HighTable ) },
+        { s_profileLevelH264MainTable, ARRAY_SIZE( s_profileLevelH264MainTable ) },
+        { s_profileLevelHevcMainTable, ARRAY_SIZE( s_profileLevelHevcMainTable ) },
+        { s_profileLevelHevcMain10Table, ARRAY_SIZE( s_profileLevelHevcMain10Table ) } };
+
+
 RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_t *pConfig,
                                    Logger_Level_e level )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    int32_t i = 0;
+    int32_t i, rc = 0;
 
     ret = ComponentIF::Init( pName, level );
-    m_state = RIDE_HAL_COMPONENT_STATE_INITIALIZING;
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIALIZING;
+        if ( nullptr == pConfig )
+        {
+            RIDEHAL_ERROR( "pConfig is null pointer!" );
+            ret = RIDE_HAL_ERROR_NULL_PTR;
+        }
+    }
+
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         m_width = pConfig->width;
@@ -41,8 +172,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             m_vidcEncoderData.codec = VIDC_CODEC_H264;
         }
-        m_vidcEncoderData.profile.profile = pConfig->profile;
-        m_vidcEncoderData.level.level = GetVidcLevel( pConfig->profile );
+        SetVidcProfileLevel( pConfig->profile );
         m_vidcEncoderData.sessionCodec.session = VIDC_SESSION_ENCODE;
         m_vidcEncoderData.sessionCodec.codec = m_vidcEncoderData.codec;
         m_numInputBufferReq = pConfig->numInputBufferReq;
@@ -227,6 +357,10 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
             }
             else
             {
+                if ( nullptr != pConfig->inputBufferList )
+                {
+                    m_bInputConfigBuffer = true;
+                }
                 ret = PrepareBuffer( m_vidcEncoderData.ioHandle, pConfig->inputBufferList,
                                      VIDC_BUFFER_INPUT, m_numInputBufferReq,
                                      m_vidcEncoderData.vidcInputBufferSize );
@@ -273,6 +407,10 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
             }
             else
             {
+                if ( nullptr != pConfig->outputBufferList )
+                {
+                    m_bOutputConfigBuffer = true;
+                }
                 ret = PrepareBuffer( m_vidcEncoderData.ioHandle, pConfig->outputBufferList,
                                      VIDC_BUFFER_OUTPUT, m_numOutputBufferReq,
                                      m_vidcEncoderData.vidcOutputBufferSize );
@@ -297,27 +435,34 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         RIDEHAL_DEBUG( "Loading vidc resources" );
-        device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_LOAD_RESOURCES, nullptr, 0, nullptr,
-                      0 );
-        ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_LOAD_RESOURCES, nullptr, 0,
+                           nullptr, 0 );
+        if ( VIDC_ERR_NONE != rc )
         {
-            RIDEHAL_ERROR( "VIDC_IOCTL_LOAD_RESOURCES WaitForState STATE_IDLE fail!" );
+            RIDEHAL_ERROR( "Loading vidc resources failed! rc=0x%x", rc );
+            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            ret = RIDE_HAL_ERROR_FAIL;
         }
         else
         {
-            RIDEHAL_DEBUG( "Successfully completed vidc initialization!" );
+            ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
+            if ( RIDE_HAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "VIDC_IOCTL_LOAD_RESOURCES WaitForState STATE_IDLE fail!" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
         }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         PrintEncoderConfig();
+        RIDEHAL_DEBUG( "Successfully completed vidc initialization!" );
         m_state = RIDE_HAL_COMPONENT_STATE_READY;
     }
     else
     {
-        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+        RIDEHAL_ERROR( "Something wrong happened in Init, Deiniting vidc" );
         Teardown();
     }
 
@@ -327,7 +472,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
 RideHalError_e VideoEncoder::Start()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    int32_t i = 0;
+    int32_t i, rc = 0;
 
     if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
@@ -345,19 +490,28 @@ RideHalError_e VideoEncoder::Start()
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        RIDEHAL_DEBUG( "Starting vidc" );
         m_state = RIDE_HAL_COMPONENT_STATE_STATING;
-        device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_START, nullptr, 0, nullptr, 0 );
-        ret = WaitForState( VIDEO_ENCODER_STATE_EXECUTING );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        RIDEHAL_DEBUG( "Starting vidc" );
+        rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_START, nullptr, 0, nullptr, 0 );
+        if ( VIDC_ERR_NONE != rc )
         {
-            RIDEHAL_ERROR( "VIDC_IOCTL_START WaitForState STATE_EXECUTING failed!" );
-            m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            RIDEHAL_ERROR( "Starting vidc failed! rc=0x%x", rc );
+            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            ret = RIDE_HAL_ERROR_FAIL;
         }
         else
         {
-            RIDEHAL_DEBUG( "Started vidc" );
-            m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
+            ret = WaitForState( VIDEO_ENCODER_STATE_EXECUTING );
+            if ( RIDE_HAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "VIDC_IOCTL_START WaitForState STATE_EXECUTING failed!" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
+            else
+            {
+                RIDEHAL_DEBUG( "Started vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
+            }
         }
     }
 
@@ -431,7 +585,7 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
         frameData.mark_data = (unsigned long) pInput->appMarkData;
         if ( nullptr != pInput->onTheFlyCmd )
         {
-            for ( i = 0; i < pInput->numCmd; i++ )
+            for ( i = 0; ( i < pInput->numCmd ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
             {
                 ret = Configure( &pInput->onTheFlyCmd[i] );
             }
@@ -496,6 +650,7 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
         if ( VIDC_ERR_NONE != rc )
         {
             RIDEHAL_ERROR( "SubmitInputFrame VIDC_IOCTL_EMPTY_INPUT_BUFFER failed! rc=0x%x", rc );
+            m_inputMap[frameId].useFlag = false;
             ret = RIDE_HAL_ERROR_FAIL;
         }
         else
@@ -600,6 +755,7 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
         if ( VIDC_ERR_NONE != rc )
         {
             RIDEHAL_ERROR( "SubmitOutputFrame FillBuffer 0x%x failed rc 0x%x", frameId, rc );
+            m_outputMap[frameId].useFlag = false;
             ret = RIDE_HAL_ERROR_FAIL;
         }
         else
@@ -624,36 +780,31 @@ RideHalError_e VideoEncoder::Stop()
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        if ( VIDEO_ENCODER_STATE_EXECUTING == m_vidcEncoderData.state )
+        m_state = RIDE_HAL_COMPONENT_STATE_STOPING;
+        RIDEHAL_DEBUG( "Stopping vidc!" );
+        rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_STOP, nullptr, 0, nullptr, 0 );
+        if ( VIDC_ERR_NONE != rc )
         {
-            RIDEHAL_DEBUG( "Stopping vidc!" );
-            m_state = RIDE_HAL_COMPONENT_STATE_STOPING;
-            rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_STOP, nullptr, 0, nullptr,
-                               0 );
-            if ( VIDC_ERR_NONE != rc )
+            RIDEHAL_ERROR( "Stop vidc failed! rc=0x%x", rc );
+            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+        else
+        {
+            ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
+            if ( RIDE_HAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Stop vidc failed! rc=0x%x", rc );
-                m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
-                ret = RIDE_HAL_ERROR_FAIL;
+                RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
+            else
+            {
+                RIDEHAL_DEBUG( "Stopped vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_READY;
             }
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        RIDEHAL_DEBUG( "Stopped vidc" );
-        m_state = RIDE_HAL_COMPONENT_STATE_READY;
-    }
-    else
-    {
-        RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
-        m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
-    }
 
     return ret;
 }
@@ -826,37 +977,55 @@ RideHalError_e VideoEncoder::RegisterCallback( VideoEncoder_InFrameCallback_t in
 RideHalError_e VideoEncoder::Teardown()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    int32_t rc = 0;
 
-    if ( ( RIDE_HAL_COMPONENT_STATE_ERROR == m_state ) &&
-         ( VIDEO_ENCODER_STATE_EXECUTING == m_vidcEncoderData.state ) )   // error state
+    if ( VIDEO_ENCODER_STATE_EXECUTING ==
+         m_vidcEncoderData.state )   // call Teardown before vidc stop
     {
         RIDEHAL_DEBUG( "Stopping vidc!" );
         m_state = RIDE_HAL_COMPONENT_STATE_STOPING;
-        device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_STOP, nullptr, 0, nullptr, 0 );
-        ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_STOP, nullptr, 0, nullptr, 0 );
+        if ( VIDC_ERR_NONE != rc )
         {
+            RIDEHAL_ERROR( "Stop vidc failed! rc=0x%x", rc );
             m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
+            ret = RIDE_HAL_ERROR_FAIL;
         }
         else
         {
-            RIDEHAL_DEBUG( "Stopped vidc" );
-            m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
+            if ( RIDE_HAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
+            else
+            {
+                RIDEHAL_DEBUG( "Stopped vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            }
         }
     }
 
-    if ( ( RIDE_HAL_COMPONENT_STATE_READY == m_state ) &&
-         ( VIDEO_ENCODER_STATE_IDLE == m_vidcEncoderData.state ) )   // deinit
+    if ( VIDEO_ENCODER_STATE_IDLE == m_vidcEncoderData.state )   // call Teardown after vidc stop
     {
         RIDEHAL_DEBUG( "Releasing vidc resources!" );
-        device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_RELEASE_RESOURCES, nullptr, 0, nullptr,
-                      0 );
-        ret = WaitForState( VIDEO_ENCODER_STATE_LOADED );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        rc = device_ioctl( m_vidcEncoderData.ioHandle, VIDC_IOCTL_RELEASE_RESOURCES, nullptr, 0,
+                           nullptr, 0 );
+        if ( VIDC_ERR_NONE != rc )
         {
+            RIDEHAL_ERROR( "Releasing vidc resources failed! rc=0x%x", rc );
             m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            RIDEHAL_ERROR( "WaitForState.STATE_LOADED.fail!" );
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+        else
+        {
+            ret = WaitForState( VIDEO_ENCODER_STATE_LOADED );
+            if ( RIDE_HAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "WaitForState.STATE_LOADED.fail!" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
         }
     }
 
@@ -940,101 +1109,77 @@ vidc_color_format_type VideoEncoder::GetVidcFormat( RideHal_ImageFormat_e format
     return ret;
 }
 
-uint32_t VideoEncoder::GetVidcLevel( uint32_t profile )
+void VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
 {
-    uint32_t level = 0;
-    const uint32_t *profileTbl = nullptr;
+    uint32_t i, num, level = 0;
+    const ProfileLevel_t *pTable = nullptr;
     uint32_t mbPerFrame = 0, mbPerSec = 0;
     uint64_t samplePerFrame = 0, samplePerSec = 0;
     bool bFindFlag = false;
+    m_vidcEncoderData.level.level = 0;
+    m_vidcEncoderData.profile.profile = 0;
 
-    if ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264 == m_outFormat )
+    if ( profile < VIDEO_ENCODER_PROFILE_MAX )
     {
-        switch ( profile )
-        {
-            case VIDC_PROFILE_H264_BASELINE:
-                profileTbl = ProfileLevelTable[VIDEO_ENCODER_H264_BP_START];
-                break;
-            case VIDC_PROFILE_H264_HIGH:
-                profileTbl = ProfileLevelTable[VIDEO_ENCODER_H264_HP_START];
-                break;
-            case VIDC_PROFILE_H264_MAIN:
-                profileTbl = ProfileLevelTable[VIDEO_ENCODER_H264_MP_START];
-                break;
-            default:
-                RIDEHAL_ERROR( "profile 0x%x not supported", profile );
-                break;
-        }
-        if ( nullptr != profileTbl )
-        {
-            mbPerFrame = ( ( m_height + 15 ) >> 4 ) * ( ( m_width + 15 ) >> 4 );
-            mbPerSec = mbPerFrame * m_frameRate;
-            RIDEHAL_DEBUG( "mbPerFrame %" PRIu32 " mbPerSec %" PRIu32, mbPerFrame, mbPerSec );
-            do
-            {
-                if ( mbPerFrame <= (uint32_t) profileTbl[0] )
-                {
-                    if ( mbPerSec <= (uint32_t) profileTbl[1] )
-                    {
-                        if ( m_bitRate <= (uint32_t) profileTbl[2] )
-                        {
-                            level = (uint32_t) profileTbl[3];
-                            bFindFlag = true;
-                        }
-                    }
-                }
-                profileTbl = profileTbl + VIDEO_ENCODER_MAX_PROFILE_PARAMS;
-            } while ( ( profileTbl[0] != 0 ) && ( false == bFindFlag ) );
-            if ( false == bFindFlag )
-            {
-                level = VIDC_LEVEL_H264_5p1;
-            }
-        }
-    }
-    else if ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat )
-    {
-        switch ( profile )
-        {
-            case VIDC_PROFILE_HEVC_MAIN:
-                profileTbl = ProfileLevelTable[VIDEO_ENCODER_H265_BP_START];
-                break;
-            case VIDC_PROFILE_HEVC_MAIN10:
-                profileTbl = ProfileLevelTable[VIDEO_ENCODER_H265_HP_START];
-                break;
-            default:
-                RIDEHAL_ERROR( "profile 0x%x not supported", profile );
-                break;
-        }
-
-        if ( nullptr != profileTbl )
-        {
-            samplePerFrame = m_height * m_width;
-            samplePerSec = samplePerFrame * m_frameRate;
-            RIDEHAL_DEBUG( "samplePerFrame %" PRIu64 " samplePerSec %" PRIu64, samplePerFrame,
-                           samplePerSec );
-            do
-            {
-                if ( samplePerFrame <= (uint32_t) profileTbl[0] )
-                {
-                    if ( samplePerSec <= (uint32_t) profileTbl[1] )
-                    {
-                        if ( m_bitRate <= (uint32_t) profileTbl[2] )
-                        {
-                            level = (uint32_t) profileTbl[3];
-                            bFindFlag = true;
-                        }
-                    }
-                }
-                profileTbl = profileTbl + VIDEO_ENCODER_MAX_PROFILE_PARAMS;
-            } while ( ( profileTbl[0] != 0 ) && ( false == bFindFlag ) );
-            if ( false == bFindFlag )
-            {
-                level = VIDC_LEVEL_HEVC_62;
-            }
-        }
+        pTable = s_profileLevelTables[profile].pTable;
+        num = s_profileLevelTables[profile].num;
     }
 
-    return level;
+    if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264 == m_outFormat ) &&
+         ( profile <= VIDEO_ENCODER_PROFILE_H264_MAIN ) )
+    {
+        mbPerFrame = ( ( m_height + 15 ) >> 4 ) * ( ( m_width + 15 ) >> 4 );
+        mbPerSec = mbPerFrame * m_frameRate;
+        RIDEHAL_DEBUG( "mbPerFrame %" PRIu32 " mbPerSec %" PRIu32, mbPerFrame, mbPerSec );
+        for ( i = 0; ( i < num ) && ( false == bFindFlag ); i++ )
+        {
+            if ( mbPerFrame <= pTable[i].maxFrameSize )
+            {
+                if ( mbPerSec <= pTable[i].maxSizePerSec )
+                {
+                    if ( m_bitRate <= pTable[i].maxBitRate )
+                    {
+                        m_vidcEncoderData.level.level = pTable[i].level;
+                        m_vidcEncoderData.profile.profile = pTable[i].profile;
+                        bFindFlag = true;
+                    }
+                }
+            }
+        }
+        if ( false == bFindFlag )
+        {
+            m_vidcEncoderData.level.level = pTable[num - 1].level;
+            m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
+        }
+    }
+    else if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat ) &&
+              ( profile >= VIDEO_ENCODER_PROFILE_HEVC_MAIN ) )
+    {
+        samplePerFrame = m_height * m_width;
+        samplePerSec = samplePerFrame * m_frameRate;
+        RIDEHAL_DEBUG( "samplePerFrame %" PRIu64 " samplePerSec %" PRIu64, samplePerFrame,
+                       samplePerSec );
+        for ( i = 0; ( i < num ) && ( false == bFindFlag ); i++ )
+        {
+            if ( samplePerFrame <= pTable[i].maxFrameSize )
+            {
+                if ( samplePerSec <= pTable[i].maxSizePerSec )
+                {
+                    if ( m_bitRate <= pTable[i].maxBitRate )
+                    {
+                        m_vidcEncoderData.level.level = pTable[i].level;
+                        m_vidcEncoderData.profile.profile = pTable[i].profile;
+                        bFindFlag = true;
+                    }
+                }
+            }
+        }
+        if ( false == bFindFlag )
+        {
+            m_vidcEncoderData.level.level = pTable[num - 1].level;
+            m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
+        }
+    }
 }
 
 int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
@@ -1638,9 +1783,8 @@ RideHalError_e VideoEncoder::FreeOutputBuffer()
                                " failed! rc=0x%x",
                                i, rc );
             }
-            m_outputList[i].Free();
+            if ( false == m_bOutputConfigBuffer ) ret = m_outputList[i].Free();
         }
-
         RIDEHAL_DEBUG( "Free m_outputList" );
         free( m_outputList );
         m_outputList = nullptr;
@@ -1678,9 +1822,8 @@ RideHalError_e VideoEncoder::FreeInputBuffer()
                                " failed! rc=0x%x",
                                i, rc );
             }
-            m_inputList[i].Free();
+            if ( false == m_bInputConfigBuffer ) ret = m_inputList[i].Free();
         }
-
         RIDEHAL_DEBUG( "Free m_inputList" );
         free( m_inputList );
         m_inputList = nullptr;

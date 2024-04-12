@@ -64,7 +64,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     config.numInputBufferReq = 4;
     config.numOutputBufferReq = 4;
     config.frameRate = 30;
-    config.profile = VIDC_PROFILE_H264_MAIN;
+    config.profile = VIDEO_ENCODER_PROFILE_H264_MAIN;
     config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
     config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
@@ -176,7 +176,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     config.numInputBufferReq = 4;
     config.numOutputBufferReq = 4;
     config.frameRate = 60;
-    config.profile = VIDC_PROFILE_H264_MAIN;
+    config.profile = VIDEO_ENCODER_PROFILE_H264_MAIN;
     config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
     config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
@@ -262,7 +262,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     config.numInputBufferReq = 4;
     config.numOutputBufferReq = 4;
     config.frameRate = 30;
-    config.profile = VIDC_PROFILE_HEVC_MAIN;
+    config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
     config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
     config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
