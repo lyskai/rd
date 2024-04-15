@@ -115,22 +115,19 @@ public:
                                             uint32_t numOfOutputBuffers );
 
 private:
-    RideHalError_e createSurface( void *surface, uint32_t *surfaceId, RideHal_ImageFormat_e format,
+    RideHalError_e createSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
                                   void *bufferAddr, uint32_t width, uint32_t height,
                                   uint32_t *stride, uint32_t *actualHeight, bool isSource );
-    RideHalError_e createYUVSurface( C2D_YUV_SURFACE_DEF *surfaceDef, uint32_t *surfaceId,
-                                     RideHal_ImageFormat_e format, void *bufferAddr, uint32_t width,
-                                     uint32_t height, uint32_t *stride, uint32_t *actualHeight,
-                                     bool isSource );
-    RideHalError_e createRGBSurface( C2D_RGB_SURFACE_DEF *surfaceDef, uint32_t *surfaceId,
-                                     RideHal_ImageFormat_e format, void *bufferAddr, uint32_t width,
-                                     uint32_t height, uint32_t *stride, bool isSource );
+    RideHalError_e createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                                     void *bufferAddr, uint32_t width, uint32_t height,
+                                     uint32_t *stride, uint32_t *actualHeight, bool isSource );
+    RideHalError_e createRGBSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                                     void *bufferAddr, uint32_t width, uint32_t height,
+                                     uint32_t *stride, bool isSource );
 
     uint32_t GetC2DFormatType( RideHal_ImageFormat_e format );
 
 private:
-    static const uint32_t MAX_BUFFER_NUM = 16;
-
     C2D_ImageResolution_t m_inputResolutions[RIDE_HAL_MAX_INPUTS];
     RideHal_ImageFormat_e m_inputFormats[RIDE_HAL_MAX_INPUTS];
     C2D_ROIConfig_t m_rois[RIDE_HAL_MAX_INPUTS];
@@ -146,8 +143,8 @@ private:
     uint32_t m_stride[RIDE_HAL_NUM_IMAGE_PLANES];
     uint32_t m_actualHeight[RIDE_HAL_NUM_IMAGE_PLANES];
 
-    std::unordered_map<void *, std::pair<void *, C2D_OBJECT>> m_inputBufferSurfaceMap;
-    std::unordered_map<void *, std::pair<void *, uint32_t>> m_outputBufferSurfaceMap;
+    std::unordered_map<void *, C2D_OBJECT> m_inputBufferSurfaceMap;
+    std::unordered_map<void *, uint32_t> m_outputBufferSurfaceMap;
 
 };   // class C2D
 
