@@ -45,18 +45,23 @@ private:
     RideHalError_e LoadImage( std::shared_ptr<SharedBuffer_t> image, std::string path );
 
 private:
-    std::string m_dataPath;
+    typedef struct
+    {
+        RideHal_ImageFormat_e format;
+        uint32_t width;
+        uint32_t height;
+        std::string dataPath;
+    } DataReaderConfig_t;
 
-    RideHal_ImageFormat_e m_format;
     uint32_t m_fps;
-    uint32_t m_width;
-    uint32_t m_height;
-    uint32_t m_poolSize = 4;
+    std::vector<DataReaderConfig_t> m_configs;
+    uint32_t m_numOfDataReaders;
 
+    uint32_t m_poolSize = 4;
     std::string m_topicName;
 
     std::thread m_thread;
-    SharedBufferPool m_imagePool;
+    std::vector<SharedBufferPool> m_imagePools;
     bool m_stop;
 
     DataPublisher<CamFrames_t> m_pub;

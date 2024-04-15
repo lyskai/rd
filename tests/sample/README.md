@@ -33,20 +33,24 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 
 | attribute | required | type      | default | comments |
 |-----------|----------|-----------|---------|----------|
-| format    | false    | string    | "nv12"  | The image format, options from [nv12, uyvy, rgb, bgr, p010] |
-| width     | false    | int       | 1920    | The image width |
-| height    | false    | int       | 1024    | The image height |
+| number    | false    | int       | 1       | The number of simulated cameras |
+| formatX   | false    | string    | "nv12"  | The image format for the simulated camera X, options from [nv12, uyvy, rgb, bgr, p010] |
+| widthX    | false    | int       | 1920    | The image width for the simulated camera X |
+| heightX   | false    | int       | 1024    | The image height for the simulated camera X |
+| data_pathX | true     | string    | -       | The data path  for the simulated camera X that contain the image files |
 | fps       | false    | int       | 30      | The frame rate per second |
-| data_path | true     | string    | -       | The data path that contain the image files |
 | pool_size | false    | int       | 4       | the image memory pool size |
 | topic     | true     | string    | -       | the output topic name |
+
+Note: "X" is value from 0 to number-1, thus the attribute with suffix "X" is repeated for different simulated camera.
 
 The command line template example:
 
 ```sh
-  -n CAM1 -t DataReader -k width -v 1920 -k height -v 1024 \
-    -k data_path -v /data/4K_street_1000_500_1920_1024_uyvy \
-    -k pool_size -v 4 -k format -v uyvy \
+  -n CAM1 -t DataReader -k number -v 1 \
+    -k format0 -v uyvy -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k pool_size -v 4 \
     -k topic -v /sensor/camera/CAM1/raw \
 ```
 
@@ -184,8 +188,8 @@ The command line template example:
 | winW          | false    | int         | 1920    | The window width |
 | winH          | false    | int         | 1080    | The window height |
 | cameras       | true     | string list | -       | The cameras' name list |
-| cam_topicX    | true     | string    | /sensor/camera/${cameras[X]}/raw   | the input camera frame topic name for camera X |
-| obj_topicX    | true     | string    | /sensor/camera/${cameras[X]}/objs  | the input road object topic name for camera X |
+| cam_topicX    | false    | string      | /sensor/camera/${cameras[X]}/raw   | the input camera frame topic name for camera X |
+| obj_topicX    | false    | string      | /sensor/camera/${cameras[X]}/objs  | the input road object topic name for camera X |
 
 The command line template example:
 
@@ -234,9 +238,9 @@ The command line template example:
 
 ```sh
 export RIDEHAL_LOG_LEVEL=INFO
-./bin/rhrun ./bin/RideHalSampleApp -n CAM0 -t DataReader -k width -v 1920 -k height -v 1024 \
-    -k data_path -v /data/4K_street_1000_500_1920_1024_uyvy \
-    -k format -v uyvy -k topic -v /sensor/camera/CAM0/raw \
+./bin/rhrun ./bin/RideHalSampleApp -n CAM0 -t DataReader -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k format0 -v uyvy -k topic -v /sensor/camera/CAM0/raw \
   -n REMAP0 -t Remap -k batch_size -v 1 \
     -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v uyvy \
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
@@ -250,9 +254,9 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM0/qnn \
     -k output_topic -v /sensor/camera/CAM0/objs \
-  -n CAM1 -t DataReader -k width -v 1920 -k height -v 1024 \
-    -k data_path -v /data/4K_street_1000_500_1920_1024_uyvy \
-    -k format -v uyvy -k topic -v /sensor/camera/CAM1/raw \
+  -n CAM1 -t DataReader -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k format0 -v uyvy -k topic -v /sensor/camera/CAM1/raw \
   -n REMAP1 -t Remap -k batch_size -v 1 \
     -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v uyvy \
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
@@ -266,9 +270,9 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM1/qnn \
     -k output_topic -v /sensor/camera/CAM1/objs \
-  -n CAM2 -t DataReader -k width -v 1920 -k height -v 1024 \
-    -k data_path -v /data/4K_street_1000_500_1920_1024_uyvy \
-    -k format -v uyvy -k topic -v /sensor/camera/CAM2/raw \
+  -n CAM2 -t DataReader -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k format0 -v uyvy -k topic -v /sensor/camera/CAM2/raw \
   -n REMAP2 -t Remap -k batch_size -v 1 \
     -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v uyvy \
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
@@ -282,9 +286,9 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM2/qnn \
     -k output_topic -v /sensor/camera/CAM2/objs \
-  -n CAM3 -t DataReader -k width -v 1920 -k height -v 1024 \
-    -k data_path -v /data/4K_street_1000_500_1920_1024_uyvy \
-    -k format -v uyvy -k topic -v /sensor/camera/CAM3/raw \
+  -n CAM3 -t DataReader -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k format0 -v uyvy -k topic -v /sensor/camera/CAM3/raw \
   -n REMAP3 -t Remap -k batch_size -v 1 \
     -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v uyvy \
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
@@ -327,9 +331,9 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k width -v 1928 -k height -v 1208 \
     -k input_topic -v /sensor/camera/CAM0/qnn \
     -k output_topic -v /sensor/camera/CAM0/objs \
-  -n CAM1 -t DataReader -k width -v 1920 -k height -v 1024 \
-    -k data_path -v /data/4K_street_1000_500_1920_1024_uyvy \
-    -k format -v uyvy -k topic -v /sensor/camera/CAM1/raw \
+  -n CAM1 -t DataReader -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k format0 -v uyvy -k topic -v /sensor/camera/CAM1/raw \
   -n REMAP1 -t Remap -k batch_size -v 1 \
     -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v uyvy \
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \

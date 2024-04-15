@@ -29,25 +29,49 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    m_format = Get( config, "format", RIDE_HAL_IMAGE_FORMAT_NV12 );
-    if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_format )
+    m_numOfDataReaders = Get( config, "number", 1 );
+    if ( 0 == m_numOfDataReaders )
     {
-        RIDEHAL_ERROR( "invalid format\n" );
+        RIDEHAL_ERROR( "invalid number\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-
-    m_width = Get( config, "width", 1920 );
-    if ( 0 == m_width )
+    else
     {
-        RIDEHAL_ERROR( "invalid width = %d\n", m_width );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        m_configs.reserve( m_numOfDataReaders );
     }
 
-    m_height = Get( config, "height", 1024 );
-    if ( 0 == m_height )
+    for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
     {
-        RIDEHAL_ERROR( "invalid height = %d\n", m_height );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        DataReaderConfig_t cfg;
+
+        cfg.format = Get( config, "format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_NV12 );
+        if ( RIDE_HAL_IMAGE_FORMAT_MAX == cfg.format )
+        {
+            RIDEHAL_ERROR( "invalid format%u\n", i );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        cfg.width = Get( config, "width" + std::to_string( i ), 1920 );
+        if ( 0 == cfg.width )
+        {
+            RIDEHAL_ERROR( "invalid width%u\n", i );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        cfg.height = Get( config, "height" + std::to_string( i ), 1024 );
+        if ( 0 == cfg.height )
+        {
+            RIDEHAL_ERROR( "invalid height%u\n", i );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        cfg.dataPath = Get( config, "data_path" + std::to_string( i ), "" );
+        if ( "" == cfg.dataPath )
+        {
+            RIDEHAL_INFO( "using dummy camera frame for %u\n", i );
+        }
+
+        m_configs.push_back( cfg );
     }
 
     m_fps = Get( config, "fps", 30 );
@@ -61,13 +85,6 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
     if ( "" == m_topicName )
     {
         RIDEHAL_ERROR( "no topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-    }
-
-    m_dataPath = Get( config, "data_path", "" );
-    if ( "" == m_dataPath )
-    {
-        RIDEHAL_ERROR( "no data path\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
@@ -93,8 +110,13 @@ RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config 
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_width, m_height, m_format,
-                                RIDE_HAL_BUFFER_USAGE_CAMERA );
+        m_imagePools.resize( m_numOfDataReaders );
+        for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        {
+            ret = m_imagePools[i].Init( name + std::to_string( i ), LOGGER_LEVEL_INFO, m_poolSize,
+                                        m_configs[i].width, m_configs[i].height,
+                                        m_configs[i].format, RIDE_HAL_BUFFER_USAGE_CAMERA );
+        }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -170,43 +192,71 @@ void SampleDataReader::ThreadMain()
     uint64_t frameId = 0;
     while ( false == m_stop )
     {
-        std::shared_ptr<SharedBuffer_t> buffer = m_imagePool.Get();
-        if ( nullptr != buffer )
+        CamFrames_t frames;
+        ret = RIDE_HAL_ERROR_NONE;
+        auto start = std::chrono::high_resolution_clock::now();
+        for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
         {
-            auto start = std::chrono::high_resolution_clock::now();
-            std::string path =
-                    m_dataPath + "/" + std::to_string( index ) + s_rideHalFormatToStr[m_format];
-            ret = LoadImage( buffer, path );
-            if ( RIDE_HAL_ERROR_NONE == ret )
+            std::shared_ptr<SharedBuffer_t> buffer = m_imagePools[i].Get();
+            if ( nullptr != buffer )
             {
-                CamFrames_t frames;
-                CamFrame_t frame;
-                struct timespec ts;
-                clock_gettime( CLOCK_MONOTONIC, &ts );
-                frame.buffer = buffer;
-                frame.frameId = frameId++;
-                frame.timestamp = ts.tv_sec * 1000000000 + ts.tv_nsec;
-                frames.frames.push_back( frame );
-                m_pub.Publish( frames );
-                index++;
+                if ( m_configs[i].dataPath != "" )
+                {
+                    std::string path = m_configs[i].dataPath + "/" + std::to_string( index ) +
+                                       s_rideHalFormatToStr[m_configs[i].format];
+                    ret = LoadImage( buffer, path );
+                }
+                else
+                {
+                    // skip loading, using dummy data
+                }
+                if ( RIDE_HAL_ERROR_NONE == ret )
+                {
+                    CamFrame_t frame;
+                    struct timespec ts;
+                    clock_gettime( CLOCK_MONOTONIC, &ts );
+                    frame.buffer = buffer;
+                    frame.frameId = frameId++;
+                    frame.timestamp = ts.tv_sec * 1000000000 + ts.tv_nsec;
+                    frames.frames.push_back( frame );
+                }
+                else
+                {
+                    ret = RIDE_HAL_ERROR_EXISTS;
+                }
             }
             else
             {
-                index = 0;
-            }
-            auto end = std::chrono::high_resolution_clock::now();
-            uint64_t elapsedMs =
-                    std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count();
-            RIDEHAL_DEBUG( "Loading frame %" PRIu64 " cost %" PRIu64 "ms", frameId, elapsedMs );
-            if ( ( 1000 / m_fps ) > elapsedMs )
-            {
-                std::this_thread::sleep_for(
-                        std::chrono::milliseconds( ( 1000 / m_fps ) - elapsedMs ) );
+                ret = RIDE_HAL_ERROR_NORES;
             }
         }
+
+        if ( RIDE_HAL_ERROR_NONE == ret )
+        {
+            m_pub.Publish( frames );
+            index++;
+        }
+        else if ( RIDE_HAL_ERROR_EXISTS == ret )
+        {
+            index = 0;
+            continue; /* retry load from beginning */
+        }
+        else if ( RIDE_HAL_ERROR_NORES == ret )
+        { /* sleep to wait buffer resource ready */
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+        }
         else
-        { /* sleep to wait a buffer to be released */
-            std::this_thread::sleep_for( std::chrono::milliseconds( 1000 / m_fps ) );
+        {
+            /* OK */
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        uint64_t elapsedMs =
+                std::chrono::duration_cast<std::chrono::milliseconds>( end - start ).count();
+        RIDEHAL_DEBUG( "Loading frame %" PRIu64 " cost %" PRIu64 "ms", frameId, elapsedMs );
+        if ( ( 1000 / m_fps ) > elapsedMs )
+        {
+            std::this_thread::sleep_for(
+                    std::chrono::milliseconds( ( 1000 / m_fps ) - elapsedMs ) );
         }
     }
 }
