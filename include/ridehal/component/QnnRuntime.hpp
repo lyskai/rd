@@ -100,16 +100,16 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Get Input tensor information
-    /// @param pInfos tensor info struct
+    /// @param pInfo tensor info struct
     /// @param pNum number of input tensors
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetInputInfo( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
+    RideHalError_e GetInputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum );
 
     /// @brief Get Input tensor information
-    /// @param pInfos tensor info struct
+    /// @param pInfo tensor info struct
     /// @param pNum number of output tensors
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetOutputInfo( QnnRuntime_TensorInfo_t *pInfos, uint32_t *pNum );
+    RideHalError_e GetOutputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum );
 
     /// @brief Execute qnn model with input and output buffer
     /// @param pInputs input shared buffer
