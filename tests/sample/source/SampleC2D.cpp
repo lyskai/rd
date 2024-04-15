@@ -38,14 +38,16 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.batchSize = Get( config, "batch_size", 1 );
-    if ( 0 == m_config.batchSize )
+    m_config.numOfInputs = Get( config, "batch_size", 1 );
+    if ( 0 == m_config.numOfInputs )
     {
         RIDEHAL_ERROR( "invalid batch_size\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
+    m_config.numOfOutputs = 1;
+    m_config.batchSize = m_config.numOfInputs;
 
-    for ( uint32_t i = 0; i < m_config.batchSize; i++ )
+    for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
     {
         m_config.inputConfigs[i].inputResolution.width =
                 Get( config, "input_width" + std::to_string( i ), 1928 );
@@ -139,7 +141,7 @@ RideHalError_e SampleC2D::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize,
+        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
                                 m_config.outputResolution.width, m_config.outputResolution.height,
                                 m_config.outputFormat, RIDE_HAL_BUFFER_USAGE_GPU );
     }
