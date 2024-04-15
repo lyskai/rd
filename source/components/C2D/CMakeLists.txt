@@ -17,7 +17,6 @@ endif()
 
 set( COMPONENT_C2D_SOURCES
     C2D.cpp
-    C2D_Impl.cpp
 )
 
 add_library( RideHalC2D STATIC ${COMPONENT_C2D_SOURCES} )

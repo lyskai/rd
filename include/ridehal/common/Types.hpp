@@ -49,6 +49,7 @@ typedef enum
     RIDE_HAL_ERROR_ACCES,             ///<  Permission denied
     RIDE_HAL_ERROR_TIMEOUT,           ///<  Timeout
     RIDE_HAL_ERROR_NODATA,            ///<  No Data
+    RIDE_HAL_ERROR_EXC_MAX,           ///<  Exceen maximum limitation
     RIDE_HAL_ERROR_MAX = 0x7FFFFFFF   ///<  Do not use.
 } RideHalError_e;
 
