@@ -3,25 +3,8 @@
 #ifndef _RIDE_HAL_QNN_RUNTIME_HPP_
 #define _RIDE_HAL_QNN_RUNTIME_HPP_
 
-#include <algorithm>
-#include <array>
-#include <bitset>
-#include <cassert>
-#include <chrono>
-#include <cinttypes>
-#include <functional>
-#include <future>
-#include <getopt.h>
-#include <iomanip>
-#include <iostream>
 #include <map>
-#include <memory>
-#include <mutex>
-#include <queue>
-#include <random>
-#include <sstream>
 #include <string.h>
-#include <thread>
 #include <vector>
 
 #include "DynamicLoadUtil.hpp"

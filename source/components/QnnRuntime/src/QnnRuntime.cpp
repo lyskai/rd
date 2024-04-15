@@ -18,16 +18,14 @@
 
 #include "ridehal/component/QnnRuntime.hpp"
 #include "DataUtil.hpp"
+#include "HTP/QnnHtpCommon.h"
+#include "HTP/QnnHtpMem.h"
 #include "HTP/QnnHtpProfile.h"
 #include "Logger.hpp"
 #include "QnnProfile.h"
 #include "QnnSampleAppUtils.hpp"
 #include "QnnTypeMacros.hpp"
-#include <HTP/QnnHtpCommon.h>
-#include <HTP/QnnHtpMem.h>
-#include <fstream>
-#include <stdarg.h>
-#include <unistd.h>
+
 
 using namespace qnn;
 using namespace qnn::tools;
