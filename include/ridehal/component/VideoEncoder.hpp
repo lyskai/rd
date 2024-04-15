@@ -90,8 +90,8 @@ typedef enum
 /// @brief The VideoEncoder Init Config
 typedef struct
 {
-    uint32_t width;       // pixel
-    uint32_t height;      // pixel
+    uint32_t width;       // in pixels
+    uint32_t height;      // in pixels
     uint32_t bitRate;     // bps
     uint32_t gop;         // number of p frames in period
     uint32_t frameRate;   // fps
@@ -99,8 +99,8 @@ typedef struct
     uint32_t numOutputBufferReq;
     bool bInputDynamicMode;
     bool bOutputDynamicMode;
-    RideHal_SharedBuffer_t *inputBufferList = nullptr;    // set input buffer in non-dynamic mode
-    RideHal_SharedBuffer_t *outputBufferList = nullptr;   // set output buffer in non-dynamic mode
+    RideHal_SharedBuffer_t *pInputBufferList = nullptr;    // set input buffer in non-dynamic mode
+    RideHal_SharedBuffer_t *pOutputBufferList = nullptr;   // set output buffer in non-dynamic mode
     VideoEncoder_RateControlMode_e rateControlMode;
     VideoEncoder_Profile_e profile;
     RideHal_ImageFormat_e inFormat;    // uncompressed type
@@ -111,7 +111,7 @@ typedef struct
 typedef struct
 {
     VideoEncoder_Prop_e propID;
-    uint32_t pValue;
+    uint32_t value;
 } VideoEncoder_OnTheFlyCmd_t;
 
 /// @brief The VideoEncoder Input Frame
@@ -119,10 +119,10 @@ typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
     uint64_t timestampNs;   // frame data's timestamp.
-    void *appMarkData;      // frame data's mark data, this data will be copied to corresponding
+    void *pAppMarkData;     // frame data's mark data, this data will be copied to corresponding
                             // output compressed frame's VideoEncoder_OutputFrame_t. API won't touch
                             // this data, only copy it.
-    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmd =
+    VideoEncoder_OnTheFlyCmd_t *pOnTheFlyCmd =
             nullptr;       // use to send on-the-fly commands to encoder, like
                            // intra refresh, bps reset and so on.
     uint32_t numCmd = 0;   // number of on-the-fly commands
@@ -133,16 +133,15 @@ typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
     uint64_t timestampNs;
-    void *appMarkData;
-    uint32_t frameFlag;   // indicate whether some error occurred during encoding this frame, like
-                          // overflow
+    void *pAppMarkData;
+    uint32_t frameFlag;   // indicate whether some error occurred during encoding this frame
     VideoEncoder_FrameType_e frameType;   // indicate it's I, P, B, or IDR frame
 } VideoEncoder_OutputFrame_t;
 
 /// @brief Store the data interacted with video core
 typedef struct
 {
-    ioctl_session_t *ioHandle;                         // The IOSession
+    ioctl_session_t *pIoHandle;                        // The IOSession
     VideoEncoder_State_e state;                        // The encoder state
     vidc_session_codec_type sessionCodec;              // Session & Codec type setting for encoder
     vidc_frame_size_type frameSize;                    // The frame resolution
@@ -150,9 +149,8 @@ typedef struct
     vidc_color_format_config_type colorFormatConfig;   // Configures the uncompressed Buffer format
     vidc_plane_def_type planeDefY;                     // Specifies layout of raw data for planeY
     vidc_plane_def_type planeDefUV;                    // Specifies layout of raw data for planeUV
-    vidc_buffer_reqmnts_type inputBufferReq;    // Get/Set input buffer requirements from video core
-    vidc_buffer_reqmnts_type outputBufferReq;   // Get/Set output buffer requirements from video
-                                                // core
+    vidc_buffer_reqmnts_type inputBufferReq;    // Get/Set input buffer requirements from vidc
+    vidc_buffer_reqmnts_type outputBufferReq;   // Get/Set output buffer requirements from vidc
     uint32_t vidcInputBufferSize;               // The size of inputBuffer
     uint32_t vidcOutputBufferSize;              // The size of outputBuffer
     vidc_rate_control_mode_type rateControl;    // The encoder rate control type
@@ -216,15 +214,15 @@ public:
 
     /// @brief get video input buffers to submit input in non-dynamic mode
     /// @param pInputList pointer to hold the video input buffer list
-    /// @param size size of pInputList
+    /// @param num size of pInputList
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetInputBuffers( RideHal_SharedBuffer_t *pInputList, uint32_t size );
+    RideHalError_e GetInputBuffers( RideHal_SharedBuffer_t *pInputList, uint32_t num );
 
     /// @brief get video output buffers to submit output in non-dynamic mode
     /// @param pOutputList pointer to hold the video output buffer list
-    /// @param size size of pOutputList
+    /// @param num size of pOutputList
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetOutputBuffers( RideHal_SharedBuffer_t *pOutputList, uint32_t size );
+    RideHalError_e GetOutputBuffers( RideHal_SharedBuffer_t *pOutputList, uint32_t num );
 
     /// @brief set config dynamically to VIDC driver
     /// @param pCmd pointer to the video config information
@@ -245,12 +243,12 @@ private:
     static int DeviceCallback( uint8_t *msg, uint32_t length, void *cdata );
     int DeviceCallback( uint8_t *msg, uint32_t length );
 
-    RideHalError_e GetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
+    RideHalError_e GetDrvProperty( ioctl_session_t *pIoHandle, vidc_property_id_type propId,
                                    uint32_t nPktSize, uint8_t *pPkt );
-    RideHalError_e SetDrvProperty( ioctl_session_t *ioHandle, vidc_property_id_type propId,
+    RideHalError_e SetDrvProperty( ioctl_session_t *pIoHandle, vidc_property_id_type propId,
                                    uint32_t nPktSize, uint8_t *pPkt );
     RideHalError_e WaitForState( VideoEncoder_State_e expectedState );
-    RideHalError_e PrepareBuffer( ioctl_session_t *ioHandle, RideHal_SharedBuffer_t *bufferList,
+    RideHalError_e PrepareBuffer( ioctl_session_t *pIoHandle, RideHal_SharedBuffer_t *pBufferList,
                                   vidc_buffer_type bufferType, int32_t bufCntMin, int32_t bufSize );
     RideHalError_e GetInputInformation( void );
     RideHalError_e GetInputBufferRequirement( void );
@@ -287,15 +285,15 @@ private:
     RideHal_ImageFormat_e m_outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
 
     RideHal_SharedBuffer_t *m_inputList =
-            nullptr; /* store input buffer that allocated inside videoencoder */
+            nullptr;   // store input buffer that allocated inside videoencoder
     RideHal_SharedBuffer_t *m_outputList =
-            nullptr; /* store output buffer that allocated inside videoencoder */
+            nullptr;   // store output buffer that allocated inside videoencoder
 
     typedef struct
     {
         RideHal_SharedBuffer_t sharedBuffer;
         uint64_t timestampNs;
-        void *appMarkData;
+        void *pAppMarkData;
         bool useFlag = false;   // indicate whether sharedBuffer is using by driver or available
     } VideoEncoder_InputInfo_t;
 
@@ -306,9 +304,9 @@ private:
     } VideoEncoder_OutputInfo_t;
 
     std::mutex m_inLock;
-    std::unordered_map<uint64_t, VideoEncoder_InputInfo_t> m_inputMap; /* store input info */
+    std::unordered_map<uint64_t, VideoEncoder_InputInfo_t> m_inputMap;   // store input info
     std::mutex m_outLock;
-    std::unordered_map<uint64_t, VideoEncoder_OutputInfo_t> m_outputMap; /* store output info */
+    std::unordered_map<uint64_t, VideoEncoder_OutputInfo_t> m_outputMap;   // store output info
 };
 
 }   // namespace component

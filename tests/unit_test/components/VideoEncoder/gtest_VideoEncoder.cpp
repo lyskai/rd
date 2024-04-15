@@ -70,8 +70,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
     config.bInputDynamicMode = true;
     config.bOutputDynamicMode = true;
-    config.inputBufferList = nullptr;
-    config.outputBufferList = nullptr;
+    config.pInputBufferList = nullptr;
+    config.pOutputBufferList = nullptr;
 
     RideHalError_e ret;
     RideHal_SharedBuffer_t *sharedBuffer = nullptr;
@@ -91,7 +91,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
 
     VideoEncoder_OnTheFlyCmd_t onTheFlyCmd;
     onTheFlyCmd.propID = VIDEO_ENCODER_PROP_FRAME_RATE;
-    onTheFlyCmd.pValue = 15;
+    onTheFlyCmd.value = 15;
     ret = veTest.Configure( &onTheFlyCmd );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
@@ -120,16 +120,16 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     }
 
     inputFrame.timestampNs = 0;
-    inputFrame.appMarkData = nullptr;
+    inputFrame.pAppMarkData= nullptr;
     onTheFlyCmd.propID = VIDEO_ENCODER_PROP_BITRATE;
-    onTheFlyCmd.pValue = 32000;
+    onTheFlyCmd.value = 32000;
     inputFrame.numCmd = 2;
     VideoEncoder_OnTheFlyCmd_t *onTheFlyCmds = new VideoEncoder_OnTheFlyCmd_t[2];
     onTheFlyCmds[0].propID = VIDEO_ENCODER_PROP_BITRATE;
-    onTheFlyCmds[0].pValue = 32000;
+    onTheFlyCmds[0].value = 32000;
     onTheFlyCmds[1].propID = VIDEO_ENCODER_PROP_FRAME_RATE;
-    onTheFlyCmds[1].pValue = 20;
-    inputFrame.onTheFlyCmd = onTheFlyCmds;
+    onTheFlyCmds[1].value = 20;
+    inputFrame.pOnTheFlyCmd = onTheFlyCmds;
 
     ret = veTest.SubmitInputFrame( &inputFrame );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
@@ -182,8 +182,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
-    config.inputBufferList = nullptr;
-    config.outputBufferList = nullptr;
+    config.pInputBufferList = nullptr;
+    config.pOutputBufferList = nullptr;
 
     RideHal_SharedBuffer_t *sharedBuffer = nullptr;
 
@@ -210,7 +210,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
         VideoEncoder_InputFrame_t inputFrame;
         inputFrame.sharedBuffer = inputList[i];
         inputFrame.timestampNs = g_timestamp;
-        inputFrame.appMarkData = nullptr;
+        inputFrame.pAppMarkData= nullptr;
         ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
         g_timestamp += 33333;
@@ -268,7 +268,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
-    config.inputBufferList = nullptr;
+    config.pInputBufferList = nullptr;
 
     RideHal_SharedBuffer_t *outBufferList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
     for ( i = 0; i < config.numOutputBufferReq; i++ )
@@ -283,7 +283,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
         // ret = sharedBuffer->Allocate( 118784 );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
-    config.outputBufferList = outBufferList;
+    config.pOutputBufferList = outBufferList;
 
     RideHal_SharedBuffer_t *sharedBuffer = nullptr;
 
@@ -310,7 +310,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
         VideoEncoder_InputFrame_t inputFrame;
         inputFrame.sharedBuffer = inputList[i];
         inputFrame.timestampNs = g_timestamp;
-        inputFrame.appMarkData = nullptr;
+        inputFrame.pAppMarkData= nullptr;
         ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
         g_timestamp += 33333;

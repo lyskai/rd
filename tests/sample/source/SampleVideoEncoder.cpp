@@ -16,7 +16,7 @@ SampleVideoEncoder ::~SampleVideoEncoder() {}
 
 void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame )
 {
-    uint64_t frameId = ( uint64_t )(uintptr_t) pInputFrame->appMarkData;
+    uint64_t frameId = ( uint64_t )(uintptr_t) pInputFrame->pAppMarkData;
 
     RIDEHAL_DEBUG( "InFrameCallback for frameId %" PRIu64, frameId );
 
@@ -69,7 +69,12 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     }
     else
     {
-        RIDEHAL_ERROR( "frame info queue is empty!" );
+        frame.frameId = ( uint64_t )(uintptr_t) pOutputFrame->pAppMarkData;
+        frame.buffer = buffer;
+        frame.timestamp = pOutputFrame->timestampNs;
+        frames.frames.push_back( frame );
+        m_pub.Publish( frames );
+        RIDEHAL_DEBUG( "frame info queue is empty!" );
     }
 }
 
@@ -233,8 +238,8 @@ void SampleVideoEncoder::ThreadMain()
             VideoEncoder_InputFrame_t inputFrame;
             inputFrame.sharedBuffer = frame.buffer->sharedBuffer;
             inputFrame.timestampNs = frame.timestamp;
-            inputFrame.appMarkData = (void *) frame.frameId;
-            inputFrame.onTheFlyCmd = nullptr;
+            inputFrame.pAppMarkData = (void *) frame.frameId;
+            inputFrame.pOnTheFlyCmd = nullptr;
 
             {
                 std::lock_guard<std::mutex> l( m_lock );
