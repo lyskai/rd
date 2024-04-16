@@ -49,6 +49,8 @@ RideHalError_e SampleIF::Init( std::string name )
     m_name = name;
     ret = RIDEHAL_LOGGER_INIT( name.c_str(), LOGGER_LEVEL_INFO );
 
+    m_profiler.Init( name );
+
     return ret;
 }
 

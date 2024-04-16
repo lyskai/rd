@@ -20,16 +20,18 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, bool requestMode )
     pSharedBuffer->sharedBuffer = pFrame->sharedBuffer;
     pSharedBuffer->pubHandle = ( (uint64_t) pFrame->streamId << 32 ) + pFrame->frameIndex;
 
+    PROFILER_BEGIN();
+    PROFILER_END();
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         uint32_t streamId = ( pSharedBuffer->pubHandle >> 32 ) & 0xFFFFFFFFul;
         uint32_t frameIndex = pSharedBuffer->pubHandle & 0xFFFFFFFFul;
-        if (!requestMode)
+        if ( !requestMode )
         {
             m_camera.ReleaseFrame( frameIndex );
         }
         else
         {
-            m_camera.RequestFrame(pFrame);
+            m_camera.RequestFrame( pFrame );
         }
         delete pSharedBuffer;
     } );
@@ -95,11 +97,11 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
         }
 
         int32_t requestMode = Get( config, "requestMode", 0 );
-        if (0 == requestMode)
+        if ( 0 == requestMode )
         {
             m_camConfig.requestMode = false;
         }
-        else if (1 == requestMode)
+        else if ( 1 == requestMode )
         {
             m_camConfig.requestMode = true;
         }
@@ -155,6 +157,8 @@ RideHalError_e SampleCamera::Stop()
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     ret = m_camera.Stop();
+
+    PROFILER_SHOW();
 
     return ret;
 }

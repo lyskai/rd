@@ -191,9 +191,11 @@ void SampleQnn::ThreadMain()
                 bool locked = false;
                 ret = SampleIF::Lock();
                 locked = ( RIDE_HAL_ERROR_NONE == ret );
+                PROFILER_BEGIN();
                 ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(), outputs.size() );
                 if ( true == locked )
                 {
+                    PROFILER_END();
                     SampleIF::Unlock();
                 }
             }
@@ -236,6 +238,8 @@ RideHalError_e SampleQnn::Stop()
     }
 
     ret = m_qnn.Stop();
+
+    PROFILER_SHOW();
 
     return ret;
 }

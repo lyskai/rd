@@ -89,6 +89,7 @@ void SampleRecorder::ThreadMain()
                            frame.timestamp );
             if ( num < m_maxImages )
             {
+                PROFILER_BEGIN();
                 auto &buffer = frame.buffer->sharedBuffer;
                 if ( buffer.imgProps.format < RIDE_HAL_IMAGE_FORMAT_MAX )
                 {
@@ -122,6 +123,7 @@ void SampleRecorder::ThreadMain()
                     fwrite( buffer.data(), buffer.size, 1, m_file );
                 }
                 num++;
+                PROFILER_END();
             }
             else if ( nullptr != m_file )
             {
@@ -146,6 +148,8 @@ RideHalError_e SampleRecorder::Stop()
     {
         m_thread.join();
     }
+
+    PROFILER_SHOW();
 
     return ret;
 }

@@ -43,6 +43,8 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     *pEncFrame = *pOutputFrame;
     pSharedBuffer->pubHandle = ( uint64_t )(uintptr_t) pEncFrame;
 
+    PROFILER_BEGIN();
+    PROFILER_END();
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         VideoEncoder_OutputFrame_t *pEncFrame =
                 (VideoEncoder_OutputFrame_t *) (void *) pSharedBuffer->pubHandle;

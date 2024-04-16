@@ -267,9 +267,11 @@ void SampleRemap::ThreadMain()
                 bool locked = false;
                 ret = SampleIF::Lock();
                 locked = ( RIDE_HAL_ERROR_NONE == ret );
+                PROFILER_BEGIN();
                 ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer, 1 );
                 if ( RIDE_HAL_ERROR_NONE == ret )
                 {
+                    PROFILER_END();
                     CamFrames_t outFrames;
                     CamFrame_t frame;
                     frame.buffer = buffer;
@@ -301,6 +303,8 @@ RideHalError_e SampleRemap::Stop()
     {
         m_thread.join();
     }
+
+    PROFILER_SHOW();
 
     ret = m_remap.Stop();
 

@@ -111,7 +111,9 @@ void SamplePostProcCenternet::ThreadMain()
         ret = m_sub.Receive( tensors );
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
+            PROFILER_BEGIN();
             ProcessUint8( tensors );
+            PROFILER_END();
         }
     }
 }
@@ -286,6 +288,8 @@ RideHalError_e SamplePostProcCenternet::Stop()
     {
         m_thread.join();
     }
+
+    PROFILER_SHOW();
 
     return ret;
 }

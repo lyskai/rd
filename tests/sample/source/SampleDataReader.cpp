@@ -195,6 +195,7 @@ void SampleDataReader::ThreadMain()
         CamFrames_t frames;
         ret = RIDE_HAL_ERROR_NONE;
         auto start = std::chrono::high_resolution_clock::now();
+        PROFILER_BEGIN();
         for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
         {
             std::shared_ptr<SharedBuffer_t> buffer = m_imagePools[i].Get();
@@ -233,6 +234,7 @@ void SampleDataReader::ThreadMain()
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
+            PROFILER_END();
             m_pub.Publish( frames );
             index++;
         }
@@ -270,6 +272,8 @@ RideHalError_e SampleDataReader::Stop()
     {
         m_thread.join();
     }
+
+    PROFILER_SHOW();
 
     return ret;
 }

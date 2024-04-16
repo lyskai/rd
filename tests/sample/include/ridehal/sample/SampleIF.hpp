@@ -8,6 +8,7 @@
 #include "ridehal/common/Types.hpp"
 #include "ridehal/sample/DataBroker.hpp"
 #include "ridehal/sample/DataTypes.hpp"
+#include "ridehal/sample/Profiler.hpp"
 
 #include <map>
 #include <mutex>
@@ -101,6 +102,7 @@ protected:
 
 protected:
     std::string m_name;
+    Profiler m_profiler;
     RIDEHAL_DECLARE_LOGGER();
 
 private:
