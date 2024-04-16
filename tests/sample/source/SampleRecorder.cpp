@@ -82,15 +82,45 @@ void SampleRecorder::ThreadMain()
         CamFrames_t frames;
         CamFrame_t frame;
         ret = m_sub.Receive( frames );
-        if ( 0 == ret )
+        if ( RIDE_HAL_ERROR_NONE == ret )
         {
             frame = frames.frames[0];
-            RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n ", frame.frameId,
+            RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n", frame.frameId,
                            frame.timestamp );
             if ( num < m_maxImages )
             {
-                fwrite( frame.buffer->sharedBuffer.data(), frame.buffer->sharedBuffer.size, 1,
-                        m_file );
+                auto &buffer = frame.buffer->sharedBuffer;
+                if ( buffer.imgProps.format < RIDE_HAL_IMAGE_FORMAT_MAX )
+                {
+                    uint32_t sizeOne = buffer.size / buffer.imgProps.batchSize;
+                    for ( uint32_t i = 0; i < buffer.imgProps.batchSize; i++ )
+                    {
+                        std::string path = "/tmp/" + m_name + "_" + std::to_string( num ) + "_" +
+                                           std::to_string( i ) + ".raw";
+                        uint8_t *ptr = (uint8_t *) buffer.data() + sizeOne * i;
+                        FILE *fp = fopen( path.c_str(), "wb" );
+                        if ( nullptr != fp )
+                        {
+                            fwrite( ptr, sizeOne, 1, fp );
+                            fclose( fp );
+                        }
+                        else
+                        {
+                            RIDEHAL_ERROR( "failed to create file: %s", path.c_str() );
+                        }
+                    }
+                    fprintf( m_file,
+                             "%u: frameId %" PRIu64 " timestamp %" PRIu64
+                             ": batch=%u resolution=%ux%u stride=%u actual_height=%u format=%d\n",
+                             num, frame.frameId, frame.timestamp, buffer.imgProps.batchSize,
+                             buffer.imgProps.width, buffer.imgProps.height,
+                             buffer.imgProps.stride[0], buffer.imgProps.actualHeight[0],
+                             buffer.imgProps.format );
+                }
+                else
+                { /* compressed image */
+                    fwrite( buffer.data(), buffer.size, 1, m_file );
+                }
                 num++;
             }
             else if ( nullptr != m_file )
