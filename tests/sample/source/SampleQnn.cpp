@@ -24,8 +24,8 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.backendId = QNNRUNTIME_BACKEND_HTP;
-    m_config.backendCoreId = Get( config, "core", 0 );
+    m_config.backendType = RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0;
+    // m_config.backendCoreId = Get( config, "core", 0 );
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
@@ -63,7 +63,7 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = SampleIF::Init( (RideHal_ProcessorType_e) m_config.backendCoreId );
+        ret = SampleIF::Init( m_config.backendType );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )

@@ -51,11 +51,11 @@ namespace ridehal
 namespace component
 {
 
-#define QNN_BACKEND_NUM ( sizeof( s_Backends ) / sizeof( char * ) )
-
-static const char *const s_Backends[] = {
-        "libQnnHtp.so", "libQnnHta.so", "libQnnCpu.so", "libQnnHtpMcp.so", "libQnnGpu.so",
-};
+static std::map<RideHal_ProcessorType_e, const char *> s_Backends = {
+        { RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0, "libQnnHtp.so" },
+        { RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1, "libQnnHtp.so" },
+        { RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_CPU, "libQnnCpu.so" },
+        { RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_GPU, "libQnnGpu.so" } };
 
 std::mutex QnnRuntime::s_DmaMemInfoMapLock[QnnRuntime::DMA_MEMINFO_MAP_SIZE];
 std::map<uint8_t *, QnnRuntime::DmaMemInfo_t>
@@ -66,30 +66,26 @@ QnnRuntime::QnnRuntime() {}
 
 void QnnLog_Callback( const char *fmt, QnnLog_Level_t logLevel, uint64_t timestamp, va_list args )
 {
-    char msg[512];
-
-    Logger_Level_e level = Logger_Level_e::LOGGER_LEVEL_INFO;
     switch ( logLevel )
     {
-        case QNN_LOG_LEVEL_DEBUG:
         case QNN_LOG_LEVEL_VERBOSE:
-            level = Logger_Level_e::LOGGER_LEVEL_DEBUG;
+            Logger::GetDefault().Log( LOGGER_LEVEL_VERBOSE, fmt, args );
+            break;
+        case QNN_LOG_LEVEL_DEBUG:
+            Logger::GetDefault().Log( LOGGER_LEVEL_DEBUG, fmt, args );
             break;
         case QNN_LOG_LEVEL_INFO:
-            level = Logger_Level_e::LOGGER_LEVEL_INFO;
+            Logger::GetDefault().Log( LOGGER_LEVEL_INFO, fmt, args );
             break;
         case QNN_LOG_LEVEL_WARN:
-            level = Logger_Level_e::LOGGER_LEVEL_WARN;
+            Logger::GetDefault().Log( LOGGER_LEVEL_WARN, fmt, args );
             break;
         case QNN_LOG_LEVEL_ERROR:
-            level = Logger_Level_e::LOGGER_LEVEL_ERROR;
+            Logger::GetDefault().Log( LOGGER_LEVEL_ERROR, fmt, args );
             break;
         default:
             break;
     }
-
-    vprintf( fmt, args );
-    // m_pLogger->Log( level, "%s", msg );
 }
 
 RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
@@ -371,8 +367,16 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         RIDEHAL_ERROR( "QnnRuntime Config is nullptr!" );
         ret = RideHalError_e::RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    m_BackendId = pConfig->backendId;
-    m_BackendCoreId = pConfig->backendCoreId;
+
+    m_BackendType = pConfig->backendType;
+    if ( m_BackendType == RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 )
+    {
+        m_BackendCoreId = 1;
+    }
+    else
+    {
+        m_BackendCoreId = 0;
+    }
     auto modelPath = pConfig->modelPath;
     QnnLog_Error_t logError;
     auto logLevel = QNN_LOG_LEVEL_WARN;
@@ -386,23 +390,23 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
     {
-        if ( m_BackendId < (int) QNN_BACKEND_NUM )
+        if ( (int) m_BackendType < (int) RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_MAX )
         {
             auto statusCode = dynamicloadutil::getQnnFunctionPointers(
-                    s_Backends[m_BackendId], soPath, &m_QnnFunctionPointers, &m_BackendHandle,
+                    s_Backends[m_BackendType], soPath, &m_QnnFunctionPointers, &m_BackendHandle,
                     !m_LoadFromCachedBinary, &m_ModelHandle );
             if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
             {
                 RIDEHAL_ERROR( "%s: failed to get qnn function pointers from model %s(%s), error "
                                "is %d",
-                               m_Name.c_str(), soPath.c_str(), s_Backends[m_BackendId],
+                               m_Name.c_str(), soPath.c_str(), s_Backends[m_BackendType],
                                statusCode );
                 ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
             }
         }
         else
         {
-            RIDEHAL_ERROR( "%s: invalid backend id %d", m_Name.c_str(), m_BackendId );
+            RIDEHAL_ERROR( "%s: invalid backend type %d", m_Name.c_str(), (int) m_BackendType );
             ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
         }
     }
@@ -511,29 +515,10 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
             int deviceId = m_BackendCoreId;
             int core_Id = 0;
-            if ( QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP_MCP == m_BackendId )
-            { /* NOTE: this assume that only has one HTP_MCP device */
-                deviceId = 0;
-                core_Id = m_BackendCoreId;
-            }
 
             if ( deviceId < (int) m_PlatformInfo->v1.numHwDevices )
             {
                 QnnDevice_HardwareDeviceInfo_t hwDevice = m_PlatformInfo->v1.hwDevices[deviceId];
-                if ( QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP_MCP == m_BackendId )
-                {
-                    if ( core_Id < (int) hwDevice.v1.numCores )
-                    {
-                        hwDevice.v1.numCores = 1;
-                        hwDevice.v1.cores = &hwDevice.v1.cores[core_Id];
-                    }
-                    else
-                    {
-                        RIDEHAL_ERROR( "%s: invalid backend core id = %d", m_Name.c_str(),
-                                       m_BackendCoreId );
-                        ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
-                    }
-                }
                 QnnDevice_PlatformInfo_t platformInfo = {
                         .version = QNN_DEVICE_PLATFORM_INFO_VERSION_1,
                         .v1 =
@@ -584,7 +569,8 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
     {
-        if ( QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP == m_BackendId )
+        if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
+             RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 == m_BackendType )
         {   // set up context priority
             m_ContextConfigArray[0].option = QNN_CONTEXT_CONFIG_OPTION_PRIORITY;
             m_ContextConfigArray[0].priority = pConfig->priority;
@@ -629,9 +615,10 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     }
 
     RIDEHAL_INFO( "%s: init %s with backend %s\n", m_Name.c_str(), modelPath.c_str(),
-                  s_Backends[m_BackendId] );
+                  s_Backends[m_BackendType] );
 
-    if ( QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP == m_BackendId )
+    if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
+         RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 == m_BackendType )
     {
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
         s_DmaMemInfoMapUseRef[m_BackendCoreId]++;
@@ -1019,7 +1006,8 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t &sharedBu
                                           const Qnn_Tensor_t &tensor )
 {
 
-    if ( m_BackendId == QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP )
+    if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
+         RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 == m_BackendType )
     {
         return GetMemHandleHTP( sharedBuffer, tensor );
     }
@@ -1174,7 +1162,8 @@ void QnnRuntime::DeRegisterMemory()
         auto ptr = kv.first;
         auto &info = kv.second;
         m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
-        if ( m_BackendId == QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP )
+        if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
+             RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 == m_BackendType )
         {
             remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
         }
@@ -1204,7 +1193,8 @@ void QnnRuntime::DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer )
         auto ptr = it->first;
         auto &info = it->second;
         m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
-        if ( m_BackendId == QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP )
+        if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
+             RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 == m_BackendType )
         {
             remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
         }
@@ -1215,7 +1205,8 @@ void QnnRuntime::DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer )
 
 RideHalError_e QnnRuntime::Deinit()
 {
-    if ( QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP == m_BackendId )
+    if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
+         RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP1 == m_BackendType )
     {
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
         if ( s_DmaMemInfoMapUseRef[m_BackendCoreId] > 0 )

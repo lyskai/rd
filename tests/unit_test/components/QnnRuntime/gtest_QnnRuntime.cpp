@@ -19,8 +19,7 @@ TEST( QnnRuntime, SANITY_General )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "/var/opt/qride/data/centernet";
-    qnnConfig.backendId = QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP;
-    qnnConfig.backendCoreId = 0;
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0;
     QnnRuntime_UdoPackage_t udoPackage;
     // udoPackage.udoLibPath = "libQnnAutoAiswOpPackage.so";
     // udoPackage.interfaceProvider = "AutoAiswOpPackageInterfaceProvider";
@@ -97,8 +96,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "/var/opt/qride/data/centernet";
-    qnnConfig.backendId = QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP;
-    qnnConfig.backendCoreId = 0;
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0;
     qnnConfig.loadType = QnnRuntime_LoadType_e::LOAD_CONTEXT_BIN_FROM_BUFFER;
     std::string modelFile = qnnConfig.modelPath + "/program.bin";
     uint64_t bufferSize{ 0 };

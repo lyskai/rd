@@ -18,13 +18,6 @@ namespace ridehal
 {
 namespace component
 {
-typedef enum
-{
-    QNNRUNTIME_BACKEND_HTP = 0,
-    QNNRUNTIME_BACKEND_CPU,
-    QNNRUNTIME_BACKEND_GPU,
-    QNNRUNTIME_BACKEND_HTP_MCP
-} QnnRuntime_Backend_e;
 
 typedef struct
 {
@@ -53,8 +46,7 @@ typedef struct
     std::string modelPath;
     uint8_t *contextBuffer;
     uint64_t contextSize;
-    int backendId;
-    int backendCoreId = 0;
+    RideHal_ProcessorType_e backendType;
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;
     std::vector<QnnRuntime_UdoPackage_t> udoPackages;
 } QnnRuntime_Config_t;
@@ -187,7 +179,7 @@ private:
 
     std::string m_Name;
     Logger *m_pLogger = nullptr;
-    int m_BackendId = QnnRuntime_Backend_e::QNNRUNTIME_BACKEND_HTP;
+    RideHal_ProcessorType_e m_BackendType;
     int m_BackendCoreId = 0;
     Qnn_BackendHandle_t m_BackendHandle = nullptr;
     Qnn_DeviceHandle_t m_DeviceHandle = nullptr;
