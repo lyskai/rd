@@ -113,38 +113,6 @@ AEEResult FadasVersion(rout sequence<uint8_t> version);
 
 AEEResult FadasDeInit();
 
-AEEResult FadasCvtYUV_UYVYtoRGB(in sequence<uint8_t> src,
-                                in FadasImgProps_t srcProps,
-                                rout sequence<uint8_t> dst,
-                                in uint32_t dstStride);
-
-
-AEEResult FadasCvtYUV_UYVYtoYUV(in sequence<uint8_t> src,
-                                in FadasImgProps_t srcProps,
-                                rout sequence<uint8_t> dst,
-                                in uint32_t dstStride);
-
-AEEResult FadasCvtYUV_UYVYtoNV12(in int32_t srcFd,
-                                 in uint32_t srcLen,
-                                 in uint32_t offset,
-                                 in FadasImgProps_t srcProps,
-                                 in int32_t dstFd,
-                                 in uint32_t dstLen,
-                                 in uint32_t dstStride);
-
-AEEResult FadasCvtYUV_CreateWorkers(inrout uint64 addr,
-                                    in int32 num_threads,
-                                    in FadasCvtYUVPipeline_e type );
-
-AEEResult FadasCvtYUV_DestroyWorkers( in uint64 addr );
-
-AEEResult FadasCvtYUV_RunMT( in uint64 addr,
-                             inrout sequence<uint8_t> src,
-                             inrout sequence<uint8_t> dst,
-                             inrout FadasImgProps_t srcProps,
-                             inrout FadasImgProps_t dstProps,
-                             inrout FadasROI_t roi);
-
 AEEResult FadasRemap_CreateMapFromMap( inrout uint64 mapPtr,
                                 in uint32_t camWidth,
                                 in uint32_t camHeight,
@@ -155,16 +123,6 @@ AEEResult FadasRemap_CreateMapFromMap( inrout uint64 mapPtr,
                                 in uint32_t mapStride,
                                 in FadasRemapPipeline_e imgFormat,
                                 in uint8_t borderConst);
-
-AEEResult FadasRemap_CreateMapFromFisheyeCalib(inrout uint64 mapPtr,
-												in uint32_t camWidth,
-												in uint32_t camHeight,
-                                                in FadasCameraProps_t camProps,
-                                                in FadasDistCoeffs_t distCoeffs,
-                                                in FadasRemapPipeline_e imgFormat,
-												in uint32_t mapWidth,
-                                                in uint32_t mapHeight,
-                                                in uint8_t borderConst);
 
 AEEResult FadasRemap_CreateMapNoUndistortion(inrout uint64 mapPtr,
 												in uint32_t camWidth,
@@ -182,14 +140,6 @@ AEEResult FadasRemap_CreateWorkers(inrout uint64 worker_ptr,
 
 AEEResult FadasRemap_DestroyWorkers( in uint64 worker_ptr );
 
-
-AEEResult FadasRemap_Run(    in uint64 mapPtr,
-                               in sequence<uint8_t> src,
-                               in FadasImgProps_t srcProps,
-                               rout sequence<uint8_t> dst,
-                               in FadasImgProps_t dstProps,
-                               inrout FadasROI_t dstROI);
-
 AEEResult FadasRemap_RunMT(   in sequence<uint64> workerPtrs,
                               in sequence<uint64> mapPtrs,
                               in sequence<int32_t> srcFds,
@@ -201,23 +151,6 @@ AEEResult FadasRemap_RunMT(   in sequence<uint64> workerPtrs,
                               in sequence<FadasROI_t> dstROIs,
                               in sequence<FadasNormlzParams_t> normlz);
 
-AEEResult FadasCvtYUV_Renormalize888( in int32_t srcFd,
-                                      in FadasImgProps_t srcProps,
-                                      in FadasNormlzParams_t normlzR,
-                                      in FadasNormlzParams_t normlzG,
-                                      in FadasNormlzParams_t normlzB,
-                                      in int32_t dstFd,
-                                      in uint32_t dstStride,
-                                      in int32_t batchSize);
-
-AEEResult FadasCvtYUV_Renormalize888u8f32( in int32_t srcFd,
-                                           in FadasImgProps_t srcProps,
-                                           in FadasNormlzParams_t normlzR,
-                                           in FadasNormlzParams_t normlzG,
-                                           in FadasNormlzParams_t normlzB,
-                                           in int32_t dstFd,
-                                           in uint32_t dstStride,
-                                           in int32_t batchSize);
 
 AEEResult       mmap( in int32_t         bufFd,
                       in uint32_t          bufSize);
