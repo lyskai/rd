@@ -101,11 +101,11 @@ public:
 
     /// @brief Start the QnnRuntime object
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Start() final { return RideHalError_e::RIDE_HAL_ERROR_NONE; };
+    RideHalError_e Start() final;
 
     /// @brief Stop the QnnRuntime object
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e Stop() final { return RideHalError_e::RIDE_HAL_ERROR_NONE; };
+    RideHalError_e Stop() final;
 
     /// @brief Enable qnn performance calculation
     void EnablePerf() { m_bEnabelPerf = true; };
@@ -123,7 +123,7 @@ public:
 
     /// @brief DeRigister memory with specific shared buffer
     /// @param sharedBuffer specific shared buffer
-    void DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer );
+    RideHalError_e DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer );
 
 private:
     /// @brief Create qnn model from .so file
@@ -162,16 +162,17 @@ private:
                                   const Qnn_Tensor_t &tensor );
 
     /// @brief DeRegister memory
-    void DeRegisterMemory();
+    RideHalError_e DeRegisterMemory();
 
 private:
     /// @brief Extract qnn profiling event
     /// @param profileEventId profiling event id
     /// @param perf Qnn performance info
-    void ExtractProfilingEvent( QnnProfile_EventId_t profileEventId, QnnRuntime_Perf_t *perf );
+    RideHalError_e ExtractProfilingEvent( QnnProfile_EventId_t profileEventId,
+                                          QnnRuntime_Perf_t *perf );
 
     /// @brief Generate qnn performance
-    void GeneratePerf();
+    RideHalError_e GeneratePerf();
 
 private:
     static constexpr size_t CONTEXT_CONFIG_SIZE = 1;
