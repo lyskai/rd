@@ -22,6 +22,12 @@ enum FadasRemapPipeline_e
     FADAS_REMAP_PIPELINE_VYUY_TO_RGB888_ROISCALE_NSP,  ///< Convert VYUY to RGB + ROI scaling
     FADAS_REMAP_PIPELINE_UYVY_TO_RGB888_NORMI8_NSP,    ///< Convert UYVY to RGB [see FadasCvtYUV_UYVYtoRGB()] + Renormalization
     FADAS_REMAP_PIPELINE_UYVY_TO_RGB888_NORMU8_NSP,    ///< Convert UYVY to RGB [see FadasCvtYUV_UYVYtoRGB()] + Renormalization with uint8 output
+    FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_NSP,
+    FADAS_REMAP_PIPELINE_Y8UV8_TO_BGR888_NSP,
+    FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_NORMI8_NSP,
+    FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_NORMU8_NSP,
+    FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_ROISCALE_NSP,
+    FADAS_REMAP_PIPELINE_UYVY_TO_BGR888_NSP,           ///< Convert UYVY to BGR
     FADAS_REMAP_PIPELINE_MAX_NSP                       ///< \b WARNING: must be last};
 };
 
@@ -83,6 +89,7 @@ struct  FadasImgProps_t
     FadasImageFormat_e format;
     uint32_t stride[4];
     uint32_t numPlanes;
+    uint32_t actualHeight[4];
 };
 
 struct FadasROI_t

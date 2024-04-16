@@ -86,6 +86,10 @@ public:
                              const RideHal_SharedBuffer_t *outputs );
 
 private:
+    RideHalError_e RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
+                                const RideHal_SharedBuffer_t *outputs );
+    RideHalError_e RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
+                                const RideHal_SharedBuffer_t *outputs );
     FadasRemapPipeline_e RemapGetPipelineCPU( RideHal_ImageFormat_e inputFormat,
                                               RideHal_ImageFormat_e outputFormat,
                                               bool bEnableNormalize );
