@@ -43,12 +43,13 @@ typedef enum
 typedef struct
 {
     QnnRuntime_LoadType_e loadType = LOAD_CONTEXT_BIN_FROM_FILE;
-    std::string modelPath;
+    const char *modelPath;
     uint8_t *contextBuffer;
     uint64_t contextSize;
     RideHal_ProcessorType_e backendType;
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;
-    std::vector<QnnRuntime_UdoPackage_t> udoPackages;
+    QnnRuntime_UdoPackage_t *pUdoPackages = nullptr;
+    size_t numOfUdoPackages = 0;
 } QnnRuntime_Config_t;
 
 typedef struct
@@ -145,7 +146,7 @@ private:
     /// @brief Load customer op package
     /// @param udoPackages set of udo packages information
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e LoadOpPackages( const std::vector<QnnRuntime_UdoPackage_t> &udoPackages );
+    RideHalError_e LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages, size_t numOfUdoPackages );
 
     /// @brief Get memory handle for HTP
     /// @param sharedBuffer shared buffer

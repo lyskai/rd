@@ -52,6 +52,7 @@ private:
     std::string m_inputTopicName;
     std::string m_outputTopicName;
 
+    std::string m_modelPath;
     std::thread m_thread;
     bool m_stop;
 

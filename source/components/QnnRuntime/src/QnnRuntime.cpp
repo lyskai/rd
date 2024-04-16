@@ -331,15 +331,24 @@ RideHalError_e QnnRuntime::CreateFromBinary( std::string modelFile )
     return ret;
 }
 
-RideHalError_e QnnRuntime::LoadOpPackages( const std::vector<QnnRuntime_UdoPackage_t> &udoPackages )
+RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages,
+                                           size_t numOfUdoPackages )
 {
 
     RideHalError_e ret = RideHalError_e::RIDE_HAL_ERROR_NONE;
 
-    for ( auto const &udoPackage : udoPackages )
+    if ( numOfUdoPackages != sizeof( pUdoPackages ) / sizeof( pUdoPackages[0] ) )
+    {
+        RIDEHAL_ERROR( "%s: Unmatched UdoPackages size. expected: %d, actual: %d ", m_Name.c_str(),
+                       numOfUdoPackages, sizeof( pUdoPackages ) );
+        ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
+    }
+
+    for ( size_t i = 0; i < numOfUdoPackages; ++i )
     {
         if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
         {
+            QnnRuntime_UdoPackage_t udoPackage = pUdoPackages[i];
             if ( QNN_BACKEND_NO_ERROR !=
                  m_QnnFunctionPointers.qnnInterface.backendRegisterOpPackage(
                          m_BackendHandle, (char *) udoPackage.udoLibPath,
@@ -390,8 +399,8 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     qnn::log::Logger::createLogger( QnnLog_Callback, logLevel, &logError );
 
-    std::string soPath = modelPath + "/program.so";
-    std::string binPath = modelPath + "/program.bin";
+    std::string soPath = std::string( modelPath ) + "/program.so";
+    std::string binPath = std::string( modelPath ) + "/program.bin";
     m_LoadFromCachedBinary = ( pConfig->loadType == LOAD_CONTEXT_BIN_FROM_FILE ||
                                pConfig->loadType == LOAD_CONTEXT_BIN_FROM_BUFFER );
 
@@ -559,18 +568,26 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
     {
-        if ( pConfig->udoPackages.size() > 0 )
+        if ( pConfig->numOfUdoPackages == 0 )
         {
-            RideHalError_e ret = LoadOpPackages( pConfig->udoPackages );
+            RIDEHAL_INFO( "%s: no op package", m_Name.c_str() );
+        }
+        else if ( pConfig->numOfUdoPackages ==
+                  sizeof( pConfig->pUdoPackages ) / sizeof( pConfig->pUdoPackages[0] ) )
+        {
+            RideHalError_e ret = LoadOpPackages( pConfig->pUdoPackages, pConfig->numOfUdoPackages );
             if ( RideHalError_e::RIDE_HAL_ERROR_NONE != ret )
             {
-                QNN_ERROR( "%s: fail to load package", m_Name.c_str() );
+                RIDEHAL_ERROR( "%s: fail to load package", m_Name.c_str() );
                 ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
             }
         }
         else
         {
-            QNN_INFO( "No opPackage!" );
+            RIDEHAL_ERROR( "%s: Unmatched UdoPackages size. expected: %d, actual: %d ",
+                           m_Name.c_str(), pConfig->numOfUdoPackages,
+                           sizeof( pConfig->pUdoPackages ) );
+            ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
         }
     }
 
@@ -621,7 +638,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
     }
 
-    RIDEHAL_INFO( "%s: init %s with backend %s\n", m_Name.c_str(), modelPath.c_str(),
+    RIDEHAL_INFO( "%s: init %s with backend %s\n", m_Name.c_str(), modelPath,
                   s_Backends[m_BackendType] );
 
     if ( RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0 == m_BackendType ||
@@ -902,9 +919,9 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
                                                                        &memHandle );
             if ( QNN_SUCCESS != ret )
             {
-                QNN_ERROR( "%s: map buffer %p(%d, %u, %u) for core %d, error %d\n", m_Name.c_str(),
-                           sharedBuffer.buffer.pData, fd, sharedBuffer.size, sharedBuffer.offset,
-                           m_BackendCoreId, ret );
+                RIDEHAL_ERROR( "%s: map buffer %p(%d, %u, %u) for core %d, error %d\n",
+                               m_Name.c_str(), sharedBuffer.buffer.pData, fd, sharedBuffer.size,
+                               sharedBuffer.offset, m_BackendCoreId, ret );
             }
             else
             {

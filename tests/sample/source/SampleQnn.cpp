@@ -17,7 +17,8 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    m_config.modelPath = Get( config, "model_path", "" );
+    m_modelPath = Get( config, "model_path", "" );
+    m_config.modelPath = m_modelPath.c_str();
     if ( "" == m_config.modelPath )
     {
         RIDEHAL_ERROR( "invalid modelPath\n" );

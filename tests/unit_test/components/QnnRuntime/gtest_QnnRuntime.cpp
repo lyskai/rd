@@ -98,7 +98,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     qnnConfig.modelPath = "/var/opt/qride/data/centernet";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0;
     qnnConfig.loadType = QnnRuntime_LoadType_e::LOAD_CONTEXT_BIN_FROM_BUFFER;
-    std::string modelFile = qnnConfig.modelPath + "/program.bin";
+    std::string modelFile = std::string( qnnConfig.modelPath ) + "/program.bin";
     uint64_t bufferSize{ 0 };
     qnn::tools::datautil::StatusCode status{ qnn::tools::datautil::StatusCode::SUCCESS };
     std::tie( status, bufferSize ) = qnn::tools::datautil::getFileSize( modelFile );
