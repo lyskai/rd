@@ -61,13 +61,17 @@ The command line template example:
 | input_id  | true     | int       | -       | The camera input id |
 | width     | true     | int       | -       | The image width |
 | height    | true     | int       | -       | The image height |
-| topic     | true     | string    | -       | the output topic name |
+| request_mode | false | bool      | false   | The camera request mode |
+| pool_size | false    | int       | 4       | The image memory pool size |
+| isp_use_case | false | int       | 3       | The ISP use case |
+| topic     | true     | string    | -       | The output topic name |
 
 The command line template example:
 
 ```sh
   -n CAM0 -t Camera -k input_id -v 0 \
     -k width -v 1928 -k height -v 1208 \
+    -k request_mode -v 0 \
     -k topic -v /sensor/camera/CAM0/raw \
 ```
 
@@ -75,13 +79,13 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| output_width  | false    | int       | 1152    | The output image width |
-| output_height | false    | int       | 800     | The output image height |
-| output_format | false    | string    | rgb     | The output image format, options from [rgb]|
+| output_width  | false    | int       | 1920    | The output image width |
+| output_height | false    | int       | 1024    | The output image height |
+| output_format | false    | string    | nv12     | The output image format, options from [uyvy, nv12, rgb, bgr, p010 ]|
 | batch_size    | false    | int       | 1       | The Remap input batch size |
 | input_widthX  | false    | int       | 1920    | The input X image width |
 | input_heightX | false    | int       | 1024    | The input X image height |
-| input_formatX | false    | string    | uyvy    | The input X image format, options from [uyvy]|
+| input_formatX | false    | string    | uyvy    | The input X image format, options from [uyvy, nv12, rgb, bgr, p010 ]|
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |
 | roi_yX        | false    | int       | 0       | The ROI top y for input X |
 | roi_widthX    | false    | int       | =output_width  | The ROI width for input X |

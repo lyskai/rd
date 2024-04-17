@@ -96,23 +96,16 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
 
-        int32_t requestMode = Get( config, "requestMode", 0 );
-        if ( 0 == requestMode )
-        {
-            m_camConfig.requestMode = false;
-        }
-        else if ( 1 == requestMode )
-        {
-            m_camConfig.requestMode = true;
-        }
-        else
-        {
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-        }
+        m_camConfig.requestMode = Get( config, "request_mode", false );
 
         m_camConfig.isAllocator = true;
-        m_camConfig.ispUserCase = 3;
-        m_camConfig.bufCnt = 4;
+        m_camConfig.ispUserCase = Get( config, "isp_use_case", 3 );
+        m_camConfig.bufCnt = Get( config, "pool_size", 4 );
+        if ( 0 == m_camConfig.bufCnt )
+        {
+            RIDEHAL_ERROR( "invalid pool_size \n" );
+            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        }
         m_camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
 
         m_topicName = Get( config, "topic", "" );

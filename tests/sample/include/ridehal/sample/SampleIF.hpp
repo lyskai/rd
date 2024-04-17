@@ -88,6 +88,7 @@ protected:
     RideHalError_e Lock();
     RideHalError_e Unlock();
 
+    std::string Get( SampleConfig_t &config, std::string key, const char *defaultV );
     std::string Get( SampleConfig_t &config, std::string key, std::string defaultV );
     std::vector<std::string> Get( SampleConfig_t &config, std::string key,
                                   std::vector<std::string> defaultV );
@@ -98,6 +99,7 @@ protected:
                                RideHal_ImageFormat_e defaultV );
     RideHal_ProcessorType_e Get( SampleConfig_t &config, std::string key,
                                  RideHal_ProcessorType_e defaultV );
+    bool Get( SampleConfig_t &config, std::string key, bool defaultV );
 
 
 protected:

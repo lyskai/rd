@@ -17,21 +17,21 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    m_config.outputResolution.width = Get( config, "output_width", 1928 );
+    m_config.outputResolution.width = Get( config, "output_width", 1920 );
     if ( 0 == m_config.outputResolution.width )
     {
         RIDEHAL_ERROR( "invalid output_width\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputResolution.height = Get( config, "output_height", 1208 );
+    m_config.outputResolution.height = Get( config, "output_height", 1204 );
     if ( 0 == m_config.outputResolution.height )
     {
         RIDEHAL_ERROR( "invalid output_height\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputFormat = Get( config, "output_format", RIDE_HAL_IMAGE_FORMAT_UYVY );
+    m_config.outputFormat = Get( config, "output_format", RIDE_HAL_IMAGE_FORMAT_NV12 );
     if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_config.outputFormat )
     {
         RIDEHAL_ERROR( "invalid output_format\n" );
@@ -50,7 +50,7 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
     for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
     {
         m_config.inputConfigs[i].inputResolution.width =
-                Get( config, "input_width" + std::to_string( i ), 1928 );
+                Get( config, "input_width" + std::to_string( i ), 1920 );
         if ( 0 == m_config.inputConfigs[i].inputResolution.width )
         {
             RIDEHAL_ERROR( "invalid input_width%u\n", i );
@@ -58,7 +58,7 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].inputResolution.height =
-                Get( config, "input_height" + std::to_string( i ), 1208 );
+                Get( config, "input_height" + std::to_string( i ), 1204 );
         if ( 0 == m_config.inputConfigs[i].inputResolution.height )
         {
             RIDEHAL_ERROR( "invalid input_height%u\n", i );
@@ -66,7 +66,7 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].inputFormat =
-                Get( config, "input_format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_NV12 );
+                Get( config, "input_format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_UYVY );
         if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_config.inputConfigs[i].inputFormat )
         {
             RIDEHAL_ERROR( "invalid input_format%u\n", i );

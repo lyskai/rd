@@ -19,7 +19,57 @@
 
 using namespace ridehal::sample;
 
+typedef struct
+{
+    std::string name;
+} Logger_HandleContextUser_t;
+
 std::condition_variable CV;
+
+static void UserLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
+                     va_list args )
+{
+    char msg[256];
+    Logger_HandleContextUser_t *pContext = (Logger_HandleContextUser_t *) hHandle;
+    (void) vsnprintf( msg, sizeof( msg ), pFormat, args );
+    printf( "%s: %s\n", pContext->name.c_str(), msg );
+}
+
+static RideHalError_e UserLoggerHandleCreate( const char *pName, Logger_Level_e level,
+                                              Logger_Handle_t *pHandle )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( ( nullptr == pName ) || ( nullptr == pHandle ) )
+    {
+        ret = RIDE_HAL_ERROR_NULL_PTR;
+    }
+    else
+    {
+        Logger_HandleContextUser_t *pContext = new Logger_HandleContextUser_t;
+        if ( nullptr != pContext )
+        {
+            pContext->name = pName;
+            (void) level;
+            *pHandle = (Logger_Handle_t) pContext;
+        }
+        else
+        {
+            ret = RIDE_HAL_ERROR_NORES;
+        }
+    }
+
+    return ret;
+}
+
+static void UserLoggerHandleDestroy( Logger_Handle_t hHandle )
+{
+    Logger_HandleContextUser_t *pContext = (Logger_HandleContextUser_t *) hHandle;
+    if ( nullptr != pContext )
+    {
+        delete pContext;
+    }
+}
 
 void SignalHandler( int signal )
 {
@@ -59,7 +109,7 @@ int main( int argc, char *argv[] )
     PipelineConfig_t cameraConfig;
     std::string key;
     int flags, opt;
-    while ( ( opt = getopt( argc, argv, "n:t:k:v:h" ) ) != -1 )
+    while ( ( opt = getopt( argc, argv, "dn:t:k:v:h" ) ) != -1 )
     {
         switch ( opt )
         {
@@ -87,6 +137,9 @@ int main( int argc, char *argv[] )
                 config.config[key] = optarg;
                 break;
             }
+            case 'd':
+                (void) Logger::Setup( UserLog, UserLoggerHandleCreate, UserLoggerHandleDestroy );
+                break;
             case 'h':
                 return Usage( argv[0], 0 );
                 break;

@@ -152,6 +152,20 @@ const char *SampleIF::GetName()
     return m_name.c_str();
 }
 
+std::string SampleIF::Get( SampleConfig_t &config, std::string key, const char *defaultV )
+{
+    std::string ret = defaultV;
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        ret = it->second;
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %s\n", key.c_str(), ret.c_str() );
+
+    return ret;
+}
+
 std::string SampleIF::Get( SampleConfig_t &config, std::string key, std::string defaultV )
 {
     std::string ret = defaultV;
@@ -310,6 +324,27 @@ RideHal_ProcessorType_e SampleIF::Get( SampleConfig_t &config, std::string key,
         else
         {
             ret = RIDE_HAL_PROCESSOR_MAX;
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %d\n", key.c_str(), ret );
+
+    return ret;
+}
+
+bool SampleIF::Get( SampleConfig_t &config, std::string key, bool defaultV )
+{
+    bool ret = defaultV;
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        if ( "true" == it->second )
+        {
+            ret = true;
+        }
+        else
+        {
+            ret = false;
         }
     }
 
