@@ -55,6 +55,7 @@ void EventCb( const VideoEncoder_EventType_e eventId, const void *pEvent, void *
 
 TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
 {
+    uint32_t i = 0;
     VideoEncoder veTest;
     VideoEncoder_Config_t config;
     config.width = 176;
@@ -120,7 +121,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     }
 
     inputFrame.timestampNs = 0;
-    inputFrame.pAppMarkData= nullptr;
+    inputFrame.pAppMarkData = nullptr;
     onTheFlyCmd.propID = VIDEO_ENCODER_PROP_BITRATE;
     onTheFlyCmd.value = 32000;
     inputFrame.numCmd = 2;
@@ -158,6 +159,14 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
+    for ( i = 0; i < config.numInputBufferReq; i++ )
+    {
+        ret = outputFrame[i].sharedBuffer.Free();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
+    ret = inputFrame.sharedBuffer.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
     delete[] outputFrame;
     delete onTheFlyCmds;
 }
@@ -185,8 +194,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     config.pInputBufferList = nullptr;
     config.pOutputBufferList = nullptr;
 
-    RideHal_SharedBuffer_t *sharedBuffer = nullptr;
-
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
     ret = veTest.Init( "VideoEncoderNormal", &config );
@@ -210,7 +217,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
         VideoEncoder_InputFrame_t inputFrame;
         inputFrame.sharedBuffer = inputList[i];
         inputFrame.timestampNs = g_timestamp;
-        inputFrame.pAppMarkData= nullptr;
+        inputFrame.pAppMarkData = nullptr;
         ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
         g_timestamp += 33333;
@@ -268,11 +275,13 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
-    config.pInputBufferList = nullptr;
 
+    RideHal_SharedBuffer_t *inBufferList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
     RideHal_SharedBuffer_t *outBufferList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
-    for ( i = 0; i < config.numOutputBufferReq; i++ )
+    for ( i = 0; i < config.numInputBufferReq; i++ )
     {
+        ret = inBufferList[i].Allocate( config.width, config.height, config.inFormat );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
         RideHal_ImageProps_t imgProps;
         imgProps.batchSize = 1;
         imgProps.width = config.width;
@@ -283,9 +292,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
         // ret = sharedBuffer->Allocate( 118784 );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
+    config.pInputBufferList = inBufferList;
     config.pOutputBufferList = outBufferList;
-
-    RideHal_SharedBuffer_t *sharedBuffer = nullptr;
 
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
@@ -300,29 +308,15 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
-    RideHal_SharedBuffer_t *inputList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
-
-    ret = veTest.GetInputBuffers( inputList, config.numInputBufferReq );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
     for ( i = 0; i < config.numInputBufferReq; i++ )
     {
         VideoEncoder_InputFrame_t inputFrame;
-        inputFrame.sharedBuffer = inputList[i];
+        inputFrame.sharedBuffer = inBufferList[i];
         inputFrame.timestampNs = g_timestamp;
-        inputFrame.pAppMarkData= nullptr;
+        inputFrame.pAppMarkData = nullptr;
         ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
         g_timestamp += 33333;
-    }
-
-    RideHal_SharedBuffer_t *outputList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
-    ret = veTest.GetOutputBuffers( outputList, config.numOutputBufferReq );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
-    for ( i = 0; i < config.numOutputBufferReq; i++ )
-    {
-        printf( "outputList[%d].data(): 0x%x\n", i, outputList[i].data() );
     }
 
     // wait inputdone siganl
@@ -344,9 +338,215 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
+    for ( i = 0; i < config.numInputBufferReq; i++ )
+    {
+        ret = inBufferList[i].Free();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ret = outBufferList[i].Free();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
+
+    delete[] inBufferList;
     delete[] outBufferList;
-    delete[] inputList;
-    delete[] outputList;
+}
+
+TEST( VideoEncoder, SANITY_VideoEncoder_Resolution )
+{
+    RideHalError_e ret;
+    uint32_t i = 0;
+
+    VideoEncoder veTest;
+    VideoEncoder_Config_t config;
+    config.width = 128;
+    config.height = 128;
+    config.bitRate = 512000;
+    config.gop = 0;
+    config.numInputBufferReq = 4;
+    config.numOutputBufferReq = 4;
+    config.frameRate = 60;
+    config.profile = VIDEO_ENCODER_PROFILE_H264_MAIN;
+    config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
+    config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
+    config.bInputDynamicMode = false;
+    config.bOutputDynamicMode = false;
+    config.pInputBufferList = nullptr;
+    config.pOutputBufferList = nullptr;
+
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    ret = veTest.Init( "VideoEncoderResolution_96x96", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+
+    config.width = 176;
+    config.height = 144;
+    config.bitRate = 1000000;
+    ret = veTest.Init( "VideoEncoderResolution_176x144", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+
+    config.width = 1280;
+    config.height = 720;
+    config.bitRate = 2000000;
+    ret = veTest.Init( "VideoEncoderResolution_1280x720", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+
+    config.width = 1920;
+    config.height = 1080;
+    config.bitRate = 5000000;
+    ret = veTest.Init( "VideoEncoderResolution_1920x1080", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+
+    config.width = 1920;
+    config.height = 1088;
+    config.bitRate = 10000000;
+    ret = veTest.Init( "VideoEncoderResolution_1920x1088", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+
+    config.width = 3840;
+    config.height = 2160;
+    config.bitRate = 20000000;
+    ret = veTest.Init( "VideoEncoderResolution_3840x2160", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+
+    config.width = 4096;
+    config.height = 2160;
+    config.bitRate = 50000000;
+    ret = veTest.Init( "VideoEncoderResolution_4096x2160", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+}
+
+TEST( VideoEncoder, SANITY_VideoEncoder_InitError )
+{
+    RideHalError_e ret;
+    uint32_t i = 0;
+
+    VideoEncoder veTest;
+    VideoEncoder_Config_t config;
+    config.width = 0;
+    config.height = 0;
+    config.bitRate = 0;
+    config.gop = 0;
+    config.numInputBufferReq = 1;
+    config.numOutputBufferReq = 128;
+    config.frameRate = 0;
+    config.profile = VIDEO_ENCODER_PROFILE_MAX;
+    config.rateControlMode = VIDEO_ENCODER_RCM_UNUSED;
+    config.inFormat = RIDE_HAL_IMAGE_FORMAT_MAX;
+    config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_MAX;
+    config.bInputDynamicMode = true;
+    config.bOutputDynamicMode = false;
+
+    RideHal_SharedBuffer_t *inBufferList = new RideHal_SharedBuffer_t[8];
+    RideHal_SharedBuffer_t *outBufferList = new RideHal_SharedBuffer_t[8];
+    for ( i = 0; i < 8; i++ )
+    {
+        ret = inBufferList[i].Allocate( 176, 144, RIDE_HAL_IMAGE_FORMAT_NV12 );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        RideHal_ImageProps_t imgProps;
+        imgProps.batchSize = 1;
+        imgProps.width = 176;
+        imgProps.height = 144;
+        imgProps.compressedSize = 118784;
+        imgProps.format = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
+        ret = outBufferList[i].Allocate( &imgProps );
+        // ret = sharedBuffer->Allocate( 118784 );
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
+    config.pInputBufferList = inBufferList;
+    config.pOutputBufferList = outBufferList;
+
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    ret = veTest.Init( "VideoEncoderErrorTest_nullptr", nullptr );
+    ASSERT_EQ( RIDE_HAL_ERROR_NULL_PTR, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_width", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.width = 176;
+    config.height = 144;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_rc", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_informat", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_outformat", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_inreq", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.numInputBufferReq = 8;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_outreq", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.numOutputBufferReq = 8;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_buffer", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    for ( i = 0; i < 8; i++ )
+    {
+        ret = inBufferList[i].Free();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ret = outBufferList[i].Free();
+        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    }
+
+    delete[] inBufferList;
+    delete[] outBufferList;
 }
 
 #ifndef GTEST_RIDEHAL

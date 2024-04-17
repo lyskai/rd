@@ -177,7 +177,11 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         m_vidcEncoderData.sessionCodec.codec = m_vidcEncoderData.codec;
         m_numInputBufferReq = pConfig->numInputBufferReq;
         m_numOutputBufferReq = pConfig->numOutputBufferReq;
+        ret = ValidateConfig( pConfig );
+    }
 
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
         m_ioctlCb.handler = VideoEncoder::DeviceCallback;
         m_ioctlCb.data = (void *) this;
 
@@ -330,7 +334,24 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = ValidateConfig( pConfig );
+        if ( ( false == m_bInputDynamicMode ) && ( nullptr != pConfig->pInputBufferList ) )
+        {
+            for ( i = 0; ( i < m_numInputBufferReq ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+            {
+                ret = ValidateBuffer( &pConfig->pInputBufferList[i], VIDC_BUFFER_INPUT );
+            }
+        }
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        if ( ( false == m_bOutputDynamicMode ) && ( nullptr != pConfig->pOutputBufferList ) )
+        {
+            for ( i = 0; ( i < m_numOutputBufferReq ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+            {
+                ret = ValidateBuffer( &pConfig->pOutputBufferList[i], VIDC_BUFFER_OUTPUT );
+            }
+        }
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -1123,62 +1144,66 @@ void VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
     {
         pTable = s_profileLevelTables[profile].pTable;
         num = s_profileLevelTables[profile].num;
-    }
 
-    if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264 == m_outFormat ) &&
-         ( profile <= VIDEO_ENCODER_PROFILE_H264_MAIN ) )
-    {
-        mbPerFrame = ( ( m_height + 15 ) >> 4 ) * ( ( m_width + 15 ) >> 4 );
-        mbPerSec = mbPerFrame * m_frameRate;
-        RIDEHAL_DEBUG( "mbPerFrame %" PRIu32 " mbPerSec %" PRIu32, mbPerFrame, mbPerSec );
-        for ( i = 0; ( i < num ) && ( false == bFindFlag ); i++ )
+        if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264 == m_outFormat ) &&
+             ( profile <= VIDEO_ENCODER_PROFILE_H264_MAIN ) )
         {
-            if ( mbPerFrame <= pTable[i].maxFrameSize )
+            mbPerFrame = ( ( m_height + 15 ) >> 4 ) * ( ( m_width + 15 ) >> 4 );
+            mbPerSec = mbPerFrame * m_frameRate;
+            RIDEHAL_DEBUG( "mbPerFrame %" PRIu32 " mbPerSec %" PRIu32, mbPerFrame, mbPerSec );
+            for ( i = 0; ( i < num ) && ( false == bFindFlag ); i++ )
             {
-                if ( mbPerSec <= pTable[i].maxSizePerSec )
+                if ( mbPerFrame <= pTable[i].maxFrameSize )
                 {
-                    if ( m_bitRate <= pTable[i].maxBitRate )
+                    if ( mbPerSec <= pTable[i].maxSizePerSec )
                     {
-                        m_vidcEncoderData.level.level = pTable[i].level;
-                        m_vidcEncoderData.profile.profile = pTable[i].profile;
-                        bFindFlag = true;
+                        if ( m_bitRate <= pTable[i].maxBitRate )
+                        {
+                            m_vidcEncoderData.level.level = pTable[i].level;
+                            m_vidcEncoderData.profile.profile = pTable[i].profile;
+                            bFindFlag = true;
+                        }
                     }
                 }
             }
+            if ( false == bFindFlag )
+            {
+                m_vidcEncoderData.level.level = pTable[num - 1].level;
+                m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
+            }
         }
-        if ( false == bFindFlag )
+        else if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat ) &&
+                  ( profile >= VIDEO_ENCODER_PROFILE_HEVC_MAIN ) )
         {
-            m_vidcEncoderData.level.level = pTable[num - 1].level;
-            m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
+            samplePerFrame = m_height * m_width;
+            samplePerSec = samplePerFrame * m_frameRate;
+            RIDEHAL_DEBUG( "samplePerFrame %" PRIu64 " samplePerSec %" PRIu64, samplePerFrame,
+                           samplePerSec );
+            for ( i = 0; ( i < num ) && ( false == bFindFlag ); i++ )
+            {
+                if ( samplePerFrame <= pTable[i].maxFrameSize )
+                {
+                    if ( samplePerSec <= pTable[i].maxSizePerSec )
+                    {
+                        if ( m_bitRate <= pTable[i].maxBitRate )
+                        {
+                            m_vidcEncoderData.level.level = pTable[i].level;
+                            m_vidcEncoderData.profile.profile = pTable[i].profile;
+                            bFindFlag = true;
+                        }
+                    }
+                }
+            }
+            if ( false == bFindFlag )
+            {
+                m_vidcEncoderData.level.level = pTable[num - 1].level;
+                m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
+            }
         }
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat ) &&
-              ( profile >= VIDEO_ENCODER_PROFILE_HEVC_MAIN ) )
+    else
     {
-        samplePerFrame = m_height * m_width;
-        samplePerSec = samplePerFrame * m_frameRate;
-        RIDEHAL_DEBUG( "samplePerFrame %" PRIu64 " samplePerSec %" PRIu64, samplePerFrame,
-                       samplePerSec );
-        for ( i = 0; ( i < num ) && ( false == bFindFlag ); i++ )
-        {
-            if ( samplePerFrame <= pTable[i].maxFrameSize )
-            {
-                if ( samplePerSec <= pTable[i].maxSizePerSec )
-                {
-                    if ( m_bitRate <= pTable[i].maxBitRate )
-                    {
-                        m_vidcEncoderData.level.level = pTable[i].level;
-                        m_vidcEncoderData.profile.profile = pTable[i].profile;
-                        bFindFlag = true;
-                    }
-                }
-            }
-        }
-        if ( false == bFindFlag )
-        {
-            m_vidcEncoderData.level.level = pTable[num - 1].level;
-            m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
-        }
+        RIDEHAL_ERROR( "profile %d not supported", profile );
     }
 }
 
@@ -1333,10 +1358,9 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
     int32_t i = 0;
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( ( 0 == m_width ) || ( 0 == m_height ) )
+    if ( ( m_width < 128 ) || ( m_height < 128 ) || ( m_width > 8192 ) || ( m_height > 8192 ) )
     {
-        RIDEHAL_ERROR( "m_width %" PRIu32 " m_height%" PRIu32 " should not be zero!", m_width,
-                       m_height );
+        RIDEHAL_ERROR( "m_width %" PRIu32 " m_height%" PRIu32 " not in range!", m_width, m_height );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
@@ -1392,24 +1416,6 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
     {
         RIDEHAL_ERROR( "should not provide outputbuffer in config in dynamic mode!" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-    }
-
-    if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( false == m_bInputDynamicMode ) &&
-         ( nullptr != pConfig->pInputBufferList ) )
-    {
-        for ( i = 0; ( i < m_numInputBufferReq ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
-        {
-            ret = ValidateBuffer( &pConfig->pInputBufferList[i], VIDC_BUFFER_INPUT );
-        }
-    }
-
-    if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( false == m_bOutputDynamicMode ) &&
-         ( nullptr != pConfig->pOutputBufferList ) )
-    {
-        for ( i = 0; ( i < m_numOutputBufferReq ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
-        {
-            ret = ValidateBuffer( &pConfig->pOutputBufferList[i], VIDC_BUFFER_OUTPUT );
-        }
     }
 
     return ret;
@@ -1623,8 +1629,8 @@ RideHalError_e VideoEncoder::PrepareBuffer( ioctl_session_t *pIoHandle,
             RIDEHAL_DEBUG( "PrepareBuffer [%" PRId32 "]: buf_addr = 0x%x, buf_handle = 0x%x, "
                            "buf_size = %d",
                            i, buf_info.buf_addr, buf_info.buf_handle, bufSize );
-            rc = device_ioctl( pIoHandle, VIDC_IOCTL_SET_BUFFER, (uint8_t *) ( &buf_info ), nMsgSize,
-                               nullptr, 0 );
+            rc = device_ioctl( pIoHandle, VIDC_IOCTL_SET_BUFFER, (uint8_t *) ( &buf_info ),
+                               nMsgSize, nullptr, 0 );
             if ( VIDC_ERR_NONE != rc )
             {
                 RIDEHAL_ERROR( " PrepareBuffer VIDC_IOCTL_SET_BUFFER failed. Index=%" PRId32
