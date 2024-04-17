@@ -91,7 +91,7 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
         for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
               idx++ )
         {
-            ret = m_camSubs[idx].Init( name, m_camTopicNames[idx] );
+            ret = m_camSubs[idx].Init( name, m_camTopicNames[idx], 1 );
         }
     }
 

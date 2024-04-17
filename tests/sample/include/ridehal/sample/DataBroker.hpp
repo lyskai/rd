@@ -30,7 +30,7 @@ template<typename T>
 class DataQueue final
 {
 public:
-    DataQueue( std::string name, size_t queueDepth = 8, bool bLatest = true )
+    DataQueue( std::string name, size_t queueDepth = 2, bool bLatest = true )
         : m_name( name ),
           m_queueDepth( queueDepth ),
           m_bLatest( bLatest )
@@ -253,7 +253,7 @@ public:
         }
     }
 
-    RideHalError_e Init( std::string name, std::string topicName, uint32_t queueDepth = 8,
+    RideHalError_e Init( std::string name, std::string topicName, uint32_t queueDepth = 2,
                          bool bLatest = true )
     {
         RideHalError_e ret = RIDE_HAL_ERROR_NONE;
