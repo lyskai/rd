@@ -20,9 +20,6 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoRGB )
     char pName[5] = "C2D";
 
     C2DConfig.numOfInputs = 1;
-    C2DConfig.numOfOutputs = 1;
-    C2DConfig.batchSize = 1;
-
     for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
     {
         C2DConfig.inputConfigs[i].inputFormat = RIDE_HAL_IMAGE_FORMAT_UYVY;
@@ -34,9 +31,9 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoRGB )
         C2DConfig.inputConfigs[i].ROI.height = 100;
     }
 
-    C2DConfig.outputFormat = RIDE_HAL_IMAGE_FORMAT_RGB888;
-    C2DConfig.outputResolution.width = 600;
-    C2DConfig.outputResolution.height = 600;
+    RideHal_ImageFormat_e C2DOutputFormat = RIDE_HAL_IMAGE_FORMAT_RGB888;
+    uint32_t C2DOutputWidth = 600;
+    uint32_t C2DOutputHeight = 600;
 
     RideHal_SharedBuffer_t inputs[C2DConfig.numOfInputs];
     ret = inputs[0].Allocate( C2DConfig.inputConfigs[0].inputResolution.width,
@@ -44,9 +41,8 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoRGB )
                               C2DConfig.inputConfigs[0].inputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    RideHal_SharedBuffer_t outputs[C2DConfig.numOfOutputs];
-    ret = outputs[0].Allocate( C2DConfig.outputResolution.width, C2DConfig.outputResolution.height,
-                               C2DConfig.outputFormat );
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Init( pName, pC2DConfig );
@@ -55,7 +51,7 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoRGB )
     ret = C2DObj.Start();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, outputs, C2DConfig.numOfOutputs );
+    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, &output );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Stop();
@@ -76,9 +72,6 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoYUVY )
     char pName[5] = "C2D";
 
     C2DConfig.numOfInputs = 1;
-    C2DConfig.numOfOutputs = 1;
-    C2DConfig.batchSize = 1;
-
     for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
     {
         C2DConfig.inputConfigs[i].inputFormat = RIDE_HAL_IMAGE_FORMAT_RGB888;
@@ -90,9 +83,9 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoYUVY )
         C2DConfig.inputConfigs[i].ROI.height = 600;
     }
 
-    C2DConfig.outputFormat = RIDE_HAL_IMAGE_FORMAT_UYVY;
-    C2DConfig.outputResolution.width = 600;
-    C2DConfig.outputResolution.height = 600;
+    RideHal_ImageFormat_e C2DOutputFormat = RIDE_HAL_IMAGE_FORMAT_UYVY;
+    uint32_t C2DOutputWidth = 600;
+    uint32_t C2DOutputHeight = 600;
 
     RideHal_SharedBuffer_t inputs[C2DConfig.numOfInputs];
     ret = inputs[0].Allocate( C2DConfig.inputConfigs[0].inputResolution.width,
@@ -100,9 +93,8 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoYUVY )
                               C2DConfig.inputConfigs[0].inputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    RideHal_SharedBuffer_t outputs[C2DConfig.numOfOutputs];
-    ret = outputs[0].Allocate( C2DConfig.outputResolution.width, C2DConfig.outputResolution.height,
-                               C2DConfig.outputFormat );
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Init( pName, pC2DConfig );
@@ -111,7 +103,7 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoYUVY )
     ret = C2DObj.Start();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, outputs, C2DConfig.numOfOutputs );
+    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, &output );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Stop();
@@ -132,9 +124,6 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoNV12 )
     char pName[5] = "C2D";
 
     C2DConfig.numOfInputs = 1;
-    C2DConfig.numOfOutputs = 1;
-    C2DConfig.batchSize = 1;
-
     for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
     {
         C2DConfig.inputConfigs[i].inputFormat = RIDE_HAL_IMAGE_FORMAT_RGB888;
@@ -146,9 +135,9 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoNV12 )
         C2DConfig.inputConfigs[i].ROI.height = 720;
     }
 
-    C2DConfig.outputFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
-    C2DConfig.outputResolution.width = 1080;
-    C2DConfig.outputResolution.height = 720;
+    RideHal_ImageFormat_e C2DOutputFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    uint32_t C2DOutputWidth = 1080;
+    uint32_t C2DOutputHeight = 720;
 
     RideHal_SharedBuffer_t inputs[C2DConfig.numOfInputs];
     ret = inputs[0].Allocate( C2DConfig.inputConfigs[0].inputResolution.width,
@@ -156,9 +145,8 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoNV12 )
                               C2DConfig.inputConfigs[0].inputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    RideHal_SharedBuffer_t outputs[C2DConfig.numOfOutputs];
-    ret = outputs[0].Allocate( C2DConfig.outputResolution.width, C2DConfig.outputResolution.height,
-                               C2DConfig.outputFormat );
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Init( pName, pC2DConfig );
@@ -167,7 +155,7 @@ TEST( C2D, SANITY_C2D_ConvertRGBtoNV12 )
     ret = C2DObj.Start();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, outputs, C2DConfig.numOfOutputs );
+    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, &output );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Stop();
@@ -188,9 +176,6 @@ TEST( C2D, SANITY_C2D_ConvertNV12toUYVY )
     char pName[5] = "C2D";
 
     C2DConfig.numOfInputs = 1;
-    C2DConfig.numOfOutputs = 1;
-    C2DConfig.batchSize = 1;
-
     for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
     {
         C2DConfig.inputConfigs[i].inputFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
@@ -202,9 +187,9 @@ TEST( C2D, SANITY_C2D_ConvertNV12toUYVY )
         C2DConfig.inputConfigs[i].ROI.height = 720;
     }
 
-    C2DConfig.outputFormat = RIDE_HAL_IMAGE_FORMAT_UYVY;
-    C2DConfig.outputResolution.width = 1080;
-    C2DConfig.outputResolution.height = 720;
+    RideHal_ImageFormat_e C2DOutputFormat = RIDE_HAL_IMAGE_FORMAT_UYVY;
+    uint32_t C2DOutputWidth = 1080;
+    uint32_t C2DOutputHeight = 720;
 
     RideHal_SharedBuffer_t inputs[C2DConfig.numOfInputs];
     ret = inputs[0].Allocate( C2DConfig.inputConfigs[0].inputResolution.width,
@@ -212,9 +197,8 @@ TEST( C2D, SANITY_C2D_ConvertNV12toUYVY )
                               C2DConfig.inputConfigs[0].inputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    RideHal_SharedBuffer_t outputs[C2DConfig.numOfOutputs];
-    ret = outputs[0].Allocate( C2DConfig.outputResolution.width, C2DConfig.outputResolution.height,
-                               C2DConfig.outputFormat );
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Init( pName, pC2DConfig );
@@ -223,7 +207,7 @@ TEST( C2D, SANITY_C2D_ConvertNV12toUYVY )
     ret = C2DObj.Start();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, outputs, C2DConfig.numOfOutputs );
+    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, &output );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Stop();
@@ -244,9 +228,6 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoNV12 )
     char pName[5] = "C2D";
 
     C2DConfig.numOfInputs = 1;
-    C2DConfig.numOfOutputs = 1;
-    C2DConfig.batchSize = 1;
-
     for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
     {
         C2DConfig.inputConfigs[i].inputFormat = RIDE_HAL_IMAGE_FORMAT_UYVY;
@@ -258,9 +239,9 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoNV12 )
         C2DConfig.inputConfigs[i].ROI.height = 720;
     }
 
-    C2DConfig.outputFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
-    C2DConfig.outputResolution.width = 1080;
-    C2DConfig.outputResolution.height = 720;
+    RideHal_ImageFormat_e C2DOutputFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    uint32_t C2DOutputWidth = 1080;
+    uint32_t C2DOutputHeight = 720;
 
     RideHal_SharedBuffer_t inputs[C2DConfig.numOfInputs];
     ret = inputs[0].Allocate( C2DConfig.inputConfigs[0].inputResolution.width,
@@ -268,9 +249,8 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoNV12 )
                               C2DConfig.inputConfigs[0].inputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    RideHal_SharedBuffer_t outputs[C2DConfig.numOfOutputs];
-    ret = outputs[0].Allocate( C2DConfig.outputResolution.width, C2DConfig.outputResolution.height,
-                               C2DConfig.outputFormat );
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Init( pName, pC2DConfig );
@@ -279,7 +259,7 @@ TEST( C2D, SANITY_C2D_ConvertUYVYtoNV12 )
     ret = C2DObj.Start();
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, outputs, C2DConfig.numOfOutputs );
+    ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, &output );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = C2DObj.Stop();

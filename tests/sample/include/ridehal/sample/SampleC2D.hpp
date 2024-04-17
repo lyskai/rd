@@ -48,6 +48,9 @@ private:
 
 private:
     C2D_Config_t m_config;
+    RideHal_ImageFormat_e m_outputFormat;
+    uint32_t m_outputWidth;
+    uint32_t m_outputHeight;
     uint32_t m_poolSize = 4;
 
     std::string m_inputTopicName;
@@ -67,3 +70,4 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDE_HAL_SAMPLE_C2D_HPP_
+

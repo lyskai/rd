@@ -17,22 +17,22 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    m_config.outputResolution.width = Get( config, "output_width", 1920 );
-    if ( 0 == m_config.outputResolution.width )
+    m_outputWidth = Get( config, "output_width", 1928 );
+    if ( 0 == m_outputWidth )
     {
         RIDEHAL_ERROR( "invalid output_width\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputResolution.height = Get( config, "output_height", 1204 );
-    if ( 0 == m_config.outputResolution.height )
+    m_outputHeight = Get( config, "output_height", 1208 );
+    if ( 0 == m_outputHeight )
     {
         RIDEHAL_ERROR( "invalid output_height\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outputFormat = Get( config, "output_format", RIDE_HAL_IMAGE_FORMAT_NV12 );
-    if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_config.outputFormat )
+    m_outputFormat = Get( config, "output_format", RIDE_HAL_IMAGE_FORMAT_UYVY );
+    if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_outputFormat )
     {
         RIDEHAL_ERROR( "invalid output_format\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
@@ -44,13 +44,11 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         RIDEHAL_ERROR( "invalid batch_size\n" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    m_config.numOfOutputs = 1;
-    m_config.batchSize = m_config.numOfInputs;
 
     for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
     {
         m_config.inputConfigs[i].inputResolution.width =
-                Get( config, "input_width" + std::to_string( i ), 1920 );
+                Get( config, "input_width" + std::to_string( i ), 1928 );
         if ( 0 == m_config.inputConfigs[i].inputResolution.width )
         {
             RIDEHAL_ERROR( "invalid input_width%u\n", i );
@@ -58,7 +56,7 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].inputResolution.height =
-                Get( config, "input_height" + std::to_string( i ), 1204 );
+                Get( config, "input_height" + std::to_string( i ), 1208 );
         if ( 0 == m_config.inputConfigs[i].inputResolution.height )
         {
             RIDEHAL_ERROR( "invalid input_height%u\n", i );
@@ -66,7 +64,7 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.inputConfigs[i].inputFormat =
-                Get( config, "input_format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_UYVY );
+                Get( config, "input_format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_NV12 );
         if ( RIDE_HAL_IMAGE_FORMAT_MAX == m_config.inputConfigs[i].inputFormat )
         {
             RIDEHAL_ERROR( "invalid input_format%u\n", i );
@@ -142,8 +140,8 @@ RideHalError_e SampleC2D::Init( std::string name, SampleConfig_t &config )
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
-                                m_config.outputResolution.width, m_config.outputResolution.height,
-                                m_config.outputFormat, RIDE_HAL_BUFFER_USAGE_GPU );
+                                m_outputWidth, m_outputHeight, m_outputFormat,
+                                RIDE_HAL_BUFFER_USAGE_GPU );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -197,11 +195,10 @@ void SampleC2D::ThreadMain()
                 {
                     inputs.push_back( frame.buffer->sharedBuffer );
                 }
-                PROFILER_BEGIN();
-                ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer, 1 );
+
+                ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDE_HAL_ERROR_NONE == ret )
                 {
-                    PROFILER_END();
                     CamFrames_t outFrames;
                     CamFrame_t frame;
                     frame.buffer = buffer;
@@ -232,8 +229,6 @@ RideHalError_e SampleC2D::Stop()
 
     ret = m_c2d.Stop();
 
-    PROFILER_SHOW();
-
     return ret;
 }
 
@@ -250,3 +245,4 @@ REGISTER_SAMPLE( C2D, SampleC2D );
 
 }   // namespace sample
 }   // namespace ridehal
+
