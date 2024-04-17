@@ -12,21 +12,23 @@ set( QNN_HEADERS
     ${HEADERS_DIR}/component/QnnRuntime.hpp
    )
 
+set( QNN_SAMPLEAPP_DIR $ENV{QNN_SDK_ROOT}/examples/QNN/SampleApp )
+
 set( QNN_SOURCES
-    src/Log/LogUtils.cpp
-    src/Log/Logger.cpp
-    src/PAL/src/linux/Directory.cpp
-    src/PAL/src/linux/Path.cpp
-    src/PAL/src/linux/DynamicLoading.cpp
-    src/PAL/src/linux/FileOp.cpp
-    src/PAL/src/common/StringOp.cpp
-    src/PAL/src/common/GetOpt.cpp
-    src/Utils/DataUtil.cpp
-    src/Utils/QnnSampleAppUtils.cpp
-    src/Utils/DynamicLoadUtil.cpp
-    src/Utils/IOTensor.cpp
-    src/WrapperUtils/QnnWrapperUtils.cpp
-    src/QnnRuntime.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/Log/LogUtils.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/Log/Logger.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/src/linux/Directory.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/src/linux/Path.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/src/linux/DynamicLoading.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/src/linux/FileOp.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/src/common/StringOp.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/src/common/GetOpt.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/Utils/DataUtil.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/Utils/QnnSampleAppUtils.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/Utils/DynamicLoadUtil.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/Utils/IOTensor.cpp
+    ${QNN_SAMPLEAPP_DIR}/src/WrapperUtils/QnnWrapperUtils.cpp
+    QnnRuntime.cpp
 )
 
 add_library( RideHalQnnRuntime STATIC ${QNN_HEADERS} ${QNN_SOURCES} )
@@ -36,14 +38,11 @@ set_property( TARGET RideHalQnnRuntime PROPERTY POSITION_INDEPENDENT_CODE ON )
 
 target_include_directories( RideHalQnnRuntime PUBLIC
     ${PROJECT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Log
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/PAL/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/Utils
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/WrapperUtils
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/
+    ${QNN_SAMPLEAPP_DIR}/src
+    ${QNN_SAMPLEAPP_DIR}/src/Log
+    ${QNN_SAMPLEAPP_DIR}/src/PAL/include
+    ${QNN_SAMPLEAPP_DIR}/src/Utils
+    ${QNN_SAMPLEAPP_DIR}/src/WrapperUtils
     $ENV{QNN_SDK_ROOT}/include/QNN
 )
 
