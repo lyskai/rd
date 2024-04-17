@@ -37,12 +37,6 @@ RideHalError_e FadasSrv::InitCPU()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( FADAS_ERROR_NONE != FadasCvtYUV_Init( nullptr ) )
-    {
-        RIDEHAL_ERROR( "FadasCvtYUV_Init failed!" );
-        ret = RIDE_HAL_ERROR_FAIL;
-    }
-
     if ( FADAS_ERROR_NONE != FadasRemap_Init( nullptr ) )
     {
         RIDEHAL_ERROR( "FadasRemap_Init failed!" );
@@ -195,12 +189,6 @@ RideHalError_e FadasSrv::Deinit()
             }
             else
             {
-                if ( FADAS_ERROR_NONE != FadasCvtYUV_DeInit() )
-                {
-                    RIDEHAL_ERROR( "FadasCvtYUV_DeInit failed!" );
-                    ret = RIDE_HAL_ERROR_FAIL;
-                }
-
                 if ( FADAS_ERROR_NONE != FadasRemap_DeInit() )
                 {
                     RIDEHAL_ERROR( "FadasRemap_DeInit failed!" );
