@@ -49,17 +49,6 @@ typedef enum
     VIDEO_ENCODER_PROFILE_MAX
 } VideoEncoder_Profile_e;
 
-/// @brief This data type list the different VideoEncoder state
-typedef enum
-{
-    VIDEO_ENCODER_STATE_DEINIT = 0,
-    VIDEO_ENCODER_STATE_LOADED,
-    VIDEO_ENCODER_STATE_IDLE,
-    VIDEO_ENCODER_STATE_EXECUTING,
-    VIDEO_ENCODER_STATE_PAUSE,
-    VIDEO_ENCODER_STATE_UNUSED = 0xf0000000
-} VideoEncoder_State_e;
-
 /// @brief This data type list the different frame types
 typedef enum
 {
@@ -142,7 +131,6 @@ typedef struct
 typedef struct
 {
     ioctl_session_t *pIoHandle;                        // The IOSession
-    VideoEncoder_State_e state;                        // The encoder state
     vidc_session_codec_type sessionCodec;              // Session & Codec type setting for encoder
     vidc_frame_size_type frameSize;                    // The frame resolution
     vidc_frame_rate_type frameRate;                    // Frame rate for Encoder
@@ -247,7 +235,7 @@ private:
                                    uint32_t nPktSize, uint8_t *pPkt );
     RideHalError_e SetDrvProperty( ioctl_session_t *pIoHandle, vidc_property_id_type propId,
                                    uint32_t nPktSize, uint8_t *pPkt );
-    RideHalError_e WaitForState( VideoEncoder_State_e expectedState );
+    RideHalError_e WaitForState( RideHal_ComponentState_t expectedState );
     RideHalError_e PrepareBuffer( ioctl_session_t *pIoHandle, RideHal_SharedBuffer_t *pBufferList,
                                   vidc_buffer_type bufferType, int32_t bufCntMin, int32_t bufSize );
     RideHalError_e GetInputInformation( void );
@@ -258,7 +246,6 @@ private:
     void PrintEncoderConfig( void );
     vidc_color_format_type GetVidcFormat( RideHal_ImageFormat_e );
     void SetVidcProfileLevel( VideoEncoder_Profile_e );
-    RideHalError_e Teardown(); /* release all the resources */
     RideHalError_e ValidateConfig( const VideoEncoder_Config_t *pConfig );
     RideHalError_e ValidateBuffer( const RideHal_SharedBuffer_t *pBuffer,
                                    vidc_buffer_type bufferType );

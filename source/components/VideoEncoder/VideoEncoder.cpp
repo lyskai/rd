@@ -196,7 +196,6 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_vidcEncoderData.state = VIDEO_ENCODER_STATE_LOADED;
         RIDEHAL_DEBUG( "Setting VIDC_I_SESSION_CODEC" );
         ret = SetDrvProperty( m_vidcEncoderData.pIoHandle, VIDC_I_SESSION_CODEC,
                               sizeof( vidc_session_codec_type ),
@@ -466,10 +465,10 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         }
         else
         {
-            ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
+            ret = WaitForState( RIDE_HAL_COMPONENT_STATE_READY );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "VIDC_IOCTL_LOAD_RESOURCES WaitForState STATE_IDLE fail!" );
+                RIDEHAL_ERROR( "VIDC_IOCTL_LOAD_RESOURCES WaitForState.state_ready fail!" );
                 m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
             }
         }
@@ -479,12 +478,12 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
     {
         PrintEncoderConfig();
         RIDEHAL_DEBUG( "Successfully completed vidc initialization!" );
-        m_state = RIDE_HAL_COMPONENT_STATE_READY;
     }
     else
     {
         RIDEHAL_ERROR( "Something wrong happened in Init, Deiniting vidc" );
-        Teardown();
+        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+        Deinit();
     }
 
     return ret;
@@ -522,16 +521,11 @@ RideHalError_e VideoEncoder::Start()
         }
         else
         {
-            ret = WaitForState( VIDEO_ENCODER_STATE_EXECUTING );
+            ret = WaitForState( RIDE_HAL_COMPONENT_STATE_RUNNING );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "VIDC_IOCTL_START WaitForState STATE_EXECUTING failed!" );
+                RIDEHAL_ERROR( "VIDC_IOCTL_START WaitForState.state_running failed!" );
                 m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            }
-            else
-            {
-                RIDEHAL_DEBUG( "Started vidc" );
-                m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
             }
         }
     }
@@ -812,16 +806,11 @@ RideHalError_e VideoEncoder::Stop()
         }
         else
         {
-            ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
+            ret = WaitForState( RIDE_HAL_COMPONENT_STATE_READY );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
+                RIDEHAL_ERROR( "WaitForState.state_ready.fail!" );
                 m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            }
-            else
-            {
-                RIDEHAL_DEBUG( "Stopped vidc" );
-                m_state = RIDE_HAL_COMPONENT_STATE_READY;
             }
         }
     }
@@ -833,16 +822,71 @@ RideHalError_e VideoEncoder::Stop()
 RideHalError_e VideoEncoder::Deinit()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    int32_t rc = 0;
 
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
+    if ( ( RIDE_HAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDE_HAL_COMPONENT_STATE_ERROR != m_state ) )
     {
         ret = RIDE_HAL_ERROR_STATE;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( RIDE_HAL_COMPONENT_STATE_READY == m_state ) )
     {
         RIDEHAL_DEBUG( "Deiniting vidc" );
-        ret = Teardown();
+        RIDEHAL_DEBUG( "Releasing vidc resources!" );
+        m_state = RIDE_HAL_COMPONENT_STATE_DEINITIALIZING;
+        rc = device_ioctl( m_vidcEncoderData.pIoHandle, VIDC_IOCTL_RELEASE_RESOURCES, nullptr, 0,
+                           nullptr, 0 );
+        if ( VIDC_ERR_NONE != rc )
+        {
+            RIDEHAL_ERROR( "Releasing vidc resources failed! rc=0x%x", rc );
+            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+        else
+        {
+            ret = WaitForState( RIDE_HAL_COMPONENT_STATE_INITIAL );
+            if ( RIDE_HAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "WaitForState.state_initial.fail!" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
+        }
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        ret = FreeInputBuffer();
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        ret = FreeOutputBuffer();
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        if ( m_vidcEncoderData.pIoHandle )
+        {
+            device_close( m_vidcEncoderData.pIoHandle );
+        }
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        RIDEHAL_DEBUG( "Deinited component" );
+        ret = ComponentIF::Deinit();
+    }
+
+    if ( RIDE_HAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Something wrong happened in Deinit" );
+        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+    }
+    else
+    {
+        RIDEHAL_DEBUG( "Deinited done" );
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
     }
 
     return ret;
@@ -992,87 +1036,6 @@ RideHalError_e VideoEncoder::RegisterCallback( VideoEncoder_InFrameCallback_t in
         m_eventCb = eventCb;
         m_pAppPriv = pAppPriv;
     }
-    return ret;
-}
-
-RideHalError_e VideoEncoder::Teardown()
-{
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    int32_t rc = 0;
-
-    if ( VIDEO_ENCODER_STATE_EXECUTING ==
-         m_vidcEncoderData.state )   // call Teardown before vidc stop
-    {
-        RIDEHAL_DEBUG( "Stopping vidc!" );
-        m_state = RIDE_HAL_COMPONENT_STATE_STOPING;
-        rc = device_ioctl( m_vidcEncoderData.pIoHandle, VIDC_IOCTL_STOP, nullptr, 0, nullptr, 0 );
-        if ( VIDC_ERR_NONE != rc )
-        {
-            RIDEHAL_ERROR( "Stop vidc failed! rc=0x%x", rc );
-            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            ret = RIDE_HAL_ERROR_FAIL;
-        }
-        else
-        {
-            ret = WaitForState( VIDEO_ENCODER_STATE_IDLE );
-            if ( RIDE_HAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "WaitForState.state_idle.fail!" );
-                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            }
-            else
-            {
-                RIDEHAL_DEBUG( "Stopped vidc" );
-                m_state = RIDE_HAL_COMPONENT_STATE_READY;
-            }
-        }
-    }
-
-    if ( VIDEO_ENCODER_STATE_IDLE == m_vidcEncoderData.state )   // call Teardown after vidc stop
-    {
-        RIDEHAL_DEBUG( "Releasing vidc resources!" );
-        rc = device_ioctl( m_vidcEncoderData.pIoHandle, VIDC_IOCTL_RELEASE_RESOURCES, nullptr, 0,
-                           nullptr, 0 );
-        if ( VIDC_ERR_NONE != rc )
-        {
-            RIDEHAL_ERROR( "Releasing vidc resources failed! rc=0x%x", rc );
-            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            ret = RIDE_HAL_ERROR_FAIL;
-        }
-        else
-        {
-            ret = WaitForState( VIDEO_ENCODER_STATE_LOADED );
-            if ( RIDE_HAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "WaitForState.STATE_LOADED.fail!" );
-                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
-            }
-        }
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = FreeInputBuffer();
-        ret = FreeOutputBuffer();
-
-        if ( m_vidcEncoderData.pIoHandle )
-        {
-            device_close( m_vidcEncoderData.pIoHandle );
-        }
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        RIDEHAL_DEBUG( "Deinited component" );
-        ret = ComponentIF::Deinit();
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        RIDEHAL_DEBUG( "Deinited vidc" );
-        m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
-    }
-
     return ret;
 }
 
@@ -1315,28 +1278,84 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
             m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_ERR_HWFATAL:
+            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
             m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_ERR_CLIENTFATAL:
+            m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
             m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_RESP_START:
-            m_vidcEncoderData.state = VIDEO_ENCODER_STATE_EXECUTING;
+            if ( RIDE_HAL_COMPONENT_STATE_STATING == m_state )
+            {
+                RIDEHAL_DEBUG( "Started vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Started vidc from wrong state" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
             break;
         case VIDC_EVT_RESP_STOP:
-            m_vidcEncoderData.state = VIDEO_ENCODER_STATE_IDLE;
+            if ( RIDE_HAL_COMPONENT_STATE_STOPING == m_state )
+            {
+                RIDEHAL_DEBUG( "Stopped vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Stopped vidc from wrong state" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
             break;
         case VIDC_EVT_RESP_PAUSE:
-            m_vidcEncoderData.state = VIDEO_ENCODER_STATE_PAUSE;
+            if ( RIDE_HAL_COMPONENT_STATE_PAUSING == m_state )
+            {
+                RIDEHAL_DEBUG( "Paused vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_PAUSE;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Paused vidc from wrong state" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
             break;
         case VIDC_EVT_RESP_RESUME:
-            m_vidcEncoderData.state = VIDEO_ENCODER_STATE_EXECUTING;
+            if ( RIDE_HAL_COMPONENT_STATE_RESUMING == m_state )
+            {
+                RIDEHAL_DEBUG( "Resumed vidc" );
+                m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Resumed vidc from wrong state" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
             break;
         case VIDC_EVT_RESP_LOAD_RESOURCES:
-            m_vidcEncoderData.state = VIDEO_ENCODER_STATE_IDLE;
+            if ( RIDE_HAL_COMPONENT_STATE_INITIALIZING == m_state )
+            {
+                RIDEHAL_DEBUG( "Loaded vidc resources" );
+                m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Loaded vidc resources from wrong state" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
             break;
         case VIDC_EVT_RESP_RELEASE_RESOURCES:
-            m_vidcEncoderData.state = VIDEO_ENCODER_STATE_LOADED;
+            if ( RIDE_HAL_COMPONENT_STATE_DEINITIALIZING == m_state )
+            {
+                RIDEHAL_DEBUG( "Released vidc resources" );
+                m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Released vidc resources from wrong state" );
+                m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
+            }
             break;
         case VIDC_EVT_RELEASE_BUFFER_REFERENCE:
             m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
@@ -1523,12 +1542,12 @@ RideHalError_e VideoEncoder::SetDrvProperty( ioctl_session_t *pIoHandle,
     return ret;
 }
 
-RideHalError_e VideoEncoder::WaitForState( VideoEncoder_State_e expectedState )
+RideHalError_e VideoEncoder::WaitForState( RideHal_ComponentState_t expectedState )
 {
     int32_t counter = 0;
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    while ( ( m_vidcEncoderData.state != expectedState ) && ( RIDE_HAL_ERROR_NONE == ret ) )
+    while ( ( m_state != expectedState ) && ( RIDE_HAL_ERROR_NONE == ret ) )
     {
         MM_Timer_Sleep( 1 );
         counter++;
