@@ -175,6 +175,11 @@ private:
     /// @brief Generate qnn performance
     RideHalError_e GeneratePerf();
 
+    inline RideHal_TensorType_e SwitchFromQnnDataType( Qnn_DataType_t dataType );
+
+    inline Qnn_DataType_t SwitchToQnnDataType( RideHal_TensorType_e tensorType );
+
+
 private:
     static constexpr size_t CONTEXT_CONFIG_SIZE = 1;
     static constexpr size_t DMA_MEMINFO_MAP_SIZE = 2;

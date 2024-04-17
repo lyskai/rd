@@ -1,20 +1,5 @@
-//-----------------------------------------------------------------------------
-//
-// Qualcomm Technologies, Inc. Proprietary
-// (c) 2021-2024 Qualcomm Technologies, Inc. All rights reserved.
-//
-// All data and information contained in or disclosed by this document are
-// confidential and proprietary information of Qualcomm Technologies, Inc., and
-// all rights therein are expressly reserved. By accepting this material, the
-// recipient agrees that this material and the information contained therein
-// are held in confidence and in trust and will not be used, copied, reproduced
-// in whole or in part, nor its contents revealed in any manner to others
-// without the express written permission of Qualcomm Technologies, Inc.
-//
-// This software may be subject to U.S. and international export, re-export, or
-// transfer ("export") laws.  Diversion contrary to U.S. and international law
-// is strictly prohibited.
-//-----------------------------------------------------------------------------
+// Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+// Confidential & Proprietary.
 
 #include "ridehal/component/QnnRuntime.hpp"
 #include "DataUtil.hpp"
@@ -61,6 +46,7 @@ std::mutex QnnRuntime::s_DmaMemInfoMapLock[QnnRuntime::DMA_MEMINFO_MAP_SIZE];
 std::map<uint8_t *, QnnRuntime::DmaMemInfo_t>
         QnnRuntime::s_DmaMemInfoMap[QnnRuntime::DMA_MEMINFO_MAP_SIZE];
 uint64_t QnnRuntime::s_DmaMemInfoMapUseRef[QnnRuntime::DMA_MEMINFO_MAP_SIZE] = { 0, 0 };
+
 
 QnnRuntime::QnnRuntime() {}
 
@@ -679,71 +665,41 @@ RideHalError_e QnnRuntime::GetInputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_
         else
         {
 
-            for ( uint32_t i = 0; i < *pNum; ++i )
+            for ( uint32_t i = 0; ( i < *pNum ) && ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret );
+                  ++i )
             {
-                if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
+
+                RideHal_TensorProps_t tensorProp;
+                QnnRuntime_TensorInfo_t tensorInfo;
+                auto tensor = &m_GraphsInfo[0]->inputTensors[i];
+
+                pInfo[i].pName = QNN_TENSOR_GET_NAME( tensor );
+
+                size_t sz = 1;
+                auto rank = QNN_TENSOR_GET_RANK( tensor );
+                auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+                for ( uint32_t j = 0; j < rank; j++ )
                 {
-
-
-                    RideHal_TensorProps_t tensorProp;
-                    QnnRuntime_TensorInfo_t tensorInfo;
-                    auto tensor = &m_GraphsInfo[0]->inputTensors[i];
-
-                    auto name = QNN_TENSOR_GET_NAME( tensor );
-                    if ( nullptr != name )
-                    {
-                        pInfo[i].pName = name;
-                    }
-                    else
-                    {
-                        pInfo[i].pName = std::to_string( i ).c_str();
-                    }
-
-                    size_t sz = 1;
-                    auto rank = QNN_TENSOR_GET_RANK( tensor );
-                    auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
-                    for ( uint32_t j = 0; j < rank; j++ )
-                    {
-                        sz *= dimensions[j];
-                        tensorProp.dims[j] = dimensions[j];
-                    }
-                    tensorProp.numDims = rank;
-
-                    auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
-                    if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET ==
-                         quantizeParams.quantizationEncoding )
-                    {
-                        pInfo[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
-                        pInfo[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
-                    }
-                    else
-                    {
-                        RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported",
-                                      m_Name.c_str(), pInfo[i].pName,
-                                      quantizeParams.quantizationEncoding );
-                    }
-                    auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
-                    switch ( dataType )
-                    {
-                        case QNN_DATATYPE_UFIXED_POINT_8:
-                            tensorProp.type = RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT8;
-                            break;
-                        case QNN_DATATYPE_UFIXED_POINT_16:
-                            tensorProp.type = RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT16;
-                            break;
-                        case QNN_DATATYPE_FLOAT_32:
-                            tensorProp.type = RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_FLOAT32;
-                            break;
-                        default:
-                        {
-                            RIDEHAL_WARN( "%s: tensor data type: %d is not supported ",
-                                          m_Name.c_str(), (int) dataType );
-                            ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
-                            break;
-                        }
-                    }
-                    pInfo[i].properties = tensorProp;
+                    sz *= dimensions[j];
+                    tensorProp.dims[j] = dimensions[j];
                 }
+                tensorProp.numDims = rank;
+
+                auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
+                if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET == quantizeParams.quantizationEncoding )
+                {
+                    pInfo[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
+                    pInfo[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
+                }
+                else
+                {
+                    RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported",
+                                  m_Name.c_str(), pInfo[i].pName,
+                                  quantizeParams.quantizationEncoding );
+                }
+                const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
+                tensorProp.type = SwitchFromQnnDataType( dataType );
+                pInfo[i].properties = tensorProp;
             }
             return ret;
         }
@@ -773,69 +729,41 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32
         }
         else
         {
-            for ( uint32_t i = 0; i < *pNum; ++i )
+            for ( uint32_t i = 0; ( i < *pNum ) && ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret );
+                  ++i )
             {
-                if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
+
+                RideHal_TensorProps_t tensorProp;
+                QnnRuntime_TensorInfo_t tensorInfo;
+                auto tensor = &m_GraphsInfo[0]->outputTensors[i];
+
+                pInfo[i].pName = QNN_TENSOR_GET_NAME( tensor );
+
+                size_t sz = 1;
+                auto rank = QNN_TENSOR_GET_RANK( tensor );
+                auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+                for ( uint32_t j = 0; j < rank; j++ )
                 {
-                    RideHal_TensorProps_t tensorProp;
-                    QnnRuntime_TensorInfo_t tensorInfo;
-                    auto tensor = &m_GraphsInfo[0]->outputTensors[i];
-
-                    auto name = QNN_TENSOR_GET_NAME( tensor );
-                    if ( nullptr != name )
-                    {
-                        pInfo[i].pName = name;
-                    }
-                    else
-                    {
-                        pInfo[i].pName = std::to_string( i ).c_str();
-                    }
-
-                    size_t sz = 1;
-                    auto rank = QNN_TENSOR_GET_RANK( tensor );
-                    auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
-                    for ( uint32_t j = 0; j < rank; j++ )
-                    {
-                        sz *= dimensions[j];
-                        tensorProp.dims[j] = dimensions[j];
-                    }
-                    tensorProp.numDims = rank;
-
-                    auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
-                    if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET ==
-                         quantizeParams.quantizationEncoding )
-                    {
-                        pInfo[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
-                        pInfo[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
-                    }
-                    else
-                    {
-                        RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported",
-                                      m_Name.c_str(), pInfo[i].pName,
-                                      quantizeParams.quantizationEncoding );
-                    }
-                    auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
-                    switch ( dataType )
-                    {
-                        case QNN_DATATYPE_UFIXED_POINT_8:
-                            tensorProp.type = RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT8;
-                            break;
-                        case QNN_DATATYPE_UFIXED_POINT_16:
-                            tensorProp.type = RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT16;
-                            break;
-                        case QNN_DATATYPE_FLOAT_32:
-                            tensorProp.type = RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_FLOAT32;
-                            break;
-                        default:
-                        {
-                            RIDEHAL_WARN( "%s: tensor data type: %d is not supported ",
-                                          m_Name.c_str(), (int) dataType );
-                            ret = RideHalError_e::RIDE_HAL_ERROR_FAIL;
-                            break;
-                        }
-                    }
-                    pInfo[i].properties = tensorProp;
+                    sz *= dimensions[j];
+                    tensorProp.dims[j] = dimensions[j];
                 }
+                tensorProp.numDims = rank;
+
+                auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
+                if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET == quantizeParams.quantizationEncoding )
+                {
+                    pInfo[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
+                    pInfo[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
+                }
+                else
+                {
+                    RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported",
+                                  m_Name.c_str(), pInfo[i].pName,
+                                  quantizeParams.quantizationEncoding );
+                }
+                const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
+                tensorProp.type = SwitchFromQnnDataType( dataType );
+                pInfo[i].properties = tensorProp;
             }
         }
     }
@@ -992,20 +920,7 @@ RideHalError_e QnnRuntime::RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedB
             Qnn_MemDescriptor_t desc;
             desc.memShape.numDim = sharedBuffer.tensorProps.numDims;
             desc.memShape.dimSize = sharedBuffer.tensorProps.dims;
-            switch ( sharedBuffer.tensorProps.type )
-            {
-                case RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT8:
-                    desc.dataType = QNN_DATATYPE_UFIXED_POINT_8;
-                    break;
-                case RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_UINT16:
-                    desc.dataType = QNN_DATATYPE_UFIXED_POINT_16;
-                    break;
-                case RideHal_TensorType_e::RIDE_HAL_TENSOR_TYPE_FLOAT32:
-                    desc.dataType = QNN_DATATYPE_FLOAT_32;
-                    break;
-                default:
-                    break;
-            }
+            desc.dataType = SwitchToQnnDataType( sharedBuffer.tensorProps.type );
 
             int client = 0;   // NOTE: default is 0
             int extDomainId = get_extended_domains_id( domain, client );
@@ -1365,8 +1280,7 @@ RideHalError_e QnnRuntime::Deinit()
 
     RideHalError_e ret = RideHalError_e::RIDE_HAL_ERROR_NONE;
 
-    if ( ( RIDE_HAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state ) )
+    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RideHalError_e::RIDE_HAL_ERROR_STATE;
@@ -1482,6 +1396,11 @@ RideHalError_e QnnRuntime::Deinit()
         }
     }
 
+    if ( RideHalError_e::RIDE_HAL_ERROR_NONE == ret )
+    {
+        ret = ComponentIF::Deinit();
+    }
+
     return ret;
 }
 
@@ -1495,7 +1414,6 @@ RideHalError_e QnnRuntime::Start()
     }
     else
     {
-        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
         RIDEHAL_ERROR( "QnnRuntime component start failed due to wrong state!" );
         ret = RideHalError_e::RIDE_HAL_ERROR_STATE;
     }
@@ -1514,12 +1432,171 @@ RideHalError_e QnnRuntime::Stop()
     }
     else
     {
-        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
         RIDEHAL_ERROR( "QnnRuntime component stop failed due to wrong state!" );
         ret = RideHalError_e::RIDE_HAL_ERROR_STATE;
     }
 
     return ret;
+}
+
+inline RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType )
+{
+    RideHal_TensorType_e tensorType;
+    switch ( dataType )
+    {
+        case QNN_DATATYPE_INT_8:
+            tensorType = RIDEHAL_TENSOR_TYPE_INT_8;
+            break;
+
+        case QNN_DATATYPE_INT_16:
+            tensorType = RIDEHAL_TENSOR_TYPE_INT_16;
+            break;
+
+        case QNN_DATATYPE_INT_32:
+            tensorType = RIDEHAL_TENSOR_TYPE_INT_32;
+            break;
+
+        case QNN_DATATYPE_INT_64:
+            tensorType = RIDEHAL_TENSOR_TYPE_INT_64;
+            break;
+
+        case QNN_DATATYPE_UINT_8:
+            tensorType = RIDEHAL_TENSOR_TYPE_UINT_8;
+            break;
+
+        case QNN_DATATYPE_UINT_16:
+            tensorType = RIDEHAL_TENSOR_TYPE_UINT_16;
+            break;
+
+        case QNN_DATATYPE_UINT_32:
+            tensorType = RIDEHAL_TENSOR_TYPE_UINT_32;
+            break;
+
+        case QNN_DATATYPE_UINT_64:
+            tensorType = RIDEHAL_TENSOR_TYPE_UINT_64;
+            break;
+
+        case QNN_DATATYPE_FLOAT_16:
+            tensorType = RIDEHAL_TENSOR_TYPE_FLOAT_16;
+            break;
+
+        case QNN_DATATYPE_FLOAT_32:
+            tensorType = RIDEHAL_TENSOR_TYPE_FLOAT_32;
+            break;
+
+        case QNN_DATATYPE_FLOAT_64:
+            tensorType = RIDEHAL_TENSOR_TYPE_FLOAT_64;
+            break;
+
+        case QNN_DATATYPE_SFIXED_POINT_8:
+            tensorType = RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8;
+            break;
+
+        case QNN_DATATYPE_SFIXED_POINT_16:
+            tensorType = RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16;
+            break;
+
+        case QNN_DATATYPE_SFIXED_POINT_32:
+            tensorType = RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32;
+            break;
+
+        case QNN_DATATYPE_UFIXED_POINT_8:
+            tensorType = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8;
+            break;
+
+        case QNN_DATATYPE_UFIXED_POINT_16:
+            tensorType = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16;
+            break;
+
+        case QNN_DATATYPE_UFIXED_POINT_32:
+            tensorType = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32;
+            break;
+
+        default:
+            RIDEHAL_ERROR( "unsupported qnn data type: %d", (int) dataType );
+            break;
+    }
+    return tensorType;
+}
+
+inline Qnn_DataType_t QnnRuntime::SwitchToQnnDataType( RideHal_TensorType_e tensorType )
+{
+    Qnn_DataType_t dataType;
+    switch ( tensorType )
+    {
+        case RIDEHAL_TENSOR_TYPE_INT_8:
+            dataType = QNN_DATATYPE_INT_8;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_INT_16:
+            dataType = QNN_DATATYPE_INT_16;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_INT_32:
+            dataType = QNN_DATATYPE_INT_32;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_INT_64:
+            dataType = QNN_DATATYPE_INT_64;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UINT_8:
+            dataType = QNN_DATATYPE_UINT_8;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UINT_16:
+            dataType = QNN_DATATYPE_UINT_16;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UINT_32:
+            dataType = QNN_DATATYPE_UINT_32;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UINT_64:
+            dataType = QNN_DATATYPE_UINT_64;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_FLOAT_16:
+            dataType = QNN_DATATYPE_FLOAT_16;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_FLOAT_32:
+            dataType = QNN_DATATYPE_FLOAT_32;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_FLOAT_64:
+            dataType = QNN_DATATYPE_FLOAT_64;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8:
+            dataType = QNN_DATATYPE_SFIXED_POINT_8;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16:
+            dataType = QNN_DATATYPE_SFIXED_POINT_16;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32:
+            dataType = QNN_DATATYPE_SFIXED_POINT_32;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8:
+            dataType = QNN_DATATYPE_UFIXED_POINT_8;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16:
+            dataType = QNN_DATATYPE_UFIXED_POINT_16;
+            break;
+
+        case RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32:
+            dataType = QNN_DATATYPE_UFIXED_POINT_32;
+            break;
+
+        default:
+            RIDEHAL_ERROR( "unsupported ridehal tensor type: %d", (int) tensorType );
+            break;
+    }
+    return dataType;
 }
 
 }   // namespace component

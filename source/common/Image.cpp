@@ -397,7 +397,7 @@ RideHalError_e RideHal_SharedBuffer::ImageToTensor( RideHal_SharedBuffer *pShare
         pSharedBuffer->buffer = this->buffer;
         pSharedBuffer->offset = this->offset;
         pSharedBuffer->type = RIDE_HAL_BUFFER_TYPE_TENSOR;
-        pSharedBuffer->tensorProps.type = RIDE_HAL_TENSOR_TYPE_UINT8;
+        pSharedBuffer->tensorProps.type = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8;
         pSharedBuffer->tensorProps.numDims = 4;
         pSharedBuffer->tensorProps.dims[0] = this->imgProps.batchSize;
         pSharedBuffer->tensorProps.dims[1] = this->imgProps.height;

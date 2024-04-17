@@ -237,7 +237,9 @@ TEST( Buffer, SANITY_CompressedImageAllocateByProps )
 TEST( Buffer, SANITY_TensorAllocate )
 {
     RideHal_SharedBuffer_t sharedBuffer;
-    RideHal_TensorProps_t tensorProp = { RIDE_HAL_TENSOR_TYPE_UINT8, { 1, 128, 128, 10 }, 4 };
+    RideHal_TensorProps_t tensorProp = { RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
+                                         { 1, 128, 128, 10 },
+                                         4 };
 
     auto ret = sharedBuffer.Allocate( &tensorProp );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );

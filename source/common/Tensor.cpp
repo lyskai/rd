@@ -7,15 +7,29 @@ namespace ridehal
 {
 namespace common
 {
+#define SIZE_OF_FLOAT16 2
 static uint32_t s_rideHalTensorTypeToDataSize[RIDE_HAL_TENSOR_TYPE_MAX] = {
-        sizeof( int8_t ),   /* RIDE_HAL_TEBSOR_TYPE_INT8 */
-        sizeof( int16_t ),  /* RIDE_HAL_TEBSOR_TYPE_INT16 */
-        sizeof( int32_t ),  /* RIDE_HAL_TEBSOR_TYPE_INT32 */
-        sizeof( uint8_t ),  /* RIDE_HAL_TEBSOR_TYPE_UINT8 */
-        sizeof( uint16_t ), /* RIDE_HAL_TEBSOR_TYPE_UINT16 */
-        sizeof( uint32_t ), /* RIDE_HAL_TEBSOR_TYPE_UINT32 */
-        2,                  /* RIDE_HAL_TEBSOR_TYPE_FLOAT16 */
-        sizeof( float )     /* RIDE_HAL_TEBSOR_TYPE_FLOAT32 */
+        sizeof( int8_t ),  /* RIDEHAL_TENSOR_TYPE_INT_8 */
+        sizeof( int16_t ), /* RIDEHAL_TENSOR_TYPE_INT_16 */
+        sizeof( int32_t ), /* RIDEHAL_TENSOR_TYPE_INT_32 */
+        sizeof( int64_t ), /* RIDEHAL_TENSOR_TYPE_INT_64 */
+
+        sizeof( uint8_t ),  /* RIDEHAL_TENSOR_TYPE_UINT_8 */
+        sizeof( uint16_t ), /* RIDEHAL_TENSOR_TYPE_UINT_16 */
+        sizeof( uint32_t ), /* RIDEHAL_TENSOR_TYPE_UINT_32 */
+        sizeof( uint64_t ), /* RIDEHAL_TENSOR_TYPE_UINT_64 */
+
+        SIZE_OF_FLOAT16,  /* RIDEHAL_TENSOR_TYPE_FLOAT_16 */
+        sizeof( float ),  /* RIDEHAL_TENSOR_TYPE_FLOAT_32 */
+        sizeof( double ), /* RIDEHAL_TENSOR_TYPE_FLOAT_64 */
+
+        sizeof( int8_t ),  /* RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8 */
+        sizeof( int16_t ), /* RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16 */
+        sizeof( int32_t ), /* RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32 */
+
+        sizeof( uint8_t ),  /* RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8 */
+        sizeof( uint16_t ), /* RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16 */
+        sizeof( uint32_t )  /* RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32 */
 };
 
 RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_TensorProps_t *pTensorProps,
