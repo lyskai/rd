@@ -3,7 +3,6 @@
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/bld/include )
-list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/externals/include )
 
 add_library(FadasIfaceStub SHARED)
 target_sources(FadasIfaceStub PRIVATE FadasIface.c FadasIface.h)
