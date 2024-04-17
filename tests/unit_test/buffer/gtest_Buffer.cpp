@@ -165,6 +165,51 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 }
 
+TEST( Buffer, SANITY_ImageAllocateRGBByProps )
+{
+    RideHal_SharedBuffer_t sharedBufferAll;
+    RideHal_SharedBuffer_t sharedBufferMiddle;
+    RideHal_ImageProps_t imgProp;
+
+    imgProp.format = RIDE_HAL_IMAGE_FORMAT_RGB888;
+    imgProp.batchSize = 3;
+    imgProp.width = 1024;
+    imgProp.height = 768;
+    imgProp.stride[0] = 1024 * 3;
+    imgProp.actualHeight[0] = 768;
+    imgProp.numPlanes = 1;
+    imgProp.extraPadding = 0;
+
+    // testing allocated a batched RGB image
+    auto ret = sharedBufferAll.Allocate( &imgProp );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_NE( nullptr, sharedBufferAll.data() );
+    ASSERT_EQ( 0, sharedBufferAll.offset );
+    std::generate( (uint8_t *) sharedBufferAll.data(),
+                   (uint8_t *) sharedBufferAll.data() + sharedBufferAll.size, std::rand );
+    ASSERT_EQ( sharedBufferAll.buffer.size, sharedBufferAll.size );
+    ASSERT_EQ( 3 * 1024 * 768 * 3, sharedBufferAll.size );
+    ASSERT_EQ( 1, sharedBufferAll.imgProps.numPlanes );
+    ASSERT_EQ( 3, sharedBufferAll.imgProps.batchSize );
+    ASSERT_EQ( 1024 * 3, sharedBufferAll.imgProps.stride[0] );
+    ASSERT_EQ( 768, sharedBufferAll.imgProps.actualHeight[0] );
+
+    /* get the RGB image in the middle of sharedBufferAll */
+    ret = sharedBufferAll.GetSharedBuffer( &sharedBufferMiddle, 1, 1 );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( ( (uint8_t *) sharedBufferAll.data() ) + 1024 * 768 * 3, sharedBufferMiddle.data() );
+    ASSERT_EQ( 1024 * 768 * 3, sharedBufferMiddle.offset );
+    ASSERT_EQ( sharedBufferAll.buffer.size / 3, sharedBufferMiddle.size );
+    ASSERT_EQ( 1024 * 768 * 3, sharedBufferMiddle.size );
+    ASSERT_EQ( 1, sharedBufferMiddle.imgProps.numPlanes );
+    ASSERT_EQ( 1, sharedBufferMiddle.imgProps.batchSize );
+    ASSERT_EQ( 1024 * 3, sharedBufferMiddle.imgProps.stride[0] );
+    ASSERT_EQ( 768, sharedBufferMiddle.imgProps.actualHeight[0] );
+
+    ret = sharedBufferAll.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+}
+
 TEST( Buffer, SANITY_CompressedImageAllocateByProps )
 {
     RideHal_SharedBuffer_t sharedBuffer;
