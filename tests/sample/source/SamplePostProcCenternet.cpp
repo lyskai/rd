@@ -3,7 +3,8 @@
 
 
 #include "ridehal/sample/SamplePostProcCenternet.hpp"
-
+#include <algorithm>
+#include <assert.h>
 
 namespace ridehal
 {
