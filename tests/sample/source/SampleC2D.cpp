@@ -196,9 +196,11 @@ void SampleC2D::ThreadMain()
                     inputs.push_back( frame.buffer->sharedBuffer );
                 }
 
-                ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
+                PROFILER_BEGIN();
+		ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDE_HAL_ERROR_NONE == ret )
                 {
+		    PROFILER_END();
                     CamFrames_t outFrames;
                     CamFrame_t frame;
                     frame.buffer = buffer;
@@ -228,6 +230,8 @@ RideHalError_e SampleC2D::Stop()
     }
 
     ret = m_c2d.Stop();
+
+    PROFILER_SHOW();
 
     return ret;
 }
