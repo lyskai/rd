@@ -37,19 +37,17 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     CamFrames_t frames;
     CamFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
-    VideoEncoder_OutputFrame_t *pEncFrame = new VideoEncoder_OutputFrame_t;
 
     pSharedBuffer->sharedBuffer = pOutputFrame->sharedBuffer;
-    *pEncFrame = *pOutputFrame;
-    pSharedBuffer->pubHandle = ( uint64_t )(uintptr_t) pEncFrame;
+    pSharedBuffer->pubHandle = 0;
 
     PROFILER_BEGIN();
     PROFILER_END();
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
-        VideoEncoder_OutputFrame_t *pEncFrame =
-                (VideoEncoder_OutputFrame_t *) (void *) pSharedBuffer->pubHandle;
-        m_encoder.SubmitOutputFrame( pEncFrame );
-        delete pEncFrame;
+        VideoEncoder_OutputFrame_t outFrame;
+        outFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
+        outFrame.pAppMarkData = nullptr;
+        m_encoder.SubmitOutputFrame( &outFrame );
         delete pSharedBuffer;
     } );
 
