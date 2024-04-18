@@ -110,6 +110,16 @@ RideHalError_e SampleC2D::ParseConfig( SampleConfig_t &config )
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
+    bool bCache = Get( config, "cache", true );
+    if ( false == bCache )
+    {
+        m_bufferFlags = 0;
+    }
+    else
+    {
+        m_bufferFlags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA;
+    }
+
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
     {
@@ -141,7 +151,7 @@ RideHalError_e SampleC2D::Init( std::string name, SampleConfig_t &config )
     {
         ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
                                 m_outputWidth, m_outputHeight, m_outputFormat,
-                                RIDE_HAL_BUFFER_USAGE_GPU );
+                                RIDE_HAL_BUFFER_USAGE_GPU, m_bufferFlags );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -197,10 +207,10 @@ void SampleC2D::ThreadMain()
                 }
 
                 PROFILER_BEGIN();
-		ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
+                ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDE_HAL_ERROR_NONE == ret )
                 {
-		    PROFILER_END();
+                    PROFILER_END();
                     CamFrames_t outFrames;
                     CamFrame_t frame;
                     frame.buffer = buffer;

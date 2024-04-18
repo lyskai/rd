@@ -91,6 +91,7 @@ The command line template example:
 | roi_widthX    | false    | int       | =output_width  | The ROI width for input X |
 | roi_heightX   | false    | int       | =output_height | The ROI height for input X |
 | pool_size     | false    | int       | 4       | the image memory pool size |
+| cache         | false    | bool      | true    | use cached memroy or not for the image memory |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
 

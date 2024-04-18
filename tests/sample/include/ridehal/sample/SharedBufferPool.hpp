@@ -37,20 +37,24 @@ public:
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number, uint32_t width,
                          uint32_t height, RideHal_ImageFormat_e format,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
+                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          uint32_t batchSize, uint32_t width, uint32_t height,
                          RideHal_ImageFormat_e format,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
+                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_ImageProps_t &imageProps,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
+                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_TensorProps_t &tensorProps,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT );
+                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
 
 private:
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number );

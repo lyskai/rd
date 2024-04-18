@@ -52,6 +52,7 @@ private:
     uint32_t m_outputWidth;
     uint32_t m_outputHeight;
     uint32_t m_poolSize = 4;
+    RideHal_BufferFlags_t m_bufferFlags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA;
 
     std::string m_inputTopicName;
     std::string m_outputTopicName;

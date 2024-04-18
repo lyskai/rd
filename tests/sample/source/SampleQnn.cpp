@@ -26,6 +26,11 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
     }
 
     m_config.backendType = Get( config, "processor", RIDE_HAL_PROCESSOR_HTP0 );
+    if ( RIDE_HAL_PROCESSOR_MAX == m_config.backendType )
+    {
+        RIDEHAL_ERROR( "invalid processor %s\n", Get( config, "processor", "" ).c_str() );
+        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+    }
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
@@ -76,7 +81,6 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
     {
         ret = m_qnn.GetInputInfo( nullptr, &inputNum );
     }
-    printf( "inputNum: %d\n", inputNum );
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
@@ -90,7 +94,6 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
     {
         ret = m_qnn.GetOutputInfo( nullptr, &outputNum );
     }
-    printf( "outputNum: %d\n", outputNum );
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {

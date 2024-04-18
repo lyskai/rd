@@ -81,14 +81,15 @@ void SharedBufferPool::Deleter( SharedBuffer_t *ptrToDelete )
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        uint32_t width, uint32_t height,
-                                       RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage )
+                                       RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage,
+                                       RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
-        ret = sharedBuffer.Allocate( width, height, format, usage );
+        ret = sharedBuffer.Allocate( width, height, format, usage, flags );
         RIDEHAL_DEBUG( "%s image[%u] %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
                        m_name.c_str(), width, height, idx, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
@@ -104,14 +105,15 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        uint32_t batchSize, uint32_t width, uint32_t height,
-                                       RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage )
+                                       RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage,
+                                       RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
-        ret = sharedBuffer.Allocate( batchSize, width, height, format, usage );
+        ret = sharedBuffer.Allocate( batchSize, width, height, format, usage, flags );
         RIDEHAL_DEBUG( "%s image[%u] %u %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
                        m_name.c_str(), batchSize, width, height, idx, sharedBuffer.size,
                        sharedBuffer.data(), sharedBuffer.buffer.dmaHandle, ret );
@@ -127,14 +129,14 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        RideHal_ImageProps_t &imageProps,
-                                       RideHal_BufferUsage_e usage )
+                                       RideHal_BufferUsage_e usage, RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
-        ret = sharedBuffer.Allocate( &imageProps, usage );
+        ret = sharedBuffer.Allocate( &imageProps, usage, flags );
         RIDEHAL_DEBUG( "%s image[%u] allocated with size=%u data=%p handle=%llu ret=%d\n",
                        m_name.c_str(), idx, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
@@ -150,14 +152,14 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        RideHal_TensorProps_t &tensorProps,
-                                       RideHal_BufferUsage_e usage )
+                                       RideHal_BufferUsage_e usage, RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = Init( name, level, number );
 
     for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
-        ret = sharedBuffer.Allocate( &tensorProps, usage );
+        ret = sharedBuffer.Allocate( &tensorProps, usage, flags );
         RIDEHAL_DEBUG( "%s tensor[%u] allocated with size=%u data=%p handle=%llu ret=%d\n",
                        m_name.c_str(), idx, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
