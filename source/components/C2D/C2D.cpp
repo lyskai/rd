@@ -202,6 +202,11 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
         ret = RegisterOutputBuffers( pOutput, 1 );
     }
 
+    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
+    {
+        ret = RIDE_HAL_ERROR_STATE;
+    }
+
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < m_numOfInputs; i++ )
@@ -397,12 +402,21 @@ RideHalError_e C2D::DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInput
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
-    for ( size_t i = 0; i < numOfInputBuffers; i++ )
+    if ( numOfInputBuffers > m_inputBufferSurfaceMap.size() )
     {
-        bufferAddr = pInputBuffer[i].data();
-        if ( m_inputBufferSurfaceMap.find( bufferAddr ) != m_inputBufferSurfaceMap.end() )
+        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        RIDEHAL_ERROR( "Number of deregister buffers greater than registered buffers " );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        for ( size_t i = 0; i < numOfInputBuffers; i++ )
         {
-            m_inputBufferSurfaceMap.erase( bufferAddr );
+            bufferAddr = pInputBuffer[i].data();
+            if ( m_inputBufferSurfaceMap.find( bufferAddr ) != m_inputBufferSurfaceMap.end() )
+            {
+                m_inputBufferSurfaceMap.erase( bufferAddr );
+            }
         }
     }
 
@@ -417,14 +431,23 @@ RideHalError_e C2D::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutp
     void *bufferAddr = nullptr;
     uint32_t outputSize = pOutputBuffer->size / pOutputBuffer->imgProps.batchSize;
 
-    for ( size_t i = 0; i < numOfOutputBuffers; i++ )
+    if ( numOfOutputBuffers > m_outputBufferSurfaceMap.size() )
     {
-        for ( size_t k = 0; k < m_numOfInputs; k++ )
+        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        RIDEHAL_ERROR( "Number of deregister buffers greater than registered buffers " );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        for ( size_t i = 0; i < numOfOutputBuffers; i++ )
         {
-            bufferAddr = (void *) ( (uintptr_t) pOutputBuffer[i].data() + k * outputSize );
-            if ( m_outputBufferSurfaceMap.find( bufferAddr ) != m_outputBufferSurfaceMap.end() )
+            for ( size_t k = 0; k < m_numOfInputs; k++ )
             {
-                m_outputBufferSurfaceMap.erase( bufferAddr );
+                bufferAddr = (void *) ( (uintptr_t) pOutputBuffer[i].data() + k * outputSize );
+                if ( m_outputBufferSurfaceMap.find( bufferAddr ) != m_outputBufferSurfaceMap.end() )
+                {
+                    m_outputBufferSurfaceMap.erase( bufferAddr );
+                }
             }
         }
     }
@@ -501,7 +524,9 @@ RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
-        RIDEHAL_ERROR( "Failed to create YUV surface, c2dStatus wrong\n" );
+        RIDEHAL_ERROR( "Failed to create %s YUV surface, c2dStatus wrong",
+                       isSource ? "source" : "target" );
+        RIDEHAL_ERROR( "format: %d, width: %u, height: %u", (int) format, width, height );
     }
 
     return ret;
@@ -528,7 +553,10 @@ RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, RideHal_ImageFormat_e
 
     if ( C2D_STATUS_OK != c2dStatus )
     {
-        RIDEHAL_ERROR( "Failed to create RGB surface, c2dStatus wrong\n" );
+        ret = RIDE_HAL_ERROR_FAIL;
+        RIDEHAL_ERROR( "Failed to create %s RGB surface, c2dStatus wrong",
+                       isSource ? "source" : "target" );
+        RIDEHAL_ERROR( "format: %d, width: %u, height: %u", (int) format, width, height );
     }
 
     return ret;
@@ -536,7 +564,7 @@ RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, RideHal_ImageFormat_e
 
 uint32_t C2D::GetC2DFormatType( RideHal_ImageFormat_e format )
 {
-    uint32_t c2dFormat = (uint32_t) -1;
+    uint32_t c2dFormat = (uint32_t) RIDE_HAL_IMAGE_FORMAT_MAX;
     switch ( format )
     {
         case RIDE_HAL_IMAGE_FORMAT_UYVY:
@@ -555,8 +583,10 @@ uint32_t C2D::GetC2DFormatType( RideHal_ImageFormat_e format )
             c2dFormat = C2D_RGB_FORMAT( C2D_COLOR_FORMAT_888_RGB );
             break;
         default:
+            RIDEHAL_ERROR( "Unsupported C2D image format" );
             break;
     }
+
     return c2dFormat;
 }
 

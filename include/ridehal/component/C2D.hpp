@@ -137,3 +137,4 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDE_HAL_C2D_HPP_
+
