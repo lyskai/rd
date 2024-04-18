@@ -84,6 +84,8 @@ public:
                                       uint32_t inputWidth, uint32_t inputHeight, FadasROI_t ROI );
     RideHalError_e RemapRun( const RideHal_SharedBuffer_t *inputs,
                              const RideHal_SharedBuffer_t *outputs );
+    RideHalError_e DestroyWorkers();
+    RideHalError_e DestroyMap();
 
 private:
     RideHalError_e RemapRunCPU( const RideHal_SharedBuffer_t *inputs,

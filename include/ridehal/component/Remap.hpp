@@ -72,7 +72,7 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Register buffer for remap
-    /// @param pBuffer a list of buffers to be registeer
+    /// @param pBuffers a list of buffers to be registeer
     /// @param numBuffers number of buffers
     /// @param bufferType buffer type, could be IN, OUT, INOUT
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
@@ -80,7 +80,7 @@ public:
                            FadasBufType_e bufferType );
 
     /// @brief Deregister buffer for remap
-    /// @param pBuffer a list of buffers to be deregister
+    /// @param pBuffers a list of buffers to be deregister
     /// @param numBuffers number of buffers
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e DeregBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
@@ -100,11 +100,10 @@ public:
     /// @brief execute
     /// @param pInputs the input shared buffers
     /// @param numInputs the number of the input shared buffers
-    /// @param pOutputs the input shared buffers
-    /// @param numOutputs the number of the output shared buffers
+    /// @param pOutput the output shared buffers
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
-                            const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs = 1 );
+                            const RideHal_SharedBuffer_t *pOutput );
 
 private:
     FadasRemap m_fadasRemapObj;

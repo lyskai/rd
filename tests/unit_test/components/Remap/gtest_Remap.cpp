@@ -87,13 +87,13 @@ TEST( Remap, SANITY_RemapGeneral )
     }
 
 
-    RideHal_SharedBuffer_t outputs[1];
-    ret = outputs[0].Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
-                               RemapConfig.outputHeight, RemapConfig.outputFormat );
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
+                           RemapConfig.outputHeight, RemapConfig.outputFormat );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     size_t outputSize = RemapConfig.outputWidth * RemapConfig.outputHeight * 3;
-    uint8_t *outputData = (uint8_t *) outputs[0].data();
+    uint8_t *outputData = (uint8_t *) output.data();
 
     ret = RemapObj.Init( pName, pRemapConfig );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
@@ -104,14 +104,14 @@ TEST( Remap, SANITY_RemapGeneral )
     ret = RemapObj.RegBuf( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = RemapObj.RegBuf( outputs, 1, FADAS_BUF_TYPE_OUT );
+    ret = RemapObj.RegBuf( &output, 1, FADAS_BUF_TYPE_OUT );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     uint32_t times = 1;
     auto start = std::chrono::high_resolution_clock::now();
     for ( int i = 0; i < times; i++ )
     {
-        ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, outputs, 1 );
+        ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );
     }
     auto end = std::chrono::high_resolution_clock::now();
     double duration_ms = std::chrono::duration<double, std::milli>( end - start ).count();
@@ -121,7 +121,7 @@ TEST( Remap, SANITY_RemapGeneral )
     ret = RemapObj.DeregBuf( inputs, RemapConfig.numOfInputs );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = RemapObj.DeregBuf( outputs, 1 );
+    ret = RemapObj.DeregBuf( &output, 1 );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     printf( "outputData is: \n" );

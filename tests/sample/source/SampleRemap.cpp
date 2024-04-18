@@ -268,7 +268,7 @@ void SampleRemap::ThreadMain()
                 ret = SampleIF::Lock();
                 locked = ( RIDE_HAL_ERROR_NONE == ret );
                 PROFILER_BEGIN();
-                ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer, 1 );
+                ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDE_HAL_ERROR_NONE == ret )
                 {
                     PROFILER_END();

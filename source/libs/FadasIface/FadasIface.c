@@ -1,9 +1,5 @@
 #ifndef _FADASIFACE_STUB_H
 #define _FADASIFACE_STUB_H
-/**=============================================================================
-Copyright (c) 2020 QUALCOMM Technologies Incorporated.
-All Rights Reserved Qualcomm Proprietary
-=============================================================================**/
 #include "FadasIface.h"
 #ifndef _QAIC_ENV_H
 #define _QAIC_ENV_H

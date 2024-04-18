@@ -1,7 +1,6 @@
-/**=============================================================================
-Copyright (c) 2020 QUALCOMM Technologies Incorporated.
-All Rights Reserved Qualcomm Proprietary
-=============================================================================**/
+// Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+// Confidential & Proprietary.
+
 #ifndef FADAS_INTERFACE_IDL
 #define FADAS_INTERFACE_IDL
 #include "AEEStdDef.idl"

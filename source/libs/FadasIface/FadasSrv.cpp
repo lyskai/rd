@@ -235,20 +235,8 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
         auto it = memMap.find( pBuffer->data() );
         if ( it == memMap.end() )
         {
-            if ( ( RIDE_HAL_PROCESSOR_CPU == m_processor ) ||
-                 ( RIDE_HAL_PROCESSOR_GPU == m_processor ) )
-            {
-                for ( int i = 0; i < batch; i++ )
-                {
-
-                    (void) FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
-                                        sizeOne );
-                }
-                fd = 1;   // virtual fd for CPU&GPU pipeline, indicates that the register is
-                          // successful, would not be really used.
-            }
-            else if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-                      ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+            if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
             {
                 int extDomainId = 0;
                 int domain = CDSP_DOMAIN_ID;
@@ -319,6 +307,17 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
                     fd = -1;
                 }
             }
+            else
+            {
+                for ( int i = 0; i < batch; i++ )
+                {
+                    (void) FadasRegBuf( bufferType,
+                                        (uint8_t *) pBuffer->data() + offset + sizeOne * i,
+                                        sizeOne );
+                }
+                fd = 1;   // virtual fd for CPU&GPU pipeline, indicates that the register is
+                          // successful, would not be really used.
+            }
             memMap[ptr] = { fd, size, offset, batch, ptr, sizeOne };
         }
         else
@@ -382,17 +381,9 @@ void FadasSrv::DeregBuf( void *pBuffer )
             void *ptr = it->second.ptr;
             size_t sizeOne = it->second.sizeOne;
             memMap.erase( it );
-            if ( ( RIDE_HAL_PROCESSOR_CPU == m_processor ) ||
-                 ( RIDE_HAL_PROCESSOR_GPU == m_processor ) )
-            {
-                for ( int i = 0; i < batch; i++ )
-                {
-                    FadasDeregBuf( (uint8_t *) pBuffer + sizeOne * i );
-                }
-            }
 
-            else if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-                      ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+            if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
             {
                 int extDomainId = 0;
                 int domain = CDSP_DOMAIN_ID;
@@ -406,6 +397,13 @@ void FadasSrv::DeregBuf( void *pBuffer )
                 FadasIface_munmap( handle64, fd, (uint32_t) size );
                 fastrpc_munmap( extDomainId, fd, ptr, size );
                 remote_register_buf_v2( extDomainId, ptr, size, -1 );
+            }
+            else
+            {
+                for ( int i = 0; i < batch; i++ )
+                {
+                    FadasDeregBuf( (uint8_t *) pBuffer + sizeOne * i );
+                }
             }
         }
     }
@@ -750,7 +748,7 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
 }
 
 RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
-                                        const RideHal_SharedBuffer_t *outputs )
+                                        const RideHal_SharedBuffer_t *output )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
@@ -768,7 +766,6 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             break;
         }
     }
-    const RideHal_SharedBuffer_t *output = &outputs[0];
     dstFd = RegBuf( output, FADAS_BUF_TYPE_OUT );
     if ( dstFd < 0 )
     {
@@ -782,7 +779,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
         for ( uint32_t inputId = 0; inputId < m_numOfInputs; inputId++ )
         {
             uint8_t *pSrc = (uint8_t *) inputs[inputId].data();
-            uint8_t *pDst = (uint8_t *) outputs[0].data() + inputId * outputSize;
+            uint8_t *pDst = (uint8_t *) output->data() + inputId * outputSize;
 
             FadasImage_t srcImg;
             srcImg.props.width = inputs[inputId].imgProps.width;
@@ -816,13 +813,13 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             srcImg.bAllocated = false;
 
             FadasImage_t rgbImg;
-            rgbImg.props.width = outputs[0].imgProps.width;
-            rgbImg.props.height = outputs[0].imgProps.height;
+            rgbImg.props.width = output->imgProps.width;
+            rgbImg.props.height = output->imgProps.height;
             rgbImg.props.format = FADAS_IMAGE_FORMAT_RGB888;
-            rgbImg.props.numPlanes = outputs[0].imgProps.numPlanes;
-            for ( int i = 0; i < outputs[0].imgProps.numPlanes; i++ )
+            rgbImg.props.numPlanes = output->imgProps.numPlanes;
+            for ( int i = 0; i < output->imgProps.numPlanes; i++ )
             {
-                rgbImg.props.stride[i] = outputs[0].imgProps.stride[i];
+                rgbImg.props.stride[i] = output->imgProps.stride[i];
             }
             rgbImg.plane[0] = pDst;
             rgbImg.bAllocated = false;
@@ -858,7 +855,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
 }
 
 RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
-                                        const RideHal_SharedBuffer_t *outputs )
+                                        const RideHal_SharedBuffer_t *output )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
@@ -876,7 +873,6 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
             break;
         }
     }
-    const RideHal_SharedBuffer_t *output = &outputs[0];
     dstFd = RegBuf( output, FADAS_BUF_TYPE_OUT );
     if ( dstFd < 0 )
     {
@@ -930,13 +926,13 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
     }
 
     FadasIface_FadasImgProps_t dstImgProp;
-    dstImgProp.width = outputs[0].imgProps.width;
-    dstImgProp.height = outputs[0].imgProps.height;
+    dstImgProp.width = output->imgProps.width;
+    dstImgProp.height = output->imgProps.height;
     dstImgProp.format = FADAS_IMAGE_FORMAT_RGB888_NSP;
-    dstImgProp.numPlanes = outputs[0].imgProps.numPlanes;
-    for ( int i = 0; i < outputs[0].imgProps.numPlanes; i++ )
+    dstImgProp.numPlanes = output->imgProps.numPlanes;
+    for ( int i = 0; i < output->imgProps.numPlanes; i++ )
     {
-        dstImgProp.stride[i] = outputs[0].imgProps.stride[i];
+        dstImgProp.stride[i] = output->imgProps.stride[i];
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
@@ -966,19 +962,17 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
                     m_numOfInputs, offsets, m_numOfInputs, srcImgProps, m_numOfInputs, dstFd,
                     outputSize, &dstImgProp, ROIs, m_numOfInputs, normlz, 3 );
         }
-        printf( "1 ret = %d \n", ret );
         if ( retV != AEE_SUCCESS )
         {
             RIDEHAL_ERROR( "Remap888 failed: ret = 0x%x", retV );
             ret = RIDE_HAL_ERROR_FAIL;
         }
-        printf( "2 ret = %d \n", ret );
     }
     return ret;
 }
 
 RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
-                                     const RideHal_SharedBuffer_t *outputs )
+                                     const RideHal_SharedBuffer_t *output )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
@@ -986,33 +980,33 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
     {
         RIDEHAL_ERROR( "NULL pointer for input buffers!" );
     }
-    else if ( nullptr == outputs )
+    else if ( nullptr == output )
     {
-        RIDEHAL_ERROR( "NULL pointer for output buffers!" );
+        RIDEHAL_ERROR( "NULL pointer for output buffer!" );
     }
     else
     {
         for ( uint32_t inputId = 0; inputId < m_numOfInputs; inputId++ )
         {
-            if ( m_inputFormats[inputId] != inputs[0].imgProps.format )
+            if ( m_inputFormats[inputId] != inputs[inputId].imgProps.format )
             {
                 RIDEHAL_ERROR( "Format in input buffer and config not match!" );
                 ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
-            else if ( m_inputWidths[inputId] != inputs[0].imgProps.width )
+            else if ( m_inputWidths[inputId] != inputs[inputId].imgProps.width )
             {
                 RIDEHAL_ERROR( "Width in input buffer and config not match!" );
                 ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
-            else if ( m_inputHeights[inputId] != inputs[0].imgProps.height )
+            else if ( m_inputHeights[inputId] != inputs[inputId].imgProps.height )
             {
                 RIDEHAL_ERROR( "Height in input buffer and config not match!" );
                 ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
-            else if ( 1 != inputs[0].imgProps.batchSize )
+            else if ( 1 != inputs[inputId].imgProps.batchSize )
             {
                 RIDEHAL_ERROR( "Batch in input buffer must be 1!" );
                 ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
@@ -1020,22 +1014,22 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
             }
         }
 
-        if ( m_outputFormat != outputs[0].imgProps.format )
+        if ( m_outputFormat != output->imgProps.format )
         {
             RIDEHAL_ERROR( "Format in output buffer and config not match!" );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
-        else if ( m_outputWidth != outputs[0].imgProps.width )
+        else if ( m_outputWidth != output->imgProps.width )
         {
             RIDEHAL_ERROR( "Width in output buffer and config not match!" );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
-        else if ( m_outputHeight != outputs[0].imgProps.height )
+        else if ( m_outputHeight != output->imgProps.height )
         {
             RIDEHAL_ERROR( "Height in output buffer and config not match!" );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
         }
-        else if ( m_numOfInputs != outputs[0].imgProps.batchSize )
+        else if ( m_numOfInputs != output->imgProps.batchSize )
         {
             RIDEHAL_ERROR( "Batch in output buffer and config not match!" );
             ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
@@ -1046,12 +1040,58 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
             if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
                  ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
             {
-                ret = RemapRunDSP( inputs, outputs );
+                ret = RemapRunDSP( inputs, output );
             }
             else
             {
-                ret = RemapRunCPU( inputs, outputs );
+                ret = RemapRunCPU( inputs, output );
             }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e FadasRemap::DestroyWorkers()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) || ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+    {
+        for ( int i = 0; i < m_numOfInputs; i++ )
+        {
+            FadasIface_FadasRemap_DestroyWorkers(
+                    0, m_workerPtrs[i] );   // handle not really need for DestroyWorkers
+        }
+    }
+    else
+    {
+        for ( int i = 0; i < m_numOfInputs; i++ )
+        {
+            FadasRemap_DestroyWorkers( reinterpret_cast<void *>( m_workerPtrs[i] ) );
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e FadasRemap::DestroyMap()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) || ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+    {
+        for ( int i = 0; i < m_numOfInputs; i++ )
+        {
+            FadasIface_FadasRemap_DestroyMap(
+                    0, m_remapPtrs[i] );   // handle not really need for DestroyMap
+        }
+    }
+    else
+    {
+        for ( int i = 0; i < m_numOfInputs; i++ )
+        {
+            FadasRemap_DestroyMap( reinterpret_cast<FadasRemapMap *>( m_remapPtrs[i] ) );
         }
     }
 

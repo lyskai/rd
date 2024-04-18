@@ -25,7 +25,6 @@ RideHalError_e Remap::Start()
     }
     else
     {
-        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
         RIDEHAL_ERROR( "Remap component start failed due to wrong state!" );
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -37,14 +36,12 @@ RideHalError_e Remap::Stop()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( ( RIDE_HAL_COMPONENT_STATE_RUNNING == m_state ) ||
-         ( RIDE_HAL_COMPONENT_STATE_ERROR == m_state ) )
+    if ( RIDE_HAL_COMPONENT_STATE_RUNNING == m_state )
     {
         m_state = RIDE_HAL_COMPONENT_STATE_READY;
     }
     else
     {
-        m_state = RIDE_HAL_COMPONENT_STATE_ERROR;
         RIDEHAL_ERROR( "Remap component stop failed due to wrong state!" );
         ret = RIDE_HAL_ERROR_STATE;
     }
@@ -57,6 +54,8 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     ret = ComponentIF::Init( pName, level );
+
+    m_state = RIDE_HAL_COMPONENT_STATE_INITIALIZING;
 
     if ( RIDE_HAL_ERROR_NONE != ret )
     {
@@ -135,20 +134,46 @@ RideHalError_e Remap::Deinit()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    ret = m_fadasRemapObj.Deinit();
-
-    if ( RIDE_HAL_ERROR_NONE != ret )
+    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
     {
-        RIDEHAL_ERROR( "Failed to deinit fadas remap!" );
+        RIDEHAL_ERROR( "Remap component not in ready status!" );
+        ret = RIDE_HAL_ERROR_STATE;
     }
     else
     {
-        ret = ComponentIF::Deinit();
-    }
+        ret = m_fadasRemapObj.DestroyMap();
 
-    if ( RIDE_HAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to deinit component!" );
+        if ( RIDE_HAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to destroy map!" );
+        }
+        else
+        {
+            ret = m_fadasRemapObj.DestroyWorkers();
+        }
+
+        if ( RIDE_HAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to destroy worker!" );
+        }
+        else
+        {
+            ret = m_fadasRemapObj.Deinit();
+        }
+
+        if ( RIDE_HAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to deinit fadas remap!" );
+        }
+        else
+        {
+            ret = ComponentIF::Deinit();
+        }
+
+        if ( RIDE_HAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to deinit component!" );
+        }
     }
 
     return ret;
@@ -215,7 +240,7 @@ RideHalError_e Remap::DeregBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t
 }
 
 RideHalError_e Remap::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
-                               const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs )
+                               const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
@@ -230,14 +255,9 @@ RideHalError_e Remap::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t n
         RIDEHAL_ERROR( "Number of input buffers not equal to config value!" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( 1 != numOutputs )
-    {
-        RIDEHAL_ERROR( "Number of output buffers not equal to 1!" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
-    }
     else
     {
-        ret = m_fadasRemapObj.RemapRun( pInputs, pOutputs );
+        ret = m_fadasRemapObj.RemapRun( pInputs, pOutput );
     }
 
     if ( RIDE_HAL_ERROR_NONE != ret )

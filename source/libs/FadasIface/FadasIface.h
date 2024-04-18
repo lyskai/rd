@@ -1,9 +1,5 @@
 #ifndef _FADASIFACE_H
 #define _FADASIFACE_H
-/**=============================================================================
-Copyright (c) 2020 QUALCOMM Technologies Incorporated.
-All Rights Reserved Qualcomm Proprietary
-=============================================================================**/
 #include <AEEStdDef.h>
 #include <remote.h>
 
