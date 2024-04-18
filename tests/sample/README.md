@@ -111,7 +111,7 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| processor     | false    | string    | "dsp0"  | The processor type, options from [dsp0, dsp1, cpu, gpu] |
+| processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu, gpu] |
 | output_width  | false    | int       | 1152    | The output image width |
 | output_height | false    | int       | 800     | The output image height |
 | output_format | false    | string    | rgb     | The output image format, options from [rgb]|
@@ -147,7 +147,7 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| core          | false    | int       | 0       | The HTP core id: 0 - CDSP0, 1 - CDSP1 |
+| processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu, gpu] |
 | model_path    | true     | string    | -       | The model path that contain the QNN models |
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | input_topic   | true     | string    | -       | the input topic name |
@@ -156,7 +156,7 @@ The command line template example:
 The command line template example:
 
 ```sh
-  -n CNT0 -t Qnn -k core -v 0 \
+  -n CNT0 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
@@ -262,7 +262,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM0/raw \
     -k output_topic -v /sensor/camera/CAM0/remap \
-  -n CNT0 -t Qnn -k core -v 0 \
+  -n CNT0 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
@@ -278,7 +278,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM1/raw \
     -k output_topic -v /sensor/camera/CAM1/remap \
-  -n CNT1 -t Qnn -k core -v 0 \
+  -n CNT1 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM1/remap \
     -k output_topic -v /sensor/camera/CAM1/qnn \
@@ -294,7 +294,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM2/raw \
     -k output_topic -v /sensor/camera/CAM2/remap \
-  -n CNT2 -t Qnn -k core -v 0 \
+  -n CNT2 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM2/remap \
     -k output_topic -v /sensor/camera/CAM2/qnn \
@@ -310,7 +310,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM3/raw \
     -k output_topic -v /sensor/camera/CAM3/remap \
-  -n CNT3 -t Qnn -k core -v 0 \
+  -n CNT3 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM3/remap \
     -k output_topic -v /sensor/camera/CAM3/qnn \
@@ -329,17 +329,17 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k width -v 1928 -k height -v 1208 \
     -k topic -v /sensor/camera/CAM0/raw \
   -n C2D0 -t C2D -k batch_size -v 1 \
-    -k input_width0 -v 2048 -k input_height0 -v 1216 -k input_format0 -v nv12 \
-    -k roi_x0 -v 0 -k roi_y0 -v 0 -k roi_width0 -v 1928 -k roi_height0 -v 1208 \
-    -k output_width -v 2048 -k output_height -v 1216 -k output_format -v uyvy \
+    -k input_width0 -v 1928 -k input_height0 -v 1208 -k input_format0 -v nv12 \
+	-k roi_x0 -v 0 -k roi_y0 -v 0 -k roi_width0 -v 1928 -k roi_height0 -v 1208 \
+    -k output_width -v 1928 -k output_height -v 1208 -k output_format -v uyvy \
     -k input_topic -v /sensor/camera/CAM0/raw \
     -k output_topic -v /sensor/camera/CAM0/uyvy \
   -n REMAP0 -t Remap -k batch_size -v 1 \
-    -k input_width0 -v 2048 -k input_height0 -v 1216 -k input_format0 -v uyvy \
+    -k input_width0 -v 1928 -k input_height0 -v 1208 -k input_format0 -v uyvy \
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM0/uyvy \
     -k output_topic -v /sensor/camera/CAM0/remap \
-  -n CNT0 -t Qnn -k core -v 0 \
+  -n CNT0 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
@@ -355,7 +355,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM1/raw \
     -k output_topic -v /sensor/camera/CAM1/remap \
-  -n CNT1 -t Qnn -k core -v 0 \
+  -n CNT1 -t Qnn -k processor -v htp0 \
     -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
     -k input_topic -v /sensor/camera/CAM1/remap \
     -k output_topic -v /sensor/camera/CAM1/qnn \

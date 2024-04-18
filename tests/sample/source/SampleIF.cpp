@@ -305,11 +305,11 @@ RideHal_ProcessorType_e SampleIF::Get( SampleConfig_t &config, std::string key,
     if ( it != config.end() )
     {
         std::string processor = it->second;
-        if ( "dsp0" == processor )
+        if ( "htp0" == processor )
         {
             ret = RIDE_HAL_PROCESSOR_HTP0;
         }
-        else if ( "dsp1" == processor )
+        else if ( "htp1" == processor )
         {
             ret = RIDE_HAL_PROCESSOR_HTP1;
         }
