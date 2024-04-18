@@ -3,6 +3,7 @@
 
 #include <c2d2.h>
 #include <cinttypes>
+#include <cstring>
 #include <memory>
 #include <queue>
 #include <thread>
