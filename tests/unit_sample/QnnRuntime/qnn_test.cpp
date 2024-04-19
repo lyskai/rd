@@ -136,36 +136,31 @@ public:
         auto cost = std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count();
         printf( "[%s] Init cost %.2f ms\n", name.c_str(), (float) cost / 1000.0 );
 
-        uint32_t inputNum = 0;
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            ret = m_qnn.GetInputInfo( nullptr, &inputNum );
+            ret = m_qnn.GetInputInfo( &m_inputInfoList );
         }
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            m_inputsInfo.resize( inputNum );
-            m_inputBuffers.resize( inputNum );
-            ret = m_qnn.GetInputInfo( m_inputsInfo.data(), &inputNum );
+            m_inputBuffers.resize( m_inputInfoList.num );
         }
 
 
         uint32_t outputNum = 0;
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            ret = m_qnn.GetOutputInfo( nullptr, &outputNum );
+            ret = m_qnn.GetOutputInfo( &m_outputInfoList );
         }
 
         if ( RIDE_HAL_ERROR_NONE == ret )
         {
-            m_outputsInfo.resize( outputNum );
-            m_outputBuffers.resize( outputNum );
-            ret = m_qnn.GetOutputInfo( m_outputsInfo.data(), &outputNum );
+            m_outputBuffers.resize( m_outputInfoList.num );
         }
 
-        for ( size_t i = 0; ( i < m_inputsInfo.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( size_t i = 0; ( i < m_inputInfoList.num ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
         {
-            auto &info = m_inputsInfo[i];
+            auto &info = m_inputInfoList.pInfo[i];
             printf( "[%s] input %" PRIu64 " name=%s %s\n", name.c_str(), i, info.pName,
                     GetTensorInfoStr( info ).c_str() );
             ret = m_inputBuffers[i].Allocate( &info.properties );
@@ -212,9 +207,9 @@ public:
             }
         }
 
-        for ( size_t i = 0; ( i < m_outputsInfo.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
         {
-            auto &info = m_outputsInfo[i];
+            auto &info = m_outputInfoList.pInfo[i];
             printf( "[%s] output %" PRIu64 " name=%s %s\n", name.c_str(), i, info.pName,
                     GetTensorInfoStr( info ).c_str() );
             ret = m_outputBuffers[i].Allocate( &info.properties );
@@ -276,7 +271,7 @@ public:
                 {
                     std::string path = name + "_output" + std::to_string( i ) + ".raw";
                     SaveRaw( path, m_outputBuffers[i].data(), m_outputBuffers[i].size );
-                    auto &info = m_outputsInfo[i];
+                    auto &info = m_outputInfoList.pInfo[i];
                     // enhanced way to dump the output for accuracy analyze
                     uint8_t *pData = (uint8_t *) m_outputBuffers[i].data();
                     float *fData = new float[m_outputBuffers[i].size];
@@ -340,8 +335,8 @@ private:
     QnnTest_Parameters_t m_params;
     QnnRuntime_Config_t m_config;
     QnnRuntime m_qnn;
-    std::vector<QnnRuntime_TensorInfo_t> m_inputsInfo;
-    std::vector<QnnRuntime_TensorInfo_t> m_outputsInfo;
+    QnnRuntime_TensorInfoList_t m_inputInfoList;
+    QnnRuntime_TensorInfoList_t m_outputInfoList;
     std::vector<RideHal_SharedBuffer_t> m_inputBuffers;
     std::vector<RideHal_SharedBuffer_t> m_outputBuffers;
     uint64_t m_total = 0;

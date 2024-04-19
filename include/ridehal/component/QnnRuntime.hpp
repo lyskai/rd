@@ -60,6 +60,12 @@ typedef struct
     int32_t quantOffset;
 } QnnRuntime_TensorInfo_t;
 
+typedef struct
+{
+    QnnRuntime_TensorInfo_t *pInfo;
+    uint32_t num;
+} QnnRuntime_TensorInfoList_t;
+
 
 class QnnRuntime : public ComponentIF
 {
@@ -79,13 +85,16 @@ public:
     /// @param pInfo tensor info struct
     /// @param pNum number of input tensors
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetInputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum );
+    // RideHalError_e GetInputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum );
+    RideHalError_e GetInputInfo( QnnRuntime_TensorInfoList_t *pList );
+
 
     /// @brief Get Input tensor information
     /// @param pInfo tensor info struct
     /// @param pNum number of output tensors
     /// @return RIDE_HAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetOutputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum );
+    RideHalError_e GetOutputInfo( QnnRuntime_TensorInfoList_t *pList );
+
 
     /// @brief Execute qnn model with input and output buffer
     /// @param pInputs input shared buffer
@@ -165,6 +174,10 @@ private:
     /// @brief DeRegister memory
     RideHalError_e DeRegisterMemory();
 
+    RideHalError_e GetInputInfo();
+
+    RideHalError_e GetOutputInfo();
+
 private:
     /// @brief Extract qnn profiling event
     /// @param profileEventId profiling event id
@@ -226,6 +239,10 @@ private:
     static std::map<uint8_t *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
     QnnRuntime_Perf_t m_perf;
     bool m_bEnabelPerf = true;
+    QnnRuntime_TensorInfo_t *m_pInputTensor;
+    size_t m_pInputTensorNum = 0;
+    QnnRuntime_TensorInfo_t *m_pOutputTensor;
+    size_t m_pOutputTensorNum = 0;
 };   // QnnRuntime
 
 }   // namespace component

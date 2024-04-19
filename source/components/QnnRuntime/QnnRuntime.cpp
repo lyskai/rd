@@ -619,6 +619,16 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
     }
 
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        ret = GetInputInfo();
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        ret = GetOutputInfo();
+    }
+
     RIDEHAL_INFO( "%s: init %s with backend %s\n", m_Name.c_str(), modelPath,
                   s_Backends[m_BackendType] );
 
@@ -639,72 +649,69 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
 QnnRuntime::~QnnRuntime() {}
 
-RideHalError_e QnnRuntime::GetInputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum )
+RideHalError_e QnnRuntime::GetInputInfo()
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    if ( ( RIDE_HAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state ) )
+    if ( m_GraphsInfo == nullptr )
     {
-        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
-        ret = RIDE_HAL_ERROR_STATE;
+        RIDEHAL_ERROR( "m_GraphsInfo is nullptr" );
+        ret = RIDE_HAL_ERROR_FAIL;
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        // only update tensor numbers if pInfo is nullptr
-        if ( pInfo == nullptr )
-        {
-            *pNum = m_GraphsInfo[0]->numInputTensors;
-        }
-        else
-        {
+        m_pInputTensorNum = m_GraphsInfo[0]->numInputTensors;
+    }
 
-            for ( uint32_t i = 0; ( i < *pNum ) && ( RIDE_HAL_ERROR_NONE == ret ); ++i )
+    if ( m_pInputTensorNum != 0 )
+    {
+        m_pInputTensor = new QnnRuntime_TensorInfo_t[m_pInputTensorNum];
+    }
+
+    RIDEHAL_INFO( "m_pInputTensor size: %d", m_pInputTensorNum );
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        for ( uint32_t i = 0; i < m_pInputTensorNum; ++i )
+        {
+            RideHal_TensorProps_t tensorProp;
+            auto tensor = &m_GraphsInfo[0]->inputTensors[i];
+
+            m_pInputTensor[i].pName = QNN_TENSOR_GET_NAME( tensor );
+
+            size_t sz = 1;
+            auto rank = QNN_TENSOR_GET_RANK( tensor );
+            auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+            for ( uint32_t j = 0; j < rank; j++ )
             {
-
-                RideHal_TensorProps_t tensorProp;
-                QnnRuntime_TensorInfo_t tensorInfo;
-                auto tensor = &m_GraphsInfo[0]->inputTensors[i];
-
-                pInfo[i].pName = QNN_TENSOR_GET_NAME( tensor );
-
-                size_t sz = 1;
-                auto rank = QNN_TENSOR_GET_RANK( tensor );
-                auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
-                for ( uint32_t j = 0; j < rank; j++ )
-                {
-                    sz *= dimensions[j];
-                    tensorProp.dims[j] = dimensions[j];
-                }
-                tensorProp.numDims = rank;
-
-                auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
-                if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET == quantizeParams.quantizationEncoding )
-                {
-                    pInfo[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
-                    pInfo[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
-                }
-                else
-                {
-                    RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported",
-                                  m_Name.c_str(), pInfo[i].pName,
-                                  quantizeParams.quantizationEncoding );
-                }
-                const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
-                tensorProp.type = SwitchFromQnnDataType( dataType );
-                pInfo[i].properties = tensorProp;
+                sz *= dimensions[j];
+                tensorProp.dims[j] = dimensions[j];
             }
-            return ret;
+            tensorProp.numDims = rank;
+
+            auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
+            if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET == quantizeParams.quantizationEncoding )
+            {
+                m_pInputTensor[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
+                m_pInputTensor[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
+            }
+            else
+            {
+                RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported", m_Name.c_str(),
+                              m_pInputTensor[i].pName, quantizeParams.quantizationEncoding );
+            }
+            const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
+            tensorProp.type = SwitchFromQnnDataType( dataType );
+            m_pInputTensor[i].properties = tensorProp;
         }
     }
 
     return ret;
 }
 
-RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32_t *pNum )
+RideHalError_e QnnRuntime::GetInputInfo( QnnRuntime_TensorInfoList_t *pList )
 {
-
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
     if ( ( RIDE_HAL_COMPONENT_STATE_READY != m_state ) &&
@@ -716,50 +723,105 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfo_t *pInfo, uint32
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        // only update tensor numbers if pInfo is nullptr
-        if ( pInfo == nullptr )
+        if ( m_pInputTensor == nullptr )
         {
-            *pNum = m_GraphsInfo[0]->numOutputTensors;
+            RIDEHAL_ERROR( "Input tensor is nullptr!" );
+            ret = RIDE_HAL_ERROR_FAIL;
         }
         else
         {
-            for ( uint32_t i = 0; ( i < *pNum ) && ( RIDE_HAL_ERROR_NONE == ret ); ++i )
-            {
-
-                RideHal_TensorProps_t tensorProp;
-                QnnRuntime_TensorInfo_t tensorInfo;
-                auto tensor = &m_GraphsInfo[0]->outputTensors[i];
-
-                pInfo[i].pName = QNN_TENSOR_GET_NAME( tensor );
-
-                size_t sz = 1;
-                auto rank = QNN_TENSOR_GET_RANK( tensor );
-                auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
-                for ( uint32_t j = 0; j < rank; j++ )
-                {
-                    sz *= dimensions[j];
-                    tensorProp.dims[j] = dimensions[j];
-                }
-                tensorProp.numDims = rank;
-
-                auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
-                if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET == quantizeParams.quantizationEncoding )
-                {
-                    pInfo[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
-                    pInfo[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
-                }
-                else
-                {
-                    RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported",
-                                  m_Name.c_str(), pInfo[i].pName,
-                                  quantizeParams.quantizationEncoding );
-                }
-                const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
-                tensorProp.type = SwitchFromQnnDataType( dataType );
-                pInfo[i].properties = tensorProp;
-            }
+            pList->pInfo = m_pInputTensor;
+            pList->num = m_pInputTensorNum;
         }
     }
+
+    return ret;
+}
+
+RideHalError_e QnnRuntime::GetOutputInfo()
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( m_GraphsInfo == nullptr )
+    {
+        RIDEHAL_ERROR( "m_GraphsInfo is nullptr" );
+        ret = RIDE_HAL_ERROR_FAIL;
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        m_pOutputTensorNum = m_GraphsInfo[0]->numOutputTensors;
+    }
+
+    if ( m_pOutputTensorNum != 0 )
+    {
+        m_pOutputTensor = new QnnRuntime_TensorInfo_t[m_pOutputTensorNum];
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        for ( uint32_t i = 0; i < m_pOutputTensorNum; ++i )
+        {
+            RideHal_TensorProps_t tensorProp;
+            auto tensor = &m_GraphsInfo[0]->outputTensors[i];
+
+            m_pOutputTensor[i].pName = QNN_TENSOR_GET_NAME( tensor );
+
+            size_t sz = 1;
+            auto rank = QNN_TENSOR_GET_RANK( tensor );
+            auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+            for ( uint32_t j = 0; j < rank; j++ )
+            {
+                sz *= dimensions[j];
+                tensorProp.dims[j] = dimensions[j];
+            }
+            tensorProp.numDims = rank;
+
+            auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
+            if ( QNN_QUANTIZATION_ENCODING_SCALE_OFFSET == quantizeParams.quantizationEncoding )
+            {
+                m_pOutputTensor[i].quantScale = quantizeParams.scaleOffsetEncoding.scale;
+                m_pOutputTensor[i].quantOffset = -quantizeParams.scaleOffsetEncoding.offset;
+            }
+            else
+            {
+                RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported", m_Name.c_str(),
+                              m_pOutputTensor[i].pName, quantizeParams.quantizationEncoding );
+            }
+            const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
+            tensorProp.type = SwitchFromQnnDataType( dataType );
+            m_pOutputTensor[i].properties = tensorProp;
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfoList_t *pList )
+{
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    if ( ( RIDE_HAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state ) )
+    {
+        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
+        ret = RIDE_HAL_ERROR_STATE;
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        if ( m_pOutputTensor == nullptr )
+        {
+            RIDEHAL_ERROR( "Input tensor is nullptr!" );
+            ret = RIDE_HAL_ERROR_FAIL;
+        }
+        else
+        {
+            pList->pInfo = m_pOutputTensor;
+            pList->num = m_pOutputTensorNum;
+        }
+    }
+
     return ret;
 }
 
@@ -1386,6 +1448,22 @@ RideHalError_e QnnRuntime::Deinit()
         {
             RIDEHAL_DEBUG( "%s:Cleaning up graph Info structures.", m_Name.c_str() );
             qnn_wrapper_api::freeGraphsInfo( &m_GraphsInfo, m_GraphsCount );
+        }
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        if ( m_pInputTensor != nullptr )
+        {
+            delete[] m_pInputTensor;
+        }
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
+        if ( m_pOutputTensor != nullptr )
+        {
+            delete[] m_pOutputTensor;
         }
     }
 

@@ -56,8 +56,8 @@ private:
     std::thread m_thread;
     bool m_stop;
 
-    std::vector<QnnRuntime_TensorInfo_t> m_inputInfos;
-    std::vector<QnnRuntime_TensorInfo_t> m_outputInfos;
+    QnnRuntime_TensorInfoList_t m_inputInfoList;
+    QnnRuntime_TensorInfoList_t m_outputInfoList;
 
     std::vector<SharedBufferPool> m_tensorPools;
 

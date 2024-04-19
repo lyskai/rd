@@ -34,45 +34,33 @@ TEST( QnnRuntime, SANITY_General )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
 
-    uint32_t inputNum = 0;
+    QnnRuntime_TensorInfoList_t tensorInputList;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = qnnRuntime.GetInputInfo( nullptr, &inputNum );
+        ret = qnnRuntime.GetInputInfo( &tensorInputList );
     }
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    QnnRuntime_TensorInfo_t inputInfos[inputNum];
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = qnnRuntime.GetInputInfo( inputInfos, &inputNum );
-    }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
+    const uint32_t inputNum = tensorInputList.num;
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &inputInfos[i].properties );
+        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
 
-    uint32_t outputNum = 0;
+    QnnRuntime_TensorInfoList_t tensorOutputList;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = qnnRuntime.GetOutputInfo( nullptr, &outputNum );
+        ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
     }
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    QnnRuntime_TensorInfo_t outputInfos[outputNum];
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = qnnRuntime.GetOutputInfo( outputInfos, &outputNum );
-    }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
+    const uint32_t outputNum = tensorOutputList.num;
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &outputInfos[i].properties );
+        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
 
@@ -117,45 +105,33 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
 
-    uint32_t inputNum = 0;
+    QnnRuntime_TensorInfoList_t tensorInputList;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = qnnRuntime.GetInputInfo( nullptr, &inputNum );
+        ret = qnnRuntime.GetInputInfo( &tensorInputList );
     }
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    QnnRuntime_TensorInfo_t inputInfos[inputNum];
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = qnnRuntime.GetInputInfo( inputInfos, &inputNum );
-    }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
+    const uint32_t inputNum = tensorInputList.num;
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &inputInfos[i].properties );
+        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
 
-    uint32_t outputNum = 0;
+    QnnRuntime_TensorInfoList_t tensorOutputList;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = qnnRuntime.GetOutputInfo( nullptr, &outputNum );
+        ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
     }
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    QnnRuntime_TensorInfo_t outputInfos[outputNum];
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = qnnRuntime.GetOutputInfo( outputInfos, &outputNum );
-    }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-
+    const uint32_t outputNum = tensorOutputList.num;
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &outputInfos[i].properties );
+        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     }
 

@@ -76,30 +76,17 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         ret = m_qnn.Init( name.c_str(), &m_config );
     }
 
-    uint32_t inputNum = 0;
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        ret = m_qnn.GetInputInfo( nullptr, &inputNum );
+        ret = m_qnn.GetInputInfo( &m_inputInfoList );
     }
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        m_inputInfos.resize( inputNum );
-        ret = m_qnn.GetInputInfo( &m_inputInfos[0], &inputNum );
+        ret = m_qnn.GetOutputInfo( &m_outputInfoList );
     }
 
-
-    uint32_t outputNum = 0;
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        ret = m_qnn.GetOutputInfo( nullptr, &outputNum );
-    }
-
-    if ( RIDE_HAL_ERROR_NONE == ret )
-    {
-        m_outputInfos.resize( outputNum );
-        ret = m_qnn.GetOutputInfo( &m_outputInfos[0], &outputNum );
-    }
+    const size_t outputNum = m_outputInfoList.num;
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
@@ -110,7 +97,7 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         {
             ret = m_tensorPools[index].Init(
                     "Qnn." + name + "." + std::to_string( index ), LOGGER_LEVEL_INFO, m_poolSize,
-                    m_outputInfos[i].properties, RIDE_HAL_BUFFER_USAGE_HTP );
+                    m_outputInfoList.pInfo[i].properties, RIDE_HAL_BUFFER_USAGE_HTP );
             index += 1;
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
@@ -174,7 +161,7 @@ void SampleQnn::ThreadMain()
                 inputs.push_back( sharedBuffer );
             }
 
-            for ( size_t i = 0; ( i < m_outputInfos.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
+            for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDE_HAL_ERROR_NONE == ret );
                   i++ )
             {
                 std::shared_ptr<SharedBuffer_t> buffer = m_tensorPools[i].Get();
@@ -211,9 +198,9 @@ void SampleQnn::ThreadMain()
                 {
                     Tensor_t tensor;
                     tensor.buffer = buffer;
-                    tensor.name = m_outputInfos[index].pName;
-                    tensor.quantScale = m_outputInfos[index].quantScale;
-                    tensor.quantOffset = m_outputInfos[index].quantOffset;
+                    tensor.name = m_outputInfoList.pInfo[index].pName;
+                    tensor.quantScale = m_outputInfoList.pInfo[index].quantScale;
+                    tensor.quantOffset = m_outputInfoList.pInfo[index].quantOffset;
                     outTensors.tensors.push_back( tensor );
                     index++;
                 }
