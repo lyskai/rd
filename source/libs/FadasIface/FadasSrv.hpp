@@ -21,8 +21,6 @@ extern "C"
 #include "ridehal/common/Types.hpp"
 using namespace ridehal::common;
 
-#define ALIGN_128( x ) ( ( ( ( x ) + 127 ) >> 7 ) << 7 )
-
 namespace ridehal
 {
 namespace libs
@@ -30,8 +28,17 @@ namespace libs
 namespace FadasIface
 {
 
-#define FADAS_CLIENT_ID 1
-#define FADAS_CLIENT_URI "&_session=1"
+#ifndef FADAS_CLIENT_URI
+#define FADAS_CLIENT_URI "&_session="
+#endif
+
+#ifndef CDSP_DOMAIN
+#define CDSP_DOMAIN "&_dom=cdsp0"
+#endif
+
+#ifndef CDSP1_DOMAIN
+#define CDSP1_DOMAIN "&_dom=cdsp1"
+#endif
 
 class FadasSrv
 {
@@ -63,6 +70,7 @@ private:
     static uint64_t s_useRef[RIDE_HAL_PROCESSOR_MAX];
     static bool s_initialized[RIDE_HAL_PROCESSOR_MAX];
     static std::map<void *, MemInfo> s_memMaps[RIDE_HAL_PROCESSOR_MAX];
+    static int s_client;
 
 protected:
     RIDEHAL_DECLARE_LOGGER();

@@ -55,8 +55,6 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
 
     ret = ComponentIF::Init( pName, level );
 
-    m_state = RIDE_HAL_COMPONENT_STATE_INITIALIZING;
-
     if ( RIDE_HAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to init component!" );
@@ -69,6 +67,7 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
     else
     {
         m_config = *pConfig;
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIALIZING;
         ret = m_fadasRemapObj.Init( m_config.processor, pName, level );
     }
 
@@ -125,6 +124,13 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
         m_state = RIDE_HAL_COMPONENT_STATE_READY;
+    }
+    else
+    {
+        m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
+        m_fadasRemapObj.DestroyMap();
+        m_fadasRemapObj.DestroyWorkers();
+        m_fadasRemapObj.Deinit();
     }
 
     return ret;

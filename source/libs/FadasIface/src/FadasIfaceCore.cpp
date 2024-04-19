@@ -98,7 +98,7 @@ AEEResult SetClocks( remote_handle64 handle )
 
     if ( 0 != retVal )
     {
-        FARF( ALWAYS, "Failed to set clocks!" );
+        FARF( ERROR, "Failed to set clocks!" );
         ret = AEE_EFAILED;
     }
 
@@ -115,7 +115,7 @@ void *FadasIface_GetBufPtr( int32_t bufFd )
     }
     else
     {
-        FARF( ALWAYS, "bufFd < 0!" );
+        FARF( ERROR, "bufFd %d!", bufFd );
     }
 
     return bufPtr;
@@ -128,7 +128,7 @@ AEEResult FadasIface_open( const char *uri, remote_handle64 *handle )
     *handle = (remote_handle64) dspContext;
     if ( 0 == *handle )
     {
-        FARF( ALWAYS, "Null handle pointer!" );
+        FARF( ERROR, "Null handle pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -139,7 +139,7 @@ AEEResult FadasIface_open( const char *uri, remote_handle64 *handle )
 
     if ( AEE_SUCCESS != ret )
     {
-        FARF( ALWAYS, "Failed to do FadasIface_open!" );
+        FARF( ERROR, "Failed to do FadasIface_open!" );
     }
 
     return ret;
@@ -150,7 +150,7 @@ AEEResult FadasIface_close( remote_handle64 handle )
     dspContext_t *dspContext = (dspContext_t *) handle;
     if ( NULL == dspContext )
     {
-        FARF( ALWAYS, "Null handle pointer!" );
+        FARF( ERROR, "Null handle pointer!" );
     }
     else
     {
@@ -199,7 +199,7 @@ AEEResult FadasIface_FadasRemap_CreateMapFromMap( remote_handle64 handle, uint64
 
     if ( nullptr == map )
     {
-        FARF( ALWAYS, "Null map pointer!" );
+        FARF( ERROR, "Null map pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -222,7 +222,7 @@ AEEResult FadasIface_FadasRemap_CreateMapNoUndistortion( remote_handle64 handle,
             g_MapImageConversion[static_cast<int>( imgFormat )], borderConst );
     if ( nullptr == map )
     {
-        FARF( ALWAYS, "Null map pointer!" );
+        FARF( ERROR, "Null map pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -252,7 +252,7 @@ AEEResult FadasIface_FadasRemap_CreateWorkers( remote_handle64 handle, uint64 *w
                                              g_MapImageConversion[static_cast<int>( imgFormat )] );
     if ( nullptr == worker )
     {
-        FARF( ALWAYS, "Null worker pointer!" );
+        FARF( ERROR, "Null worker pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -287,12 +287,12 @@ AEEResult FadasIface_FadasRemap_RunMT( remote_handle64 handle, const uint64 *wor
     uint8_t *dst = (uint8_t *) FadasIface_GetBufPtr( dstFd );
     if ( nullptr == dst )
     {
-        FARF( ALWAYS, "Null dst pointer!" );
+        FARF( ERROR, "Null dst pointer!" );
         ret = AEE_EFAILED;
     }
     else if ( ( srcFdsLen != offsetsLen ) || ( srcFdsLen != srcPropsLen ) )
     {
-        FARF( ALWAYS, "Fd length not equal to props length" );
+        FARF( ERROR, "Fd length not equal to props length" );
         ret = AEE_EFAILED;
     }
     else
@@ -302,7 +302,7 @@ AEEResult FadasIface_FadasRemap_RunMT( remote_handle64 handle, const uint64 *wor
             src[i] = (uint8_t *) FadasIface_GetBufPtr( srcFds[i] );
             if ( nullptr == src[i] )
             {
-                FARF( ALWAYS, "Null src pointer!" );
+                FARF( ERROR, "Null src pointer!" );
                 ret = AEE_EFAILED;
                 break;
             }
@@ -383,7 +383,7 @@ AEEResult FadasIface_FadasRemap_RunMT( remote_handle64 handle, const uint64 *wor
 
             if ( FADAS_ERROR_NONE != retVal )
             {
-                FARF( ALWAYS, "Failed to do FadasRemap_RunMT" );
+                FARF( ERROR, "Failed to do FadasRemap_RunMT" );
                 ret = AEE_EOFFSET + retVal;
                 break;
             }
@@ -401,7 +401,7 @@ AEEResult FadasIface_mmap( remote_handle64 handle, int32_t bufFd, uint32_t bufSi
     void *buf = FadasIface_GetBufPtr( bufFd );
     if ( nullptr != buf )
     {
-        FARF( ALWAYS, "Already used buf pointer!" );
+        FARF( ERROR, "Already used buf pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -411,7 +411,7 @@ AEEResult FadasIface_mmap( remote_handle64 handle, int32_t bufFd, uint32_t bufSi
         buf = HAP_mmap( NULL, bufSize, prot, flags, bufFd, 0 );
         if ( ( ( (void *) 0xFFFFFFFF ) == buf ) || ( nullptr == buf ) )
         {
-            FARF( ALWAYS, "Null buf pointer!" );
+            FARF( ERROR, "Null buf pointer!" );
             ret = AEE_EFAILED;
         }
     }
@@ -437,7 +437,7 @@ AEEResult FadasIface_munmap( remote_handle64 handle, int32_t bufFd, uint32_t buf
 
     if ( AEE_SUCCESS != ret )
     {
-        FARF( ALWAYS, "Failed to do FadasIface_munmap!" );
+        FARF( ERROR, "Failed to do FadasIface_munmap!" );
     }
 
     return ret;
@@ -453,7 +453,7 @@ AEEResult FadasIface_FadasRegBuf( remote_handle64 handle, FadasIface_FadasBufTyp
 
     if ( nullptr == ptr )
     {
-        FARF( ALWAYS, "Null bufFd pointer!" );
+        FARF( ERROR, "Null bufFd pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -466,7 +466,7 @@ AEEResult FadasIface_FadasRegBuf( remote_handle64 handle, FadasIface_FadasBufTyp
             ptr += bufSize;
             if ( FADAS_ERROR_NONE != retVal )
             {
-                FARF( ALWAYS, "Failed to do FadasRegBuf!" );
+                FARF( ERROR, "Failed to do FadasRegBuf!" );
                 ret = AEE_EFAILED;
                 break;
             }
@@ -485,7 +485,7 @@ AEEResult FadasIface_FadasDeregBuf( remote_handle64 handle, int32_t bufFd, uint3
 
     if ( nullptr == ptr )
     {
-        FARF( ALWAYS, "Null bufFd pointer!" );
+        FARF( ERROR, "Null bufFd pointer!" );
         ret = AEE_EFAILED;
     }
     else
@@ -498,7 +498,7 @@ AEEResult FadasIface_FadasDeregBuf( remote_handle64 handle, int32_t bufFd, uint3
             ptr += bufSize;
             if ( FADAS_ERROR_NONE != ret )
             {
-                FARF( ALWAYS, "Failed to do FadasDeregBuf!" );
+                FARF( ERROR, "Failed to do FadasDeregBuf!" );
                 ret = AEE_EFAILED;
                 break;
             }
