@@ -40,6 +40,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | data_pathX | true     | string    | -       | The data path  for the simulated camera X that contain the image files |
 | fps       | false    | int       | 30      | The frame rate per second |
 | pool_size | false    | int       | 4       | the image memory pool size |
+| cache     | false    | bool      | true    | use cached memroy or not for the image memory |
 | topic     | true     | string    | -       | the output topic name |
 
 Note: "X" is value from 0 to number-1, thus the attribute with suffix "X" is repeated for different simulated camera.
@@ -51,6 +52,7 @@ The command line template example:
     -k format0 -v uyvy -k width0 -v 1920 -k height0 -v 1024 \
     -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
     -k pool_size -v 4 \
+    -k cache -v false \
     -k topic -v /sensor/camera/CAM1/raw \
 ```
 
@@ -106,6 +108,7 @@ The command line template example:
     -k output_width -v 2048 -k output_height -v 1216 -k output_format -v uyvy \
     -k input_topic -v /sensor/camera/CAM0/raw \
     -k output_topic -v /sensor/camera/CAM0/uyvy \
+    -k cache -v false
 ```
 
 ### 2.4 RideHal Remap Sample
@@ -366,3 +369,4 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_topic -v /sensor/camera/CAM1/objs \
   -n VIZ -t TinyViz -k cameras -v CAM0,CAM1
 ```
+

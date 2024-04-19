@@ -65,6 +65,7 @@ private:
     bool m_stop;
 
     DataPublisher<CamFrames_t> m_pub;
+    RideHal_BufferFlags_t m_bufferFlags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA;
 
     static std::mutex s_lock;
 
@@ -74,3 +75,4 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDE_HAL_SAMPLE_DATAREADER_HPP_
+

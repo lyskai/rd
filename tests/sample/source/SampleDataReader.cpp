@@ -81,6 +81,16 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
+    bool bCache = Get( config, "cache", true );
+    if ( false == bCache )
+    {
+        m_bufferFlags = 0;
+    }
+    else
+    {
+        m_bufferFlags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA;
+    }
+
     m_topicName = Get( config, "topic", "" );
     if ( "" == m_topicName )
     {
@@ -115,7 +125,8 @@ RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config 
         {
             ret = m_imagePools[i].Init( name + std::to_string( i ), LOGGER_LEVEL_INFO, m_poolSize,
                                         m_configs[i].width, m_configs[i].height,
-                                        m_configs[i].format, RIDE_HAL_BUFFER_USAGE_CAMERA );
+                                        m_configs[i].format, RIDE_HAL_BUFFER_USAGE_CAMERA,
+                                        m_bufferFlags );
         }
     }
 
@@ -289,3 +300,4 @@ REGISTER_SAMPLE( DataReader, SampleDataReader );
 
 }   // namespace sample
 }   // namespace ridehal
+
