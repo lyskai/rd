@@ -61,13 +61,15 @@ esac
 
 # build FastADAS interface library
 if [[ -v HEXAGON_SDK_ROOT && -v BSP_ROOT ]] ; then
-  cd $topdir/source/libs/FadasIface/bld
-  rm hexagon_Release_toolv*_v68 -fr
-  make tree V=hexagon_Release_dynamic_toolv86_v68 VERBOSE=1 V_dynamic=1 || make tree V=hexagon_Release_dynamic_toolv84_v68 VERBOSE=1 V_dynamic=1 
-  cp -fv hexagon_Release_toolv*_v68/ship/libFadasIface_skel.so ../prebuilt/dsp
-  cp -fv hexagon_Release_toolv*_v68/FadasIface.h ../
-  cp -fv hexagon_Release_toolv*_v68/FadasIface_stub.c ../FadasIface.c
-  $HEXAGON_SDK_ROOT/tools/HEXAGON_Tools/*/Tools/bin/hexagon-strip ../prebuilt/dsp/libFadasIface_skel.so
+  if ! [ -f $topdir/source/libs/FadasIface/prebuilt/dsp/libFadasIface_skel.so ];  then
+    cd $topdir/source/libs/FadasIface/bld
+    rm hexagon_Release_toolv*_v68 -fr
+    make tree V=hexagon_Release_dynamic_toolv86_v68 VERBOSE=1 V_dynamic=1 || make tree V=hexagon_Release_dynamic_toolv84_v68 VERBOSE=1 V_dynamic=1
+    cp -fv hexagon_Release_toolv*_v68/ship/libFadasIface_skel.so ../prebuilt/dsp
+    cp -fv hexagon_Release_toolv*_v68/FadasIface.h ../
+    cp -fv hexagon_Release_toolv*_v68/FadasIface_stub.c ../FadasIface.c
+    $HEXAGON_SDK_ROOT/tools/HEXAGON_Tools/*/Tools/bin/hexagon-strip ../prebuilt/dsp/libFadasIface_skel.so
+  fi
 fi
 
 mkdir -p $workdir && cd $workdir || exit 1
