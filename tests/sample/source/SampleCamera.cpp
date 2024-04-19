@@ -18,7 +18,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, bool requestMode )
     CamFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
     pSharedBuffer->sharedBuffer = pFrame->sharedBuffer;
-    pSharedBuffer->pubHandle = ( (uint64_t) pFrame->streamId << 32 ) + pFrame->frameIndex;
+    pSharedBuffer->pubHandle = ( (uint64_t) m_camConfig.streamId << 32 ) + pFrame->frameIndex;
 
     PROFILER_BEGIN();
     PROFILER_END();
@@ -97,6 +97,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
         }
 
         m_camConfig.requestMode = Get( config, "request_mode", false );
+        m_camConfig.streamId = Get( config, "stream_id", 0 );
 
         m_camConfig.isAllocator = true;
         m_camConfig.ispUserCase = Get( config, "isp_use_case", 3 );

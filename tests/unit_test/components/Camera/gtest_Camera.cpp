@@ -74,16 +74,18 @@ void FrameCallBack_RequestMode( CameraFrame_t *pFrame, void *pPrivData )
 
 void EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivData )
 {
-    printf( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
+    RIDEHAL_LOG_ERROR( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
 }
 
 TEST( Camera, Query_QcarCam )
 {
     RideHalError_e ret;
     Camera *pCamera = new Camera;
+    CameraInputs_t camInputs;
 
-    ret = pCamera->QueryInputs();
+    ret = pCamera->GetInputsInfo( &camInputs );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    printf( "Number of camera connected: %d\n", camInputs.numInputs );
 
     delete pCamera;
 }
@@ -103,6 +105,7 @@ TEST( Camera, SANITY_QcarCam )
     camConfig.height = 1208;
     camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.streamId = 0;
+    camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
@@ -140,6 +143,7 @@ TEST( Camera, SetBuffer_QcarCam )
     camConfig.width = 1928;
     camConfig.height = 1208;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
     camConfig.streamId = 0;
     RideHal_SharedBuffer_t *pSharedBuffer = new RideHal_SharedBuffer_t[BUFFFER_COUNT];
 
@@ -152,7 +156,7 @@ TEST( Camera, SetBuffer_QcarCam )
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
-    ret = pCamera->SetBuffer( pSharedBuffer, BUFFFER_COUNT );
+    ret = pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 
     ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
@@ -195,6 +199,7 @@ TEST( Camera, PauseResume_QcarCam )
     camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.streamId = 0;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
@@ -243,6 +248,7 @@ TEST( Camera, RequestMode_QcarCam )
     camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.streamId = 0;
     camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
