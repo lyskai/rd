@@ -391,6 +391,7 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
 
     if ( camInfo.lastFPSUpdate < pts - NSEC_PER_SEC / 2 )
     {
+        std::lock_guard<std::mutex> camInfoGuard( *camInfo.mutex );
         updateFPS( camInfo );
         camInfo.lastFPSUpdate = pts;
     }
