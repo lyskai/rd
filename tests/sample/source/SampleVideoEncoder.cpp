@@ -163,6 +163,7 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
     m_config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
     m_config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
     m_config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    m_config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
     m_config.bInputDynamicMode = true;
     m_config.bOutputDynamicMode = false;
 

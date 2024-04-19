@@ -245,7 +245,7 @@ private:
     RideHalError_e FreeInputBuffer( void );
     void PrintEncoderConfig( void );
     vidc_color_format_type GetVidcFormat( RideHal_ImageFormat_e );
-    void SetVidcProfileLevel( VideoEncoder_Profile_e );
+    RideHalError_e SetVidcProfileLevel( VideoEncoder_Profile_e );
     RideHalError_e ValidateConfig( const VideoEncoder_Config_t *pConfig );
     RideHalError_e ValidateBuffer( const RideHal_SharedBuffer_t *pBuffer,
                                    vidc_buffer_type bufferType );

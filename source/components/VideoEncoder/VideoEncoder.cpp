@@ -107,9 +107,7 @@ static const ProfileLevel_t s_profileLevelHevcMainTable[] = {
         { 8912896, 267386880, 25000000, VIDC_LEVEL_HEVC_5, VIDC_PROFILE_HEVC_MAIN },
         { 8912896, 534773760, 40000000, VIDC_LEVEL_HEVC_51, VIDC_PROFILE_HEVC_MAIN },
         { 8912896, 1069547520, 60000000, VIDC_LEVEL_HEVC_52, VIDC_PROFILE_HEVC_MAIN },
-        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN },
-        { 35651584, 2139095040, 120000000, VIDC_LEVEL_HEVC_61, VIDC_PROFILE_HEVC_MAIN },
-        { 35651584, 4278190080, 240000000, VIDC_LEVEL_HEVC_62, VIDC_PROFILE_HEVC_MAIN } };
+        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN } };
 static const ProfileLevel_t s_profileLevelHevcMain10Table[] = {
         /*max sample per frame, max sample per sec, max bitrate, level, profile*/
         { 36864, 552960, 128000, VIDC_LEVEL_HEVC_1, VIDC_PROFILE_HEVC_MAIN10 },
@@ -122,9 +120,7 @@ static const ProfileLevel_t s_profileLevelHevcMain10Table[] = {
         { 8912896, 267386880, 25000000, VIDC_LEVEL_HEVC_5, VIDC_PROFILE_HEVC_MAIN10 },
         { 8912896, 534773760, 40000000, VIDC_LEVEL_HEVC_51, VIDC_PROFILE_HEVC_MAIN10 },
         { 8912896, 1069547520, 60000000, VIDC_LEVEL_HEVC_52, VIDC_PROFILE_HEVC_MAIN10 },
-        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN10 },
-        { 35651584, 2139095040, 120000000, VIDC_LEVEL_HEVC_61, VIDC_PROFILE_HEVC_MAIN10 },
-        { 35651584, 4278190080, 240000000, VIDC_LEVEL_HEVC_62, VIDC_PROFILE_HEVC_MAIN10 } };
+        { 35651584, 1069547520, 60000000, VIDC_LEVEL_HEVC_6, VIDC_PROFILE_HEVC_MAIN10 } };
 
 static const ProfileLevelTableRef_t s_profileLevelTables[] = {
         { s_profileLevelH264BaseLineTable, ARRAY_SIZE( s_profileLevelH264BaseLineTable ) },
@@ -172,7 +168,11 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             m_vidcEncoderData.codec = VIDC_CODEC_H264;
         }
-        SetVidcProfileLevel( pConfig->profile );
+        ret = SetVidcProfileLevel( pConfig->profile );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
         m_vidcEncoderData.sessionCodec.session = VIDC_SESSION_ENCODE;
         m_vidcEncoderData.sessionCodec.codec = m_vidcEncoderData.codec;
         m_numInputBufferReq = pConfig->numInputBufferReq;
@@ -703,6 +703,11 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
         RIDEHAL_DEBUG( "SubmitOutputFrame begin" );
         outputBuffer = &pOutput->sharedBuffer;
         frameId = outputBuffer->buffer.dmaHandle;
+        ret = ValidateBuffer( outputBuffer, VIDC_BUFFER_OUTPUT );
+    }
+
+    if ( RIDE_HAL_ERROR_NONE == ret )
+    {
         std::unique_lock<std::mutex> auto_lock( m_outLock );
         if ( true == m_bOutputDynamicMode )
         {
@@ -1093,8 +1098,9 @@ vidc_color_format_type VideoEncoder::GetVidcFormat( RideHal_ImageFormat_e format
     return ret;
 }
 
-void VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
+RideHalError_e VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
 {
+    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     uint32_t i, num, level = 0;
     const ProfileLevel_t *pTable = nullptr;
     uint32_t mbPerFrame = 0, mbPerSec = 0;
@@ -1122,17 +1128,13 @@ void VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
                     {
                         if ( m_bitRate <= pTable[i].maxBitRate )
                         {
+                            RIDEHAL_DEBUG( "set level = %" PRIu32 ", profile = %" PRIu32,
+                                           pTable[i].level, pTable[i].profile );
                             m_vidcEncoderData.level.level = pTable[i].level;
                             m_vidcEncoderData.profile.profile = pTable[i].profile;
-                            bFindFlag = true;
                         }
                     }
                 }
-            }
-            if ( false == bFindFlag )
-            {
-                m_vidcEncoderData.level.level = pTable[num - 1].level;
-                m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
             }
         }
         else if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat ) &&
@@ -1150,24 +1152,24 @@ void VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
                     {
                         if ( m_bitRate <= pTable[i].maxBitRate )
                         {
+                            RIDEHAL_DEBUG( "set level = %" PRIu32 ", profile = %" PRIu32,
+                                           pTable[i].level, pTable[i].profile );
                             m_vidcEncoderData.level.level = pTable[i].level;
                             m_vidcEncoderData.profile.profile = pTable[i].profile;
-                            bFindFlag = true;
                         }
                     }
                 }
             }
-            if ( false == bFindFlag )
-            {
-                m_vidcEncoderData.level.level = pTable[num - 1].level;
-                m_vidcEncoderData.profile.profile = pTable[num - 1].profile;
-            }
         }
     }
-    else
+
+    if ( ( 0 == m_vidcEncoderData.level.level ) || ( 0 == m_vidcEncoderData.profile.profile ) )
     {
         RIDEHAL_ERROR( "profile %d not supported", profile );
+        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
+
+    return ret;
 }
 
 int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
@@ -1383,27 +1385,31 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( VIDC_RATE_CONTROL_UNUSED == m_vidcEncoderData.rateControl )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) &&
+         ( VIDC_RATE_CONTROL_UNUSED == m_vidcEncoderData.rateControl ) )
     {
         RIDEHAL_ERROR( "rate control mode: 0x%x not supported!", pConfig->rateControlMode );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( VIDC_COLOR_FORMAT_UNUSED == m_vidcEncoderData.colorFormatConfig.color_format )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) &&
+         ( VIDC_COLOR_FORMAT_UNUSED == m_vidcEncoderData.colorFormatConfig.color_format ) )
     {
         RIDEHAL_ERROR( "input format: %d not supported!", m_inFormat );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 != m_outFormat ) &&
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) &&
+         ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265 != m_outFormat ) &&
          ( RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264 != m_outFormat ) )
     {
         RIDEHAL_ERROR( "output format: %d not supported!", m_outFormat );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( ( pConfig->numInputBufferReq > VIDEO_ENCODER_MAX_BUFFER_REQ ) ||
-         ( pConfig->numInputBufferReq < VIDEO_ENCODER_MIN_BUFFER_REQ ) )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) &&
+         ( ( pConfig->numInputBufferReq > VIDEO_ENCODER_MAX_BUFFER_REQ ) ||
+           ( pConfig->numInputBufferReq < VIDEO_ENCODER_MIN_BUFFER_REQ ) ) )
     {
         RIDEHAL_ERROR( "numInputBufferReq: %" PRIu32 " too small or too large! (MIN_BUFFER_REQ %d, "
                        "MAX_BUFFER_REQ %d) ",
@@ -1413,8 +1419,9 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
         m_numInputBufferReq = 0;
     }
 
-    if ( ( pConfig->numOutputBufferReq > VIDEO_ENCODER_MAX_BUFFER_REQ ) ||
-         ( pConfig->numOutputBufferReq < VIDEO_ENCODER_MIN_BUFFER_REQ ) )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) &&
+         ( ( pConfig->numOutputBufferReq > VIDEO_ENCODER_MAX_BUFFER_REQ ) ||
+           ( pConfig->numOutputBufferReq < VIDEO_ENCODER_MIN_BUFFER_REQ ) ) )
     {
         RIDEHAL_ERROR( "numOutputBufferReq: %" PRIu32
                        " too small or too large! (MIN_BUFFER_REQ %d, "
@@ -1425,13 +1432,15 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
         m_numOutputBufferReq = 0;
     }
 
-    if ( ( true == m_bInputDynamicMode ) && ( nullptr != pConfig->pInputBufferList ) )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( true == m_bInputDynamicMode ) &&
+         ( nullptr != pConfig->pInputBufferList ) )
     {
         RIDEHAL_ERROR( "should not provide inputbuffer in config in dynamic mode!" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( ( true == m_bOutputDynamicMode ) && ( nullptr != pConfig->pOutputBufferList ) )
+    if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( true == m_bOutputDynamicMode ) &&
+         ( nullptr != pConfig->pOutputBufferList ) )
     {
         RIDEHAL_ERROR( "should not provide outputbuffer in config in dynamic mode!" );
         ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
@@ -1784,6 +1793,7 @@ RideHalError_e VideoEncoder::FreeOutputBuffer()
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     vidc_buffer_info_type outbuf = { VIDC_BUFFER_UNUSED, 0 };
 
+    RIDEHAL_DEBUG( "FreeOutputBuffer:" );
     if ( nullptr != m_outputList )   // it means non dynamic mode
     {
         for ( i = 0; i < m_numOutputBufferReq; i++ )
@@ -1823,7 +1833,7 @@ RideHalError_e VideoEncoder::FreeInputBuffer()
     int32_t i, rc = 0;
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
     vidc_buffer_info_type inbuf = { VIDC_BUFFER_UNUSED, 0 };
-
+    RIDEHAL_DEBUG( "FreeInputBuffer:" );
     if ( nullptr != m_inputList )   // it means non dynamic mode
     {
         for ( i = 0; i < m_numInputBufferReq; i++ )

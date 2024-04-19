@@ -363,7 +363,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Resolution )
     config.gop = 0;
     config.numInputBufferReq = 4;
     config.numOutputBufferReq = 4;
-    config.frameRate = 60;
+    config.frameRate = 30;
     config.profile = VIDEO_ENCODER_PROFILE_H264_MAIN;
     config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
     config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
@@ -375,7 +375,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Resolution )
 
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
-    ret = veTest.Init( "VideoEncoderResolution_96x96", &config );
+    ret = veTest.Init( "VideoEncoderResolution_128x128", &config );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
 
@@ -436,18 +436,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Resolution )
     config.height = 2160;
     config.bitRate = 20000000;
     ret = veTest.Init( "VideoEncoderResolution_3840x2160", &config );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
-
-    ret = veTest.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
-
-
-    config.width = 4096;
-    config.height = 2160;
-    config.bitRate = 50000000;
-    ret = veTest.Init( "VideoEncoderResolution_4096x2160", &config );
     ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
 
@@ -547,6 +535,118 @@ TEST( VideoEncoder, SANITY_VideoEncoder_InitError )
 
     delete[] inBufferList;
     delete[] outBufferList;
+}
+
+TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
+{
+    RideHalError_e ret;
+    uint32_t i = 0;
+
+    VideoEncoder veTest1, veTest;
+    VideoEncoder_Config_t config;
+    config.width = 176;
+    config.height = 144;
+    config.bitRate = 512000;
+    config.gop = 0;
+    config.numInputBufferReq = 4;
+    config.numOutputBufferReq = 4;
+    config.frameRate = 60;
+    config.profile = VIDEO_ENCODER_PROFILE_H264_MAIN;
+    config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
+    config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
+    config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
+    config.bInputDynamicMode = false;
+    config.bOutputDynamicMode = false;
+    config.pInputBufferList = nullptr;
+    config.pOutputBufferList = nullptr;
+
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, veTest1.GetState() );
+
+    ret = veTest1.Start();
+    ASSERT_EQ( RIDE_HAL_ERROR_STATE, ret );
+
+    ret = veTest1.Stop();
+    ASSERT_EQ( RIDE_HAL_ERROR_STATE, ret );
+
+    ret = veTest1.Deinit();
+    ASSERT_EQ( RIDE_HAL_ERROR_STATE, ret );
+
+    ret = veTest.Init( "VideoEncoderErrorTest", &config );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, veTest.GetState() );
+
+    ret = veTest.Start();
+    ASSERT_EQ( RIDE_HAL_ERROR_NULL_PTR, ret );
+
+    ret = veTest.RegisterCallback( nullptr, nullptr, nullptr, nullptr );
+    ASSERT_EQ( RIDE_HAL_ERROR_NULL_PTR, ret );
+
+    VideoEncoder_InputFrame_t inputFrame;
+    ret = veTest.SubmitInputFrame( &inputFrame );
+    ASSERT_EQ( RIDE_HAL_ERROR_STATE, ret );
+
+    VideoEncoder_OutputFrame_t outputFrame;
+    ret = veTest.SubmitOutputFrame( &outputFrame );
+    ASSERT_EQ( RIDE_HAL_ERROR_STATE, ret );
+
+    ret = veTest.RegisterCallback( OnInputDoneCb, OnOutputDoneCb, EventCb, (void *) &veTest );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = veTest.Start();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
+
+    ret = veTest.SubmitInputFrame( nullptr );
+    ASSERT_EQ( RIDE_HAL_ERROR_NULL_PTR, ret );
+
+    RideHal_SharedBuffer_t sharedBuffer;
+    ret = sharedBuffer.Allocate( 128, 128, RIDE_HAL_IMAGE_FORMAT_NV12 );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    inputFrame.sharedBuffer = sharedBuffer;
+    ret = veTest.SubmitInputFrame( &inputFrame );
+    ASSERT_EQ( RIDE_HAL_ERROR_INVALID_BUF, ret );
+
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = sharedBuffer.Allocate( config.width, config.height, RIDE_HAL_IMAGE_FORMAT_RGB888 );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    inputFrame.sharedBuffer = sharedBuffer;
+    ret = veTest.SubmitInputFrame( &inputFrame );
+    ASSERT_EQ( RIDE_HAL_ERROR_INVALID_BUF, ret );
+
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    ret = veTest.SubmitOutputFrame( nullptr );
+    ASSERT_EQ( RIDE_HAL_ERROR_NULL_PTR, ret );
+
+    RideHal_ImageProps_t imgProps;
+    imgProps.batchSize = 1;
+    imgProps.width = config.width;
+    imgProps.height = config.height;
+    imgProps.compressedSize = 118784;
+    imgProps.format = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    ret = sharedBuffer.Allocate( &imgProps );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    outputFrame.sharedBuffer = sharedBuffer;
+    ret = veTest.SubmitOutputFrame( &outputFrame );
+    ASSERT_EQ( RIDE_HAL_ERROR_INVALID_BUF, ret );
+
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+
+    imgProps.format = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H264;
+    ret = sharedBuffer.Allocate( &imgProps );
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    outputFrame.sharedBuffer = sharedBuffer;
+    ret = veTest.SubmitOutputFrame( &outputFrame );
+    ASSERT_EQ( RIDE_HAL_ERROR_NORES, ret );
+
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
 }
 
 #ifndef GTEST_RIDEHAL
