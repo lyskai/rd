@@ -110,16 +110,12 @@ public:
                                             uint32_t numOfOutputBuffers );
 
 private:
-    RideHalError_e createSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                  void *bufferAddr, uint32_t width, uint32_t height,
-                                  uint32_t *stride, uint32_t *actualHeight, bool isSource );
-    RideHalError_e createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                     void *bufferAddr, uint32_t width, uint32_t height,
-                                     uint32_t *stride, uint32_t *actualHeight, bool isSource );
-    RideHalError_e createRGBSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                     void *bufferAddr, uint32_t width, uint32_t height,
-                                     uint32_t *stride, bool isSource );
-
+    RideHalError_e createSurface( uint32_t *surfaceId, uint32_t batchIdx,
+                                  const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource );
+    RideHalError_e createYUVSurface( uint32_t *surfaceId, uint32_t batchIdx,
+                                     const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource );
+    RideHalError_e createRGBSurface( uint32_t *surfaceId, uint32_t batchIdx,
+                                     const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource );
     uint32_t GetC2DFormatType( RideHal_ImageFormat_e format );
 
 private:

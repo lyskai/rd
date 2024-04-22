@@ -250,12 +250,10 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
 
-    uint32_t stride[RIDE_HAL_NUM_IMAGE_PLANES];
-    uint32_t actualHeight[RIDE_HAL_NUM_IMAGE_PLANES];
-
     void *bufferAddr = nullptr;
     bool isSource = true;
     uint32_t sourceSurfaceId = 0;
+    uint32_t batchIdx = 0;
     C2D_OBJECT c2dObj;
 
     for ( size_t i = 0; i < numOfInputBuffers; i++ )
@@ -289,15 +287,8 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
             }
             else
             {
-                for ( uint8_t k = 0; k < RIDE_HAL_NUM_IMAGE_PLANES; k++ )
-                {
-                    stride[k] = pInputBuffer[i].imgProps.stride[k];
-                    actualHeight[k] = pInputBuffer[i].imgProps.actualHeight[k];
-                }
+                ret = createSurface( &sourceSurfaceId, batchIdx, pInputBuffer, isSource );
 
-                ret = createSurface( &sourceSurfaceId, m_inputFormats[i], bufferAddr,
-                                     m_inputResolutions[i].width, m_inputResolutions[i].height,
-                                     stride, actualHeight, isSource );
                 if ( ret == RIDE_HAL_ERROR_NONE )
                 {
                     c2dObj.surface_id = sourceSurfaceId;
@@ -342,12 +333,6 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
     void *bufferAddr = nullptr;
     uint32_t targetSurfaceId = 0;
     bool isSource = false;
-
-    RideHal_ImageFormat_e outputFormat = pOutputBuffer->imgProps.format;
-    uint32_t outputWidth = pOutputBuffer->imgProps.width;
-    uint32_t outputHeight = pOutputBuffer->imgProps.height;
-    uint32_t stride[RIDE_HAL_NUM_IMAGE_PLANES];
-    uint32_t actualHeight[RIDE_HAL_NUM_IMAGE_PLANES];
     uint32_t outputSize = pOutputBuffer->size / pOutputBuffer->imgProps.batchSize;
 
     if ( m_numOfInputs != pOutputBuffer->imgProps.batchSize )
@@ -359,12 +344,6 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
 
     if ( RIDE_HAL_ERROR_NONE == ret )
     {
-        for ( uint8_t k = 0; k < RIDE_HAL_NUM_IMAGE_PLANES; k++ )
-        {
-            stride[k] = pOutputBuffer->imgProps.stride[k];
-            actualHeight[k] = pOutputBuffer->imgProps.actualHeight[k];
-        }
-
         for ( size_t i = 0; i < numOfOutputBuffers; i++ )
         {
             for ( size_t k = 0; k < m_numOfInputs; k++ )
@@ -376,8 +355,7 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
                 }
                 else
                 {
-                    ret = createSurface( &targetSurfaceId, outputFormat, bufferAddr, outputWidth,
-                                         outputHeight, stride, actualHeight, isSource );
+                    ret = createSurface( &targetSurfaceId, k, pOutputBuffer, isSource );
                     if ( ret == RIDE_HAL_ERROR_NONE )
                     {
                         m_outputBufferSurfaceMap[bufferAddr] = targetSurfaceId;
@@ -455,18 +433,20 @@ RideHalError_e C2D::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutp
     return ret;
 }
 
-RideHalError_e C2D::createSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                   void *bufferAddr, uint32_t width, uint32_t height,
-                                   uint32_t *stride, uint32_t *actualHeight, bool isSource )
+RideHalError_e C2D::createSurface( uint32_t *surfaceId, uint32_t batchIdx,
+                                   const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    uint32_t width = pSharedBuffer->imgProps.width;
+    uint32_t height = pSharedBuffer->imgProps.height;
+    RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
 
     switch ( format )
     {
         case RIDE_HAL_IMAGE_FORMAT_RGB888:
         case RIDE_HAL_IMAGE_FORMAT_BGR888:
-            ret = createRGBSurface( surfaceId, format, bufferAddr, width, height, stride,
-                                    isSource );
+            ret = createRGBSurface( surfaceId, batchIdx, pSharedBuffer, isSource );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to create RGB Surface\n" );
@@ -475,8 +455,7 @@ RideHalError_e C2D::createSurface( uint32_t *surfaceId, RideHal_ImageFormat_e fo
         case RIDE_HAL_IMAGE_FORMAT_UYVY:
         case RIDE_HAL_IMAGE_FORMAT_NV12:
         case RIDE_HAL_IMAGE_FORMAT_P010:
-            ret = createYUVSurface( surfaceId, format, bufferAddr, width, height, stride,
-                                    actualHeight, isSource );
+            ret = ret = createYUVSurface( surfaceId, batchIdx, pSharedBuffer, isSource );
             if ( RIDE_HAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to create YUV Surface\n" );
@@ -489,21 +468,33 @@ RideHalError_e C2D::createSurface( uint32_t *surfaceId, RideHal_ImageFormat_e fo
     return ret;
 }
 
-RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                      void *bufferAddr, uint32_t width, uint32_t height,
-                                      uint32_t *stride, uint32_t *actualHeight, bool isSource )
+RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, uint32_t batchIdx,
+                                      const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    void *bufferAddr = nullptr;
+    RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
     C2D_YUV_SURFACE_DEF surfaceDef;
+
     memset( &surfaceDef, 0, sizeof( C2D_YUV_SURFACE_DEF ) );
+
+    if ( isSource )
+    {
+        bufferAddr = pSharedBuffer->data();
+    }
+    else
+    {
+        uint32_t outputSize = pSharedBuffer->size / pSharedBuffer->imgProps.batchSize;
+        bufferAddr = (void *) ( (uintptr_t) pSharedBuffer->data() + batchIdx * outputSize );
+    }
 
     surfaceDef.plane0 = bufferAddr;
     surfaceDef.format = GetC2DFormatType( format );
-    surfaceDef.height = height;
-    surfaceDef.width = width;
-    surfaceDef.stride0 = stride[0];
-    surfaceDef.stride1 = stride[1];
-    surfaceDef.stride2 = stride[2];
+    surfaceDef.height = pSharedBuffer->imgProps.height;
+    surfaceDef.width = pSharedBuffer->imgProps.width;
+    surfaceDef.stride0 = pSharedBuffer->imgProps.stride[0];
+    surfaceDef.stride1 = pSharedBuffer->imgProps.stride[1];
     surfaceDef.phys0 = (void *) 1;   // any nonzero value
     surfaceDef.phys1 = (void *) 1;   // any nonzero value
 
@@ -512,7 +503,8 @@ RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e
         case C2D_COLOR_FORMAT_420_NV12:
         case C2D_COLOR_FORMAT_420_P010:
             surfaceDef.plane1 =
-                    (void *) ( (uint8_t *) surfaceDef.plane0 + stride[0] * actualHeight[0] );
+                    (void *) ( (uint8_t *) surfaceDef.plane0 +
+                               surfaceDef.stride0 * pSharedBuffer->imgProps.actualHeight[0] );
             break;
         default:
             break;
@@ -524,39 +516,53 @@ RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, RideHal_ImageFormat_e
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
-        RIDEHAL_ERROR( "Failed to create %s YUV surface, c2dStatus wrong",
-                       isSource ? "source" : "target" );
-        RIDEHAL_ERROR( "format: %d, width: %u, height: %u", (int) format, width, height );
+        RIDEHAL_ERROR( "Failed to create %s YUV surface, format: %d, width: %u, height: %u, "
+                       "c2dStatus wrong",
+                       isSource ? "source" : "target", (int) format, surfaceDef.width,
+                       surfaceDef.height );
     }
 
     return ret;
 }
 
-RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                      void *bufferAddr, uint32_t width, uint32_t height,
-                                      uint32_t *stride, bool isSource )
+RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, uint32_t batchIdx,
+                                      const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource )
 {
     RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+
+    void *bufferAddr = nullptr;
+    RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
     C2D_RGB_SURFACE_DEF surfaceDef;
+
     memset( &surfaceDef, 0, sizeof( C2D_RGB_SURFACE_DEF ) );
+
+    if ( isSource )
+    {
+        bufferAddr = pSharedBuffer->data();
+    }
+    else
+    {
+        uint32_t outputSize = pSharedBuffer->size / pSharedBuffer->imgProps.batchSize;
+        bufferAddr = (void *) ( (uintptr_t) pSharedBuffer->data() + batchIdx * outputSize );
+    }
 
     surfaceDef.buffer = bufferAddr;
     surfaceDef.format = GetC2DFormatType( format );
-    surfaceDef.height = height;
-    surfaceDef.width = width;
-    surfaceDef.stride = stride[0];
+    surfaceDef.height = pSharedBuffer->imgProps.height;
+    surfaceDef.width = pSharedBuffer->imgProps.width;
+    surfaceDef.stride = pSharedBuffer->imgProps.stride[0];
     surfaceDef.phys = (void *) 1;   // any nonzero value
     auto c2dStatus = c2dCreateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
             static_cast<C2D_SURFACE_TYPE>( C2D_SURFACE_RGB_HOST | C2D_SURFACE_WITH_PHYS ),
             (void *) &surfaceDef );
-
     if ( C2D_STATUS_OK != c2dStatus )
     {
         ret = RIDE_HAL_ERROR_FAIL;
-        RIDEHAL_ERROR( "Failed to create %s RGB surface, c2dStatus wrong",
-                       isSource ? "source" : "target" );
-        RIDEHAL_ERROR( "format: %d, width: %u, height: %u", (int) format, width, height );
+        RIDEHAL_ERROR( "Failed to create %s RGB surface, format: %d, width: %u, height: %u, "
+                       "c2dStatus wrong",
+                       isSource ? "source" : "target", (int) format, surfaceDef.width,
+                       surfaceDef.height );
     }
 
     return ret;
