@@ -62,9 +62,15 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
             uint32_t mapHeight = RemapConfig.inputConfigs[inputId].mapHeight;
             uint32_t inputWidth = RemapConfig.inputConfigs[inputId].inputWidth;
             uint32_t inputHeight = RemapConfig.inputConfigs[inputId].inputHeight;
-            uint32_t mapSize = mapWidth * mapHeight;
-            float mapX[mapSize];
-            float mapY[mapSize];
+            uint32_t mapSize = mapWidth * mapHeight * sizeof( float );
+            RideHal_SharedBuffer_t mapXBuffer;
+            RideHal_SharedBuffer_t mapYBuffer;
+            ret = mapXBuffer.Allocate( mapSize );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            ret = mapYBuffer.Allocate( mapSize );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            float *mapX = (float *) mapXBuffer.data();
+            float *mapY = (float *) mapYBuffer.data();
             for ( int i = 0; i < mapHeight; i++ )
             {
                 for ( int j = 0; j < mapWidth; j++ )
@@ -98,8 +104,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
                 inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
                                      RemapConfig.inputConfigs[inputId].inputHeight * 2;
             }
-            else if ( RemapConfig.inputConfigs[inputId].inputFormat ==
-                      RIDEHAL_IMAGE_FORMAT_RGB888 )
+            else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_RGB888 )
             {
                 inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
                                      RemapConfig.inputConfigs[inputId].inputHeight * 3;
@@ -192,21 +197,30 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     return;
 }
 
-TEST( Remap, DSPSuccessPipelineTest )   // general success test on DSP for various pipeline,
-                                        // including multiple input formats, output formats,
-                                        // undisortion or not, normalization or not
+TEST( Remap, DSPSuccessPipeline1Test )   // general success test on DSP for UYVY/RGB to RGB, with
+                                         // and without normalization, no undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 RIDEHAL_IMAGE_FORMAT_RGB888, false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, false, false );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, false );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, true, false, false );
 }
 
-TEST( Remap, CPUSuccessPipelineTest )   // general success test on CPU for various pipeline,
-                                        // including multiple input formats, output formats,
-                                        // undisortion or not, normalization or not
+TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY/RGB to RGB, with
+                                         // and without normalization, undistortion
+{
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, true, false, false );
+}
+
+TEST( Remap, CPUSuccessPipeline1Test )   // general success test on CPU for UYVY/RGB to RGB, with
+                                         // and without normalization, no undistortion
 {
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, false );
@@ -216,12 +230,23 @@ TEST( Remap, CPUSuccessPipelineTest )   // general success test on CPU for vario
                  false, true, false, false );
 }
 
+TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for UYVY/RGB to RGB, with
+                                         // and without normalization, undistortion
+{
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, true, false, false );
+}
+
 TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
                                      // pipeline, no undistortion and no renormalization
 {
     printf( "DSP general accuracy test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 RIDEHAL_IMAGE_FORMAT_RGB888, false, false, true, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, true, false );
     printf( "CPU general accuracy test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, true, false );
@@ -231,8 +256,8 @@ TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU 
                                         // RGB pipeline, no undistortion and no renormalization
 {
     printf( "DSP general performance test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 RIDEHAL_IMAGE_FORMAT_RGB888, false, false, false, true );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, false, true );
     printf( "CPU general performance test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, true );

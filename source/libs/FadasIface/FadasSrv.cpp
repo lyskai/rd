@@ -622,9 +622,9 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                     retVal = FadasIface_FadasRemap_CreateMapFromMap(
                             m_handle64, &remapPtr, m_inputWidths[inputId], m_inputHeights[inputId],
                             m_mapWidths[inputId], m_mapHeights[inputId], pMapX,
-                            m_mapHeights[inputId] * m_inputWidths[inputId], pMapY,
-                            m_mapHeights[inputId] * m_inputWidths[inputId],
-                            m_inputWidths[inputId] * sizeof( float ), pipeline, 0 );
+                            m_mapHeights[inputId] * m_mapWidths[inputId], pMapY,
+                            m_mapHeights[inputId] * m_mapWidths[inputId],
+                            m_mapWidths[inputId] * sizeof( float ), pipeline, 0 );
                 }
                 else
                 {
@@ -661,7 +661,7 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 {
                     remapPtr = FadasRemap_CreateMapFromMap(
                             m_inputWidths[inputId], m_inputHeights[inputId], m_mapWidths[inputId],
-                            m_mapHeights[inputId], m_inputWidths[inputId] * sizeof( float ), pMapX,
+                            m_mapHeights[inputId], m_mapWidths[inputId] * sizeof( float ), pMapX,
                             pMapY, pipeline, 0 );
                 }
                 else
