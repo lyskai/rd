@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_SAMPLE_PROFILER_HPP_
-#define _RIDE_HAL_SAMPLE_PROFILER_HPP_
+#ifndef _RIDEHAL_SAMPLE_PROFILER_HPP_
+#define _RIDEHAL_SAMPLE_PROFILER_HPP_
 
 #include <chrono>
 #include <cinttypes>
@@ -144,4 +144,4 @@ private:
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_SAMPLE_PROFILER_HPP_
+#endif   // _RIDEHAL_SAMPLE_PROFILER_HPP_

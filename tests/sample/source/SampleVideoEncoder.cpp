@@ -107,27 +107,27 @@ void SampleVideoEncoder::EventCallback( const VideoEncoder_EventType_e eventId,
 
 RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_config.width = Get( config, "width", 0 );
     if ( 0 == m_config.width )
     {
         RIDEHAL_ERROR( "invalid width = %u\n", m_config.width );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_config.height = Get( config, "height", 0 );
     if ( 0 == m_config.height )
     {
         RIDEHAL_ERROR( "invalid height = %u\n", m_config.height );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_config.numInputBufferReq = Get( config, "pool_size", 4 );
     if ( 0 == m_config.numInputBufferReq )
     {
         RIDEHAL_ERROR( "invalid pool_size = %u\n", m_config.numInputBufferReq );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     m_config.numOutputBufferReq = m_config.numInputBufferReq;
 
@@ -135,34 +135,34 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
     if ( 0 == m_config.bitRate )
     {
         RIDEHAL_ERROR( "invalid bitrate = %u\n", m_config.bitRate );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_config.frameRate = Get( config, "fps", 30 );
     if ( 0 == m_config.frameRate )
     {
         RIDEHAL_ERROR( "invalid fps = %u\n", m_config.frameRate );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
     {
         RIDEHAL_ERROR( "no input topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_outputTopicName = Get( config, "output_topic", "" );
     if ( "" == m_outputTopicName )
     {
         RIDEHAL_ERROR( "no output topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_config.gop = 20;
     m_config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
-    m_config.inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
-    m_config.outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    m_config.inFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    m_config.outFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
     m_config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
     m_config.bInputDynamicMode = true;
     m_config.bOutputDynamicMode = false;
@@ -172,32 +172,32 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
 
 RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = ParseConfig( config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_encoder.Init( (char *) name.c_str(), &m_config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_encoder.RegisterCallback( SampleVideoEncoder::InFrameCallback,
                                           SampleVideoEncoder::OutFrameCallback,
                                           SampleVideoEncoder::EventCallback, (void *) this );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_sub.Init( name, m_inputTopicName );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_pub.Init( name, m_outputTopicName );
     }
@@ -207,11 +207,11 @@ RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &confi
 
 RideHalError_e SampleVideoEncoder::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_encoder.Start();
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
         m_thread = std::thread( &SampleVideoEncoder::ThreadMain, this );
@@ -248,7 +248,7 @@ void SampleVideoEncoder::ThreadMain()
             }
 
             ret = m_encoder.SubmitInputFrame( &inputFrame );
-            if ( RIDE_HAL_ERROR_NONE != ret )
+            if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "failed to submit input frameId %" PRIu64, frame.frameId );
                 std::lock_guard<std::mutex> l( m_lock );
@@ -266,7 +266,7 @@ void SampleVideoEncoder::ThreadMain()
 
 RideHalError_e SampleVideoEncoder::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = true;
     if ( m_thread.joinable() )
@@ -281,7 +281,7 @@ RideHalError_e SampleVideoEncoder::Stop()
 
 RideHalError_e SampleVideoEncoder::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_encoder.Deinit();
 

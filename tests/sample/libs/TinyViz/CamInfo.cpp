@@ -97,7 +97,7 @@ uint32_t CamInfo::stride()
 
 RideHal_ImageFormat_e CamInfo::format()
 {
-    RideHal_ImageFormat_e fmt = RIDE_HAL_IMAGE_FORMAT_MAX;
+    RideHal_ImageFormat_e fmt = RIDEHAL_IMAGE_FORMAT_MAX;
 
     if ( nullptr != camFrame.buffer )
     {

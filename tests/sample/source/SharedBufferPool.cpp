@@ -14,7 +14,7 @@ SharedBufferPool::SharedBufferPool() {}
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     (void) RIDEHAL_LOGGER_INIT( name.c_str(), level );
 
@@ -86,7 +86,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 {
     RideHalError_e ret = Init( name, level, number );
 
-    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDEHAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( width, height, format, usage, flags );
@@ -95,7 +95,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
     }
@@ -110,7 +110,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 {
     RideHalError_e ret = Init( name, level, number );
 
-    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDEHAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( batchSize, width, height, format, usage, flags );
@@ -119,7 +119,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
                        sharedBuffer.data(), sharedBuffer.buffer.dmaHandle, ret );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
     }
@@ -133,7 +133,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 {
     RideHalError_e ret = Init( name, level, number );
 
-    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDEHAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( &imageProps, usage, flags );
@@ -142,7 +142,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
     }
@@ -156,7 +156,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 {
     RideHalError_e ret = Init( name, level, number );
 
-    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    for ( uint32_t idx = 0; ( idx < m_queue.size() ) && ( RIDEHAL_ERROR_NONE == ret ); idx++ )
     {
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( &tensorProps, usage, flags );
@@ -165,7 +165,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
     }

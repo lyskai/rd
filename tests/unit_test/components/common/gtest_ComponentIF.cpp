@@ -22,17 +22,17 @@ public:
     RideHalError_e Init( const char *pName, const ComponentIFTest_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
         ret = ComponentIF::Init( pName );
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             // DO real initialize using pConfig.
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            m_state = RIDEHAL_COMPONENT_STATE_READY;
         }
 
         return ret;
@@ -40,21 +40,21 @@ public:
 
     RideHalError_e Start()
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-        if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
+        if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
         {
-            ret = RIDE_HAL_ERROR_STATE;
+            ret = RIDEHAL_ERROR_BAD_STATE;
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             // DO start
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
+            m_state = RIDEHAL_COMPONENT_STATE_RUNNING;
         }
 
         return ret;
@@ -63,21 +63,21 @@ public:
 
     RideHalError_e Stop()
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-        if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
+        if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
         {
-            ret = RIDE_HAL_ERROR_STATE;
+            ret = RIDEHAL_ERROR_BAD_STATE;
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             // DO stop
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_state = RIDE_HAL_COMPONENT_STATE_READY;
+            m_state = RIDEHAL_COMPONENT_STATE_READY;
         }
 
         return ret;
@@ -85,19 +85,19 @@ public:
 
     RideHalError_e Deinit()
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-        if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
+        if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
         {
-            ret = RIDE_HAL_ERROR_STATE;
+            ret = RIDEHAL_ERROR_BAD_STATE;
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             // DO deinit
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             ret = ComponentIF::Deinit();
         }
@@ -114,23 +114,23 @@ TEST( ComponentIF, SANITY_ComponentIF )
 
     for ( int i = 0; i < 3; i++ )
     {
-        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+        ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
 
         ret = cifTest.Init( "test", &config );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_COMPONENT_STATE_READY, cifTest.GetState() );
 
         ret = cifTest.Start();
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_RUNNING, cifTest.GetState() );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_COMPONENT_STATE_RUNNING, cifTest.GetState() );
 
         ret = cifTest.Stop();
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_READY, cifTest.GetState() );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_COMPONENT_STATE_READY, cifTest.GetState() );
 
         ret = cifTest.Deinit();
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
-        ASSERT_EQ( RIDE_HAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
     }
 }
 

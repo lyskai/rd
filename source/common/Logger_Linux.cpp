@@ -35,11 +35,11 @@ void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const ch
 RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
                                       Logger_Handle_t *pHandle )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( nullptr == pName ) || ( nullptr == pHandle ) )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -52,7 +52,7 @@ RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
         }
         else
         {
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
     }
 

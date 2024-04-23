@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_REMAP_HPP_
-#define _RIDE_HAL_REMAP_HPP_
+#ifndef _RIDEHAL_REMAP_HPP_
+#define _RIDEHAL_REMAP_HPP_
 
 #include <cinttypes>
 #include <inttypes.h>
@@ -45,7 +45,7 @@ typedef struct
 typedef struct
 {
     RideHal_ProcessorType_e processor;                     /*pipelie processor type*/
-    Remap_InputConfig_t inputConfigs[RIDE_HAL_MAX_INPUTS]; /*input images configuration*/
+    Remap_InputConfig_t inputConfigs[RIDEHAL_MAX_INPUTS]; /*input images configuration*/
     uint32_t numOfInputs;                                  /*number of input images*/
     uint32_t outputWidth;                                  /*output image width*/
     uint32_t outputHeight;                                 /*output image height*/
@@ -67,7 +67,7 @@ public:
     /// @param pName the remap unique instance name
     /// @param pConfig the remap configuration paramaters
     /// @param level the logger message level
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, const Remap_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
@@ -75,33 +75,33 @@ public:
     /// @param pBuffers a list of buffers to be registeer
     /// @param numBuffers number of buffers
     /// @param bufferType buffer type, could be IN, OUT, INOUT
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e RegBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                            FadasBufType_e bufferType );
 
     /// @brief Deregister buffer for remap
     /// @param pBuffers a list of buffers to be deregister
     /// @param numBuffers number of buffers
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e DeregBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /// @brief Start the remap pipeline
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start();
 
     /// @brief Stop the remap pipeline
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop();
 
     /// @brief deinitialize the remap pipeline
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit();
 
     /// @brief execute
     /// @param pInputs the input shared buffers
     /// @param numInputs the number of the input shared buffers
     /// @param pOutput the output shared buffers
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
 
@@ -114,4 +114,4 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_REMAP_HPP_
+#endif   // _RIDEHAL_REMAP_HPP_

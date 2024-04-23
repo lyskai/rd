@@ -11,22 +11,22 @@ namespace component
 
 RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_INITIAL != m_state )
+    if ( RIDEHAL_COMPONENT_STATE_INITIAL != m_state )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else
     {
         m_name = pName;
         ret = RIDEHAL_LOGGER_INIT( pName, level );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        if ( RIDEHAL_ERROR_NONE != ret )
         {
             fprintf( stderr, "WARINING: failed to create logger for component %s: ret = %d\n",
                      pName, ret );
         }
-        ret = RIDE_HAL_ERROR_NONE;
+        ret = RIDEHAL_ERROR_NONE;
     }
 
     return ret;
@@ -34,17 +34,17 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
 
 RideHalError_e ComponentIF::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = RIDEHAL_LOGGER_DEINIT();
-    if ( RIDE_HAL_ERROR_NONE != ret )
+    if ( RIDEHAL_ERROR_NONE != ret )
     {
         fprintf( stderr, "WARINING: failed to deinit logger for component %s: ret = %d\n",
                  GetName(), ret );
     }
-    ret = RIDE_HAL_ERROR_NONE; /* ignore logger init error */
+    ret = RIDEHAL_ERROR_NONE; /* ignore logger init error */
 
-    m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
+    m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
 
     return ret;
 }

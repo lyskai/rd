@@ -36,8 +36,8 @@ else()
 endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
-  #list( APPEND RIDEHAL_SAMPLE_DEFINITIONS WITH_RSM_V2 )
-  #list( APPEND TARGET_LIBRARIES rsm_client )
+  list( APPEND RIDEHAL_SAMPLE_DEFINITIONS WITH_RSM_V2 )
+  list( APPEND TARGET_LIBRARIES rsm_client )
 endif()
 
 add_library( RideHalSample SHARED ${RIDEHAL_SAMPLE_SOURCES} )

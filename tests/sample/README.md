@@ -65,7 +65,10 @@ The command line template example:
 | height    | true     | int       | -       | The image height |
 | request_mode | false | bool      | false   | The camera request mode |
 | pool_size | false    | int       | 4       | The image memory pool size |
+| format    | false    | string    | "nv12"  | The camera frame format, options from [nv12, uyvy] |
+| frame_drop_patten | false | int  | 0       | The frame drop patten defined by qcarcam |
 | isp_use_case | false | int       | 3       | The ISP use case |
+| op_mode   | false    | int       | 2       | The input operation mode, 1: Inline ISP, 2: Injection to ISP. |
 | topic     | true     | string    | -       | The output topic name |
 
 The command line template example:
@@ -369,4 +372,3 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_topic -v /sensor/camera/CAM1/objs \
   -n VIZ -t TinyViz -k cameras -v CAM0,CAM1
 ```
-

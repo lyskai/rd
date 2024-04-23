@@ -1,8 +1,8 @@
 //  Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#ifndef _RIDE_HAL_SHARED_BUFFER_POOL_HPP_
-#define _RIDE_HAL_SHARED_BUFFER_POOL_HPP_
+#ifndef _RIDEHAL_SHARED_BUFFER_POOL_HPP_
+#define _RIDEHAL_SHARED_BUFFER_POOL_HPP_
 
 #include <cinttypes>
 #include <cstring>
@@ -37,24 +37,24 @@ public:
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number, uint32_t width,
                          uint32_t height, RideHal_ImageFormat_e format,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
-                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+                         RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          uint32_t batchSize, uint32_t width, uint32_t height,
                          RideHal_ImageFormat_e format,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
-                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+                         RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_ImageProps_t &imageProps,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
-                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+                         RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_TensorProps_t &tensorProps,
-                         RideHal_BufferUsage_e usage = RIDE_HAL_BUFFER_USAGE_DEFAULT,
-                         RideHal_BufferFlags_t flags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA );
+                         RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
+                         RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
 private:
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number );
@@ -75,4 +75,4 @@ private:
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // #ifndef _RIDE_HAL_SHARED_BUFFER_POOL_HPP_
+#endif   // #ifndef _RIDEHAL_SHARED_BUFFER_POOL_HPP_

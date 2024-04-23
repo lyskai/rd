@@ -63,56 +63,56 @@ public:
     ~Camera();
 
     /// @brief init the Camera object
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( char *pName, const Camera_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the Camera object
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start() final;
 
     /// @brief Stop the Camera object
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop() final;
 
     /// @brief deinit the Camera object
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit() final;
 
     /// @brief Pause the Camera object
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Pause();
 
     /// @brief Resume the Camera object
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Resume();
 
     /// @brief release a camera frame
     /// @param frameIndex index of the frame
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e ReleaseFrame( uint32_t frameIndex );
 
     /// @brief resuest a new camera frame
     /// @param pFrame the frame to request from camera
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e RequestFrame( CameraFrame_t *pFrame );
 
     /// @brief resuest a new camera frame
     /// @param pBuffer a list of buffers to be set to camera
     /// @param numBuffers number of buffers to be set
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32_t numBuffers );
 
     /// @brief register callback
     /// @param frameCallback frame callback function
     /// @param eventCallback event callback function
     /// @param pAppPriv app private data
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e RegisterCallback( RideHal_CamFrameCallback_t frameCallback,
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
 
     /// @brief get camera inputs info
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e GetInputsInfo(CameraInputs_t *pCamInputs);
 
 private:
@@ -154,4 +154,4 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_RIDEHALCAM_HPP_
+#endif   // _RIDEHAL_RIDEHALCAM_HPP_

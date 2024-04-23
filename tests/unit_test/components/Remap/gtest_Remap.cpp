@@ -14,7 +14,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
                   RideHal_ImageFormat_e outputFormatTest, bool bEnableUndistortionTest,
                   bool bEnableNormalizeTest, bool bCheckAccuracyTest, bool bCheckPerformanceTest )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     Remap RemapObj;
     Remap_Config_t RemapConfig;
@@ -85,26 +85,26 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
         ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
                                         RemapConfig.inputConfigs[inputId].inputHeight,
                                         RemapConfig.inputConfigs[inputId].inputFormat );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     if ( bCheckAccuracyTest == true )
     {
-        size_t inputSize[RIDE_HAL_MAX_INPUTS];
+        size_t inputSize[RIDEHAL_MAX_INPUTS];
         for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
         {
-            if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDE_HAL_IMAGE_FORMAT_UYVY )
+            if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_UYVY )
             {
                 inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
                                      RemapConfig.inputConfigs[inputId].inputHeight * 2;
             }
             else if ( RemapConfig.inputConfigs[inputId].inputFormat ==
-                      RIDE_HAL_IMAGE_FORMAT_RGB888 )
+                      RIDEHAL_IMAGE_FORMAT_RGB888 )
             {
                 inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
                                      RemapConfig.inputConfigs[inputId].inputHeight * 3;
             }
-            else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDE_HAL_IMAGE_FORMAT_NV12 )
+            else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_NV12 )
             {
                 inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
                                      RemapConfig.inputConfigs[inputId].inputHeight * 1.5;
@@ -129,19 +129,19 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     RideHal_SharedBuffer_t output;
     ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
                            RemapConfig.outputHeight, RemapConfig.outputFormat );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.Init( pName, pRemapConfig );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.RegBuf( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.RegBuf( &output, 1, FADAS_BUF_TYPE_OUT );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( bCheckPerformanceTest == true )
     {
@@ -154,19 +154,19 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
         auto end = std::chrono::high_resolution_clock::now();
         double duration_ms = std::chrono::duration<double, std::milli>( end - start ).count();
         printf( "execute time = %f\n", (float) duration_ms / (float) times );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
     else
     {
         ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = RemapObj.DeregBuf( inputs, RemapConfig.numOfInputs );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.DeregBuf( &output, 1 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( bCheckAccuracyTest == true )
     {
@@ -184,10 +184,10 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     }
 
     ret = RemapObj.Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     return;
 }
@@ -196,11 +196,11 @@ TEST( Remap, DSPSuccessPipelineTest )   // general success test on DSP for vario
                                         // including multiple input formats, output formats,
                                         // undisortion or not, normalization or not
 {
-    SuccessTest( RIDE_HAL_PROCESSOR_HTP0, RIDE_HAL_IMAGE_FORMAT_RGB888,
-                 RIDE_HAL_IMAGE_FORMAT_RGB888, false, false, false, false );
-    SuccessTest( RIDE_HAL_PROCESSOR_HTP0, RIDE_HAL_IMAGE_FORMAT_UYVY, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, false );
-    SuccessTest( RIDE_HAL_PROCESSOR_HTP0, RIDE_HAL_IMAGE_FORMAT_UYVY, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, true, false, false );
 }
 
@@ -208,11 +208,11 @@ TEST( Remap, CPUSuccessPipelineTest )   // general success test on CPU for vario
                                         // including multiple input formats, output formats,
                                         // undisortion or not, normalization or not
 {
-    SuccessTest( RIDE_HAL_PROCESSOR_CPU, RIDE_HAL_IMAGE_FORMAT_RGB888, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, false );
-    SuccessTest( RIDE_HAL_PROCESSOR_CPU, RIDE_HAL_IMAGE_FORMAT_UYVY, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, false );
-    SuccessTest( RIDE_HAL_PROCESSOR_CPU, RIDE_HAL_IMAGE_FORMAT_UYVY, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, true, false, false );
 }
 
@@ -220,10 +220,10 @@ TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backen
                                      // pipeline, no undistortion and no renormalization
 {
     printf( "DSP general accuracy test\n" );
-    SuccessTest( RIDE_HAL_PROCESSOR_HTP0, RIDE_HAL_IMAGE_FORMAT_RGB888,
-                 RIDE_HAL_IMAGE_FORMAT_RGB888, false, false, true, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, false, false, true, false );
     printf( "CPU general accuracy test\n" );
-    SuccessTest( RIDE_HAL_PROCESSOR_CPU, RIDE_HAL_IMAGE_FORMAT_RGB888, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, true, false );
 }
 
@@ -231,10 +231,10 @@ TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU 
                                         // RGB pipeline, no undistortion and no renormalization
 {
     printf( "DSP general performance test\n" );
-    SuccessTest( RIDE_HAL_PROCESSOR_HTP0, RIDE_HAL_IMAGE_FORMAT_RGB888,
-                 RIDE_HAL_IMAGE_FORMAT_RGB888, false, false, false, true );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, false, false, false, true );
     printf( "CPU general performance test\n" );
-    SuccessTest( RIDE_HAL_PROCESSOR_CPU, RIDE_HAL_IMAGE_FORMAT_RGB888, RIDE_HAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, true );
 }
 

@@ -64,12 +64,12 @@ protected:
 private:
     RideHalError_e InitCPU();
     RideHalError_e InitDSP( RideHal_ProcessorType_e coreId );
-    static std::mutex s_coreLock[RIDE_HAL_PROCESSOR_MAX];
+    static std::mutex s_coreLock[RIDEHAL_PROCESSOR_MAX];
     static std::mutex s_FadasLock;
-    static remote_handle64 s_handle64[RIDE_HAL_PROCESSOR_MAX];
-    static uint64_t s_useRef[RIDE_HAL_PROCESSOR_MAX];
-    static bool s_initialized[RIDE_HAL_PROCESSOR_MAX];
-    static std::map<void *, MemInfo> s_memMaps[RIDE_HAL_PROCESSOR_MAX];
+    static remote_handle64 s_handle64[RIDEHAL_PROCESSOR_MAX];
+    static uint64_t s_useRef[RIDEHAL_PROCESSOR_MAX];
+    static bool s_initialized[RIDEHAL_PROCESSOR_MAX];
+    static std::map<void *, MemInfo> s_memMaps[RIDEHAL_PROCESSOR_MAX];
     static int s_client;
 
 protected:
@@ -110,15 +110,15 @@ private:
 private:
     remote_handle64 m_handle64;
     uint32_t m_numOfInputs;
-    RideHal_ImageFormat_e m_inputFormats[RIDE_HAL_MAX_INPUTS];
+    RideHal_ImageFormat_e m_inputFormats[RIDEHAL_MAX_INPUTS];
     RideHal_ImageFormat_e m_outputFormat;
-    uint32_t m_inputWidths[RIDE_HAL_MAX_INPUTS];
-    uint32_t m_inputHeights[RIDE_HAL_MAX_INPUTS];
-    uint32_t m_mapWidths[RIDE_HAL_MAX_INPUTS];
-    uint32_t m_mapHeights[RIDE_HAL_MAX_INPUTS];
-    FadasROI_t m_ROIs[RIDE_HAL_MAX_INPUTS];
-    uint64 m_workerPtrs[RIDE_HAL_MAX_INPUTS];
-    uint64 m_remapPtrs[RIDE_HAL_MAX_INPUTS];
+    uint32_t m_inputWidths[RIDEHAL_MAX_INPUTS];
+    uint32_t m_inputHeights[RIDEHAL_MAX_INPUTS];
+    uint32_t m_mapWidths[RIDEHAL_MAX_INPUTS];
+    uint32_t m_mapHeights[RIDEHAL_MAX_INPUTS];
+    FadasROI_t m_ROIs[RIDEHAL_MAX_INPUTS];
+    uint64 m_workerPtrs[RIDEHAL_MAX_INPUTS];
+    uint64 m_remapPtrs[RIDEHAL_MAX_INPUTS];
     FadasNormlzParams_t m_normlz[3];
     uint32_t m_outputWidth;
     uint32_t m_outputHeight;

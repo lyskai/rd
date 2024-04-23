@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_SAMPLE_DATA_BROKER_HPP_
-#define _RIDE_HAL_SAMPLE_DATA_BROKER_HPP_
+#ifndef _RIDEHAL_SAMPLE_DATA_BROKER_HPP_
+#define _RIDEHAL_SAMPLE_DATA_BROKER_HPP_
 
 #include <condition_variable>
 #include <cstdint>
@@ -39,10 +39,10 @@ public:
 
     /// @brief publish a data into the queue
     /// @param data the data
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Publish( T &data )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
         std::unique_lock<std::mutex> lock( m_mutex );
         m_queue.push( data );
         if ( m_queueDepth < m_queue.size() )
@@ -57,10 +57,10 @@ public:
 
     /// @brief Receive a data from the queue
     /// @param data the data returned
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Receive( T &data, uint32_t timeoutMs = 50 )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
         std::unique_lock<std::mutex> lock( m_mutex );
         if ( m_queue.empty() )
         {
@@ -71,7 +71,7 @@ public:
                 {
                     if ( m_queue.empty() )
                     {
-                        ret = RIDE_HAL_ERROR_ACCES;
+                        ret = RIDEHAL_ERROR_FAIL;
                     }
                     else
                     {
@@ -80,12 +80,13 @@ public:
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_TIMEOUT;
+                    ret = RIDEHAL_ERROR_TIMEOUT;
                 }
             }
             else
             {
-                ret = RIDE_HAL_ERROR_NODATA;
+                /* queue is empty, treat it as timeout */
+                ret = RIDEHAL_ERROR_TIMEOUT;
             }
         }
         else
@@ -168,13 +169,13 @@ public:
 
     RideHalError_e Publish( T &data )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
         std::unique_lock<std::mutex> lck( m_lock );
         for ( auto it : m_dataQueueMap )
         {
             ret = it.second->Publish( data );
-            if ( RIDE_HAL_ERROR_NONE != ret )
+            if ( RIDEHAL_ERROR_NONE != ret )
             {
                 break;
             }
@@ -206,14 +207,14 @@ public:
 
     RideHalError_e Init( std::string name, std::string topicName )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
         m_name = name;
         m_topicName = topicName;
         m_broker = DataBroker<T>::Add( topicName );
         if ( nullptr == m_broker )
         {
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
 
         return ret;
@@ -221,14 +222,14 @@ public:
 
     RideHalError_e Publish( T &data )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
         if ( nullptr != m_broker )
         {
             m_broker->Publish( data );
         }
         else
         {
-            ret = RIDE_HAL_ERROR_STATE;
+            ret = RIDEHAL_ERROR_BAD_STATE;
         }
 
         return ret;
@@ -256,7 +257,7 @@ public:
     RideHalError_e Init( std::string name, std::string topicName, uint32_t queueDepth = 2,
                          bool bLatest = true )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
         m_name = name;
         m_topicName = topicName;
@@ -266,12 +267,12 @@ public:
             m_sub = m_broker->CreateSubscriber( m_name, queueDepth, bLatest );
             if ( nullptr == m_sub )
             {
-                ret = RIDE_HAL_ERROR_EXISTS;
+                ret = RIDEHAL_ERROR_ALREADY;
             }
         }
         else
         {
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
 
         return ret;
@@ -279,7 +280,7 @@ public:
 
     RideHalError_e Receive( T &out, uint32_t timeoutMs = 1000 )
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
         if ( nullptr != m_sub )
         {
@@ -287,7 +288,7 @@ public:
         }
         else
         {
-            ret = RIDE_HAL_ERROR_STATE;
+            ret = RIDEHAL_ERROR_BAD_STATE;
         }
 
         return ret;
@@ -327,4 +328,4 @@ std::shared_ptr<DataBroker<T>> DataBroker<T>::Add( std::string topicName )
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_SAMPLE_DATA_BROKER_HPP_
+#endif   // _RIDEHAL_SAMPLE_DATA_BROKER_HPP_

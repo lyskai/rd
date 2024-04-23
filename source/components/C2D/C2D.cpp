@@ -23,24 +23,24 @@ C2D::~C2D() {}
 
 RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger_Level_e level )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = ComponentIF::Init( pName, level );
-    if ( RIDE_HAL_ERROR_NONE != ret )
+    if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "ComponentIF::Init failed\n" );
     }
     else
     {
         m_numOfInputs = pConfig->numOfInputs;
-        if ( m_numOfInputs > RIDE_HAL_MAX_INPUTS )
+        if ( m_numOfInputs > RIDEHAL_MAX_INPUTS )
         {
-            ret = RIDE_HAL_ERROR_EXC_MAX;
+            ret = RIDEHAL_ERROR_OUT_OF_BOUND;
             RIDEHAL_ERROR( "Number of Inputs exceeds maximum limit" );
         }
 
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             for ( uint32_t i = 0; i < m_numOfInputs; i++ )
             {
@@ -55,7 +55,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                     RIDEHAL_ERROR( "ROI topX of input %u is out of range", i );
                     break;
                 }
@@ -67,7 +67,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                     RIDEHAL_ERROR( "ROI topY of input %u is out of range", i );
                     break;
                 }
@@ -80,7 +80,7 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                     RIDEHAL_ERROR( "ROI width of input %u is out of range", i );
                     break;
                 }
@@ -93,16 +93,16 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                     RIDEHAL_ERROR( "ROI height of input %u is out of range", i );
                     break;
                 }
             }
 
             /* Complete initialization */
-            if ( RIDE_HAL_ERROR_NONE == ret )
+            if ( RIDEHAL_ERROR_NONE == ret )
             {
-                m_state = RIDE_HAL_COMPONENT_STATE_READY;
+                m_state = RIDEHAL_COMPONENT_STATE_READY;
                 RIDEHAL_INFO( "Component C2D is initialized\n" );
             }
         }
@@ -113,16 +113,16 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
 
 RideHalError_e C2D::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         // DO start
-        m_state = RIDE_HAL_COMPONENT_STATE_RUNNING;
+        m_state = RIDEHAL_COMPONENT_STATE_RUNNING;
         RIDEHAL_INFO( "Component C2D start to run\n" );
     }
 
@@ -131,17 +131,17 @@ RideHalError_e C2D::Start()
 
 RideHalError_e C2D::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         // DO stop
-        m_state = RIDE_HAL_COMPONENT_STATE_READY;
+        m_state = RIDEHAL_COMPONENT_STATE_READY;
         RIDEHAL_INFO( "Component C2D is stopped\n" );
     }
 
@@ -150,23 +150,23 @@ RideHalError_e C2D::Stop()
 
 RideHalError_e C2D::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( RIDE_HAL_COMPONENT_STATE_READY != m_state )
+    if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_inputBufferSurfaceMap.clear();
         m_outputBufferSurfaceMap.clear();
 
         ret = ComponentIF::Deinit();
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             /* Complete deinitialization */
-            m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
+            m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
             RIDEHAL_INFO( "Component C2D is deinitialized\n" );
         }
         else
@@ -181,7 +181,7 @@ RideHalError_e C2D::Deinit()
 RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                              const RideHal_SharedBuffer_t *pOutput )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *inputBufAddr = nullptr;
     void *outputBufAddr = pOutput->data();
@@ -192,7 +192,7 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
 
     if ( numInputs != m_numOfInputs )
     {
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         RIDEHAL_ERROR( "Number of inputs not correct: %u != %u\n", m_numOfInputs, numInputs );
     }
 
@@ -202,12 +202,12 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
         ret = RegisterOutputBuffers( pOutput, 1 );
     }
 
-    if ( RIDE_HAL_COMPONENT_STATE_RUNNING != m_state )
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < m_numOfInputs; i++ )
         {
@@ -227,7 +227,7 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
                     c2dDraw( targetSurfaceId, C2D_TARGET_ROTATE_0, 0, 0, 0, &c2dObject, 1 );
             if ( C2D_STATUS_OK != c2dStatus )
             {
-                ret = RIDE_HAL_ERROR_FAIL;
+                ret = RIDEHAL_ERROR_FAIL;
                 RIDEHAL_ERROR( "Failed to draw blit objects for input %u\n: ", i );
                 break;
             }
@@ -235,7 +235,7 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
             c2dStatus = c2dFinish( targetSurfaceId );
             if ( C2D_STATUS_OK != c2dStatus )
             {
-                ret = RIDE_HAL_ERROR_FAIL;
+                ret = RIDEHAL_ERROR_FAIL;
                 RIDEHAL_ERROR( "Failed to finish target, status = %d\n", c2dStatus );
                 break;
             }
@@ -248,7 +248,7 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
 RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffer,
                                           uint32_t numOfInputBuffers )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
     bool isSource = true;
@@ -261,7 +261,7 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
         /* Check input image format */
         if ( pInputBuffer->imgProps.format != m_inputFormats[i] )
         {
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             RIDEHAL_ERROR( "Failed to register input buffer %u, format not correct\n", i );
             break;
         }
@@ -270,13 +270,13 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
         if ( pInputBuffer->imgProps.width != m_inputResolutions[i].width ||
              pInputBuffer->imgProps.height != m_inputResolutions[i].height )
         {
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             RIDEHAL_ERROR( "Failed to register input buffer %u, resolution not correct\n", i );
             break;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < numOfInputBuffers; i++ )
         {
@@ -289,7 +289,7 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
             {
                 ret = createSurface( &sourceSurfaceId, batchIdx, pInputBuffer, isSource );
 
-                if ( ret == RIDE_HAL_ERROR_NONE )
+                if ( ret == RIDEHAL_ERROR_NONE )
                 {
                     c2dObj.surface_id = sourceSurfaceId;
                     if ( ( m_rois[i].topX != 0 ) || ( m_rois[i].topY != 0 ) ||
@@ -328,7 +328,7 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
 RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffer,
                                            uint32_t numOfOutputBuffers )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
     uint32_t targetSurfaceId = 0;
@@ -337,12 +337,12 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
 
     if ( m_numOfInputs != pOutputBuffer->imgProps.batchSize )
     {
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         RIDEHAL_ERROR( "Failed to register output buffer, numOfInputs %u != batchSize %u",
                        m_numOfInputs, pOutputBuffer->imgProps.batchSize );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < numOfOutputBuffers; i++ )
         {
@@ -356,7 +356,7 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
                 else
                 {
                     ret = createSurface( &targetSurfaceId, k, pOutputBuffer, isSource );
-                    if ( ret == RIDE_HAL_ERROR_NONE )
+                    if ( ret == RIDEHAL_ERROR_NONE )
                     {
                         m_outputBufferSurfaceMap[bufferAddr] = targetSurfaceId;
                     }
@@ -377,16 +377,16 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
 RideHalError_e C2D::DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffer,
                                             uint32_t numOfInputBuffers )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
     if ( numOfInputBuffers > m_inputBufferSurfaceMap.size() )
     {
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         RIDEHAL_ERROR( "Number of deregister buffers greater than registered buffers " );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < numOfInputBuffers; i++ )
         {
@@ -404,18 +404,18 @@ RideHalError_e C2D::DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInput
 RideHalError_e C2D::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffer,
                                              uint32_t numOfOutputBuffers )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
     uint32_t outputSize = pOutputBuffer->size / pOutputBuffer->imgProps.batchSize;
 
     if ( numOfOutputBuffers > m_outputBufferSurfaceMap.size() )
     {
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         RIDEHAL_ERROR( "Number of deregister buffers greater than registered buffers " );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < numOfOutputBuffers; i++ )
         {
@@ -436,7 +436,7 @@ RideHalError_e C2D::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutp
 RideHalError_e C2D::createSurface( uint32_t *surfaceId, uint32_t batchIdx,
                                    const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     uint32_t width = pSharedBuffer->imgProps.width;
     uint32_t height = pSharedBuffer->imgProps.height;
@@ -444,19 +444,19 @@ RideHalError_e C2D::createSurface( uint32_t *surfaceId, uint32_t batchIdx,
 
     switch ( format )
     {
-        case RIDE_HAL_IMAGE_FORMAT_RGB888:
-        case RIDE_HAL_IMAGE_FORMAT_BGR888:
+        case RIDEHAL_IMAGE_FORMAT_RGB888:
+        case RIDEHAL_IMAGE_FORMAT_BGR888:
             ret = createRGBSurface( surfaceId, batchIdx, pSharedBuffer, isSource );
-            if ( RIDE_HAL_ERROR_NONE != ret )
+            if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to create RGB Surface\n" );
             }
             break;
-        case RIDE_HAL_IMAGE_FORMAT_UYVY:
-        case RIDE_HAL_IMAGE_FORMAT_NV12:
-        case RIDE_HAL_IMAGE_FORMAT_P010:
+        case RIDEHAL_IMAGE_FORMAT_UYVY:
+        case RIDEHAL_IMAGE_FORMAT_NV12:
+        case RIDEHAL_IMAGE_FORMAT_P010:
             ret = ret = createYUVSurface( surfaceId, batchIdx, pSharedBuffer, isSource );
-            if ( RIDE_HAL_ERROR_NONE != ret )
+            if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to create YUV Surface\n" );
             }
@@ -471,7 +471,7 @@ RideHalError_e C2D::createSurface( uint32_t *surfaceId, uint32_t batchIdx,
 RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, uint32_t batchIdx,
                                       const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
     RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
@@ -515,7 +515,7 @@ RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, uint32_t batchIdx,
             (void *) &surfaceDef );
     if ( C2D_STATUS_OK != c2dStatus )
     {
-        ret = RIDE_HAL_ERROR_FAIL;
+        ret = RIDEHAL_ERROR_FAIL;
         RIDEHAL_ERROR( "Failed to create %s YUV surface, format: %d, width: %u, height: %u, "
                        "c2dStatus wrong",
                        isSource ? "source" : "target", (int) format, surfaceDef.width,
@@ -528,7 +528,7 @@ RideHalError_e C2D::createYUVSurface( uint32_t *surfaceId, uint32_t batchIdx,
 RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, uint32_t batchIdx,
                                       const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     void *bufferAddr = nullptr;
     RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
@@ -558,7 +558,7 @@ RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, uint32_t batchIdx,
             (void *) &surfaceDef );
     if ( C2D_STATUS_OK != c2dStatus )
     {
-        ret = RIDE_HAL_ERROR_FAIL;
+        ret = RIDEHAL_ERROR_FAIL;
         RIDEHAL_ERROR( "Failed to create %s RGB surface, format: %d, width: %u, height: %u, "
                        "c2dStatus wrong",
                        isSource ? "source" : "target", (int) format, surfaceDef.width,
@@ -570,22 +570,22 @@ RideHalError_e C2D::createRGBSurface( uint32_t *surfaceId, uint32_t batchIdx,
 
 uint32_t C2D::GetC2DFormatType( RideHal_ImageFormat_e format )
 {
-    uint32_t c2dFormat = (uint32_t) RIDE_HAL_IMAGE_FORMAT_MAX;
+    uint32_t c2dFormat = (uint32_t) RIDEHAL_IMAGE_FORMAT_MAX;
     switch ( format )
     {
-        case RIDE_HAL_IMAGE_FORMAT_UYVY:
+        case RIDEHAL_IMAGE_FORMAT_UYVY:
             c2dFormat = C2D_COLOR_FORMAT_422_UYVY;
             break;
-        case RIDE_HAL_IMAGE_FORMAT_NV12:
+        case RIDEHAL_IMAGE_FORMAT_NV12:
             c2dFormat = C2D_COLOR_FORMAT_420_NV12;
             break;
-        case RIDE_HAL_IMAGE_FORMAT_P010:
+        case RIDEHAL_IMAGE_FORMAT_P010:
             c2dFormat = C2D_COLOR_FORMAT_420_P010;
             break;
-        case RIDE_HAL_IMAGE_FORMAT_RGB888:
+        case RIDEHAL_IMAGE_FORMAT_RGB888:
             c2dFormat = C2D_RGB_FORMAT( C2D_COLOR_FORMAT_888_RGB | C2D_FORMAT_SWAP_ENDIANNESS );
             break;
-        case RIDE_HAL_IMAGE_FORMAT_BGR888:
+        case RIDEHAL_IMAGE_FORMAT_BGR888:
             c2dFormat = C2D_RGB_FORMAT( C2D_COLOR_FORMAT_888_RGB );
             break;
         default:

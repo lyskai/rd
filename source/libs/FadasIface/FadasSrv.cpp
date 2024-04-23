@@ -11,12 +11,12 @@ namespace libs
 namespace FadasIface
 {
 
-std::mutex FadasSrv::s_coreLock[RIDE_HAL_PROCESSOR_MAX];
+std::mutex FadasSrv::s_coreLock[RIDEHAL_PROCESSOR_MAX];
 std::mutex FadasSrv::s_FadasLock;
-remote_handle64 FadasSrv::s_handle64[RIDE_HAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
-bool FadasSrv::s_initialized[RIDE_HAL_PROCESSOR_MAX] = { false, false, false, false };
-uint64_t FadasSrv::s_useRef[RIDE_HAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
-std::map<void *, FadasSrv::MemInfo> FadasSrv::s_memMaps[RIDE_HAL_PROCESSOR_MAX];
+remote_handle64 FadasSrv::s_handle64[RIDEHAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
+bool FadasSrv::s_initialized[RIDEHAL_PROCESSOR_MAX] = { false, false, false, false };
+uint64_t FadasSrv::s_useRef[RIDEHAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
+std::map<void *, FadasSrv::MemInfo> FadasSrv::s_memMaps[RIDEHAL_PROCESSOR_MAX];
 int FadasSrv::s_client = 1;
 
 extern "C"
@@ -28,12 +28,12 @@ extern "C"
 
 RideHalError_e FadasSrv::InitCPU()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( FADAS_ERROR_NONE != FadasRemap_Init( nullptr ) )
     {
         RIDEHAL_ERROR( "FadasRemap_Init failed!" );
-        ret = RIDE_HAL_ERROR_FAIL;
+        ret = RIDEHAL_ERROR_FAIL;
     }
 
     return ret;
@@ -41,7 +41,7 @@ RideHalError_e FadasSrv::InitCPU()
 
 RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     std::string envName = "RIDEHAL_FADAS_CLIENT_ID";
     char *envValue = getenv( envName.c_str() );
@@ -57,7 +57,7 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
 
     std::string uriFadas = FadasIface_URI;
     std::string uriDomain = CDSP_DOMAIN;
-    if ( RIDE_HAL_PROCESSOR_HTP1 == coreId )
+    if ( RIDEHAL_PROCESSOR_HTP1 == coreId )
     {
         uriDomain = CDSP1_DOMAIN;
     }
@@ -68,7 +68,7 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
 
     remote_handle64 handle64 = 0;
     int domain = CDSP_DOMAIN_ID;
-    if ( RIDE_HAL_PROCESSOR_HTP1 == coreId )
+    if ( RIDEHAL_PROCESSOR_HTP1 == coreId )
     {
         domain = CDSP1_DOMAIN_ID;
     }
@@ -87,14 +87,14 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
         else
         {
             RIDEHAL_ERROR( "Unsigned PD not supported on this device!" );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
 
         auto retVal = FadasIface_open( uri, &handle64 );
         if ( AEE_SUCCESS != retVal )
         {
             RIDEHAL_ERROR( "Failed to open fadas: %d", retVal );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
 
         s_handle64[coreId] = handle64;
@@ -104,14 +104,14 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
         handle64 = s_handle64[coreId];
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         int32_t ans = 0xFFFFFFFF;
         FadasIface_FadasInit( handle64, &ans );
         if ( FADAS_ERROR_NONE != ans )
         {
             RIDEHAL_ERROR( "FAILED:  FadasIface_FadasInit - 0x%x", ans );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
         else
         {
@@ -122,7 +122,7 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
             if ( retVal != AEE_SUCCESS )
             {
                 RIDEHAL_ERROR( "FAILED: FadasIface_FadasVersion - 0x%x", retVal );
-                ret = RIDE_HAL_ERROR_FAIL;
+                ret = RIDEHAL_ERROR_FAIL;
             }
             else
             {
@@ -137,23 +137,23 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
 RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName,
                                Logger_Level_e level )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     std::lock_guard<std::mutex> l( s_FadasLock );
-    if ( ( RIDE_HAL_PROCESSOR_HTP0 == coreId ) || ( RIDE_HAL_PROCESSOR_HTP1 == coreId ) ||
-         ( RIDE_HAL_PROCESSOR_CPU == coreId ) || ( RIDE_HAL_PROCESSOR_GPU == coreId ) )
+    if ( ( RIDEHAL_PROCESSOR_HTP0 == coreId ) || ( RIDEHAL_PROCESSOR_HTP1 == coreId ) ||
+         ( RIDEHAL_PROCESSOR_CPU == coreId ) || ( RIDEHAL_PROCESSOR_GPU == coreId ) )
     {
         m_processor = coreId;
     }
     else
     {
         RIDEHAL_ERROR( "Invalid processor type!" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( ( false == s_initialized[coreId] ) && ( RIDE_HAL_ERROR_NONE == ret ) )
+    if ( ( false == s_initialized[coreId] ) && ( RIDEHAL_ERROR_NONE == ret ) )
     {
-        if ( ( RIDE_HAL_PROCESSOR_HTP0 == coreId ) || ( RIDE_HAL_PROCESSOR_HTP1 == coreId ) )
+        if ( ( RIDEHAL_PROCESSOR_HTP0 == coreId ) || ( RIDEHAL_PROCESSOR_HTP1 == coreId ) )
         {
             ret = InitDSP( coreId );
         }
@@ -162,13 +162,13 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
             ret = InitCPU();
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             s_initialized[coreId] = true;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         s_useRef[coreId]++;
     }
@@ -178,7 +178,7 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
 
 RideHalError_e FadasSrv::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     std::lock_guard<std::mutex> l( s_FadasLock );
     if ( s_initialized[m_processor] && ( s_useRef[m_processor] > 0 ) )
@@ -196,8 +196,8 @@ RideHalError_e FadasSrv::Deinit()
             {
                 DeregBuf( ptr );
             }
-            if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-                 ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
                 FadasIface_FadasDeInit( s_handle64[m_processor] );
             }
@@ -206,7 +206,7 @@ RideHalError_e FadasSrv::Deinit()
                 if ( FADAS_ERROR_NONE != FadasRemap_DeInit() )
                 {
                     RIDEHAL_ERROR( "FadasRemap_DeInit failed!" );
-                    ret = RIDE_HAL_ERROR_FAIL;
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
             }
             memMap.clear();
@@ -231,7 +231,7 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
     {
         RIDEHAL_ERROR( "null buffer!" );
     }
-    else if ( RIDE_HAL_BUFFER_TYPE_IMAGE != pBuffer->type )
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pBuffer->type )
     {
         RIDEHAL_ERROR( "Shared buffer type is not image!" );
     }
@@ -249,12 +249,12 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
         auto it = memMap.find( pBuffer->data() );
         if ( it == memMap.end() )
         {
-            if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-                 ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
                 int extDomainId = 0;
                 int domain = CDSP_DOMAIN_ID;
-                if ( RIDE_HAL_PROCESSOR_HTP1 == m_processor )
+                if ( RIDEHAL_PROCESSOR_HTP1 == m_processor )
                 {
                     domain = CDSP1_DOMAIN_ID;
                 }
@@ -396,12 +396,12 @@ void FadasSrv::DeregBuf( void *pBuffer )
             size_t sizeOne = it->second.sizeOne;
             memMap.erase( it );
 
-            if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-                 ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
                 int extDomainId = 0;
                 int domain = CDSP_DOMAIN_ID;
-                if ( RIDE_HAL_PROCESSOR_HTP1 == m_processor )
+                if ( RIDEHAL_PROCESSOR_HTP1 == m_processor )
                 {
                     domain = CDSP1_DOMAIN_ID;
                 }
@@ -436,18 +436,18 @@ RideHalError_e FadasRemap::SetRemapParams( uint32_t numOfInputs, uint32_t output
                                            FadasNormlzParams_t normlzB, bool bEnableUndistortion,
                                            bool bEnableNormalize )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDE_HAL_IMAGE_FORMAT_RGB888 != outputFormat ) &&
-         ( RIDE_HAL_IMAGE_FORMAT_BGR888 != outputFormat ) )
+    if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 != outputFormat ) &&
+         ( RIDEHAL_IMAGE_FORMAT_BGR888 != outputFormat ) )
     {
         RIDEHAL_ERROR( "Invalid output format!" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( RIDE_HAL_MAX_INPUTS <= numOfInputs )
+    else if ( RIDEHAL_MAX_INPUTS <= numOfInputs )
     {
         RIDEHAL_ERROR( "Invalid number of inputs!" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -472,47 +472,47 @@ FadasRemapPipeline_e FadasRemap::RemapGetPipelineCPU( RideHal_ImageFormat_e inpu
 {
     FadasRemapPipeline_e pipeline = FADAS_REMAP_PIPELINE_MAX;
 
-    if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
-         ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
+         ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
          ( true == bEnableNormalize ) )   // UYVY to RGB normalize pipeline
     {
         pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_RGB888_NORMU8;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // UYVY to RGB pipeline
     {
         pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_RGB888;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_RGB888 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // RGB to RGB pipeline
     {
 
         pipeline = FADAS_REMAP_PIPELINE_3C888;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // UYVY to BGR pipeline
     {
         pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_BGR888;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // NV12 to RGB pipeline
     {
 
         pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( true == bEnableNormalize ) )   // NV12 to RGB normalize pipeline
     {
 
         pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_NORMU8;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // NV12 to BGR pipeline
     {
 
@@ -532,47 +532,47 @@ FadasIface_FadasRemapPipeline_e FadasRemap::RemapGetPipelineDSP( RideHal_ImageFo
 {
     FadasIface_FadasRemapPipeline_e pipeline = FADAS_REMAP_PIPELINE_MAX_NSP;
 
-    if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
-         ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
+         ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
          ( true == bEnableNormalize ) )   // UYVY to RGB normalize pipeline
     {
         pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_RGB888_NORMU8_NSP;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // UYVY to RGB pipeline
     {
         pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_RGB888_NSP;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_RGB888 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // RGB to RGB pipeline
     {
 
         pipeline = FADAS_REMAP_PIPELINE_3C888_NSP;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // UYVY to BGR pipeline
     {
         pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_BGR888_NSP;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // NV12 to RGB pipeline
     {
 
         pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_NSP;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
               ( true == bEnableNormalize ) )   // NV12 to RGB normalize pipeline
     {
 
         pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_RGB888_NORMU8_NSP;
     }
-    else if ( ( RIDE_HAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
-              ( RIDE_HAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // NV12 to BGR pipeline
     {
 
@@ -591,7 +591,7 @@ FadasIface_FadasRemapPipeline_e FadasRemap::RemapGetPipelineDSP( RideHal_ImageFo
 RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth, uint32_t mapHeight,
                                             float *pMapX, float *pMapY )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_mapWidths[inputId] = mapWidth;
     m_mapHeights[inputId] = mapHeight;
@@ -599,19 +599,19 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
     if ( ( true == m_bEnableUndistortion ) && ( ( nullptr == pMapX ) || ( nullptr == pMapY ) ) )
     {
         RIDEHAL_ERROR( "Null remap pointer!" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-             ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+        if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+             ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
         {
             FadasIface_FadasRemapPipeline_e pipeline = RemapGetPipelineDSP(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
             if ( FADAS_REMAP_PIPELINE_MAX_NSP == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for DSP!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
             else
             {
@@ -636,7 +636,7 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 if ( AEE_SUCCESS != retVal )
                 {
                     RIDEHAL_ERROR( "Failed to create a remap map for DSP!" );
-                    ret = RIDE_HAL_ERROR_FAIL;
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
@@ -652,7 +652,7 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
             if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for CPU!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
             else
             {
@@ -674,7 +674,7 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 if ( remapPtr == nullptr )
                 {
                     RIDEHAL_ERROR( "Failed to create a remap map for CPU!" );
-                    ret = RIDE_HAL_ERROR_FAIL;
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
@@ -691,31 +691,31 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
                                               uint32_t inputWidth, uint32_t inputHeight,
                                               FadasROI_t ROI )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_inputFormats[inputId] = inputFormat;
     m_inputWidths[inputId] = inputWidth;
     m_inputHeights[inputId] = inputHeight;
     m_ROIs[inputId] = ROI;
 
-    if ( ( RIDE_HAL_IMAGE_FORMAT_UYVY != m_inputFormats[inputId] ) &&
-         ( RIDE_HAL_IMAGE_FORMAT_RGB888 != m_inputFormats[inputId] ) &&
-         ( RIDE_HAL_IMAGE_FORMAT_NV12 != m_inputFormats[inputId] ) )
+    if ( ( RIDEHAL_IMAGE_FORMAT_UYVY != m_inputFormats[inputId] ) &&
+         ( RIDEHAL_IMAGE_FORMAT_RGB888 != m_inputFormats[inputId] ) &&
+         ( RIDEHAL_IMAGE_FORMAT_NV12 != m_inputFormats[inputId] ) )
     {
         RIDEHAL_ERROR( "Invalid input format for inputId = %d ", inputId );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-             ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+        if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+             ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
         {
             FadasIface_FadasRemapPipeline_e pipeline = RemapGetPipelineDSP(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
             if ( FADAS_REMAP_PIPELINE_MAX_NSP == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for DSP!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
             else
             {
@@ -725,7 +725,7 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
                 if ( AEE_SUCCESS != retVal )
                 {
                     RIDEHAL_ERROR( "Failed to create a remap worker for DSP!" );
-                    ret = RIDE_HAL_ERROR_FAIL;
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
@@ -741,7 +741,7 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
             if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for CPU!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
             else
             {
@@ -749,7 +749,7 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
                 if ( workerPtr == nullptr )
                 {
                     RIDEHAL_ERROR( "Failed to create a remap worker for CPU!" );
-                    ret = RIDE_HAL_ERROR_FAIL;
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
@@ -764,10 +764,10 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
 RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                                         const RideHal_SharedBuffer_t *output )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     /*call unified RegBuf functions even the buffers may have been registered*/
-    int32_t srcFds[RIDE_HAL_MAX_INPUTS];
+    int32_t srcFds[RIDEHAL_MAX_INPUTS];
     int32_t dstFd;
     for ( uint32_t inputId = 0; inputId < m_numOfInputs; inputId++ )
     {
@@ -776,21 +776,21 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
         if ( srcFds[inputId] < 0 )
         {
             RIDEHAL_ERROR( "Input Buffer register failed!" );
-            ret = RIDE_HAL_ERROR_INVALID_BUF;
+            ret = RIDEHAL_ERROR_INVALID_BUF;
             break;
         }
     }
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         dstFd = RegBuf( output, FADAS_BUF_TYPE_OUT );
         if ( dstFd < 0 )
         {
             RIDEHAL_ERROR( "Output buffer register failed!" );
-            ret = RIDE_HAL_ERROR_INVALID_BUF;
+            ret = RIDEHAL_ERROR_INVALID_BUF;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         size_t outputSize = output->size / output->imgProps.batchSize;
         for ( uint32_t inputId = 0; inputId < m_numOfInputs; inputId++ )
@@ -807,15 +807,15 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                 srcImg.props.stride[i] = inputs[inputId].imgProps.stride[i];
             }
             srcImg.plane[0] = pSrc;
-            if ( RIDE_HAL_IMAGE_FORMAT_UYVY == m_inputFormats[inputId] )
+            if ( RIDEHAL_IMAGE_FORMAT_UYVY == m_inputFormats[inputId] )
             {
                 srcImg.props.format = FADAS_IMAGE_FORMAT_UYVY;
             }
-            else if ( RIDE_HAL_IMAGE_FORMAT_RGB888 == m_inputFormats[inputId] )
+            else if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_inputFormats[inputId] )
             {
                 srcImg.props.format = FADAS_IMAGE_FORMAT_RGB888;
             }
-            else if ( RIDE_HAL_IMAGE_FORMAT_NV12 == m_inputFormats[inputId] )
+            else if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_inputFormats[inputId] )
             {
                 srcImg.props.format = FADAS_IMAGE_FORMAT_Y8UV8;
                 srcImg.plane[1] =
@@ -824,7 +824,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             else
             {
                 RIDEHAL_ERROR( "Invalid input format for inputId = %d!", inputId );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
             srcImg.bAllocated = false;
@@ -841,7 +841,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             rgbImg.plane[0] = pDst;
             rgbImg.bAllocated = false;
 
-            if ( RIDE_HAL_ERROR_NONE == ret )
+            if ( RIDEHAL_ERROR_NONE == ret )
             {
                 FadasROI_t roi = m_ROIs[inputId];
                 FadasRemapMap_t *remapPtr = (FadasRemapMap_t *) m_remapPtrs[inputId];
@@ -861,7 +861,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                 if ( FADAS_ERROR_NONE != retFadas )
                 {
                     RIDEHAL_ERROR( "Remap888 failed for batch %d: ret = 0x%x", inputId, ret );
-                    ret = RIDE_HAL_ERROR_FAIL;
+                    ret = RIDEHAL_ERROR_FAIL;
                     break;
                 }
             }
@@ -874,10 +874,10 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
 RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
                                         const RideHal_SharedBuffer_t *output )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     /*call unified RegBuf functions even the buffers may have been registered*/
-    int32_t srcFds[RIDE_HAL_MAX_INPUTS];
+    int32_t srcFds[RIDEHAL_MAX_INPUTS];
     int32_t dstFd;
     for ( uint32_t inputId = 0; inputId < m_numOfInputs; inputId++ )
     {
@@ -886,26 +886,26 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
         if ( srcFds[inputId] < 0 )
         {
             RIDEHAL_ERROR( "Input Buffer register failed!" );
-            ret = RIDE_HAL_ERROR_INVALID_BUF;
+            ret = RIDEHAL_ERROR_INVALID_BUF;
             break;
         }
     }
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         dstFd = RegBuf( output, FADAS_BUF_TYPE_OUT );
         if ( dstFd < 0 )
         {
             RIDEHAL_ERROR( "Output buffer register failed!" );
-            ret = RIDE_HAL_ERROR_INVALID_BUF;
+            ret = RIDEHAL_ERROR_INVALID_BUF;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         size_t outputSize = output->size / output->imgProps.batchSize;
-        FadasIface_FadasROI_t ROIs[RIDE_HAL_MAX_INPUTS];
-        FadasIface_FadasImgProps_t srcImgProps[RIDE_HAL_MAX_INPUTS];
-        uint32_t offsets[RIDE_HAL_MAX_INPUTS];
+        FadasIface_FadasROI_t ROIs[RIDEHAL_MAX_INPUTS];
+        FadasIface_FadasImgProps_t srcImgProps[RIDEHAL_MAX_INPUTS];
+        uint32_t offsets[RIDEHAL_MAX_INPUTS];
 
         for ( uint32_t inputId = 0; inputId < m_numOfInputs; inputId++ )
         {
@@ -921,22 +921,22 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
             {
                 srcImgProp.actualHeight[i] = inputs[inputId].imgProps.actualHeight[i];
             }
-            if ( RIDE_HAL_IMAGE_FORMAT_UYVY == m_inputFormats[inputId] )
+            if ( RIDEHAL_IMAGE_FORMAT_UYVY == m_inputFormats[inputId] )
             {
                 srcImgProp.format = FADAS_IMAGE_FORMAT_UYVY_NSP;
             }
-            else if ( RIDE_HAL_IMAGE_FORMAT_RGB888 == m_inputFormats[inputId] )
+            else if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_inputFormats[inputId] )
             {
                 srcImgProp.format = FADAS_IMAGE_FORMAT_RGB888_NSP;
             }
-            else if ( RIDE_HAL_IMAGE_FORMAT_NV12 == m_inputFormats[inputId] )
+            else if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_inputFormats[inputId] )
             {
                 srcImgProp.format = FADAS_IMAGE_FORMAT_Y8UV8_NSP;
             }
             else
             {
                 RIDEHAL_ERROR( "Invalid input format for inputId = %d!", inputId );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
             srcImgProps[inputId] = srcImgProp;
@@ -957,7 +957,7 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
             dstImgProp.stride[i] = output->imgProps.stride[i];
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             AEEResult retV;
             if ( false == m_bEnableNormalize )
@@ -987,7 +987,7 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
             if ( retV != AEE_SUCCESS )
             {
                 RIDEHAL_ERROR( "Remap888 failed: ret = 0x%x", retV );
-                ret = RIDE_HAL_ERROR_FAIL;
+                ret = RIDEHAL_ERROR_FAIL;
             }
         }
     }
@@ -998,7 +998,7 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
 RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
                                      const RideHal_SharedBuffer_t *output )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( nullptr == inputs )
     {
@@ -1015,25 +1015,25 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
             if ( m_inputFormats[inputId] != inputs[inputId].imgProps.format )
             {
                 RIDEHAL_ERROR( "Format in input buffer and config not match!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
             else if ( m_inputWidths[inputId] != inputs[inputId].imgProps.width )
             {
                 RIDEHAL_ERROR( "Width in input buffer and config not match!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
             else if ( m_inputHeights[inputId] != inputs[inputId].imgProps.height )
             {
                 RIDEHAL_ERROR( "Height in input buffer and config not match!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
             else if ( 1 != inputs[inputId].imgProps.batchSize )
             {
                 RIDEHAL_ERROR( "Batch in input buffer must be 1!" );
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
         }
@@ -1041,28 +1041,28 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
         if ( m_outputFormat != output->imgProps.format )
         {
             RIDEHAL_ERROR( "Format in output buffer and config not match!" );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
         else if ( m_outputWidth != output->imgProps.width )
         {
             RIDEHAL_ERROR( "Width in output buffer and config not match!" );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
         else if ( m_outputHeight != output->imgProps.height )
         {
             RIDEHAL_ERROR( "Height in output buffer and config not match!" );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
         else if ( m_numOfInputs != output->imgProps.batchSize )
         {
             RIDEHAL_ERROR( "Batch in output buffer and config not match!" );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
-            if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) ||
-                 ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
                 ret = RemapRunDSP( inputs, output );
             }
@@ -1078,9 +1078,9 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
 
 RideHalError_e FadasRemap::DestroyWorkers()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) || ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
     {
         for ( int i = 0; i < m_numOfInputs; i++ )
         {
@@ -1101,9 +1101,9 @@ RideHalError_e FadasRemap::DestroyWorkers()
 
 RideHalError_e FadasRemap::DestroyMap()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDE_HAL_PROCESSOR_HTP0 == m_processor ) || ( RIDE_HAL_PROCESSOR_HTP1 == m_processor ) )
+    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
     {
         for ( int i = 0; i < m_numOfInputs; i++ )
         {

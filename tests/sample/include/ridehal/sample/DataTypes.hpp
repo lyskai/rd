@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_SAMPLE_DATA_TYPES_HPP_
-#define _RIDE_HAL_SAMPLE_DATA_TYPES_HPP_
+#ifndef _RIDEHAL_SAMPLE_DATA_TYPES_HPP_
+#define _RIDEHAL_SAMPLE_DATA_TYPES_HPP_
 
 #include <vector>
 
@@ -62,4 +62,4 @@ typedef struct
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_SAMPLE_DATA_TYPES_HPP_
+#endif   // _RIDEHAL_SAMPLE_DATA_TYPES_HPP_

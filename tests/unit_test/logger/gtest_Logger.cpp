@@ -31,11 +31,11 @@ static void UserLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *
 static RideHalError_e UserLoggerHandleCreate( const char *pName, Logger_Level_e level,
                                               Logger_Handle_t *pHandle )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( nullptr == pName ) || ( nullptr == pHandle ) )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -48,7 +48,7 @@ static RideHalError_e UserLoggerHandleCreate( const char *pName, Logger_Level_e 
         }
         else
         {
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
     }
 
@@ -144,23 +144,23 @@ TEST( Logger, SANITY_Logger )
     LoggerUser loggerUser;
 
     ret = Logger::Setup( UserLog, UserLoggerHandleCreate, UserLoggerHandleDestroy );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     /* only alow to setup once, the second setup will fail */
     ret = Logger::Setup( UserLog, UserLoggerHandleCreate, UserLoggerHandleDestroy );
-    ASSERT_EQ( RIDE_HAL_ERROR_FAIL, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     ret = loggerUser.Init( "Test", LOGGER_LEVEL_VERBOSE );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     loggerUser.TestLoggerVerbose();
     ret = loggerUser.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = loggerUser.Init( "Test", LOGGER_LEVEL_INFO );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     loggerUser.TestLoggerInfo();
     ret = loggerUser.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     TestDefaultLogger();
 }

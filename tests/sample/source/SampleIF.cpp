@@ -11,7 +11,7 @@ namespace sample
 
 std::map<std::string, Sample_CreateFunction_t> SampleIF::s_SampleMap;
 
-std::mutex SampleIF::s_locks[RIDE_HAL_PROCESSOR_MAX];
+std::mutex SampleIF::s_locks[RIDEHAL_PROCESSOR_MAX];
 
 SampleIF *SampleIF::Create( std::string name )
 {
@@ -44,7 +44,7 @@ void SampleIF::RegisterSample( std::string name, Sample_CreateFunction_t createF
 
 RideHalError_e SampleIF::Init( std::string name )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_name = name;
     ret = RIDEHAL_LOGGER_INIT( name.c_str(), LOGGER_LEVEL_INFO );
@@ -56,10 +56,10 @@ RideHalError_e SampleIF::Init( std::string name )
 
 RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
 #if defined( WITH_RSM_V2 )
-    if ( processor <= RIDE_HAL_PROCESSOR_HTP1 )
+    if ( processor <= RIDEHAL_PROCESSOR_HTP1 )
     {
         memset( &m_acquireCmdV2, 0, sizeof( m_acquireCmdV2 ) );
         m_acquireCmdV2.resource = (rsm_resource_group) processor;
@@ -71,19 +71,19 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
         if ( 0 != rc )
         {
             RIDEHAL_ERROR( "rsm init failed: %d", rc );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
     else
 #endif
-            if ( processor < RIDE_HAL_PROCESSOR_MAX )
+            if ( processor < RIDEHAL_PROCESSOR_MAX )
     {
         m_processor = processor;
     }
     else
     {
         RIDEHAL_ERROR( "invalid processor %d", processor );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     return ret;
@@ -91,28 +91,28 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
 
 RideHalError_e SampleIF::Lock()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
 #if defined( WITH_RSM_V2 )
-    if ( m_processor <= RIDE_HAL_PROCESSOR_HTP1 )
+    if ( m_processor <= RIDEHAL_PROCESSOR_HTP1 )
     {
         int rc = rsm_acquire_v2( m_handle, &m_acquireCmdV2, &m_acquireRspV2 );
         if ( 0 != rc )
         {
             RIDEHAL_ERROR( "rsm acquire failed: %d", rc );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
     else
 #endif
-            if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
+            if ( m_processor < RIDEHAL_PROCESSOR_MAX )
     {
         s_locks[m_processor].lock();
     }
     else
     {
         RIDEHAL_ERROR( "the processor lock not ready" );
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
     return ret;
@@ -120,28 +120,28 @@ RideHalError_e SampleIF::Lock()
 
 RideHalError_e SampleIF::Unlock()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
 #if defined( WITH_RSM_V2 )
-    if ( m_processor <= RIDE_HAL_PROCESSOR_HTP1 )
+    if ( m_processor <= RIDEHAL_PROCESSOR_HTP1 )
     {
         int rc = rsm_release_v2( m_handle, m_acquireRspV2.token );
         if ( 0 != rc )
         {
             RIDEHAL_ERROR( "rsm release failed: %d", rc );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
     else
 #endif
-            if ( m_processor < RIDE_HAL_PROCESSOR_MAX )
+            if ( m_processor < RIDEHAL_PROCESSOR_MAX )
     {
         s_locks[m_processor].unlock();
     }
     else
     {
         RIDEHAL_ERROR( "the processor lock not ready" );
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
     return ret;
@@ -268,27 +268,27 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         std::string format = it->second;
         if ( "rgb" == format )
         {
-            ret = RIDE_HAL_IMAGE_FORMAT_RGB888;
+            ret = RIDEHAL_IMAGE_FORMAT_RGB888;
         }
         else if ( "bgr" == format )
         {
-            ret = RIDE_HAL_IMAGE_FORMAT_BGR888;
+            ret = RIDEHAL_IMAGE_FORMAT_BGR888;
         }
         else if ( "uyvy" == format )
         {
-            ret = RIDE_HAL_IMAGE_FORMAT_UYVY;
+            ret = RIDEHAL_IMAGE_FORMAT_UYVY;
         }
         else if ( "nv12" == format )
         {
-            ret = RIDE_HAL_IMAGE_FORMAT_NV12;
+            ret = RIDEHAL_IMAGE_FORMAT_NV12;
         }
         else if ( "p010" == format )
         {
-            ret = RIDE_HAL_IMAGE_FORMAT_P010;
+            ret = RIDEHAL_IMAGE_FORMAT_P010;
         }
         else
         {
-            ret = RIDE_HAL_IMAGE_FORMAT_MAX;
+            ret = RIDEHAL_IMAGE_FORMAT_MAX;
         }
     }
 
@@ -307,23 +307,23 @@ RideHal_ProcessorType_e SampleIF::Get( SampleConfig_t &config, std::string key,
         std::string processor = it->second;
         if ( "htp0" == processor )
         {
-            ret = RIDE_HAL_PROCESSOR_HTP0;
+            ret = RIDEHAL_PROCESSOR_HTP0;
         }
         else if ( "htp1" == processor )
         {
-            ret = RIDE_HAL_PROCESSOR_HTP1;
+            ret = RIDEHAL_PROCESSOR_HTP1;
         }
         else if ( "cpu" == processor )
         {
-            ret = RIDE_HAL_PROCESSOR_CPU;
+            ret = RIDEHAL_PROCESSOR_CPU;
         }
         else if ( "gpu" == processor )
         {
-            ret = RIDE_HAL_PROCESSOR_GPU;
+            ret = RIDEHAL_PROCESSOR_GPU;
         }
         else
         {
-            ret = RIDE_HAL_PROCESSOR_MAX;
+            ret = RIDEHAL_PROCESSOR_MAX;
         }
     }
 

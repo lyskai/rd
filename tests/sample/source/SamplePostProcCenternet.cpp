@@ -44,7 +44,7 @@ SamplePostProcCenternet::~SamplePostProcCenternet() {}
 
 RideHalError_e SamplePostProcCenternet::ParseConfig( SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_roiX = Get( config, "roi_x", 0 );
     m_roiY = Get( config, "roi_y", 0 );
@@ -57,14 +57,14 @@ RideHalError_e SamplePostProcCenternet::ParseConfig( SampleConfig_t &config )
     if ( "" == m_inputTopicName )
     {
         RIDEHAL_ERROR( "no input topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_outputTopicName = Get( config, "output_topic", "" );
     if ( "" == m_outputTopicName )
     {
         RIDEHAL_ERROR( "no output topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     return ret;
@@ -72,20 +72,20 @@ RideHalError_e SamplePostProcCenternet::ParseConfig( SampleConfig_t &config )
 
 RideHalError_e SamplePostProcCenternet::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = ParseConfig( config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_sub.Init( name, m_inputTopicName );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_pub.Init( name, m_outputTopicName );
     }
@@ -95,7 +95,7 @@ RideHalError_e SamplePostProcCenternet::Init( std::string name, SampleConfig_t &
 
 RideHalError_e SamplePostProcCenternet::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = false;
     m_thread = std::thread( &SamplePostProcCenternet::ThreadMain, this );
@@ -110,7 +110,7 @@ void SamplePostProcCenternet::ThreadMain()
     {
         Tensors_t tensors;
         ret = m_sub.Receive( tensors );
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             PROFILER_BEGIN();
             ProcessUint8( tensors );
@@ -282,7 +282,7 @@ void SamplePostProcCenternet::NMS( std::vector<Road2DObject_t> &boxes, float thr
 
 RideHalError_e SamplePostProcCenternet::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = true;
     if ( m_thread.joinable() )
@@ -297,7 +297,7 @@ RideHalError_e SamplePostProcCenternet::Stop()
 
 RideHalError_e SamplePostProcCenternet::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     return ret;
 }
 

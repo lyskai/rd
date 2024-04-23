@@ -1,9 +1,9 @@
 
 # 1. RideHal Buffer Data Structures
 
-- [RideHal_Buffer_t](../include/ridehal/common/Types.hpp#L89)
-- [RideHal_ImageProps_t](../include/ridehal/common/Types.hpp#L118)
-- [RideHal_TensorProps_t](../include/ridehal/common/Types.hpp#L148)
+- [RideHal_Buffer_t](../include/ridehal/common/Types.hpp#L86)
+- [RideHal_ImageProps_t](../include/ridehal/common/Types.hpp#L115)
+- [RideHal_TensorProps_t](../include/ridehal/common/Types.hpp#L166)
 - [RideHal_SharedBuffer_t](../include/ridehal/common/SharedBuffer.hpp#L15)
 
 ## 1.1 The details of image properties.
@@ -22,17 +22,66 @@ And the below picture shows a case what's the actual buffer looks like for an im
 
 Thus now, it's easy to understand those members of the type [RideHal_ImageProps_t](../include/ridehal/common/Types.hpp#L118) except batchSize and compressedSize.
 
-For the batchSize, it was generally designed for the BEV kind of AI models, check below section[A RideHal_SharedBuffer_t image for BEV kind of AI model](#a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model).
+For the batchSize, it was generally designed for the BEV kind of AI models, check below section [3.1](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model).
 
 For the compressedSize, it was designed for the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L218) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight/numPlanes/extraPadding will be invalid and should not be used.
 
+# 1.2 The details of RideHal_SharedBuffer_t.
+
+The RideHal_SharedBuffer_t is a data structure to represent a DMA memory portion that can be shared between components for zero copy purpose. Please note that, its member ["buffer"](../include/ridehal/common/SharedBuffer.hpp#L17) represent a single continuous(from user space of view, physically it's maybe not continuous.) DMA memory, and with its member ["offset"](../include/ridehal/common/SharedBuffer.hpp#L19) and ["size"](../include/ridehal/common/SharedBuffer.hpp#L18) to represent the actual memory location and size in the single DMA memory. But general case is that the RideHal_SharedBuffer_t will represent all the memory represent by its member ["buffer"](../include/ridehal/common/SharedBuffer.hpp#L17), but there is a typical use case for the BEV kind of AI model, please check section [3.1](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model) which the ShareBufferMiddle just represent the middle portion of the DMA memory.
+
+And it's strongly recommended that to use the APIs of RideHal_SharedBuffer_t to do memory allocation and free, but it's also OK to any kind of related API that underlying is using the platform DMA related API (PMEM for QNX, dma-buf for Linux) to do memory allocation and free, but in this case, the user application need to assign the right value to each member of the RideHal_SharedBuffer_t. And the RideHal_SharedBuffer_t is also using the platform DMA related API (PMEM for QNX, dma-buf for Linux) to do memory allocation and free. For QNX, check [RideHal_DmaAllocate](../source/common/Buffer_QNX.cpp#L22) and [RideHal_DmaFree](../source/common/Buffer_QNX.cpp#L74);  for Linux, check [RideHal_DmaAllocate](../source/common/Buffer_Linux.cpp#L60) and [RideHal_DmaFree](../source/common/Buffer_Linux.cpp#L126).
+
+```c
+// using PMEM or dma-buf to allocate memory, now have the virtual address pData and the uint64 dmaHandle.
+// for QNX, the dmaHandle is cast from pmem_handle_t.
+// for Linux, the dmaHandle is case from int.
+
+RideHal_SharedBuffer_t shareBuffer;
+
+shareBuffer.buffer.pData = pData;
+shareBuffer.buffer.dmaHandle = dmaHandle;
+shareBuffer.buffer.size = size;
+shareBuffer.buffer.id = (uint64)-1; // ignore this
+shareBuffer.buffer.pid = static_cast<uint64_t>( getpid() );
+shareBuffer.buffer.usage = RIDEHAL_BUFFER_USAGE_DEFAULT;
+shareBuffer.buffer.flags = 0;
+shareBuffer.size = size;
+shareBuffer.offset = 0;
+shareBuffer.type = RIDEHAL_BUFFER_TYPE_IMAGE;
+shareBuffer.imgProps.format = format;
+shareBuffer.imgProps.batchSize = batchSize;
+shareBuffer.imgProps.width = width;
+shareBuffer.imgProps.height = height;
+shareBuffer.imgProps.numPlanes = numPlanes;
+shareBuffer.imgProps.stride[0] = stride0;
+shareBuffer.imgProps.stride[numPlanes-1] = ...;
+shareBuffer.imgProps.actualHeight[0] = actualHeight0;
+shareBuffer.imgProps.actualHeight[numPlanes-1] = actualHeight0;
+shareBuffer.imgProps.extraPadding = extraPadding;
+
+// and then this can be feed into a RideHal Component
+
+remap.Execute(&shareBuffer, 1, ...);
+```
+
 # 2. RideHal buffer APIs
 
-- [Allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L54)
+- [Allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L61)
 
-- [Allocate a batched images with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L68)
+- [Allocate a batched images with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L76)
 
-- [Allocate an image(s) with specified image properties](../include/ridehal/common/SharedBuffer.hpp#L78)
+- [Allocate an image(s) with specified image properties](../include/ridehal/common/SharedBuffer.hpp#L88)
+
+- [Allocate a tensor with specified tensor properties](../include/ridehal/common/SharedBuffer.hpp#L99)
+
+- [Free](../include/ridehal/common/SharedBuffer.hpp#L107)
+
+- [GetSharedBuffer](../include/ridehal/common/SharedBuffer.hpp#L117)
+
+- [data](../include/ridehal/common/SharedBuffer.hpp#L124)
+
+- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L132)
 
 # 3. RideHal_SharedBuffer_t Examples
 

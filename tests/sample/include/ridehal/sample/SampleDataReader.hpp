@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_SAMPLE_DATAREADER_HPP_
-#define _RIDE_HAL_SAMPLE_DATAREADER_HPP_
+#ifndef _RIDEHAL_SAMPLE_DATAREADER_HPP_
+#define _RIDEHAL_SAMPLE_DATAREADER_HPP_
 
 #include "ridehal/sample/SampleIF.hpp"
 #include <mutex>
@@ -24,19 +24,19 @@ public:
     /// @brief Initialize the remap
     /// @param name the sample unique instance name
     /// @param config the sample config key value map
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( std::string name, SampleConfig_t &config );
 
     /// @brief Start the remap
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start();
 
     /// @brief Stop the remap
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop();
 
     /// @brief deinitialize the remap
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit();
 
 private:
@@ -65,7 +65,7 @@ private:
     bool m_stop;
 
     DataPublisher<CamFrames_t> m_pub;
-    RideHal_BufferFlags_t m_bufferFlags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA;
+    RideHal_BufferFlags_t m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
 
     static std::mutex s_lock;
 
@@ -74,5 +74,5 @@ private:
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_SAMPLE_DATAREADER_HPP_
+#endif   // _RIDEHAL_SAMPLE_DATAREADER_HPP_
 

@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_VIDEO_ENCODER_HPP_
-#define _RIDE_HAL_VIDEO_ENCODER_HPP_
+#ifndef _RIDEHAL_VIDEO_ENCODER_HPP_
+#define _RIDEHAL_VIDEO_ENCODER_HPP_
 
 #include "ridehal/component/ComponentIF.hpp"
 #include <mutex>
@@ -174,47 +174,47 @@ public:
     /// @param pName the video encoder unique instance name
     /// @param pConfig pointer to the video config information
     /// @param level the log level used by the video encoder, default is error
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, const VideoEncoder_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the video encoder
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start();
 
     /// @brief Stop the video encoder
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop();
 
     /// @brief deinitialize the video encoder
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit();
 
     /// @brief submit a video frame to VIDC driver for encoding
     /// @param pInput pointer to hold the video frame information
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e SubmitInputFrame( const VideoEncoder_InputFrame_t *pInput );
 
     /// @brief submit a video frame back to VIDC driver
     /// @param pOutput pointer to hold the video frame information
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e SubmitOutputFrame( const VideoEncoder_OutputFrame_t *pOutput );
 
     /// @brief get video input buffers to submit input in non-dynamic mode
     /// @param pInputList pointer to hold the video input buffer list
     /// @param num size of pInputList
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e GetInputBuffers( RideHal_SharedBuffer_t *pInputList, uint32_t num );
 
     /// @brief get video output buffers to submit output in non-dynamic mode
     /// @param pOutputList pointer to hold the video output buffer list
     /// @param num size of pOutputList
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e GetOutputBuffers( RideHal_SharedBuffer_t *pOutputList, uint32_t num );
 
     /// @brief set config dynamically to VIDC driver
     /// @param pCmd pointer to the video config information
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Configure( const VideoEncoder_OnTheFlyCmd_t *pCmd );
 
     /// @brief register callback
@@ -222,7 +222,7 @@ public:
     /// @param outputDoneCb output frame callback function
     /// @param eventCb event callback function
     /// @param pAppPriv app private data
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e RegisterCallback( VideoEncoder_InFrameCallback_t inputDoneCb,
                                      VideoEncoder_OutFrameCallback_t outputDoneCb,
                                      VideoEncoder_EventCallback_t eventCb, void *pAppPriv );
@@ -268,8 +268,8 @@ private:
     bool m_bOutputDynamicMode = true;
     bool m_bInputConfigBuffer = false;
     bool m_bOutputConfigBuffer = false;
-    RideHal_ImageFormat_e m_inFormat = RIDE_HAL_IMAGE_FORMAT_NV12;
-    RideHal_ImageFormat_e m_outFormat = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    RideHal_ImageFormat_e m_inFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    RideHal_ImageFormat_e m_outFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
 
     RideHal_SharedBuffer_t *m_inputList =
             nullptr;   // store input buffer that allocated inside videoencoder
@@ -299,4 +299,4 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_VIDEO_ENCODER_HPP_
+#endif   // _RIDEHAL_VIDEO_ENCODER_HPP_

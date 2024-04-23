@@ -78,7 +78,7 @@ typedef struct
     std::string name;
     std::string modelPath;
     int nLoops = 100;
-    RideHal_ProcessorType_e processor = RIDE_HAL_PROCESSOR_HTP0;
+    RideHal_ProcessorType_e processor = RIDEHAL_PROCESSOR_HTP0;
     std::vector<QnnTest_Buffer_t> inputs;
     int tid; /* deploy this on which thread */
     int delayMs = 0;
@@ -111,7 +111,7 @@ public:
     {
         m_params = params;
 
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
         auto &name = m_params.name;
         auto &modelPath = m_params.modelPath;
         auto processor = m_params.processor;
@@ -122,13 +122,13 @@ public:
         auto begin = std::chrono::high_resolution_clock::now();
         m_config = { LOAD_CONTEXT_BIN_FROM_FILE, modelPath.c_str(), nullptr, 0, processor,
                      QNN_PRIORITY_DEFAULT,       nullptr,           0 };
-        if ( ( RIDE_HAL_PROCESSOR_CPU == processor ) || ( RIDE_HAL_PROCESSOR_GPU == processor ) )
+        if ( ( RIDEHAL_PROCESSOR_CPU == processor ) || ( RIDEHAL_PROCESSOR_GPU == processor ) )
         {
             m_config.loadType = LOAD_SHARED_LIBRARY;
         }
 
         ret = m_qnn.Init( name.c_str(), &m_config, LOGGER_LEVEL_INFO );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        if ( RIDEHAL_ERROR_NONE != ret )
         {
             printf( "[%s] Failed to create QNN Runtime, error is %d\n", name.c_str(), ret );
         }
@@ -136,35 +136,35 @@ public:
         auto cost = std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count();
         printf( "[%s] Init cost %.2f ms\n", name.c_str(), (float) cost / 1000.0 );
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             ret = m_qnn.GetInputInfo( &m_inputInfoList );
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             m_inputBuffers.resize( m_inputInfoList.num );
         }
 
 
         uint32_t outputNum = 0;
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             ret = m_qnn.GetOutputInfo( &m_outputInfoList );
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             m_outputBuffers.resize( m_outputInfoList.num );
         }
 
-        for ( size_t i = 0; ( i < m_inputInfoList.num ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( size_t i = 0; ( i < m_inputInfoList.num ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
             auto &info = m_inputInfoList.pInfo[i];
             printf( "[%s] input %" PRIu64 " name=%s %s\n", name.c_str(), i, info.pName,
                     GetTensorInfoStr( info ).c_str() );
             ret = m_inputBuffers[i].Allocate( &info.properties );
-            if ( RIDE_HAL_ERROR_NONE == ret )
+            if ( RIDEHAL_ERROR_NONE == ret )
             {
                 if ( i < inputs.size() )
                 {
@@ -196,32 +196,32 @@ public:
                     else
                     {
                         printf( "input size not correct, abort test\n" );
-                        ret = RIDE_HAL_ERROR_FAIL;
+                        ret = RIDEHAL_ERROR_FAIL;
                     }
                 }
             }
             else
             {
                 printf( "[%s] Failed to allocate buffer for input %" PRIu64 "\n", name.c_str(), i );
-                ret = RIDE_HAL_ERROR_NORES;
+                ret = RIDEHAL_ERROR_NOMEM;
             }
         }
 
-        for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
             auto &info = m_outputInfoList.pInfo[i];
             printf( "[%s] output %" PRIu64 " name=%s %s\n", name.c_str(), i, info.pName,
                     GetTensorInfoStr( info ).c_str() );
             ret = m_outputBuffers[i].Allocate( &info.properties );
-            if ( RIDE_HAL_ERROR_NONE != ret )
+            if ( RIDEHAL_ERROR_NONE != ret )
             {
                 printf( "[%s] Failed to allocate buffer for output %" PRIu64 "\n", name.c_str(),
                         i );
-                ret = RIDE_HAL_ERROR_NORES;
+                ret = RIDEHAL_ERROR_NOMEM;
             }
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             m_qnn.EnablePerf();
             ret = m_qnn.Start();
@@ -232,7 +232,7 @@ public:
 
     RideHalError_e Run()
     {
-        RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
         auto &name = m_params.name;
         auto processor = m_params.processor;
         auto &inputs = m_params.inputs;
@@ -246,13 +246,13 @@ public:
         auto begin = std::chrono::high_resolution_clock::now();
         ret = m_qnn.Execute( m_inputBuffers.data(), m_inputBuffers.size(), m_outputBuffers.data(),
                              m_outputBuffers.size() );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        if ( RIDEHAL_ERROR_NONE != ret )
         {
             printf( "[%s] Failed to run, error is %d\n", name.c_str(), ret );
         }
         auto end = std::chrono::high_resolution_clock::now();
         auto cost = std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count();
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             perf = m_qnn.GetPerf();
             m_total += cost;
@@ -382,7 +382,7 @@ bool ThreadMain( int nLoops, std::vector<std::shared_ptr<QnnTestRunner>> runners
         printf( "[%d] avg cost %.2f ms\n", tid, (float) total / nLoops / 1000.0 );
     }
 
-    return RIDE_HAL_ERROR_NONE;
+    return RIDEHAL_ERROR_NONE;
 }
 
 int Usage( char *prog, int error )
@@ -437,8 +437,8 @@ int main( int argc, char *argv[] )
             {
                 QnnTest_Parameters_t &params = paramsList.back();
                 params.processor = (RideHal_ProcessorType_e) atoi( optarg );
-                if ( ( params.processor >= RIDE_HAL_PROCESSOR_MAX ) ||
-                     ( params.processor < RIDE_HAL_PROCESSOR_HTP0 ) )
+                if ( ( params.processor >= RIDEHAL_PROCESSOR_MAX ) ||
+                     ( params.processor < RIDEHAL_PROCESSOR_HTP0 ) )
                 {
                     printf( "invalid processor %s for %s\n", optarg, params.name.c_str() );
                     return -1;
@@ -502,7 +502,7 @@ int main( int argc, char *argv[] )
                 params.delayMs, params.periodMs );
         auto runner = std::make_shared<QnnTestRunner>();
         auto ret = runner->Init( params );
-        if ( RIDE_HAL_ERROR_NONE != ret )
+        if ( RIDEHAL_ERROR_NONE != ret )
         {
             return -1;
         }

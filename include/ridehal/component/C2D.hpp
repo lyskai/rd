@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_C2D_HPP_
-#define _RIDE_HAL_C2D_HPP_
+#ifndef _RIDEHAL_C2D_HPP_
+#define _RIDEHAL_C2D_HPP_
 
 #include <array>
 #include <c2d2.h>
@@ -42,7 +42,7 @@ typedef struct
 typedef struct
 {
     uint32_t numOfInputs;
-    C2D_InputConfig_t inputConfigs[RIDE_HAL_MAX_INPUTS];
+    C2D_InputConfig_t inputConfigs[RIDEHAL_MAX_INPUTS];
 } C2D_Config_t;
 
 
@@ -57,55 +57,55 @@ public:
 
     /// @brief Initialize the component
     /// @param name the component unique instance name
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, const C2D_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /// @brief Start the C2D executor
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start();
 
     /// @brief Stop the C2D executor
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop();
 
     /// @brief deinitialize the C2D executor
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit();
 
     /// @brief Execute
     /// @param[in] pInputs the input shared buffers
     /// @param numInputs the number of the input shared buffers
     /// @param[out] pOutput the output shared buffer
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
 
     /// @brief Register shared buffers for each input
     /// @param[in] pInputBuffer the input shared buffers array
     /// @param numOfInputBuffers the number of shared buffers
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffer,
                                          uint32_t numOfInputBuffers );
 
     /// @brief Register shared buffers for output
     /// @param[out] pOutputBuffer the output shared buffer
     /// @param numOfOutputBuffers the number of shared buffers
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffer,
                                           uint32_t numOfOutputBuffers );
 
     /// @brief Deregister shared buffers for each input
     /// @param[in] pInputBuffer the input shared buffers array
     /// @param numOfInputBuffers the number of shared buffers
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffer,
                                            uint32_t numOfInputBuffers );
 
     /// @brief Deregister shared buffers for output
     /// @param[out] pOutputBuffer the output shared buffer
     /// @param numOfOutputBuffers the number of shared buffers
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffer,
                                             uint32_t numOfOutputBuffers );
 
@@ -120,9 +120,9 @@ private:
 
 private:
     uint32_t m_numOfInputs = 1;
-    C2D_ImageResolution_t m_inputResolutions[RIDE_HAL_MAX_INPUTS];
-    RideHal_ImageFormat_e m_inputFormats[RIDE_HAL_MAX_INPUTS];
-    C2D_ROIConfig_t m_rois[RIDE_HAL_MAX_INPUTS];
+    C2D_ImageResolution_t m_inputResolutions[RIDEHAL_MAX_INPUTS];
+    RideHal_ImageFormat_e m_inputFormats[RIDEHAL_MAX_INPUTS];
+    C2D_ROIConfig_t m_rois[RIDEHAL_MAX_INPUTS];
 
     std::unordered_map<void *, C2D_OBJECT> m_inputBufferSurfaceMap;
     std::unordered_map<void *, uint32_t> m_outputBufferSurfaceMap;
@@ -132,5 +132,5 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_C2D_HPP_
+#endif   // _RIDEHAL_C2D_HPP_
 

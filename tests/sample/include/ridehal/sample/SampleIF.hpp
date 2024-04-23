@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_SAMPLE_IF_HPP_
-#define _RIDE_HAL_SAMPLE_IF_HPP_
+#ifndef _RIDEHAL_SAMPLE_IF_HPP_
+#define _RIDEHAL_SAMPLE_IF_HPP_
 
 #include "ridehal/common/Logger.hpp"
 #include "ridehal/common/Types.hpp"
@@ -54,19 +54,19 @@ public:
     /// @brief Initialize the sample
     /// @param name the sample unique instance name
     /// @param config the sample config key value map
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Init( std::string name, SampleConfig_t &config ) = 0;
 
     /// @brief Start the sample
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Start() = 0;
 
     /// @brief Stop the sample
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Stop() = 0;
 
     /// @brief deinitialize the sample
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Deinit() = 0;
 
     const char *GetName();
@@ -114,9 +114,9 @@ private:
     rsm_handle m_handle = 0;
 #endif
 
-    RideHal_ProcessorType_e m_processor = RIDE_HAL_PROCESSOR_MAX;
+    RideHal_ProcessorType_e m_processor = RIDEHAL_PROCESSOR_MAX;
 
-    static std::mutex s_locks[RIDE_HAL_PROCESSOR_MAX];
+    static std::mutex s_locks[RIDEHAL_PROCESSOR_MAX];
 
 private:
     static std::map<std::string, Sample_CreateFunction_t> s_SampleMap;
@@ -125,4 +125,4 @@ private:
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_SAMPLE_IF_HPP_
+#endif   // _RIDEHAL_SAMPLE_IF_HPP_

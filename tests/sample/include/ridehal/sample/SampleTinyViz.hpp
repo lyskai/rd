@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_SAMPLE_TINYVIZ_HPP_
-#define _RIDE_HAL_SAMPLE_TINYVIZ_HPP_
+#ifndef _RIDEHAL_SAMPLE_TINYVIZ_HPP_
+#define _RIDEHAL_SAMPLE_TINYVIZ_HPP_
 #include "TinyViz.hpp"
 #include "ridehal/sample/SampleIF.hpp"
 
@@ -23,19 +23,19 @@ public:
     /// @brief Initialize the tinyviz
     /// @param name the sample unique instance name
     /// @param config the sample config key value map
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( std::string name, SampleConfig_t &config );
 
     /// @brief Start the tinyviz
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start();
 
     /// @brief Stop the tinyviz
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop();
 
     /// @brief deinitialize the tinyviz
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit();
 
 private:
@@ -64,4 +64,4 @@ private:
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_SAMPLE_TINYVIZ_HPP_
+#endif   // _RIDEHAL_SAMPLE_TINYVIZ_HPP_

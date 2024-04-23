@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_COMPONENT_IF_HPP_
-#define _RIDE_HAL_COMPONENT_IF_HPP_
+#ifndef _RIDEHAL_COMPONENT_IF_HPP_
+#define _RIDEHAL_COMPONENT_IF_HPP_
 
 #include <string>
 
@@ -27,15 +27,15 @@ public:
     ~ComponentIF() = default;
 
     /// @brief Start the component
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Start() = 0;
 
     /// @brief Stop the component
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Stop() = 0;
 
     /// @brief deinitialize the component
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     virtual RideHalError_e Deinit();
 
     /// @brief get the current state of the component
@@ -50,17 +50,17 @@ protected:
     /// @brief Initialize the component
     /// @param pName the component unique instance name
     /// @param level the logger message level
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
 protected:
     std::string m_name;
     RIDEHAL_DECLARE_LOGGER();
-    RideHal_ComponentState_t m_state = RIDE_HAL_COMPONENT_STATE_INITIAL;
+    RideHal_ComponentState_t m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
 
 };   // class ComponentIF
 
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_COMPONENT_IF_HPP_
+#endif   // _RIDEHAL_COMPONENT_IF_HPP_

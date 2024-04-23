@@ -11,7 +11,7 @@ using namespace ridehal::component;
 
 TEST( QnnRuntime, SANITY_General )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
@@ -19,64 +19,64 @@ TEST( QnnRuntime, SANITY_General )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "/var/opt/qride/data/centernet";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0;
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     QnnRuntime_UdoPackage_t udoPackage;
     // udoPackage.udoLibPath = "libQnnAutoAiswOpPackage.so";
     // udoPackage.interfaceProvider = "AutoAiswOpPackageInterfaceProvider";
     // qnnConfig.udoPackages.push_back( udoPackage );
 
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Init( pName, pQnnConfig );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
 
     QnnRuntime_TensorInfoList_t tensorInputList;
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = qnnRuntime.GetInputInfo( &tensorInputList );
     }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     const uint32_t inputNum = tensorInputList.num;
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
         const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     QnnRuntime_TensorInfoList_t tensorOutputList;
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
     }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     const uint32_t outputNum = tensorOutputList.num;
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
         const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 TEST( QnnRuntime, CreateModelFromBuffer )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
@@ -84,7 +84,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "/var/opt/qride/data/centernet";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDE_HAL_PROCESSOR_HTP0;
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     qnnConfig.loadType = QnnRuntime_LoadType_e::LOAD_CONTEXT_BIN_FROM_BUFFER;
     std::string modelFile = std::string( qnnConfig.modelPath ) + "/program.bin";
     uint64_t bufferSize{ 0 };
@@ -96,53 +96,53 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     qnnConfig.contextBuffer = buffer.get();
     qnnConfig.contextSize = bufferSize;
 
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Init( pName, pQnnConfig );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
 
     QnnRuntime_TensorInfoList_t tensorInputList;
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = qnnRuntime.GetInputInfo( &tensorInputList );
     }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     const uint32_t inputNum = tensorInputList.num;
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
         const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     QnnRuntime_TensorInfoList_t tensorOutputList;
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
     }
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     const uint32_t outputNum = tensorOutputList.num;
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
         const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 

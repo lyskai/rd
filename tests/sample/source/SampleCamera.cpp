@@ -70,30 +70,30 @@ void SampleCamera::EventCallBack( const uint32_t eventId, const void *pPayload, 
 
 RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_camConfig.inputId = Get( config, "input_id", -1 );
         if ( -1 == m_camConfig.inputId )
         {
             RIDEHAL_ERROR( "invalid input id = %d\n", m_camConfig.inputId );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         m_camConfig.width = Get( config, "width", 0 );
         if ( 0 == m_camConfig.width )
         {
             RIDEHAL_ERROR( "invalid width = %d\n", m_camConfig.width );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         m_camConfig.height = Get( config, "height", 0 );
         if ( 0 == m_camConfig.height )
         {
             RIDEHAL_ERROR( "invalid height = %d\n", m_camConfig.height );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         m_camConfig.requestMode = Get( config, "request_mode", false );
@@ -105,31 +105,40 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
         if ( 0 == m_camConfig.bufCnt )
         {
             RIDEHAL_ERROR( "invalid pool_size \n" );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
-        m_camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+        m_camConfig.format = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
+        if ( RIDEHAL_IMAGE_FORMAT_MAX == m_camConfig.format )
+        {
+            RIDEHAL_ERROR( "invalid format\n" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_camConfig.camFrameDropPat = Get( config, "frame_drop_patten", 0 );
+
+        m_camConfig.opMode = Get( config, "op_mode", (uint32_t) QCARCAM_OPMODE_OFFLINE_ISP );
 
         m_topicName = Get( config, "topic", "" );
         if ( "" == m_topicName )
         {
             RIDEHAL_ERROR( "no topic\n" );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_camera.Init( (char *) name.c_str(), &m_camConfig );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_camera.RegisterCallback( SampleCamera::FrameCallBack, SampleCamera::EventCallBack,
                                          (void *) this );
     }
 
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_pub.Init( name, m_topicName );
     }
@@ -139,7 +148,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
 
 RideHalError_e SampleCamera::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_camera.Start();
 
@@ -148,7 +157,7 @@ RideHalError_e SampleCamera::Start()
 
 RideHalError_e SampleCamera::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_camera.Stop();
 
@@ -159,7 +168,7 @@ RideHalError_e SampleCamera::Stop()
 
 RideHalError_e SampleCamera::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_camera.Deinit();
 

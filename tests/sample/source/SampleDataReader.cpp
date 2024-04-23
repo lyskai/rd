@@ -14,12 +14,12 @@ namespace sample
 
 std::mutex SampleDataReader::s_lock;
 
-static std::string s_rideHalFormatToStr[RIDE_HAL_IMAGE_FORMAT_MAX] = {
-        ".rgb",  /* RIDE_HAL_IMAGE_FORMAT_RGB888 */
-        ".bgr",  /* RIDE_HAL_IMAGE_FORMAT_BGR888 */
-        ".uyvy", /* RIDE_HAL_IMAGE_FORMAT_UYVY */
-        ".nv12", /* RIDE_HAL_IMAGE_FORMAT_NV12 */
-        ".p010"  /* RIDE_HAL_IMAGE_FORMAT_P010 */
+static std::string s_rideHalFormatToStr[RIDEHAL_IMAGE_FORMAT_MAX] = {
+        ".rgb",  /* RIDEHAL_IMAGE_FORMAT_RGB888 */
+        ".bgr",  /* RIDEHAL_IMAGE_FORMAT_BGR888 */
+        ".uyvy", /* RIDEHAL_IMAGE_FORMAT_UYVY */
+        ".nv12", /* RIDEHAL_IMAGE_FORMAT_NV12 */
+        ".p010"  /* RIDEHAL_IMAGE_FORMAT_P010 */
 };
 
 SampleDataReader::SampleDataReader() {}
@@ -27,42 +27,42 @@ SampleDataReader::~SampleDataReader() {}
 
 RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_numOfDataReaders = Get( config, "number", 1 );
     if ( 0 == m_numOfDataReaders )
     {
         RIDEHAL_ERROR( "invalid number\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
         m_configs.reserve( m_numOfDataReaders );
     }
 
-    for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+    for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
     {
         DataReaderConfig_t cfg;
 
-        cfg.format = Get( config, "format" + std::to_string( i ), RIDE_HAL_IMAGE_FORMAT_NV12 );
-        if ( RIDE_HAL_IMAGE_FORMAT_MAX == cfg.format )
+        cfg.format = Get( config, "format" + std::to_string( i ), RIDEHAL_IMAGE_FORMAT_NV12 );
+        if ( RIDEHAL_IMAGE_FORMAT_MAX == cfg.format )
         {
             RIDEHAL_ERROR( "invalid format%u\n", i );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         cfg.width = Get( config, "width" + std::to_string( i ), 1920 );
         if ( 0 == cfg.width )
         {
             RIDEHAL_ERROR( "invalid width%u\n", i );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         cfg.height = Get( config, "height" + std::to_string( i ), 1024 );
         if ( 0 == cfg.height )
         {
             RIDEHAL_ERROR( "invalid height%u\n", i );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         cfg.dataPath = Get( config, "data_path" + std::to_string( i ), "" );
@@ -78,7 +78,7 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
     if ( 0 == m_fps )
     {
         RIDEHAL_ERROR( "invalid fps = %d\n", m_fps );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     bool bCache = Get( config, "cache", true );
@@ -88,21 +88,21 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
     }
     else
     {
-        m_bufferFlags = RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA;
+        m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
     }
 
     m_topicName = Get( config, "topic", "" );
     if ( "" == m_topicName )
     {
         RIDEHAL_ERROR( "no topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
     {
         RIDEHAL_ERROR( "invalid pool_size = %d\n", m_poolSize );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     return ret;
@@ -110,27 +110,27 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
 
 RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = ParseConfig( config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_imagePools.resize( m_numOfDataReaders );
-        for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
             ret = m_imagePools[i].Init( name + std::to_string( i ), LOGGER_LEVEL_INFO, m_poolSize,
                                         m_configs[i].width, m_configs[i].height,
-                                        m_configs[i].format, RIDE_HAL_BUFFER_USAGE_CAMERA,
+                                        m_configs[i].format, RIDEHAL_BUFFER_USAGE_CAMERA,
                                         m_bufferFlags );
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_pub.Init( name, m_topicName );
     }
@@ -140,7 +140,7 @@ RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config 
 
 RideHalError_e SampleDataReader::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     m_stop = false;
     m_thread = std::thread( &SampleDataReader::ThreadMain, this );
     return ret;
@@ -149,7 +149,7 @@ RideHalError_e SampleDataReader::Start()
 RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> image,
                                             std::string path )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     FILE *file = nullptr;
     size_t length = 0;
 
@@ -159,21 +159,21 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     if ( nullptr == file )
     {
         RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
-        ret = RIDE_HAL_ERROR_EXISTS;
+        ret = RIDEHAL_ERROR_ALREADY;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         fseek( file, 0, SEEK_END );
         length = (size_t) ftell( file );
         if ( image->sharedBuffer.size < length )
         {
             RIDEHAL_ERROR( "Invalid image file %s", path.c_str() );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         fseek( file, 0, SEEK_SET );
         auto r = fread( image->sharedBuffer.data(), 1, length, file );
@@ -181,7 +181,7 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
         if ( length != r )
         {
             RIDEHAL_ERROR( "failed to read image file %s", path.c_str() );
-            ret = RIDE_HAL_ERROR_ACCES;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
@@ -191,23 +191,23 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     }
 
     RIDEHAL_DEBUG( "Loading Image %s %s", path.c_str(),
-                   ( RIDE_HAL_ERROR_NONE == ret ) ? "OK" : "FAIL" );
+                   ( RIDEHAL_ERROR_NONE == ret ) ? "OK" : "FAIL" );
 
     return ret;
 }
 
 void SampleDataReader::ThreadMain()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     uint32_t index = 0;
     uint64_t frameId = 0;
     while ( false == m_stop )
     {
         CamFrames_t frames;
-        ret = RIDE_HAL_ERROR_NONE;
+        ret = RIDEHAL_ERROR_NONE;
         auto start = std::chrono::high_resolution_clock::now();
         PROFILER_BEGIN();
-        for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
             std::shared_ptr<SharedBuffer_t> buffer = m_imagePools[i].Get();
             if ( nullptr != buffer )
@@ -222,7 +222,7 @@ void SampleDataReader::ThreadMain()
                 {
                     // skip loading, using dummy data
                 }
-                if ( RIDE_HAL_ERROR_NONE == ret )
+                if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     CamFrame_t frame;
                     struct timespec ts;
@@ -234,27 +234,27 @@ void SampleDataReader::ThreadMain()
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_EXISTS;
+                    ret = RIDEHAL_ERROR_ALREADY;
                 }
             }
             else
             {
-                ret = RIDE_HAL_ERROR_NORES;
+                ret = RIDEHAL_ERROR_NOMEM;
             }
         }
 
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             PROFILER_END();
             m_pub.Publish( frames );
             index++;
         }
-        else if ( RIDE_HAL_ERROR_EXISTS == ret )
+        else if ( RIDEHAL_ERROR_ALREADY == ret )
         {
             index = 0;
             continue; /* retry load from beginning */
         }
-        else if ( RIDE_HAL_ERROR_NORES == ret )
+        else if ( RIDEHAL_ERROR_NOMEM == ret )
         { /* sleep to wait buffer resource ready */
             std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         }
@@ -276,7 +276,7 @@ void SampleDataReader::ThreadMain()
 
 RideHalError_e SampleDataReader::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = true;
     if ( m_thread.joinable() )
@@ -291,7 +291,7 @@ RideHalError_e SampleDataReader::Stop()
 
 RideHalError_e SampleDataReader::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     return ret;
 }
@@ -300,4 +300,3 @@ REGISTER_SAMPLE( DataReader, SampleDataReader );
 
 }   // namespace sample
 }   // namespace ridehal
-

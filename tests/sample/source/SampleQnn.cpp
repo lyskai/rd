@@ -15,42 +15,42 @@ SampleQnn::~SampleQnn() {}
 
 RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_modelPath = Get( config, "model_path", "" );
     m_config.modelPath = m_modelPath.c_str();
     if ( "" == m_config.modelPath )
     {
         RIDEHAL_ERROR( "invalid modelPath\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.backendType = Get( config, "processor", RIDE_HAL_PROCESSOR_HTP0 );
-    if ( RIDE_HAL_PROCESSOR_MAX == m_config.backendType )
+    m_config.backendType = Get( config, "processor", RIDEHAL_PROCESSOR_HTP0 );
+    if ( RIDEHAL_PROCESSOR_MAX == m_config.backendType )
     {
         RIDEHAL_ERROR( "invalid processor %s\n", Get( config, "processor", "" ).c_str() );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
     {
         RIDEHAL_ERROR( "invalid pool_size = %d\n", m_poolSize );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
     {
         RIDEHAL_ERROR( "no input topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_outputTopicName = Get( config, "output_topic", "" );
     if ( "" == m_outputTopicName )
     {
         RIDEHAL_ERROR( "no output topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     return ret;
@@ -58,37 +58,37 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
 
 RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = ParseConfig( config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = SampleIF::Init( m_config.backendType );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_qnn.Init( name.c_str(), &m_config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_qnn.GetInputInfo( &m_inputInfoList );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_qnn.GetOutputInfo( &m_outputInfoList );
     }
 
     const size_t outputNum = m_outputInfoList.num;
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_tensorPools.resize( outputNum );
 
@@ -97,21 +97,21 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         {
             ret = m_tensorPools[index].Init(
                     "Qnn." + name + "." + std::to_string( index ), LOGGER_LEVEL_INFO, m_poolSize,
-                    m_outputInfoList.pInfo[i].properties, RIDE_HAL_BUFFER_USAGE_HTP );
+                    m_outputInfoList.pInfo[i].properties, RIDEHAL_BUFFER_USAGE_HTP );
             index += 1;
-            if ( RIDE_HAL_ERROR_NONE != ret )
+            if ( RIDEHAL_ERROR_NONE != ret )
             {
                 break;
             }
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_sub.Init( name, m_inputTopicName );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_pub.Init( name, m_outputTopicName );
     }
@@ -121,10 +121,10 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
 
 RideHalError_e SampleQnn::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_qnn.Start();
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
         m_thread = std::thread( &SampleQnn::ThreadMain, this );
@@ -140,7 +140,7 @@ void SampleQnn::ThreadMain()
     {
         CamFrames_t frames;
         ret = m_sub.Receive( frames );
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n",
                            frames.frames[0].frameId, frames.frames[0].timestamp );
@@ -151,7 +151,7 @@ void SampleQnn::ThreadMain()
             {
                 RideHal_SharedBuffer_t sharedBuffer;
                 ret = frame.buffer->sharedBuffer.ImageToTensor( &sharedBuffer );
-                if ( RIDE_HAL_ERROR_NONE != ret )
+                if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "QNN failed to do image to tensor convert for frameId %" PRIu64
                                    ": ret = %d",
@@ -161,7 +161,7 @@ void SampleQnn::ThreadMain()
                 inputs.push_back( sharedBuffer );
             }
 
-            for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDE_HAL_ERROR_NONE == ret );
+            for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDEHAL_ERROR_NONE == ret );
                   i++ )
             {
                 std::shared_ptr<SharedBuffer_t> buffer = m_tensorPools[i].Get();
@@ -172,15 +172,15 @@ void SampleQnn::ThreadMain()
                 }
                 else
                 {
-                    ret = RIDE_HAL_ERROR_NORES;
+                    ret = RIDEHAL_ERROR_NOMEM;
                 }
             }
 
-            if ( RIDE_HAL_ERROR_NONE == ret )
+            if ( RIDEHAL_ERROR_NONE == ret )
             {
                 bool locked = false;
                 ret = SampleIF::Lock();
-                locked = ( RIDE_HAL_ERROR_NONE == ret );
+                locked = ( RIDEHAL_ERROR_NONE == ret );
                 PROFILER_BEGIN();
                 ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(), outputs.size() );
                 if ( true == locked )
@@ -190,7 +190,7 @@ void SampleQnn::ThreadMain()
                 }
             }
 
-            if ( RIDE_HAL_ERROR_NONE == ret )
+            if ( RIDEHAL_ERROR_NONE == ret )
             {
                 Tensors_t outTensors;
                 size_t index = 0;
@@ -219,7 +219,7 @@ void SampleQnn::ThreadMain()
 
 RideHalError_e SampleQnn::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = true;
     if ( m_thread.joinable() )
@@ -236,7 +236,7 @@ RideHalError_e SampleQnn::Stop()
 
 RideHalError_e SampleQnn::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_qnn.Deinit();
 

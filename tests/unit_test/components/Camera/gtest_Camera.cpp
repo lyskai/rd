@@ -48,10 +48,10 @@ void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
 #ifdef DUMPFRAME
     uint32_t writeBytes = DumpFrame( pFrame, pDumpPath );
 #endif
-    if (RIDE_HAL_COMPONENT_STATE_RUNNING == pCamera->GetState())
+    if (RIDEHAL_COMPONENT_STATE_RUNNING == pCamera->GetState())
     {
         ret = pCamera->ReleaseFrame( pFrame->frameIndex );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 }
 
@@ -65,10 +65,10 @@ void FrameCallBack_RequestMode( CameraFrame_t *pFrame, void *pPrivData )
     uint32_t writeBytes = DumpFrame( pFrame, pDumpPath );
 #endif
 
-    if (RIDE_HAL_COMPONENT_STATE_RUNNING == pCamera->GetState())
+    if (RIDEHAL_COMPONENT_STATE_RUNNING == pCamera->GetState())
     {
         ret = pCamera->RequestFrame( pFrame );
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 }
 
@@ -84,7 +84,7 @@ TEST( Camera, Query_QcarCam )
     CameraInputs_t camInputs;
 
     ret = pCamera->GetInputsInfo( &camInputs );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     printf( "Number of camera connected: %d\n", camInputs.numInputs );
 
     delete pCamera;
@@ -106,25 +106,25 @@ TEST( Camera, SANITY_QcarCam )
     camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.streamId = 0;
     camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
-    camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     // sanity test to run few seconds and then stop
     sleep( RUNTIME_SECOND );
 
     ret = pCamera->Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     delete pCamera;
 }
@@ -142,7 +142,7 @@ TEST( Camera, SetBuffer_QcarCam )
     camConfig.ispUserCase = 3;
     camConfig.width = 1928;
     camConfig.height = 1208;
-    camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
     camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
     camConfig.streamId = 0;
     RideHal_SharedBuffer_t *pSharedBuffer = new RideHal_SharedBuffer_t[BUFFFER_COUNT];
@@ -150,34 +150,34 @@ TEST( Camera, SetBuffer_QcarCam )
     for (int i = 0; i < BUFFFER_COUNT; i ++)
     {
         ret = pSharedBuffer[i].Allocate( camConfig.width, camConfig.height, camConfig.format);
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     // sanity test to run few seconds and then stop
     sleep( RUNTIME_SECOND );
 
     ret = pCamera->Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     for (int i = 0; i < BUFFFER_COUNT; i ++)
     {
         ret = pSharedBuffer[i].Free();
-        ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     delete pCamera;
@@ -198,36 +198,36 @@ TEST( Camera, PauseResume_QcarCam )
     camConfig.height = 1208;
     camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.streamId = 0;
-    camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
     camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     // sanity test to run few seconds and then stop
     sleep( RUNTIME_SECOND );
 
     ret = pCamera->Pause();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     sleep( RUNTIME_SECOND );
 
     ret = pCamera->Resume();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     sleep( RUNTIME_SECOND );
 
     ret = pCamera->Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     delete pCamera;
 }
@@ -247,26 +247,26 @@ TEST( Camera, RequestMode_QcarCam )
     camConfig.height = 1208;
     camConfig.bufCnt = BUFFFER_COUNT;
     camConfig.streamId = 0;
-    camConfig.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
     camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
 
     ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack, (void *) pCamera );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Start();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     // sanity test to run few seconds and then stop
     sleep( RUNTIME_SECOND );
 
     ret = pCamera->Stop();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = pCamera->Deinit();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     delete pCamera;
 }

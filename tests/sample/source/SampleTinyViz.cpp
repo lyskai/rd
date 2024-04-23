@@ -13,27 +13,27 @@ SampleTinyViz::~SampleTinyViz() {}
 
 RideHalError_e SampleTinyViz::ParseConfig( SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_winW = Get( config, "winW", 1920 );
     if ( 0 == m_winW )
     {
         RIDEHAL_ERROR( "invalid winW = %d\n", m_winW );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_winH = Get( config, "winH", 1080 );
     if ( 0 == m_winH )
     {
         RIDEHAL_ERROR( "invalid winH = %d\n", m_winH );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_camNames = Get( config, "cameras", m_camNames );
     if ( 0 == m_camNames.size() )
     {
         RIDEHAL_ERROR( "invalid cameras\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     uint32_t idx = 0;
@@ -44,7 +44,7 @@ RideHalError_e SampleTinyViz::ParseConfig( SampleConfig_t &config )
         if ( "" == camTopic )
         {
             RIDEHAL_ERROR( "no cam_topic for camera %s\n", camName.c_str() );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
         m_camTopicNames.push_back( camTopic );
 
@@ -60,21 +60,21 @@ RideHalError_e SampleTinyViz::ParseConfig( SampleConfig_t &config )
 
 RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = ParseConfig( config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         bool bOK = m_tinyViz.init( m_winW, m_winH );
         if ( false == bOK )
         {
             RIDEHAL_ERROR( "init tinyviz failed\n" );
-            ret = RIDE_HAL_ERROR_FAIL;
+            ret = RIDEHAL_ERROR_FAIL;
         }
         else
         {
@@ -85,20 +85,20 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_camSubs.resize( m_camNames.size() );
-        for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
+        for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDEHAL_ERROR_NONE == ret );
               idx++ )
         {
             ret = m_camSubs[idx].Init( name, m_camTopicNames[idx], 1 );
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_objSubs.resize( m_camNames.size() );
-        for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret );
+        for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDEHAL_ERROR_NONE == ret );
               idx++ )
         {
             if ( "" != m_objTopicNames[idx] )
@@ -113,15 +113,15 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
 
 RideHalError_e SampleTinyViz::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     if ( !m_tinyViz.start() )
     {
         RIDEHAL_ERROR( "start tinyviz failed\n" );
-        ret = RIDE_HAL_ERROR_FAIL;
+        ret = RIDEHAL_ERROR_FAIL;
     }
 
     m_stop = false;
-    for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDE_HAL_ERROR_NONE == ret ); idx++ )
+    for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDEHAL_ERROR_NONE == ret ); idx++ )
     {
         std::thread *thread = new std::thread( &SampleTinyViz::CamThreadMain, this, idx );
         if ( nullptr != thread )
@@ -130,9 +130,9 @@ RideHalError_e SampleTinyViz::Start()
         }
         else
         {
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
-        if ( ( RIDE_HAL_ERROR_NONE == ret ) && ( "" != m_objTopicNames[idx] ) )
+        if ( ( RIDEHAL_ERROR_NONE == ret ) && ( "" != m_objTopicNames[idx] ) )
         {
             std::thread *thread = new std::thread( &SampleTinyViz::ObjThreadMain, this, idx );
             if ( nullptr != thread )
@@ -141,7 +141,7 @@ RideHalError_e SampleTinyViz::Start()
             }
             else
             {
-                ret = RIDE_HAL_ERROR_NORES;
+                ret = RIDEHAL_ERROR_NOMEM;
             }
         }
     }
@@ -192,7 +192,7 @@ void SampleTinyViz::ObjThreadMain( uint32_t idx )
 
 RideHalError_e SampleTinyViz::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = true;
     for ( auto &th : m_threads )
@@ -212,7 +212,7 @@ RideHalError_e SampleTinyViz::Stop()
 
 RideHalError_e SampleTinyViz::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     return ret;
 }
 

@@ -15,20 +15,20 @@ SampleRecorder::~SampleRecorder() {}
 
 RideHalError_e SampleRecorder::ParseConfig( SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_maxImages = Get( config, "max", 1000 );
     if ( 0 == m_maxImages )
     {
         RIDEHAL_ERROR( "invalid max = %d\n", m_maxImages );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_topicName = Get( config, "topic", "" );
     if ( "" == m_topicName )
     {
         RIDEHAL_ERROR( "no topic\n" );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     return ret;
@@ -36,27 +36,27 @@ RideHalError_e SampleRecorder::ParseConfig( SampleConfig_t &config )
 
 RideHalError_e SampleRecorder::Init( std::string name, SampleConfig_t &config )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = SampleIF::Init( name );
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = ParseConfig( config );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_sub.Init( name, m_topicName );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         std::string path = "/tmp/" + name + ".raw";
         m_file = fopen( path.c_str(), "wb" );
         if ( nullptr == m_file )
         {
             RIDEHAL_ERROR( "can't create file %s", path.c_str() );
-            ret = RIDE_HAL_ERROR_ACCES;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
@@ -65,7 +65,7 @@ RideHalError_e SampleRecorder::Init( std::string name, SampleConfig_t &config )
 
 RideHalError_e SampleRecorder::Start()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = false;
     m_thread = std::thread( &SampleRecorder::ThreadMain, this );
@@ -82,7 +82,7 @@ void SampleRecorder::ThreadMain()
         CamFrames_t frames;
         CamFrame_t frame;
         ret = m_sub.Receive( frames );
-        if ( RIDE_HAL_ERROR_NONE == ret )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
             frame = frames.frames[0];
             RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n", frame.frameId,
@@ -91,7 +91,7 @@ void SampleRecorder::ThreadMain()
             {
                 PROFILER_BEGIN();
                 auto &buffer = frame.buffer->sharedBuffer;
-                if ( buffer.imgProps.format < RIDE_HAL_IMAGE_FORMAT_MAX )
+                if ( buffer.imgProps.format < RIDEHAL_IMAGE_FORMAT_MAX )
                 {
                     uint32_t sizeOne = buffer.size / buffer.imgProps.batchSize;
                     for ( uint32_t i = 0; i < buffer.imgProps.batchSize; i++ )
@@ -141,7 +141,7 @@ void SampleRecorder::ThreadMain()
 
 RideHalError_e SampleRecorder::Stop()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     m_stop = true;
     if ( m_thread.joinable() )
@@ -156,7 +156,7 @@ RideHalError_e SampleRecorder::Stop()
 
 RideHalError_e SampleRecorder::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     return ret;
 }

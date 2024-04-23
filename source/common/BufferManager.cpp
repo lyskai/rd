@@ -19,17 +19,17 @@ static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffe
     std::string str = "";
     std::stringstream ss;
 
-    if ( RIDE_HAL_BUFFER_TYPE_RAW == pSharedBuffer->type )
+    if ( RIDEHAL_BUFFER_TYPE_RAW == pSharedBuffer->type )
     {
         str = "Raw";
     }
-    else if ( RIDE_HAL_BUFFER_TYPE_IMAGE == pSharedBuffer->type )
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE == pSharedBuffer->type )
     {
         ss << "Image format=" << pSharedBuffer->imgProps.format
            << " batch=" << pSharedBuffer->imgProps.batchSize
            << " resolution=" << pSharedBuffer->imgProps.width << "x"
            << pSharedBuffer->imgProps.height;
-        if ( pSharedBuffer->imgProps.format < RIDE_HAL_IMAGE_FORMAT_MAX )
+        if ( pSharedBuffer->imgProps.format < RIDEHAL_IMAGE_FORMAT_MAX )
         {
             ss << " stride=[";
             for ( uint32_t i = 0; i < pSharedBuffer->imgProps.numPlanes; i++ )
@@ -49,7 +49,7 @@ static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffe
         }
         str = ss.str();
     }
-    else if ( RIDE_HAL_BUFFER_TYPE_TENSOR == pSharedBuffer->type )
+    else if ( RIDEHAL_BUFFER_TYPE_TENSOR == pSharedBuffer->type )
     {
         ss << "Tensor type=" << pSharedBuffer->tensorProps.type << " dims=[";
         for ( uint32_t i = 0; i < pSharedBuffer->tensorProps.numDims; i++ )
@@ -72,14 +72,14 @@ BufferManager::~BufferManager() {}
 
 RideHalError_e BufferManager::Init( const char *pName, Logger_Level_e level )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = RIDEHAL_LOGGER_INIT( pName, level );
-    if ( RIDE_HAL_ERROR_NONE != ret )
+    if ( RIDEHAL_ERROR_NONE != ret )
     {
         fprintf( stderr, "WARINING: failed to init logger for BUFMGR %s: ret = %d\n", pName, ret );
     }
-    ret = RIDE_HAL_ERROR_NONE; /* ignore logger init error */
+    ret = RIDEHAL_ERROR_NONE; /* ignore logger init error */
 
     return ret;
 }
@@ -98,17 +98,17 @@ BufferManager *BufferManager::GetDefaultBufferManager()
 
 RideHalError_e BufferManager::Register( RideHal_SharedBuffer_t *pSharedBuffer )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( nullptr == pSharedBuffer )
     {
         RIDEHAL_ERROR( "buffer is nullptr" );
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     std::lock_guard<std::mutex> l( m_lock );
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_IDAllocator++;
         pSharedBuffer->buffer.id = m_IDAllocator;
@@ -124,7 +124,7 @@ RideHalError_e BufferManager::Register( RideHal_SharedBuffer_t *pSharedBuffer )
 
 RideHalError_e BufferManager::Deregister( uint64_t id )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     std::lock_guard<std::mutex> l( m_lock );
 
     auto it = m_bufferMap.find( id );
@@ -140,7 +140,7 @@ RideHalError_e BufferManager::Deregister( uint64_t id )
     else
     {
         RIDEHAL_ERROR( "buffer %" PRIu64 " not existed", id );
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     return ret;
@@ -148,11 +148,11 @@ RideHalError_e BufferManager::Deregister( uint64_t id )
 
 RideHalError_e BufferManager::GetSharedBuffer( uint64_t id, RideHal_SharedBuffer_t *pSharedBuffer )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( nullptr == pSharedBuffer )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -165,7 +165,7 @@ RideHalError_e BufferManager::GetSharedBuffer( uint64_t id, RideHal_SharedBuffer
         else
         {
             RIDEHAL_ERROR( "buffer %" PRIu64 " not found", id );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
     }
 

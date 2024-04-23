@@ -23,7 +23,7 @@ Logger::~Logger() {}
 RideHalError_e Logger::Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
                               Logger_Destroy_t destoryFnc )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( DefaultLog == s_logFnc ) && ( DefaultCreate == s_createFnc ) &&
          ( DefaultDestory == s_destroyFnc ) )
@@ -37,7 +37,7 @@ RideHalError_e Logger::Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
     }
     else
     {
-        ret = RIDE_HAL_ERROR_FAIL;
+        ret = RIDEHAL_ERROR_FAIL;
     }
 
     return ret;
@@ -50,7 +50,7 @@ Logger &Logger::GetDefault()
         std::lock_guard<std::mutex> l( s_lock );
         // the mutext lock is need to ensure the 2 more threads reach here at the same time, thus
         // the first thread that call this API do the default logger initialization. The second
-        // thread Init call will get error RIDE_HAL_ERROR_STATE as it was already initialized.
+        // thread Init call will get error RIDEHAL_ERROR_BAD_STATE as it was already initialized.
         (void) s_defaultLogger.Init( "RIHDEHAL" );
     }
 
@@ -59,15 +59,15 @@ Logger &Logger::GetDefault()
 
 RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( nullptr == pName )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( m_hHandle != nullptr )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else
     {
@@ -100,11 +100,11 @@ void Logger::Log( Logger_Level_e level, const char *pFormat, va_list args )
 
 RideHalError_e Logger::Deinit()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( m_hHandle == nullptr )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else
     {

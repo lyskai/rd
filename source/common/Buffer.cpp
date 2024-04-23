@@ -19,11 +19,11 @@ void RideHal_SharedBuffer::Init()
     this->buffer.size = 0;
     this->buffer.id = 0;
     this->buffer.pid = static_cast<uint64_t>( getpid() );
-    this->buffer.usage = RIDE_HAL_BUFFER_USAGE_DEFAULT;
+    this->buffer.usage = RIDEHAL_BUFFER_USAGE_DEFAULT;
     this->buffer.flags = 0;
     this->size = 0;
     this->offset = 0;
-    this->type = RIDE_HAL_BUFFER_TYPE_RAW;
+    this->type = RIDEHAL_BUFFER_TYPE_RAW;
 }
 
 RideHal_SharedBuffer::RideHal_SharedBuffer()
@@ -39,10 +39,10 @@ RideHal_SharedBuffer::RideHal_SharedBuffer( const RideHal_SharedBuffer &rhs )
     this->type = rhs.type;
     switch ( type )
     {
-        case RIDE_HAL_BUFFER_TYPE_IMAGE:
+        case RIDEHAL_BUFFER_TYPE_IMAGE:
             this->imgProps = rhs.imgProps;
             break;
-        case RIDE_HAL_BUFFER_TYPE_TENSOR:
+        case RIDEHAL_BUFFER_TYPE_TENSOR:
             this->tensorProps = rhs.tensorProps;
             break;
         default:
@@ -58,10 +58,10 @@ RideHal_SharedBuffer &RideHal_SharedBuffer::operator=( const RideHal_SharedBuffe
     this->type = rhs.type;
     switch ( type )
     {
-        case RIDE_HAL_BUFFER_TYPE_IMAGE:
+        case RIDEHAL_BUFFER_TYPE_IMAGE:
             this->imgProps = rhs.imgProps;
             break;
-        case RIDE_HAL_BUFFER_TYPE_TENSOR:
+        case RIDEHAL_BUFFER_TYPE_TENSOR:
             this->tensorProps = rhs.tensorProps;
             break;
         default:
@@ -75,7 +75,7 @@ RideHal_SharedBuffer::~RideHal_SharedBuffer() {}
 RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_e usage,
                                                RideHal_BufferFlags_t flags )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     void *pData = nullptr;
     uint64_t dmaHandle = 0;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
@@ -84,23 +84,23 @@ RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_
     if ( nullptr == pBufferManager )
     {
         RIDEHAL_LOG_ERROR( "Failed to get buffer manager" );
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else if ( nullptr != this->buffer.pData )
     {
         RIDEHAL_LOG_ERROR( "buffer is already allocated" );
-        ret = RIDE_HAL_ERROR_EXISTS;
+        ret = RIDEHAL_ERROR_ALREADY;
     }
     else
     {
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = RideHal_DmaAllocate( &pData, &dmaHandle, size, flags, usage );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         this->buffer.pData = pData;
         this->buffer.dmaHandle = dmaHandle;
@@ -110,12 +110,12 @@ RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_
         this->size = size;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = pBufferManager->Register( this );
     }
 
-    if ( RIDE_HAL_ERROR_NONE != ret )
+    if ( RIDEHAL_ERROR_NONE != ret )
     {
         if ( nullptr != pData )
         {
@@ -129,33 +129,33 @@ RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_
 
 RideHalError_e RideHal_SharedBuffer::Free()
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
 
     if ( nullptr == pBufferManager )
     {
-        ret = RIDE_HAL_ERROR_STATE;
+        ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else if ( nullptr == this->buffer.pData )
     {
-        ret = RIDE_HAL_ERROR_INVALID_BUF;
+        ret = RIDEHAL_ERROR_INVALID_BUF;
     }
     else
     {
         /* OK */
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = pBufferManager->Deregister( this->buffer.id );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = RideHal_DmaFree( this->buffer.pData, this->buffer.dmaHandle, this->buffer.size );
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         Init();
     }

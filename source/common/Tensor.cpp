@@ -8,7 +8,7 @@ namespace ridehal
 namespace common
 {
 #define SIZE_OF_FLOAT16 2
-static uint32_t s_rideHalTensorTypeToDataSize[RIDE_HAL_TENSOR_TYPE_MAX] = {
+static uint32_t s_rideHalTensorTypeToDataSize[RIDEHAL_TENSOR_TYPE_MAX] = {
         sizeof( int8_t ),  /* RIDEHAL_TENSOR_TYPE_INT_8 */
         sizeof( int16_t ), /* RIDEHAL_TENSOR_TYPE_INT_16 */
         sizeof( int32_t ), /* RIDEHAL_TENSOR_TYPE_INT_32 */
@@ -36,36 +36,36 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_TensorProps_t *pTen
                                                RideHal_BufferUsage_e usage,
                                                RideHal_BufferFlags_t flags )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     size_t size = 1;
     uint32_t i = 0;
 
     if ( nullptr == pTensorProps )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( ( pTensorProps->numDims > RIDE_HAL_NUM_DIMS ) ||
-              ( pTensorProps->type >= RIDE_HAL_TENSOR_TYPE_MAX ) )
+    else if ( ( pTensorProps->numDims > RIDEHAL_NUM_TENSOR_DIMS ) ||
+              ( pTensorProps->type >= RIDEHAL_TENSOR_TYPE_MAX ) )
     {
-        ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( nullptr != this->buffer.pData )
     {
-        ret = RIDE_HAL_ERROR_EXISTS;
+        ret = RIDEHAL_ERROR_ALREADY;
     }
     else
     {
         /* check each dimension is reasonable */
-        for ( i = 0; ( i < pTensorProps->numDims ) && ( RIDE_HAL_ERROR_NONE == ret ); i++ )
+        for ( i = 0; ( i < pTensorProps->numDims ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
             if ( 0 == pTensorProps->dims[i] )
             {
-                ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         this->tensorProps = *pTensorProps;
         for ( i = 0; i < pTensorProps->numDims; i++ )
@@ -75,9 +75,9 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_TensorProps_t *pTen
         size *= s_rideHalTensorTypeToDataSize[pTensorProps->type];
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
-        this->type = RIDE_HAL_BUFFER_TYPE_TENSOR;
+        this->type = RIDEHAL_BUFFER_TYPE_TENSOR;
         ret = Allocate( size, usage, flags );
     }
 

@@ -10,19 +10,19 @@ namespace ridehal
 namespace common
 {
 
-static uint32_t s_usageToPMemID[RIDE_HAL_BUFFER_USAGE_MAX] = {
-        PMEM_DMA_ID,                  /* RIDE_HAL_BUFFER_USAGE_DEFAULT */
-        PMEM_CAMERA_ID,               /* RIDE_HAL_BUFFER_USAGE_CAMERA */
-        PMEM_GRAPHICS_FRAMEBUFFER_ID, /* RIDE_HAL_BUFFER_USAGE_GPU */
-        PMEM_VIDEO_ID,                /* RIDE_HAL_BUFFER_USAGE_VPU */
-        PMEM_EVA_ID,                  /* RIDE_HAL_BUFFER_USAGE_EVA */
-        PMEM_DSP_ID                   /* RIDE_HAL_BUFFER_USAGE_HTP */
+static uint32_t s_usageToPMemID[RIDEHAL_BUFFER_USAGE_MAX] = {
+        PMEM_DMA_ID,                  /* RIDEHAL_BUFFER_USAGE_DEFAULT */
+        PMEM_CAMERA_ID,               /* RIDEHAL_BUFFER_USAGE_CAMERA */
+        PMEM_GRAPHICS_FRAMEBUFFER_ID, /* RIDEHAL_BUFFER_USAGE_GPU */
+        PMEM_VIDEO_ID,                /* RIDEHAL_BUFFER_USAGE_VPU */
+        PMEM_EVA_ID,                  /* RIDEHAL_BUFFER_USAGE_EVA */
+        PMEM_DSP_ID                   /* RIDEHAL_BUFFER_USAGE_HTP */
 };
 
 RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t size,
                                     RideHal_BufferFlags_t flags, RideHal_BufferUsage_e usage )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     uint32_t pmemFlags = PMEM_FLAGS_CACHE_NONE | PMEM_FLAGS_PHYS_NON_CONTIG | PMEM_FLAGS_SHMEM;
     uint32_t pmemID = PMEM_DMA_ID;
     pmem_handle_t pmemHandle = nullptr;
@@ -30,37 +30,37 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
     if ( ( nullptr == pData ) || ( nullptr == pDmaHandle ) )
     {
         RIDEHAL_LOG_ERROR( "DmaAllocate with pData or pDmaHandle is nullptr" );
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         /* convert ride hal flags to the PMEM flags */
-        if ( 0 != ( flags & RIDE_HAL_BUFFER_FLAGS_CACHE_WB_WA ) )
+        if ( 0 != ( flags & RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA ) )
         {
             pmemFlags |= PMEM_FLAGS_CACHE_WB_WA;
         }
 
         /* convert ride hal usage to the PMEM ID */
-        if ( usage < RIDE_HAL_BUFFER_USAGE_MAX )
+        if ( usage < RIDEHAL_BUFFER_USAGE_MAX )
         {
             pmemID = s_usageToPMemID[usage];
         }
         else
         {
             RIDEHAL_LOG_ERROR( "DmaAllocate with invalid usage: %d", usage );
-            ret = RIDE_HAL_ERROR_BAD_ARGUMENTS;
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
     }
 
-    if ( RIDE_HAL_ERROR_NONE == ret )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         *pData = pmem_malloc_ext_v2( size, pmemID, pmemFlags, PMEM_ALIGNMENT_4K, 0x0, &pmemHandle,
                                      NULL );
         if ( nullptr == *pData )
         {
             RIDEHAL_LOG_ERROR( "DmaAllocate allocate failed" );
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
         else
         {
@@ -74,12 +74,12 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
 RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
 {
     int rc = 0;
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( nullptr == pData )
     {
         RIDEHAL_LOG_ERROR( "DmaFree with pData is nullptr" );
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -87,7 +87,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
         if ( 0 != rc )
         {
             RIDEHAL_LOG_ERROR( "DmaFree failed to do free for buffer %p: %d", pData, rc );
-            ret = RIDE_HAL_ERROR_ACCES;
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 

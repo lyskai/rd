@@ -38,11 +38,11 @@ static void UserLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *
 static RideHalError_e UserLoggerHandleCreate( const char *pName, Logger_Level_e level,
                                               Logger_Handle_t *pHandle )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( nullptr == pName ) || ( nullptr == pHandle ) )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -55,7 +55,7 @@ static RideHalError_e UserLoggerHandleCreate( const char *pName, Logger_Level_e 
         }
         else
         {
-            ret = RIDE_HAL_ERROR_NORES;
+            ret = RIDEHAL_ERROR_NOMEM;
         }
     }
 
@@ -160,7 +160,7 @@ int main( int argc, char *argv[] )
         if ( nullptr != pSample )
         {
             ret = pSample->Init( config.name, config.config );
-            if ( ret != RIDE_HAL_ERROR_NONE )
+            if ( ret != RIDEHAL_ERROR_NONE )
             {
                 printf( "Init %s failed: ret = %d\n", config.name.c_str(), ret );
                 return -1;
@@ -181,7 +181,7 @@ int main( int argc, char *argv[] )
     for ( auto sample : samples )
     {
         ret = sample->Start();
-        if ( ret != RIDE_HAL_ERROR_NONE )
+        if ( ret != RIDEHAL_ERROR_NONE )
         {
             printf( "Start %s failed: ret = %d\n", sample->GetName(), ret );
             return -1;
@@ -202,7 +202,7 @@ int main( int argc, char *argv[] )
     for ( auto sample : samples )
     {
         ret = sample->Stop();
-        if ( ret != RIDE_HAL_ERROR_NONE )
+        if ( ret != RIDEHAL_ERROR_NONE )
         {
             printf( "Stop %s failed: ret = %d\n", sample->GetName(), ret );
             return -1;
@@ -216,7 +216,7 @@ int main( int argc, char *argv[] )
     for ( auto sample : samples )
     {
         ret = sample->Deinit();
-        if ( ret != RIDE_HAL_ERROR_NONE )
+        if ( ret != RIDEHAL_ERROR_NONE )
         {
             printf( "Deinit %s failed: ret = %d\n", sample->GetName(), ret );
             return -1;

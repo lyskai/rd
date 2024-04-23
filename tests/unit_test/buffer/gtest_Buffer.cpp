@@ -15,8 +15,8 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     RideHal_SharedBuffer_t sharedBufferTs;
 
     /* testing allocate image for UYVY */
-    auto ret = sharedBuffer.Allocate( 3840, 2160, RIDE_HAL_IMAGE_FORMAT_UYVY );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    auto ret = sharedBuffer.Allocate( 3840, 2160, RIDEHAL_IMAGE_FORMAT_UYVY );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -28,10 +28,10 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_LE( 2160, sharedBuffer.imgProps.actualHeight[0] );
 
     ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret ); /* supported as padding is 0 */
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret ); /* supported as padding is 0 */
     ASSERT_EQ( 0, sharedBufferTs.offset );
     ASSERT_LE( 3840 * 2160 * 2, sharedBufferTs.size );
-    ASSERT_EQ( RIDE_HAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
+    ASSERT_EQ( RIDEHAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
     ASSERT_EQ( 4, sharedBufferTs.tensorProps.numDims );
     ASSERT_EQ( 1, sharedBufferTs.tensorProps.dims[0] );
     ASSERT_EQ( 2160, sharedBufferTs.tensorProps.dims[1] );
@@ -39,11 +39,11 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_EQ( 2, sharedBufferTs.tensorProps.dims[3] );
 
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     /* testing allocate image for NV12 */
-    ret = sharedBuffer.Allocate( 3840, 2160, RIDE_HAL_IMAGE_FORMAT_NV12 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ret = sharedBuffer.Allocate( 3840, 2160, RIDEHAL_IMAGE_FORMAT_NV12 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -56,13 +56,13 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_LE( 3840, sharedBuffer.imgProps.stride[1] );
     ASSERT_LE( 2160 / 2, sharedBuffer.imgProps.actualHeight[1] );
     ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
-    ASSERT_EQ( RIDE_HAL_ERROR_UNSUPPORTED, ret ); /* not supported as format */
+    ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret ); /* not supported as format */
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     /* testing allocate image for RGB */
-    ret = sharedBuffer.Allocate( 1024, 768, RIDE_HAL_IMAGE_FORMAT_RGB888 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ret = sharedBuffer.Allocate( 1024, 768, RIDEHAL_IMAGE_FORMAT_RGB888 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     ASSERT_EQ( sharedBuffer.buffer.size, sharedBuffer.size );
@@ -71,11 +71,11 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_LE( 1024, sharedBuffer.imgProps.stride[0] );
     ASSERT_LE( 768, sharedBuffer.imgProps.actualHeight[0] );
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     /* testing allocate batched image for RGB */
-    ret = sharedBuffer.Allocate( 7, 1024, 768, RIDE_HAL_IMAGE_FORMAT_RGB888 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ret = sharedBuffer.Allocate( 7, 1024, 768, RIDEHAL_IMAGE_FORMAT_RGB888 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -87,7 +87,7 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_LE( 768, sharedBuffer.imgProps.actualHeight[0] );
     /* testing get the middle batch of the shared image */
     ret = sharedBuffer.GetSharedBuffer( &sharedBufferM, 3 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( (uint8_t *) sharedBuffer.buffer.pData + sharedBufferM.size * 3,
                sharedBufferM.data() );
     ASSERT_EQ( sharedBufferM.size * 3, sharedBufferM.offset );
@@ -98,10 +98,10 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_LE( 768, sharedBufferM.imgProps.actualHeight[0] );
 
     ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( 0, sharedBufferTs.offset );
     ASSERT_LE( 1024 * 768 * 3 * 7, sharedBufferTs.size );
-    ASSERT_EQ( RIDE_HAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
+    ASSERT_EQ( RIDEHAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
     ASSERT_EQ( 4, sharedBufferTs.tensorProps.numDims );
     ASSERT_EQ( 7, sharedBufferTs.tensorProps.dims[0] );
     ASSERT_EQ( 768, sharedBufferTs.tensorProps.dims[1] );
@@ -109,7 +109,7 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_EQ( 3, sharedBufferTs.tensorProps.dims[3] );
 
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 TEST( Buffer, SANITY_ImageAllocateByProps )
@@ -117,7 +117,7 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     RideHal_SharedBuffer_t sharedBuffer;
     RideHal_ImageProps_t imgProp;
 
-    imgProp.format = RIDE_HAL_IMAGE_FORMAT_UYVY;
+    imgProp.format = RIDEHAL_IMAGE_FORMAT_UYVY;
     imgProp.batchSize = 1;
     imgProp.width = 3840;
     imgProp.height = 2160;
@@ -126,7 +126,7 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     imgProp.numPlanes = 1;
     imgProp.extraPadding = 0;
     auto ret = sharedBuffer.Allocate( &imgProp );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -137,10 +137,10 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     ASSERT_EQ( 3840 * 2, sharedBuffer.imgProps.stride[0] );
     ASSERT_EQ( 2160, sharedBuffer.imgProps.actualHeight[0] );
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
 
-    imgProp.format = RIDE_HAL_IMAGE_FORMAT_NV12;
+    imgProp.format = RIDEHAL_IMAGE_FORMAT_NV12;
     imgProp.batchSize = 1;
     imgProp.width = 1920;
     imgProp.height = 1024;
@@ -151,7 +151,7 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     imgProp.numPlanes = 2;
     imgProp.extraPadding = 0;
     ret = sharedBuffer.Allocate( &imgProp );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -162,7 +162,7 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     ASSERT_EQ( 1920 * 1, sharedBuffer.imgProps.stride[0] );
     ASSERT_EQ( 1024, sharedBuffer.imgProps.actualHeight[0] );
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 TEST( Buffer, SANITY_ImageAllocateRGBByProps )
@@ -171,7 +171,7 @@ TEST( Buffer, SANITY_ImageAllocateRGBByProps )
     RideHal_SharedBuffer_t sharedBufferMiddle;
     RideHal_ImageProps_t imgProp;
 
-    imgProp.format = RIDE_HAL_IMAGE_FORMAT_RGB888;
+    imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
     imgProp.batchSize = 3;
     imgProp.width = 1024;
     imgProp.height = 768;
@@ -182,7 +182,7 @@ TEST( Buffer, SANITY_ImageAllocateRGBByProps )
 
     // testing allocated a batched RGB image
     auto ret = sharedBufferAll.Allocate( &imgProp );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBufferAll.data() );
     ASSERT_EQ( 0, sharedBufferAll.offset );
     std::generate( (uint8_t *) sharedBufferAll.data(),
@@ -196,7 +196,7 @@ TEST( Buffer, SANITY_ImageAllocateRGBByProps )
 
     /* get the RGB image in the middle of sharedBufferAll */
     ret = sharedBufferAll.GetSharedBuffer( &sharedBufferMiddle, 1, 1 );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( ( (uint8_t *) sharedBufferAll.data() ) + 1024 * 768 * 3, sharedBufferMiddle.data() );
     ASSERT_EQ( 1024 * 768 * 3, sharedBufferMiddle.offset );
     ASSERT_EQ( sharedBufferAll.buffer.size / 3, sharedBufferMiddle.size );
@@ -207,7 +207,7 @@ TEST( Buffer, SANITY_ImageAllocateRGBByProps )
     ASSERT_EQ( 768, sharedBufferMiddle.imgProps.actualHeight[0] );
 
     ret = sharedBufferAll.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 TEST( Buffer, SANITY_CompressedImageAllocateByProps )
@@ -215,14 +215,14 @@ TEST( Buffer, SANITY_CompressedImageAllocateByProps )
     RideHal_SharedBuffer_t sharedBuffer;
     RideHal_ImageProps_t imgProp;
 
-    imgProp.format = RIDE_HAL_IMAGE_FORMAT_COMPRESSED_H265;
+    imgProp.format = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
     imgProp.batchSize = 1;
     imgProp.width = 3840;
     imgProp.height = 2160;
     imgProp.numPlanes = 0;
     imgProp.compressedSize = 1024 * 64;
     auto ret = sharedBuffer.Allocate( &imgProp );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -231,7 +231,7 @@ TEST( Buffer, SANITY_CompressedImageAllocateByProps )
     ASSERT_EQ( 1024 * 64, sharedBuffer.size );
     ASSERT_EQ( 0, sharedBuffer.imgProps.numPlanes );
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 TEST( Buffer, SANITY_TensorAllocate )
@@ -242,7 +242,7 @@ TEST( Buffer, SANITY_TensorAllocate )
                                          4 };
 
     auto ret = sharedBuffer.Allocate( &tensorProp );
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
     ASSERT_EQ( 0, sharedBuffer.offset );
     std::generate( (uint8_t *) sharedBuffer.data(),
@@ -251,7 +251,7 @@ TEST( Buffer, SANITY_TensorAllocate )
     ASSERT_EQ( 1 * 128 * 128 * 10, sharedBuffer.size );
     ASSERT_EQ( 4, sharedBuffer.tensorProps.numDims );
     ret = sharedBuffer.Free();
-    ASSERT_EQ( RIDE_HAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 #ifndef GTEST_RIDEHAL

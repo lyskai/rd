@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDE_HAL_BUFFER_MANAGER_HPP_
-#define _RIDE_HAL_BUFFER_MANAGER_HPP_
+#ifndef _RIDEHAL_BUFFER_MANAGER_HPP_
+#define _RIDEHAL_BUFFER_MANAGER_HPP_
 
 #include <map>
 #include <mutex>
@@ -16,40 +16,51 @@ namespace ridehal
 namespace common
 {
 
-/// @brief Buffer Manager
-///
-/// Manage the allocated DMA buffer
+/**
+ * @brief Buffer Manager
+ *
+ * Manage the allocated DMA buffer
+ */
 class BufferManager
 {
 public:
     BufferManager();
     ~BufferManager();
-
-    /// @brief Initialize the buffer manager
-    /// @param pName the buffer manager unique instance name
-    /// @param level the logger message level
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief Initialize the buffer manager
+     * @param[in] pName the buffer manager unique instance name
+     * @param[in] level the logger message level
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
-    /// @brief Register the allocated shared buffer to the buffer manager
-    /// @param pSharedBuffer the allocated shared buffer
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief Register the allocated shared buffer to the buffer manager
+     * @param[in] pSharedBuffer the allocated shared buffer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Register( RideHal_SharedBuffer_t *pSharedBuffer );
 
-    /// @brief unregister the buffer from the buffer manager
-    /// @param id the unique ID of the buffer assigned by the buffer manager
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief unregister the buffer from the buffer manager
+     * @param[in] id the unique ID of the buffer assigned by the buffer manager
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Deregister( uint64_t id );
 
-    /// @brief Get the shared buffer information
-    /// @param id the unique ID of the buffer assigned by the buffer manager
-    /// @param pSharedBuffer pointer to hold the shared buffer information
-    /// @return RIDE_HAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief Get the shared buffer information
+     * @param[in] id the unique ID of the buffer assigned by the buffer manager
+     * @param[out] pSharedBuffer pointer to hold the shared buffer information
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e GetSharedBuffer( uint64_t id, RideHal_SharedBuffer_t *pSharedBuffer );
 
 public:
-    /// @brief Get the default buffer manager
-    /// @return the buffer manager pointer, nullptr on failure
+    /**
+     * @brief Get the default buffer manager
+     * @return the buffer manager pointer, nullptr on failure
+     */
     static BufferManager *GetDefaultBufferManager();
 
 private:
@@ -66,4 +77,4 @@ private:
 }   // namespace common
 }   // namespace ridehal
 
-#endif   // _RIDE_HAL_BUFFER_MANAGER_HPP_
+#endif   // _RIDEHAL_BUFFER_MANAGER_HPP_

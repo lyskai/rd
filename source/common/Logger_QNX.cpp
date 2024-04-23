@@ -61,14 +61,14 @@ void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const ch
 RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
                                       Logger_Handle_t *pHandle )
 {
-    RideHalError_e ret = RIDE_HAL_ERROR_NONE;
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
     slog2_buffer_t hBuffer = nullptr;
     slog2_buffer_set_config_t bufferConfig;
     (void) level;
 
     if ( ( nullptr == pName ) || ( nullptr == pHandle ) )
     {
-        ret = RIDE_HAL_ERROR_NULL_PTR;
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -92,7 +92,7 @@ RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
             else
             {
                 fprintf( stderr, "ERROR: failed to create slog2 %s: %d\n", pName, rv );
-                ret = RIDE_HAL_ERROR_FAIL;
+                ret = RIDEHAL_ERROR_FAIL;
             }
         }
         else
