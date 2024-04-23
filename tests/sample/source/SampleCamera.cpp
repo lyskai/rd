@@ -12,26 +12,30 @@ namespace sample
 SampleCamera::SampleCamera() {}
 SampleCamera ::~SampleCamera() {}
 
-void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, bool requestMode )
+void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 {
     CamFrames_t frames;
     CamFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
     pSharedBuffer->sharedBuffer = pFrame->sharedBuffer;
-    pSharedBuffer->pubHandle = ( (uint64_t) m_camConfig.streamId << 32 ) + pFrame->frameIndex;
+    pSharedBuffer->pubHandle = (uint64_t) pFrame->frameIndex;
 
     PROFILER_BEGIN();
     PROFILER_END();
+
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
-        uint32_t streamId = ( pSharedBuffer->pubHandle >> 32 ) & 0xFFFFFFFFul;
         uint32_t frameIndex = pSharedBuffer->pubHandle & 0xFFFFFFFFul;
-        if ( !requestMode )
+        CameraFrame_t camFrame;
+        camFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
+        camFrame.frameIndex = frameIndex;
+        if ( false == m_camConfig.bRequestMode )
         {
-            m_camera.ReleaseFrame( frameIndex );
+            m_camera.ReleaseFrame( &camFrame );
         }
         else
         {
-            m_camera.RequestFrame( pFrame );
+
+            m_camera.RequestFrame( &camFrame );
         }
         delete pSharedBuffer;
     } );
@@ -39,12 +43,6 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, bool requestMode )
     frame.frameId = m_frameId++;
     frame.buffer = buffer;
     frame.timestamp = pFrame->timestamp;
-    if ( 0 == frame.timestamp )
-    {
-        struct timespec ts;
-        clock_gettime( CLOCK_MONOTONIC, &ts );
-        frame.timestamp = ts.tv_sec * 1000000000 + ts.tv_nsec;
-    }
     frames.frames.push_back( frame );
     m_pub.Publish( frames );
 }
@@ -57,9 +55,8 @@ void SampleCamera::EventCallBack( const uint32_t eventId, const void *pPayload )
 void SampleCamera::FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
 {
     SampleCamera *self = (SampleCamera *) pPrivData;
-    bool requestMode = self->m_camConfig.requestMode;
 
-    self->FrameCallBack( pFrame, requestMode );
+    self->FrameCallBack( pFrame );
 }
 
 void SampleCamera::EventCallBack( const uint32_t eventId, const void *pPayload, void *pPrivData )
@@ -96,10 +93,10 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
-        m_camConfig.requestMode = Get( config, "request_mode", false );
+        m_camConfig.bRequestMode = Get( config, "request_mode", false );
         m_camConfig.streamId = Get( config, "stream_id", 0 );
 
-        m_camConfig.isAllocator = true;
+        m_camConfig.bAllocator = true;
         m_camConfig.ispUserCase = Get( config, "isp_use_case", 3 );
         m_camConfig.bufCnt = Get( config, "pool_size", 4 );
         if ( 0 == m_camConfig.bufCnt )

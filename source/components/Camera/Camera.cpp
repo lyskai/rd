@@ -1,7 +1,6 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#include <atomic>
 #include "ridehal/component/Camera.hpp"
 
 namespace ridehal
@@ -59,12 +58,12 @@ QCarCamRet_e Camera::QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t ev
 
     if ( nullptr == pPrivateData )
     {
-         RIDEHAL_LOG_ERROR("invalid pPrivateData");
+        RIDEHAL_LOG_ERROR( "invalid pPrivateData" );
     }
     else
     {
         Camera *self = (Camera *) pPrivateData;
-        status = self->QcarcamEventCb(hndl, eventId, pPayload);
+        status = self->QcarcamEventCb( hndl, eventId, pPayload );
     }
 
     return status;
@@ -75,39 +74,39 @@ QCarCamRet_e Camera::QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t ev
 {
     CameraFrame_t *pCameraFrame = nullptr;
 
-    RIDEHAL_INFO("QcarcamEventCb eventId: %d", eventId);
+    RIDEHAL_INFO( "QcarcamEventCb eventId: %d", eventId );
     switch ( eventId )
     {
         case QCARCAM_EVENT_FRAME_READY:
+        {
+            pCameraFrame = GetFrame( &pPayload->frameInfo );
+            if ( nullptr != pCameraFrame )
             {
-                pCameraFrame = GetFrame(&pPayload->frameInfo);
-                if (nullptr != pCameraFrame)
-                {
-                    m_FrameCallback( pCameraFrame, m_pAppPriv );
-                }
-                else
-                {
-                    RIDEHAL_ERROR("GetFrame failed, returning nullptr");
-                }
+                m_FrameCallback( pCameraFrame, m_pAppPriv );
+            }
+            else
+            {
+                RIDEHAL_ERROR( "GetFrame failed, returning nullptr" );
+            }
 
-                break;
-            }
+            break;
+        }
         case QCARCAM_EVENT_INPUT_SIGNAL:
-            {
-                RIDEHAL_ERROR("QCARCAM received new input signal");
-                break;
-            }
+        {
+            RIDEHAL_ERROR( "QCARCAM received new input signal" );
+            break;
+        }
         case QCARCAM_EVENT_ERROR:
-            {
-                RIDEHAL_ERROR("QCARCAM_EVENT_ERROR");
-                m_EventCallback( eventId, (void *)pPayload, m_pAppPriv );
-                break;
-            }
+        {
+            RIDEHAL_ERROR( "QCARCAM_EVENT_ERROR" );
+            m_EventCallback( eventId, (void *) pPayload, m_pAppPriv );
+            break;
+        }
         default:
-            {
-                RIDEHAL_ERROR("event_cb Received unsupported event %d", eventId);
-                break;
-            }
+        {
+            RIDEHAL_ERROR( "event_cb Received unsupported event %d", eventId );
+            break;
+        }
     }
 
     return QCARCAM_RET_OK;
@@ -123,8 +122,8 @@ Camera::Camera()
     QCarCamRet_e status = QCARCAM_RET_OK;
     m_QcarCamHndl = 0;
 
-    std::lock_guard<std::mutex> guard(g_camInitMutex);
-    if (0 == g_nCamInitRefCount)
+    std::lock_guard<std::mutex> guard( g_camInitMutex );
+    if ( 0 == g_nCamInitRefCount )
     {
         status = QCarCamInitialize( (const QCarCamInit_t *) &qcarcamInit );
         if ( QCARCAM_RET_OK != status )
@@ -136,12 +135,12 @@ Camera::Camera()
         {
             RIDEHAL_LOG_INFO( "QCarCamInitialize success" );
             m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
-            g_nCamInitRefCount ++;
+            g_nCamInitRefCount++;
         }
     }
     else
     {
-        g_nCamInitRefCount ++;
+        g_nCamInitRefCount++;
     }
 
     m_sCameraInputsInfo.pCameraInputs = nullptr;
@@ -161,14 +160,14 @@ Camera::~Camera()
 
     if ( nullptr != m_sCameraInputsInfo.pCameraInputs )
     {
-        delete (m_sCameraInputsInfo.pCameraInputs);
+        delete ( m_sCameraInputsInfo.pCameraInputs );
         m_sCameraInputsInfo.pCameraInputs = nullptr;
     }
 
-    std::lock_guard<std::mutex> guard(g_camInitMutex);
-    if (0 < g_nCamInitRefCount)
+    std::lock_guard<std::mutex> guard( g_camInitMutex );
+    if ( 0 < g_nCamInitRefCount )
     {
-        g_nCamInitRefCount --;
+        g_nCamInitRefCount--;
 
         if ( 0 == g_nCamInitRefCount )
         {
@@ -197,15 +196,15 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
     QCarCamRet_e status = QCARCAM_RET_OK;
     uint32_t param = 0;
 
-    if (nullptr != pConfig)
+    if ( nullptr != pConfig )
     {
-        m_bIsAllocator = pConfig->isAllocator;
+        m_bIsAllocator = pConfig->bAllocator;
         m_nInputId = pConfig->inputId;
         m_nWidth = pConfig->width;
         m_nHeight = pConfig->height;
         m_nBufCnt = pConfig->bufCnt;
         m_colorFormat = pConfig->format;
-        m_bRequestMode = pConfig->requestMode;
+        m_bRequestMode = pConfig->bRequestMode;
         m_nStreamId = pConfig->streamId;
     }
     else
@@ -226,8 +225,9 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
         {
             m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
 
-            RIDEHAL_DEBUG( "Camera::Init input id: %d, width: %d, height: %d, format: %d, buffer count: %d",
-                    m_nInputId, m_nWidth, m_nHeight, m_colorFormat, m_nBufCnt );
+            RIDEHAL_DEBUG( "Camera::Init input id: %d, width: %d, height: %d, format: %d, buffer "
+                           "count: %d",
+                           m_nInputId, m_nWidth, m_nHeight, m_colorFormat, m_nBufCnt );
         }
         else
         {
@@ -248,13 +248,13 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
         openParams.numInputs = 1;
         openParams.inputs[0] = inputParams;
 
-        if (m_bRequestMode)
+        if ( m_bRequestMode )
         {
             openParams.flags |= QCARCAM_OPEN_FLAGS_REQUEST_MODE;
         }
 
         status = QCarCamOpen( &openParams, &m_QcarCamHndl );
-        if ( (QCARCAM_RET_OK != status) || ( !m_QcarCamHndl ) )
+        if ( ( QCARCAM_RET_OK != status ) || ( !m_QcarCamHndl ) )
         {
             RIDEHAL_ERROR( "QCarCamOpen failed: %d", status );
             ret = RIDEHAL_ERROR_FAIL;
@@ -359,11 +359,11 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
     {
         m_state = RIDEHAL_COMPONENT_STATE_READY;
     }
-    else if (!m_QcarCamHndl)
+    else if ( !m_QcarCamHndl )
     {
         RIDEHAL_ERROR( "Error happens in Init" );
-        (void )QCarCamRelease( m_QcarCamHndl );
-        (void )QCarCamClose( m_QcarCamHndl );
+        (void) QCarCamRelease( m_QcarCamHndl );
+        (void) QCarCamClose( m_QcarCamHndl );
         m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
         m_QcarCamHndl = 0;
     }
@@ -382,7 +382,7 @@ RideHalError_e Camera::Start()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
 
-    if (RIDEHAL_COMPONENT_STATE_READY == m_state)
+    if ( RIDEHAL_COMPONENT_STATE_READY == m_state )
     {
         m_state = RIDEHAL_COMPONENT_STATE_STATING;
         status = QCarCamReserve( m_QcarCamHndl );
@@ -407,13 +407,13 @@ RideHalError_e Camera::Start()
                 m_state = RIDEHAL_COMPONENT_STATE_RUNNING;
             }
 
-            if (m_bRequestMode)
+            if ( m_bRequestMode )
             {
                 m_nRequestId = 0;
 
                 for ( uint32_t i = 0; i < m_nBufCnt; i++ )
                 {
-                    ret = RequestFrame(&m_pCameraFrames[i]);
+                    ret = RequestFrame( &m_pCameraFrames[i] );
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "RequestFrame failed, index: %d", i );
@@ -483,13 +483,13 @@ RideHalError_e Camera::Deinit()
         else
         {
             status = QCarCamRelease( m_QcarCamHndl );
-            if ( QCARCAM_RET_OK !=  status )
+            if ( QCARCAM_RET_OK != status )
             {
                 RIDEHAL_ERROR( "QCarCamRelease failed %d", status );
             }
 
             status = QCarCamClose( m_QcarCamHndl );
-            if ( QCARCAM_RET_OK !=  status )
+            if ( QCARCAM_RET_OK != status )
             {
                 RIDEHAL_ERROR( "QCarCamClose failed %d", status );
             }
@@ -506,13 +506,13 @@ RideHalError_e Camera::Deinit()
 
         if ( m_pCameraFrames )
         {
-            delete [] m_pCameraFrames;
+            delete[] m_pCameraFrames;
             m_pCameraFrames = nullptr;
         }
 
         if ( m_pQcarcamBuffer )
         {
-            delete [] m_pQcarcamBuffer;
+            delete[] m_pQcarcamBuffer;
             m_pQcarcamBuffer = nullptr;
         }
 
@@ -588,30 +588,36 @@ RideHalError_e Camera::Resume()
 }
 
 /// @brief release a camera frame
-/// @param frameIndex index of the frame
+/// @param pFrame the camera frame to be released
 /// @return RIDEHAL_ERROR_NONE on success, others on failure
-RideHalError_e Camera::ReleaseFrame( uint32_t frameIndex )
+RideHalError_e Camera::ReleaseFrame( CameraFrame_t *pFrame )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
 
-    if ( RIDEHAL_COMPONENT_STATE_RUNNING == m_state )
-    {
-        status = QCarCamReleaseFrame( m_QcarCamHndl, m_nStreamId, frameIndex );
-        if ( QCARCAM_RET_OK == status )
-        {
-            RIDEHAL_INFO( "QCarCamReleaseFrame success for index: %d", frameIndex );
-        }
-        else
-        {
-            RIDEHAL_ERROR( "QCarCamReleaseFrame fail for index: %d, status: %d", frameIndex, status );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
-    }
-    else
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
         RIDEHAL_ERROR( "Camera not in running state: %d", m_state );
         ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pFrame )
+    {
+        RIDEHAL_ERROR( "pFrame is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        status = QCarCamReleaseFrame( m_QcarCamHndl, m_nStreamId, pFrame->frameIndex );
+        if ( QCARCAM_RET_OK == status )
+        {
+            RIDEHAL_INFO( "QCarCamReleaseFrame success for index: %d", pFrame->frameIndex );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "QCarCamReleaseFrame fail for index: %d, status: %d", pFrame->frameIndex,
+                           status );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
     }
 
     return ret;
@@ -619,7 +625,7 @@ RideHalError_e Camera::ReleaseFrame( uint32_t frameIndex )
 
 /// @brief get a ready frame from camera
 /// @return pointer to camera frame
-CameraFrame_t *Camera::GetFrame(const QCarCamFrameInfo_t *pframeinfo)
+CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pframeinfo )
 {
     int32_t frameIndex = -1;
     QCarCamRet_e status = QCARCAM_RET_OK;
@@ -627,7 +633,7 @@ CameraFrame_t *Camera::GetFrame(const QCarCamFrameInfo_t *pframeinfo)
     CameraFrame_t *pCameraFrame = nullptr;
     uint64_t timeout = 0;
 
-    if (!m_bRequestMode)
+    if ( !m_bRequestMode )
     {
         frameInformation.id = pframeinfo->id;
         status = QCarCamGetFrame( m_QcarCamHndl, &frameInformation, timeout, 0 );
@@ -639,9 +645,11 @@ CameraFrame_t *Camera::GetFrame(const QCarCamFrameInfo_t *pframeinfo)
             pCameraFrame->timestamp = frameInformation.sofTimestamp.timestamp;
             pCameraFrame->timestampQGPTP = frameInformation.sofTimestamp.timestampGPTP;
             pCameraFrame->flags = frameInformation.flags;
-            RIDEHAL_INFO( "GetFrame index: %d ptr: %p buffer: %p, size: %d, timestamp: %llu, timestampGPTP: %llu, flags: %x",
-                    frameIndex, pCameraFrame, pCameraFrame->sharedBuffer.data(), pCameraFrame->sharedBuffer.size,
-                    pCameraFrame->timestamp, pCameraFrame->timestampQGPTP, pCameraFrame->flags);
+            RIDEHAL_INFO( "GetFrame index: %d ptr: %p buffer: %p, size: %d, timestamp: %llu, "
+                          "timestampGPTP: %llu, flags: %x",
+                          frameIndex, pCameraFrame, pCameraFrame->sharedBuffer.data(),
+                          pCameraFrame->sharedBuffer.size, pCameraFrame->timestamp,
+                          pCameraFrame->timestampQGPTP, pCameraFrame->flags );
         }
         else
         {
@@ -655,9 +663,11 @@ CameraFrame_t *Camera::GetFrame(const QCarCamFrameInfo_t *pframeinfo)
         pCameraFrame->timestamp = frameInformation.sofTimestamp.timestamp;
         pCameraFrame->timestampQGPTP = frameInformation.sofTimestamp.timestampGPTP;
         pCameraFrame->flags = frameInformation.flags;
-        RIDEHAL_INFO( "GetFrame index: %d ptr: %p buffer: %p, size: %d, timestamp: %llu, timestampGPTP: %llu, flags: %x",
-                    frameIndex, pCameraFrame, pCameraFrame->sharedBuffer.data(), pCameraFrame->sharedBuffer.size,
-                    pCameraFrame->timestamp, pCameraFrame->timestampQGPTP, pCameraFrame->flags);
+        RIDEHAL_INFO( "GetFrame index: %d ptr: %p buffer: %p, size: %d, timestamp: %llu, "
+                      "timestampGPTP: %llu, flags: %x",
+                      frameIndex, pCameraFrame, pCameraFrame->sharedBuffer.data(),
+                      pCameraFrame->sharedBuffer.size, pCameraFrame->timestamp,
+                      pCameraFrame->timestampQGPTP, pCameraFrame->flags );
     }
 
     return pCameraFrame;
@@ -678,8 +688,8 @@ RideHalError_e Camera::RequestFrame( CameraFrame_t *pFrame )
         {
             request.numStreamRequests = 1;
             request.requestId = m_nRequestId;
-            m_nRequestId ++;
-            QCarCamStreamRequest_t* pStreamRequest = &request.streamRequests[0];
+            m_nRequestId++;
+            QCarCamStreamRequest_t *pStreamRequest = &request.streamRequests[0];
             pStreamRequest->bufferlistId = m_nStreamId;
             pStreamRequest->bufferIdx = pFrame->frameIndex;
 
@@ -687,14 +697,18 @@ RideHalError_e Camera::RequestFrame( CameraFrame_t *pFrame )
 
             if ( QCARCAM_RET_OK != status )
             {
-                RIDEHAL_ERROR( "RequestFrame fail m_QcarCamHndl: %lu, bufferlistId: %d, bufferIdx: %d request id: %d",
-                        m_QcarCamHndl, pStreamRequest->bufferlistId, pStreamRequest->bufferIdx, request.requestId );
+                RIDEHAL_ERROR( "RequestFrame fail m_QcarCamHndl: %lu, bufferlistId: %d, bufferIdx: "
+                               "%d request id: %d",
+                               m_QcarCamHndl, pStreamRequest->bufferlistId,
+                               pStreamRequest->bufferIdx, request.requestId );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             else
             {
-                RIDEHAL_INFO( "RequestFrame success m_QcarCamHndl: %lu, bufferlistId: %d, bufferIdx: %d, request id: %d",
-                        m_QcarCamHndl, pStreamRequest->bufferlistId, pStreamRequest->bufferIdx, request.requestId );
+                RIDEHAL_INFO( "RequestFrame success m_QcarCamHndl: %lu, bufferlistId: %d, "
+                              "bufferIdx: %d, request id: %d",
+                              m_QcarCamHndl, pStreamRequest->bufferlistId,
+                              pStreamRequest->bufferIdx, request.requestId );
             }
         }
         else
@@ -782,19 +796,20 @@ RideHalError_e Camera::AllocateBuffer()
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             // setup buffers
-            status = QCarCamSetBuffers( m_QcarCamHndl, (const QCarCamBufferList_t *) &m_qcarcamBuffers );
+            status = QCarCamSetBuffers( m_QcarCamHndl,
+                                        (const QCarCamBufferList_t *) &m_qcarcamBuffers );
             if ( QCARCAM_RET_OK != status )
             {
                 RIDEHAL_ERROR( "QCarCamSetBuffers error ret %d  handle %lu", status,
                                m_QcarCamHndl );
                 if ( m_pCameraFrames )
                 {
-                    delete [] m_pCameraFrames;
+                    delete[] m_pCameraFrames;
                     m_pCameraFrames = nullptr;
                 }
                 if ( m_pQcarcamBuffer )
                 {
-                    delete [] m_pQcarcamBuffer;
+                    delete[] m_pQcarcamBuffer;
                     m_pQcarcamBuffer = nullptr;
                 }
                 ret = RIDEHAL_ERROR_FAIL;
@@ -853,7 +868,7 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32
 
     if ( RIDEHAL_COMPONENT_STATE_READY == m_state )
     {
-        if ((nullptr == pBuffer) || (0 >= numBuffers))
+        if ( ( nullptr == pBuffer ) || ( 0 >= numBuffers ) )
         {
             RIDEHAL_ERROR( "invalid parameter pBuffer: %p, numBuffers: %d", pBuffer, numBuffers );
             ret = RIDEHAL_ERROR_FAIL;
@@ -874,31 +889,32 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32
 
                 m_pQcarcamBuffer[i].numPlanes = 1;
                 m_pQcarcamBuffer[i].planes[0].memHndl =
-                    m_pCameraFrames[i].sharedBuffer.buffer.dmaHandle;
+                        m_pCameraFrames[i].sharedBuffer.buffer.dmaHandle;
                 m_pQcarcamBuffer[i].planes[0].width =
-                    m_pCameraFrames[i].sharedBuffer.imgProps.width;
+                        m_pCameraFrames[i].sharedBuffer.imgProps.width;
                 m_pQcarcamBuffer[i].planes[0].height =
-                    m_pCameraFrames[i].sharedBuffer.imgProps.height;
+                        m_pCameraFrames[i].sharedBuffer.imgProps.height;
                 m_pQcarcamBuffer[i].planes[0].stride =
-                    m_pCameraFrames[i].sharedBuffer.imgProps.stride[0];
+                        m_pCameraFrames[i].sharedBuffer.imgProps.stride[0];
                 m_pQcarcamBuffer[i].planes[0].size = m_pCameraFrames[i].sharedBuffer.size;
 
                 m_pCameraFrames[i].frameIndex = i;
-                RIDEHAL_INFO( "register buffer index %d ptr: %p memHndl: %x va: %p width: %d, "
-                               "height: %d, steide: %d size: %d",
-                               i, &m_pCameraFrames[i], m_pQcarcamBuffer[i].planes[0].memHndl,
-                               m_pCameraFrames[i].sharedBuffer.data(), m_pQcarcamBuffer[i].planes[0].width,
-                               m_pQcarcamBuffer[i].planes[0].height, m_pQcarcamBuffer[i].planes[0].stride,
-                               m_pQcarcamBuffer[i].planes[0].size );
+                RIDEHAL_INFO(
+                        "register buffer index %d ptr: %p memHndl: %x va: %p width: %d, "
+                        "height: %d, steide: %d size: %d",
+                        i, &m_pCameraFrames[i], m_pQcarcamBuffer[i].planes[0].memHndl,
+                        m_pCameraFrames[i].sharedBuffer.data(), m_pQcarcamBuffer[i].planes[0].width,
+                        m_pQcarcamBuffer[i].planes[0].height, m_pQcarcamBuffer[i].planes[0].stride,
+                        m_pQcarcamBuffer[i].planes[0].size );
             }
 
             // setup buffers
             if ( QCARCAM_RET_OK !=
-                    ( status = QCarCamSetBuffers( m_QcarCamHndl,
-                                                  (const QCarCamBufferList_t *) &m_qcarcamBuffers ) ) )
+                 ( status = QCarCamSetBuffers( m_QcarCamHndl,
+                                               (const QCarCamBufferList_t *) &m_qcarcamBuffers ) ) )
             {
                 RIDEHAL_ERROR( "QCarCamSetBuffers error ret %d  handle %lu", status,
-                        m_QcarCamHndl );
+                               m_QcarCamHndl );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             else
@@ -922,11 +938,11 @@ RideHalError_e Camera::QueryInputs()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
-    uint32_t inputCount  = 0;
+    uint32_t inputCount = 0;
     m_sCameraInputsInfo.numInputs = 0;
 
-    RIDEHAL_LOG_INFO("QueryInputs");
-    status = QCarCamQueryInputs(NULL, 0, &inputCount);
+    RIDEHAL_LOG_INFO( "QueryInputs" );
+    status = QCarCamQueryInputs( NULL, 0, &inputCount );
 
     if ( QCARCAM_RET_OK != status )
     {
@@ -947,11 +963,13 @@ RideHalError_e Camera::QueryInputs()
         }
         else
         {
-            status = QCarCamQueryInputs(m_sCameraInputsInfo.pCameraInputs, inputCount, &m_sCameraInputsInfo.numInputs);
+            status = QCarCamQueryInputs( m_sCameraInputsInfo.pCameraInputs, inputCount,
+                                         &m_sCameraInputsInfo.numInputs );
 
             if ( ( QCARCAM_RET_OK != status ) || ( m_sCameraInputsInfo.numInputs != inputCount ) )
             {
-                RIDEHAL_LOG_ERROR( "Query failed QCarCamQueryInputs %d %d %d", status, m_sCameraInputsInfo.numInputs, inputCount );
+                RIDEHAL_LOG_ERROR( "Query failed QCarCamQueryInputs %d %d %d", status,
+                                   m_sCameraInputsInfo.numInputs, inputCount );
                 delete ( m_sCameraInputsInfo.pCameraInputs );
                 m_sCameraInputsInfo.pCameraInputs = nullptr;
                 m_sCameraInputsInfo.numInputs = 0;
@@ -961,7 +979,8 @@ RideHalError_e Camera::QueryInputs()
             {
                 for ( int i = 0; i < inputCount; i++ )
                 {
-                    RIDEHAL_LOG_INFO( "Available camera input id: %d", m_sCameraInputsInfo.pCameraInputs[i].inputId );
+                    RIDEHAL_LOG_INFO( "Available camera input id: %d",
+                                      m_sCameraInputsInfo.pCameraInputs[i].inputId );
                 }
             }
         }

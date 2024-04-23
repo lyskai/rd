@@ -17,15 +17,15 @@ typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer; /* Shared buffer associated with the image */
     uint64_t timestamp;                  /* Hardware timestamp (in nanoseconds) */
-    uint64_t timestampQGPTP;             /* Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
-    uint32_t frameIndex;                 /* Index of the camera frame */
-    uint32_t flags;                      /* Flag to indicate error state of the buffer */
+    uint64_t timestampQGPTP; /* Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
+    uint32_t frameIndex;     /* Index of the camera frame */
+    uint32_t flags;          /* Flag to indicate error state of the buffer */
 } CameraFrame_t;
 
 typedef struct
 {
-    QCarCamInput_t *pCameraInputs;       /* pointer to the list of qcarcam inputs info */
-    uint32_t numInputs;                  /* num of qcarcam inputs */
+    QCarCamInput_t *pCameraInputs; /* pointer to the list of qcarcam inputs info */
+    uint32_t numInputs;            /* num of qcarcam inputs */
 } CameraInputs_t;
 
 /// @brief callback for camera frame done
@@ -38,18 +38,18 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
 // @brief camera configuration
 typedef struct Camera_Config
 {
-    bool isAllocator;                    /* Flag to indicate if component is buffer allocator*/
-    bool requestMode;                    /* Flag to set request buffer mode */
-    uint32_t streamId;                   /* Camera steam id */
-    uint32_t inputId;                    /* Camera input id */
-    uint32_t ispUserCase;                /* ISP user case defined by qcarcam */
-    uint32_t width;                      /* Frame width */
-    uint32_t height;                     /* Frame height */
-    uint32_t fps;                        /* Frames per second */
-    uint32_t bufCnt;                     /* Buffer count set to camera */
-    uint32_t camFrameDropPat;            /* Frame drop patten defined by qcarcam */
-    uint32_t opMode;                     /* Operation mode defined by qcarcam */
-    RideHal_ImageFormat_e format;        /* Camera frame format */
+    bool bAllocator;              /* Flag to indicate if component is buffer allocator*/
+    bool bRequestMode;            /* Flag to set request buffer mode */
+    uint32_t streamId;            /* Camera steam id */
+    uint32_t inputId;             /* Camera input id */
+    uint32_t ispUserCase;         /* ISP user case defined by qcarcam */
+    uint32_t width;               /* Frame width */
+    uint32_t height;              /* Frame height */
+    uint32_t fps;                 /* Frames per second */
+    uint32_t bufCnt;              /* Buffer count set to camera */
+    uint32_t camFrameDropPat;     /* Frame drop patten defined by qcarcam */
+    uint32_t opMode;              /* Operation mode defined by qcarcam */
+    RideHal_ImageFormat_e format; /* Camera frame format */
 } Camera_Config_t;
 
 /// Camera Interface
@@ -88,9 +88,9 @@ public:
     RideHalError_e Resume();
 
     /// @brief release a camera frame
-    /// @param frameIndex index of the frame
+    /// @param pFrame the camera frame to be released
     /// @return RIDEHAL_ERROR_NONE on success, others on failure
-    RideHalError_e ReleaseFrame( uint32_t frameIndex );
+    RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
 
     /// @brief resuest a new camera frame
     /// @param pFrame the frame to request from camera
@@ -113,7 +113,7 @@ public:
 
     /// @brief get camera inputs info
     /// @return RIDEHAL_ERROR_NONE on success, others on failure
-    RideHalError_e GetInputsInfo(CameraInputs_t *pCamInputs);
+    RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
 
 private:
     QCarCamColorFmt_e GetQcarCamFormat( RideHal_ImageFormat_e colorFormat );
@@ -122,7 +122,7 @@ private:
 
     RideHalError_e FreeBuffer();
 
-    CameraFrame_t *GetFrame(const QCarCamFrameInfo_t *pFrameInfo);
+    CameraFrame_t *GetFrame( const QCarCamFrameInfo_t *pFrameInfo );
 
     static QCarCamRet_e QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t eventId,
                                         const QCarCamEventPayload_t *pPayload, void *pPrivateData );

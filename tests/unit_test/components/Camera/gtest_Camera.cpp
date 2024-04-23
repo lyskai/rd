@@ -11,7 +11,7 @@ using namespace ridehal::common;
 using namespace ridehal::component;
 
 #define RUNTIME_SECOND ( 3 )
-#define BUFFFER_COUNT (5)
+#define BUFFFER_COUNT ( 5 )
 
 const char *pDumpPath = "/tmp/camera_frame.bin";
 
@@ -48,9 +48,9 @@ void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
 #ifdef DUMPFRAME
     uint32_t writeBytes = DumpFrame( pFrame, pDumpPath );
 #endif
-    if (RIDEHAL_COMPONENT_STATE_RUNNING == pCamera->GetState())
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING == pCamera->GetState() )
     {
-        ret = pCamera->ReleaseFrame( pFrame->frameIndex );
+        ret = pCamera->ReleaseFrame( pFrame );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 }
@@ -65,7 +65,7 @@ void FrameCallBack_RequestMode( CameraFrame_t *pFrame, void *pPrivData )
     uint32_t writeBytes = DumpFrame( pFrame, pDumpPath );
 #endif
 
-    if (RIDEHAL_COMPONENT_STATE_RUNNING == pCamera->GetState())
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING == pCamera->GetState() )
     {
         ret = pCamera->RequestFrame( pFrame );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -97,8 +97,8 @@ TEST( Camera, SANITY_QcarCam )
 
     char componentName[20] = "Camera";
     Camera_Config_t camConfig;
-    camConfig.isAllocator = true;
-    camConfig.requestMode = false;
+    camConfig.bAllocator = true;
+    camConfig.bRequestMode = false;
     camConfig.inputId = 0;
     camConfig.ispUserCase = 3;
     camConfig.width = 1928;
@@ -136,8 +136,8 @@ TEST( Camera, SetBuffer_QcarCam )
 
     char componentName[20] = "Camera";
     Camera_Config_t camConfig;
-    camConfig.isAllocator = false;
-    camConfig.requestMode = false;
+    camConfig.bAllocator = false;
+    camConfig.bRequestMode = false;
     camConfig.inputId = 0;
     camConfig.ispUserCase = 3;
     camConfig.width = 1928;
@@ -147,9 +147,9 @@ TEST( Camera, SetBuffer_QcarCam )
     camConfig.streamId = 0;
     RideHal_SharedBuffer_t *pSharedBuffer = new RideHal_SharedBuffer_t[BUFFFER_COUNT];
 
-    for (int i = 0; i < BUFFFER_COUNT; i ++)
+    for ( int i = 0; i < BUFFFER_COUNT; i++ )
     {
-        ret = pSharedBuffer[i].Allocate( camConfig.width, camConfig.height, camConfig.format);
+        ret = pSharedBuffer[i].Allocate( camConfig.width, camConfig.height, camConfig.format );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -174,7 +174,7 @@ TEST( Camera, SetBuffer_QcarCam )
     ret = pCamera->Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    for (int i = 0; i < BUFFFER_COUNT; i ++)
+    for ( int i = 0; i < BUFFFER_COUNT; i++ )
     {
         ret = pSharedBuffer[i].Free();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -190,8 +190,8 @@ TEST( Camera, PauseResume_QcarCam )
 
     char componentName[20] = "Camera";
     Camera_Config_t camConfig;
-    camConfig.isAllocator = true;
-    camConfig.requestMode = false;
+    camConfig.bAllocator = true;
+    camConfig.bRequestMode = false;
     camConfig.inputId = 0;
     camConfig.ispUserCase = 3;
     camConfig.width = 1928;
@@ -239,8 +239,8 @@ TEST( Camera, RequestMode_QcarCam )
 
     char componentName[20] = "Camera";
     Camera_Config_t camConfig;
-    camConfig.isAllocator = true;
-    camConfig.requestMode = true;
+    camConfig.bAllocator = true;
+    camConfig.bRequestMode = true;
     camConfig.inputId = 0;
     camConfig.ispUserCase = 3;
     camConfig.width = 1928;
