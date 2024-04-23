@@ -73,6 +73,10 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
             RIDEHAL_ERROR( "rsm init failed: %d", rc );
             ret = RIDEHAL_ERROR_FAIL;
         }
+        else
+        {
+            m_processor = processor;
+        }
     }
     else
 #endif
