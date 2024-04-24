@@ -11,7 +11,7 @@ namespace ridehal
 namespace sample
 {
 
-#define U2F( dname, index ) ( ( dname[index] - dname##Offset ) * dname##Scale )
+#define U2F( dname, index ) ( ( dname[index] + dname##Offset ) * dname##Scale )
 
 static float fastPow( float p )
 {

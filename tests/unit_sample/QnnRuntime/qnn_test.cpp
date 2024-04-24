@@ -120,11 +120,17 @@ public:
                 name.c_str(), modelPath.c_str(), m_params.nLoops, processor, inputs.size() );
 
         auto begin = std::chrono::high_resolution_clock::now();
-        m_config = { LOAD_CONTEXT_BIN_FROM_FILE, modelPath.c_str(), nullptr, 0, processor,
-                     QNN_PRIORITY_DEFAULT,       nullptr,           0 };
+        m_config = { QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE,
+                     modelPath.c_str(),
+                     nullptr,
+                     0,
+                     processor,
+                     QNN_PRIORITY_DEFAULT,
+                     nullptr,
+                     0 };
         if ( ( RIDEHAL_PROCESSOR_CPU == processor ) || ( RIDEHAL_PROCESSOR_GPU == processor ) )
         {
-            m_config.loadType = LOAD_SHARED_LIBRARY;
+            m_config.loadType = QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
         }
 
         ret = m_qnn.Init( name.c_str(), &m_config, LOGGER_LEVEL_INFO );
@@ -254,12 +260,15 @@ public:
         auto cost = std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count();
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            perf = m_qnn.GetPerf();
+            ret = m_qnn.GetPerf( &perf );
             m_total += cost;
-            m_totalQnn += perf.qnn;
-            m_totalRpc += perf.rpc;
-            m_totalQnnAcc += perf.qnnAccelerator;
-            m_totalAcc += perf.accelerator;
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                m_totalQnn += perf.qnn;
+                m_totalRpc += perf.rpc;
+                m_totalQnnAcc += perf.qnnAccelerator;
+                m_totalAcc += perf.accelerator;
+            }
             printf( "[%s-%s-%d] %d: %.2f ms, perf(us): QNN=%" PRIu64 " RPC=%" PRIu64
                     " QNN ACC=%" PRIu64 " ACC=%" PRIu64 "\n",
                     name.c_str(), s_processorName[processor], m_params.tid, m_iter,

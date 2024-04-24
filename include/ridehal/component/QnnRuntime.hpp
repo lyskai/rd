@@ -35,14 +35,14 @@ typedef struct
 
 typedef enum
 {
-    LOAD_CONTEXT_BIN_FROM_FILE,
-    LOAD_CONTEXT_BIN_FROM_BUFFER,   // cotext encrypted
-    LOAD_SHARED_LIBRARY
+    QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE,
+    QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER,   // cotext encrypted
+    QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE
 } QnnRuntime_LoadType_e;
 
 typedef struct
 {
-    QnnRuntime_LoadType_e loadType = LOAD_CONTEXT_BIN_FROM_FILE;
+    QnnRuntime_LoadType_e loadType = QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE;
     const char *modelPath;
     uint8_t *contextBuffer;
     uint64_t contextSize;
@@ -118,22 +118,22 @@ public:
     RideHalError_e Stop() final;
 
     /// @brief Enable qnn performance calculation
-    void EnablePerf() { m_bEnabelPerf = true; };
+    RideHalError_e EnablePerf();
 
     /// @brief Disable qnn performance calculation
-    void DisablePerf() { m_bEnabelPerf = false; };
+    RideHalError_e DisablePerf();
 
     /// @brief Get qnn latest performance data
     /// @return QnnRuntime performance structure
-    QnnRuntime_Perf_t GetPerf() { return m_perf; };
+    RideHalError_e GetPerf( QnnRuntime_Perf_t *pPerf );
 
     /// @brief Rigister memory with specific shared buffer
     /// @param sharedBuffer specific shared buffer
-    RideHalError_e RegisterMemoryBuffer( RideHal_SharedBuffer_t &sharedBuffer );
+    RideHalError_e RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer, uint32_t numBuffers );
 
     /// @brief DeRigister memory with specific shared buffer
     /// @param sharedBuffer specific shared buffer
-    RideHalError_e DeRegisterMemory( const RideHal_SharedBuffer_t &sharedBuffer );
+    RideHalError_e DeRegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer, uint32_t numBuffers );
 
 private:
     /// @brief Create qnn model from .so file
@@ -172,7 +172,7 @@ private:
                                   const Qnn_Tensor_t &tensor );
 
     /// @brief DeRegister memory
-    RideHalError_e DeRegisterMemory();
+    RideHalError_e DeRegisterBuffers();
 
     RideHalError_e GetInputInfo();
 
@@ -217,7 +217,6 @@ private:
     QnnContext_Config_t m_ContextConfigArray[CONTEXT_CONFIG_SIZE];
 
     bool m_LoadFromCachedBinary = false;
-    bool m_BackendInitialized = false;
 
     qnn_wrapper_api::GraphInfo_t **m_GraphsInfo = nullptr;
     uint32_t m_GraphsCount = 0;
