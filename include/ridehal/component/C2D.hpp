@@ -4,7 +4,6 @@
 #ifndef _RIDEHAL_C2D_HPP_
 #define _RIDEHAL_C2D_HPP_
 
-#include <array>
 #include <c2d2.h>
 #include <cinttypes>
 #include <memory>
@@ -110,12 +109,22 @@ public:
                                             uint32_t numOfOutputBuffers );
 
 private:
-    RideHalError_e createSurface( uint32_t *surfaceId, uint32_t batchIdx,
-                                  const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource );
-    RideHalError_e createYUVSurface( uint32_t *surfaceId, uint32_t batchIdx,
-                                     const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource );
-    RideHalError_e createRGBSurface( uint32_t *surfaceId, uint32_t batchIdx,
-                                     const RideHal_SharedBuffer_t *pSharedBuffer, bool isSource );
+    RideHalError_e CreateSourceSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                        uint32_t inputIdx, C2D_OBJECT &c2dObject );
+    RideHalError_e CreateTargetSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                        uint32_t batchIdx, uint32_t *surfaceId );
+    RideHalError_e CreateYUVSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                     uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                                     uint32_t width, uint32_t height, uint32_t stride0,
+                                     uint32_t stride1, uint32_t actualHeight0, bool isSource );
+    RideHalError_e CreateRGBSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                     uint32_t *surfaceId, RideHal_ImageFormat_e format,
+                                     uint32_t width, uint32_t height, uint32_t stride,
+                                     bool isSource );
+    RideHalError_e GetSourceSurface( const RideHal_SharedBuffer_t *pSharedBuffer, uint32_t inputIdx,
+                                     C2D_OBJECT &c2dObject );
+    RideHalError_e GetTargetSurface( const RideHal_SharedBuffer_t *pSharedBuffer, uint32_t batchIdx,
+                                     uint32_t *surfaceId );
     uint32_t GetC2DFormatType( RideHal_ImageFormat_e format );
 
 private:

@@ -259,3 +259,4 @@ REGISTER_SAMPLE( C2D, SampleC2D );
 
 }   // namespace sample
 }   // namespace ridehal
+
