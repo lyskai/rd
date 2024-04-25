@@ -18,7 +18,7 @@ TEST( QnnRuntime, SANITY_General )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet";
+    qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     QnnRuntime_UdoPackage_t udoPackage;
     // udoPackage.udoLibPath = "libQnnAutoAiswOpPackage.so";
@@ -83,16 +83,16 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet";
+    qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER;
-    std::string modelFile = std::string( qnnConfig.modelPath ) + "/program.bin";
+    std::string modelPath = std::string( qnnConfig.modelPath );
     uint64_t bufferSize{ 0 };
     qnn::tools::datautil::StatusCode status{ qnn::tools::datautil::StatusCode::SUCCESS };
-    std::tie( status, bufferSize ) = qnn::tools::datautil::getFileSize( modelFile );
+    std::tie( status, bufferSize ) = qnn::tools::datautil::getFileSize( modelPath );
     std::shared_ptr<uint8_t> buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize] );
     qnn::tools::datautil::readBinaryFromFile(
-            modelFile, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
+            modelPath, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
     qnnConfig.contextBuffer = buffer.get();
     qnnConfig.contextSize = bufferSize;
 

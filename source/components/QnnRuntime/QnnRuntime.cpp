@@ -385,9 +385,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
     }
 
-    auto modelPath = pConfig->modelPath;
-    std::string soPath = std::string( modelPath ) + "/program.so";
-    std::string binPath = std::string( modelPath ) + "/program.bin";
+    const std::string modelPath = std::string( pConfig->modelPath );
     m_LoadFromCachedBinary = ( pConfig->loadType == QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE ||
                                pConfig->loadType == QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER );
 
@@ -396,13 +394,13 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         if ( (int) m_BackendType < (int) RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_MAX )
         {
             auto statusCode = dynamicloadutil::getQnnFunctionPointers(
-                    s_Backends[m_BackendType], soPath, &m_QnnFunctionPointers, &m_BackendHandle,
+                    s_Backends[m_BackendType], modelPath, &m_QnnFunctionPointers, &m_BackendHandle,
                     !m_LoadFromCachedBinary, &m_ModelHandle );
             if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
             {
                 RIDEHAL_ERROR(
                         "%s: failed to get qnn function pointers from model %s(%s), error is %d",
-                        m_Name.c_str(), soPath.c_str(), s_Backends[m_BackendType], statusCode );
+                        m_Name.c_str(), modelPath.c_str(), s_Backends[m_BackendType], statusCode );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -598,7 +596,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         {
             case QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE:
             {
-                ret = CreateFromModelSo( soPath );
+                ret = CreateFromModelSo( modelPath );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "fail to create from model so." );
@@ -618,7 +616,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             case QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE:
             default:
             {
-                ret = CreateFromBinary( binPath );
+                ret = CreateFromBinary( modelPath );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "fail to create from binary file." );
