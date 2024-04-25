@@ -139,6 +139,14 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    ret = RIDEHAL_LOGGER_INIT( pName, level );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        fprintf( stderr, "WARINING: failed to create logger for FadasSrv %s: ret = %d\n", pName,
+                 ret );
+        ret = RIDEHAL_ERROR_NONE; /* ignore logger init error */
+    }
+
     std::lock_guard<std::mutex> l( s_FadasLock );
     if ( ( RIDEHAL_PROCESSOR_HTP0 == coreId ) || ( RIDEHAL_PROCESSOR_HTP1 == coreId ) ||
          ( RIDEHAL_PROCESSOR_CPU == coreId ) || ( RIDEHAL_PROCESSOR_GPU == coreId ) )
@@ -212,6 +220,13 @@ RideHalError_e FadasSrv::Deinit()
             memMap.clear();
             s_initialized[m_processor] = false;
         }
+    }
+
+    ret = RIDEHAL_LOGGER_DEINIT();
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        fprintf( stderr, "WARINING: failed to deinit logger for FadasSrv: ret = %d\n", ret );
+        ret = RIDEHAL_ERROR_NONE; /* ignore logger deinit error */
     }
 
     return ret;
@@ -940,7 +955,7 @@ RideHalError_e FadasRemap::RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
                 break;
             }
             srcImgProps[inputId] = srcImgProp;
-            offsets[inputId] = 0;
+            offsets[inputId] = inputs[inputId].offset;
             ROIs[inputId].x = m_ROIs[inputId].x;
             ROIs[inputId].y = m_ROIs[inputId].y;
             ROIs[inputId].width = m_ROIs[inputId].width;
