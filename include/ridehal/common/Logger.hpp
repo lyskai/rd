@@ -13,34 +13,97 @@ namespace common
 {
 
 #ifndef DISABLE_RIDEHAL_LOG
+
+/** @brief A set of macros to be used by the RideHal components or utils.
+ *
+ * static void NonClassAPI(void) {
+ *    RIDEHAL_LOG_DEBUG( "NonClassAPI called" );
+ * }
+ *
+ * class ComponentA {
+ *   RideHalError_e Init( const char *pName, const char *pName, Logger_Level_e level ) {
+ *     RideHalError_e ret = RIDEHAL_LOGGER_INIT(); // do logger Init at the begin
+ *     ... // those the RIDEHAL_VERBOSE|DEBUG|INFO|WARN|ERROR related macros can be used.
+ *     RIDEHAL_INFO( "componentA: Init" );
+ *  }
+ *
+ *  RideHalError_e Deinit( ) {
+ *     RideHalError_e ret;
+ *     ...
+ *     RIDEHAL_INFO( "componentA: Deinit" );
+ *     ret = RIDEHAL_LOGGER_DEINIT(); // Do logger Deinit at the end
+ *  }
+ *
+ *  private:
+ *    RIDEHAL_DECLARE_LOGGER();
+ * }
+ */
+
+/** @brief Define a logger that to be used by a class. */
 #define RIDEHAL_DECLARE_LOGGER() Logger m_logger
 
+/** @brief Do initialization of the logger. */
 #define RIDEHAL_LOGGER_INIT( pName, level ) m_logger.Init( pName, level )
+
+/** @brief Do deinitialization of the logger. */
 #define RIDEHAL_LOGGER_DEINIT() m_logger.Deinit()
 
+
+/**
+ * @brief Do log a message
+ * @param[in] logger the logger object use to do logger
+ * @param[in] level the message log level
+ * @param[in] pFormat the message format
+ * @param[in] args variable arguments
+ * @return void
+ * @detdesc
+ * Do log a message by calling the API Log of the logger.
+ */
 #define RIDEHAL_LOGGER_LOG( logger, level, format, ... )                                           \
     ( logger ).Log( level, "%s:%d " format, __FILE__, __LINE__, ##__VA_ARGS__ )
 
+
+/** @brief Do log a verbose level message within a class API.
+ * Note: the class must has a logger member by using RIDEHAL_DECLARE_LOGGER, the same for
+ * RIDEHAL_DEBUG|INFO|WARN|ERROR. */
 #define RIDEHAL_VERBOSE( format, ... )                                                             \
     RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_VERBOSE, "VERBOSE: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a debug level message within a class API. */
 #define RIDEHAL_DEBUG( format, ... )                                                               \
     RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_DEBUG, "DEBUG: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a information level message within a class API. */
 #define RIDEHAL_INFO( format, ... )                                                                \
     RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_INFO, "INFO: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a warning level message within a class API. */
 #define RIDEHAL_WARN( format, ... )                                                                \
     RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_WARN, "WARN: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a error level message within a class API. */
 #define RIDEHAL_ERROR( format, ... )                                                               \
     RIDEHAL_LOGGER_LOG( m_logger, LOGGER_LEVEL_ERROR, "ERROR: " format, ##__VA_ARGS__ )
 
+
+/** @brief Do log a verbose level message in non-class API. */
 #define RIDEHAL_LOG_VERBOSE( format, ... )                                                         \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_VERBOSE, "VERBOSE: " format,            \
                         ##__VA_ARGS__ )
+
+/** @brief Do log a debug level message in non-class API. */
 #define RIDEHAL_LOG_DEBUG( format, ... )                                                           \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_DEBUG, "DEBUG: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a information level message in non-class API. */
 #define RIDEHAL_LOG_INFO( format, ... )                                                            \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_INFO, "INFO: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a warning level message in non-class API. */
 #define RIDEHAL_LOG_WARN( format, ... )                                                            \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_WARN, "WARN: " format, ##__VA_ARGS__ )
+
+/** @brief Do log a error level message in non-class API. */
 #define RIDEHAL_LOG_ERROR( format, ... )                                                           \
     RIDEHAL_LOGGER_LOG( Logger::GetDefault(), LOGGER_LEVEL_ERROR, "ERROR: " format, ##__VA_ARGS__ )
 #else
@@ -132,22 +195,27 @@ public:
     RideHalError_e Deinit();
 
     /**
-     * @brief Logger a message
+     * @brief Do log a message
      * @param[in] level the message log level
      * @param[in] pFormat the message format
      * @param[in] ... variable arguments
      * @return void
+     * Note: if the logger object is not initialized or the initialization is failed, the message
+     * will be dropped, and this API will return without any fault or error.
      */
     void Log( Logger_Level_e level, const char *pFormat, ... );
 
     /**
-     * @brief Logger a message
+     * @brief Do log a message
      * @param[in] level the message log level
      * @param[in] pFormat the message format
      * @param[in] args variable arguments
      * @return void
+     * Note: if the logger object is not initialized or the initialization is failed, the message
+     * will be dropped, and this API will return without any fault or error.
      */
     void Log( Logger_Level_e level, const char *pFormat, va_list args );
+
     /**
      * @brief Setup the logger backend fuction pointers
      * @param[in] logFnc the function pointer that do log

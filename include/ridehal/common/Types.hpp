@@ -85,26 +85,26 @@ typedef enum
 /** @brief The attributes of an allocated DMA memory. */
 typedef struct
 {
-    void *pData;                 /* The buffer virtual address */
-    uint64_t dmaHandle;          /* The buffer DMA handle */
-    size_t size;                 /* The buffer size */
-    uint64_t id;                 /* The unique ID assigned by the buffer manager */
-    uint64_t pid;                /* The process id that allocated this buffer */
-    RideHal_BufferUsage_e usage; /* The buffer usage */
-    RideHal_BufferFlags_t flags; /* The buffer flags */
+    void *pData;                 /**< The buffer virtual address */
+    uint64_t dmaHandle;          /**< The buffer DMA handle */
+    size_t size;                 /**< The buffer size */
+    uint64_t id;                 /**< The unique ID assigned by the buffer manager */
+    uint64_t pid;                /**< The process id that allocated this buffer */
+    RideHal_BufferUsage_e usage; /**< The buffer usage */
+    RideHal_BufferFlags_t flags; /**< The buffer flags */
 } RideHal_Buffer_t;
 
 /** @brief The image format. */
 typedef enum
 {
-    /* Below formats for an image without compression */
+    /**< Below formats for an image without compression */
     RIDEHAL_IMAGE_FORMAT_RGB888 = 0,
     RIDEHAL_IMAGE_FORMAT_BGR888,
     RIDEHAL_IMAGE_FORMAT_UYVY,
     RIDEHAL_IMAGE_FORMAT_NV12,
     RIDEHAL_IMAGE_FORMAT_P010,
     RIDEHAL_IMAGE_FORMAT_MAX,
-    /* Below formats for an image with compression, such as by the Video Encoder */
+    /**< Below formats for an image with compression, such as by the Video Encoder */
     RIDEHAL_IMAGE_FORMAT_COMPRESSED_MIN = 100,
     RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264 = 100,
     RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265,

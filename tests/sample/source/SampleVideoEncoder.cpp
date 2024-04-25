@@ -231,7 +231,6 @@ void SampleVideoEncoder::ThreadMain()
         ret = m_sub.Receive( frames );
         if ( 0 == ret )
         {
-            std::string camName = "CAM0";
             frame = frames.frames[0];
             RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n ", frame.frameId,
                            frame.timestamp );

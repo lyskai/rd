@@ -4,7 +4,7 @@ This RideHal sample is an application to demonstrate how to use the RideHal comp
 
 ## 1. RideHal Sample Application command line arguments
 
-Below is a sample that how to using command line arguments to tell the RideHal sample application to create the component with the specified arguments.
+Below is a sample that how to use command line arguments to tell the RideHal sample application to create the component with the specified arguments.
 
 ```sh
 export RIDEHAL_LOG_LEVEL=INFO
@@ -25,7 +25,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | -n        | true     | string    | The unique component name |
 | -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder] |
 | -k        | true     | string    | The unique component attribute name |
-| -v        | true     | string    | The attribute value for the prvious attribute name |
+| -v        | true     | string    | The attribute value for the previous attribute name |
 
 ## 2. RideHal Samples
 
@@ -37,10 +37,10 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | formatX   | false    | string    | "nv12"  | The image format for the simulated camera X, options from [nv12, uyvy, rgb, bgr, p010] |
 | widthX    | false    | int       | 1920    | The image width for the simulated camera X |
 | heightX   | false    | int       | 1024    | The image height for the simulated camera X |
-| data_pathX | true     | string    | -       | The data path  for the simulated camera X that contain the image files |
+| data_pathX | true     | string    | -       | The data path for the simulated camera X that contain the image files |
 | fps       | false    | int       | 30      | The frame rate per second |
 | pool_size | false    | int       | 4       | the image memory pool size |
-| cache     | false    | bool      | true    | use cached memroy or not for the image memory |
+| cache     | false    | bool      | true    | use cached memory or not for the image memory |
 | topic     | true     | string    | -       | the output topic name |
 
 Note: "X" is value from 0 to number-1, thus the attribute with suffix "X" is repeated for different simulated camera.
@@ -55,6 +55,8 @@ The command line template example:
     -k cache -v false \
     -k topic -v /sensor/camera/CAM1/raw \
 ```
+
+Refer [DataReader Utils](../../scripts/utils/data_reader/README.md) for how to generate a data reader inputs from video(*.mp4).
 
 ### 2.2 RideHal Camera Sample
 
@@ -96,7 +98,7 @@ The command line template example:
 | roi_widthX    | false    | int       | =output_width  | The ROI width for input X |
 | roi_heightX   | false    | int       | =output_height | The ROI height for input X |
 | pool_size     | false    | int       | 4       | the image memory pool size |
-| cache         | false    | bool      | true    | use cached memroy or not for the image memory |
+| cache         | false    | bool      | true    | use cached memory or not for the image memory |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
 
@@ -236,8 +238,8 @@ The command line template example:
 | max           | false    | int       | 1000    | The maximum recorded images |
 | topic         | true     | string    | -       | the input topic name |
 
-For compressed image format, all the images are saved into 1 file with name "/tmp/${name}.raw".
-For the non-compressed image format, the file with name "/tmp/${name}.raw" is used to record image informations, with seperated images with name "/tmp/${name}_${id}_${batch_id}.raw" to save the real image content, below is an example:
+For compressed image format, all the images are saved into 1 file with name "/tmp/\${name}.raw".
+For the non-compressed image format, the file with name "/tmp/\${name}.raw" is used to record image information, with separated images with name "/tmp/${name}\_\${id}\_\${batch_id}.raw" to save the real image content, below is an example:
 ```sh
 $ cat /tmp/REC0.raw
 0: frameId 0 timestamp 322037864334718: batch=3 resolution=1024x768 stride=2048 actual_height=768 format=2
@@ -255,7 +257,7 @@ The command line template example:
 ```
 
 
-## 3. Typical RideHal Sample Applicaiton pipelines
+## 3. Typical RideHal Sample Application pipelines
 
 ### 3.1 4 DataReader based QNN perception pipelines
 

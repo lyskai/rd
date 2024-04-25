@@ -21,36 +21,96 @@ namespace ridehal
 namespace sample
 {
 
+/** @brief The Shared Buffer information structure */
 typedef struct
 {
-    RideHal_SharedBuffer_t sharedBuffer;
-    uint64_t pubHandle;
+    RideHal_SharedBuffer_t sharedBuffer; /**< The RideHal shared buffer */
+    uint64_t pubHandle; /**< The publish handle associated with shared buffer that to be used to
+                           release the shared buffer */
 } SharedBuffer_t;
 
+/** @brief The RideHal shared buffer ping-pong pool */
 class SharedBufferPool
 {
 public:
     SharedBufferPool();
     ~SharedBufferPool();
 
+    /**
+     * @brief Get a free shared buffer
+     * @return The shared buffer on success, nullptr on failure
+     */
     std::shared_ptr<SharedBuffer_t> Get();
 
+    /**
+     * @brief Do initialization of the shared memory ping-pong pool
+     * @param[in] name the shared memory pool name
+     * @param[in] level the logger level
+     * @param[in] number the number of the ping-pong shared buffers
+     * @param[in] width the image width
+     * @param[in] height the image height
+     * @param[in] format the image format
+     * @param[in] usage the DMA buffer usage
+     * @param[in] flags the DMA buffer flags
+     * @detdesc
+     * It was by using the image width/height/format to allocate image buffers with best the best
+     * strides/paddings that can be shared among CPU/GPU/VPU/HTP, etc
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number, uint32_t width,
                          uint32_t height, RideHal_ImageFormat_e format,
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
                          RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
+    /**
+     * @brief Do initialization of the shared memory ping-pong pool
+     * @param[in] name the shared memory pool name
+     * @param[in] level the logger level
+     * @param[in] batchSize the image batch size
+     * @param[in] number the number of the ping-pong shared buffers
+     * @param[in] width the image width
+     * @param[in] height the image height
+     * @param[in] format the image format
+     * @param[in] usage the DMA buffer usage
+     * @param[in] flags the DMA buffer flags
+     * @detdesc
+     * It was by using the image batchSize/width/height/format to allocate batched image buffers
+     * with best the best strides/paddings that can be shared among CPU/GPU/VPU/HTP, etc
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          uint32_t batchSize, uint32_t width, uint32_t height,
                          RideHal_ImageFormat_e format,
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
                          RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
+    /**
+     * @brief Do initialization of the shared memory ping-pong pool
+     * @param[in] name the shared memory pool name
+     * @param[in] level the logger level
+     * @param[in] imageProps the specified image properties
+     * @param[in] usage the DMA buffer usage
+     * @param[in] flags the DMA buffer flags
+     * @detdesc
+     * It was by using the specified image properties to allocate image buffers.
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_ImageProps_t &imageProps,
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
                          RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
+    /**
+     * @brief Do initialization of the shared memory ping-pong pool
+     * @param[in] name the shared memory pool name
+     * @param[in] level the logger level
+     * @param[in] tensorProps the specified tensor properties
+     * @param[in] usage the DMA buffer usage
+     * @param[in] flags the DMA buffer flags
+     * @detdesc
+     * It was by using the specified tensor properties to allocate tensor buffers.
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
                          RideHal_TensorProps_t &tensorProps,
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
@@ -63,7 +123,7 @@ private:
     struct SharedBufferInfo
     {
         SharedBuffer_t sharedBuffer;
-        int dirty;
+        int dirty; /**< A flag to indicate the buffer is in use or free */
     };
 
     RIDEHAL_DECLARE_LOGGER();

@@ -1,3 +1,12 @@
+*Menu*:
+- [1. RideHal Buffer Data Structures](#1-ridehal-buffer-data-structures)
+  - [1.1 The details of image properties.](#11-the-details-of-image-properties)
+  - [1.2 The details of RideHal_SharedBuffer_t.](#12-the-details-of-ridehal_sharedbuffer_t)
+- [2. RideHal buffer APIs](#2-ridehal-buffer-apis)
+- [3. RideHal_SharedBuffer_t Examples](#3-ridehal_sharedbuffer_t-examples)
+  - [3.1 A RideHal_SharedBuffer_t image for BEV kind of AI model](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model)
+  - [3.2 Allocate buffers to hold images](#32-allocate-buffers-to-hold-images)
+  - [3.3 Convert Image to Tensor](#33-convert-image-to-tensor)
 
 # 1. RideHal Buffer Data Structures
 
@@ -30,10 +39,15 @@ For the compressedSize, it was designed for the compressed image with the format
 
 The RideHal_SharedBuffer_t is a data structure to represent a DMA memory portion that can be shared between components for zero copy purpose. Please note that, its member ["buffer"](../include/ridehal/common/SharedBuffer.hpp#L17) represent a single continuous(from user space of view, physically it's maybe not continuous.) DMA memory, and with its member ["offset"](../include/ridehal/common/SharedBuffer.hpp#L19) and ["size"](../include/ridehal/common/SharedBuffer.hpp#L18) to represent the actual memory location and size in the single DMA memory. But general case is that the RideHal_SharedBuffer_t will represent all the memory represent by its member ["buffer"](../include/ridehal/common/SharedBuffer.hpp#L17), but there is a typical use case for the BEV kind of AI model, please check section [3.1](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model) which the ShareBufferMiddle just represent the middle portion of the DMA memory.
 
-And it's strongly recommended that to use the APIs of RideHal_SharedBuffer_t to do memory allocation and free, but it's also OK to any kind of related API that underlying is using the platform DMA related API (PMEM for QNX, dma-buf for Linux) to do memory allocation and free, but in this case, the user application need to assign the right value to each member of the RideHal_SharedBuffer_t. And the RideHal_SharedBuffer_t is also using the platform DMA related API (PMEM for QNX, dma-buf for Linux) to do memory allocation and free. For QNX, check [RideHal_DmaAllocate](../source/common/Buffer_QNX.cpp#L22) and [RideHal_DmaFree](../source/common/Buffer_QNX.cpp#L74);  for Linux, check [RideHal_DmaAllocate](../source/common/Buffer_Linux.cpp#L60) and [RideHal_DmaFree](../source/common/Buffer_Linux.cpp#L126).
+And it's strongly recommended that to use the APIs of RideHal_SharedBuffer_t to do memory allocation and free, but it's also OK to use any kind of the platform DMA related APIs (PMEM for QNX, dma-buf for Linux), but in this case, the user application need to assign the right value to each member of the RideHal_SharedBuffer_t.
+
+And in fact, the RideHal_SharedBuffer_t APIs are based on the platform DMA related APIs (PMEM for QNX, dma-buf for Linux). 
+  - For QNX, check [RideHal_DmaAllocate](../source/common/Buffer_QNX.cpp#L22) and [RideHal_DmaFree](../source/common/Buffer_QNX.cpp#L74).
+  - For Linux, check [RideHal_DmaAllocate](../source/common/Buffer_Linux.cpp#L60) and [RideHal_DmaFree](../source/common/Buffer_Linux.cpp#L126).
 
 ```c
-// using PMEM or dma-buf to allocate memory, now have the virtual address pData and the uint64 dmaHandle.
+// For case that using PMEM or dma-buf to allocate memory,
+// now have the virtual address pData and the uint64 dmaHandle.
 // for QNX, the dmaHandle is cast from pmem_handle_t.
 // for Linux, the dmaHandle is case from int.
 
@@ -64,6 +78,8 @@ shareBuffer.imgProps.extraPadding = extraPadding;
 
 remap.Execute(&shareBuffer, 1, ...);
 ```
+
+And another thing, the RideHal_SharedBuffer_t can be shared between components, but it has no life cycle management ability. Here, the RideHal Sample Application has a demo that using C++ std::shared_ptr to demonstrate that how to do the buffer life cycle management between the components that running in the same process but in different threads, refer [The RideHal Sample Buffer Life Cycle Management](./sample-buffer-life-cycle-management.md).
 
 # 2. RideHal buffer APIs
 
@@ -96,5 +112,73 @@ Generally, for the BEV kind of AI models, it was that multiple cameras’ frame 
 The [SANITY_ImageAllocateRGBByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L168) demonstrate that how to allocate such a batched image(batchSize=3), the ShareBufferAll will represent the whole buffer that contain the 3 RGB images. And use the API [GetSharedBuffer](../include/ridehal/common/SharedBuffer.hpp#L101) to get a shared buffer descriptor ShareBufferMiddle to represent the middle front camera RGB image.
 
 Thus, the SharedBufferAll can be feed into the BEV kind of the AI models, and the ShareBufferMiddle can be feed into a traffic light detection AI model for example, thus for the traffic light detection AI model, it doesn't need another pre-processing to convert the front camera frame to RGB, just reused the middle portion of the SharedBufferAll to save computing resource.
+
+
+## 3.2 Allocate buffers to hold images
+
+The [SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L11) demonstrate that how to allocate 1 camera buffer for format UYVY or NV12, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L61)" to allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc.
+
+But if want to allocate a list of ping-pong buffers, the usage is generally as below.
+
+```c++
+class AUserClass
+{
+public:
+    RideHalError_e Init( void )
+    {
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
+        // allocate the 4 ping-pong buffers
+        for ( int i = 0; ( i < 4 ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
+        {
+            ret = m_buffers.Allocate( 3840, 2160, RIDEHAL_IMAGE_FORMAT_NV12 );
+        }
+
+        return ret;
+    }
+
+    RideHalError_e Run( RideHal_SharedBuffer_t *pInput )
+    {
+        RideHal_SharedBuffer_t *pBuffer = m_buffers[m_index];
+        // for each run, ping-pong use each buffer
+        // do process of the pInput, such as using c2d to do color conversion from UYVY to NV12
+        // ret = c2d.Execute( pInput, 1, pBuffer );
+        m_index++;
+        if ( m_index > 4 )
+        {
+            m_index = 0;
+        }
+    }
+
+    RideHalError_e Deinit( void )
+    {
+        RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+        // release the 4 ping-pong buffers
+        for ( int i = 0; ( i < 4 ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
+        {
+            ret = m_buffers.Free();
+        }
+
+        return ret;
+    }
+
+private:
+    RideHal_SharedBuffer_t m_buffers[4];   // A case that want 4 ping-pong buffers.
+    uint32_t m_index = 0;
+}
+```
+
+But consideration of the life cycle manegement, the implementation will be totally different for the sharing between threads in the same process or between processes.
+
+And the RideHal Sample [SharedBufferPool](../tests/sample/include/ridehal/sample/SharedBufferPool.hpp#L126) gives a demo that how to create a ping-pong buffer pool that the buffer can be shared between threads in the process, for more details, check [The RideHal Sample Buffer Life Cycle Management](./sample-buffer-life-cycle-management.md).
+
+## 3.3 Convert Image to Tensor
+
+Here for the component QnnRuntime, the inputs/outputs of this component must be Tensor not Image, so here the API [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L132) can be used to convert the Image to a Tensor.
+
+- Refer [SampleQnn ThreadMain](../tests/sample/source/SampleQnn.cpp#L153).
+- Refer [gtest SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L30).
+
+
 
 
