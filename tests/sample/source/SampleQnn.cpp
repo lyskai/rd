@@ -161,8 +161,7 @@ void SampleQnn::ThreadMain()
                 inputs.push_back( sharedBuffer );
             }
 
-            for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDEHAL_ERROR_NONE == ret );
-                  i++ )
+            for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
             {
                 std::shared_ptr<SharedBuffer_t> buffer = m_tensorPools[i].Get();
                 if ( nullptr != buffer )
@@ -178,15 +177,22 @@ void SampleQnn::ThreadMain()
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                bool locked = false;
                 ret = SampleIF::Lock();
-                locked = ( RIDEHAL_ERROR_NONE == ret );
-                PROFILER_BEGIN();
-                ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(), outputs.size() );
-                if ( true == locked )
+                if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    PROFILER_END();
-                    SampleIF::Unlock();
+                    PROFILER_BEGIN();
+                    ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(),
+                                         outputs.size() );
+                    if ( RIDEHAL_ERROR_NONE == ret )
+                    {
+                        PROFILER_END();
+                    }
+                    else
+                    {
+                        RIDEHAL_ERROR( "QNN Execute failed for %" PRIu64 " : %d",
+                                       frames.frames[0].frameId, ret );
+                    }
+                    (void) SampleIF::Unlock();
                 }
             }
 

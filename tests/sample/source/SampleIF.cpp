@@ -65,8 +65,8 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
         m_acquireCmdV2.resource = (rsm_resource_group) processor;
         m_acquireCmdV2.priority = QUEUE_PRIORITY_DEFAULT;
         m_acquireCmdV2.configure.priority = REQUEST_PRIORITY_DEFAULT;
-        m_acquireCmdV2.duration_us = 1000000;
-        m_acquireCmdV2.timeout_us = 0;
+        m_acquireCmdV2.duration_us = 0;
+        m_acquireCmdV2.timeout_us = 1000000;
         int rc = rsm_register_v2( &m_handle );
         if ( 0 != rc )
         {

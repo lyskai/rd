@@ -209,7 +209,7 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = SampleIF::Init( (RideHal_ProcessorType_e) m_config.processor );
+        ret = SampleIF::Init( m_config.processor );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -264,30 +264,28 @@ void SampleRemap::ThreadMain()
                     inputs.push_back( frame.buffer->sharedBuffer );
                 }
 
-                bool locked = false;
                 ret = SampleIF::Lock();
-                locked = ( RIDEHAL_ERROR_NONE == ret );
-                PROFILER_BEGIN();
-                ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    PROFILER_END();
-                    CamFrames_t outFrames;
-                    CamFrame_t frame;
-                    frame.buffer = buffer;
-                    frame.frameId = frames.frames[0].frameId;
-                    frame.timestamp = frames.frames[0].timestamp;
-                    outFrames.frames.push_back( frame );
-                    m_pub.Publish( outFrames );
-                }
-                else
-                {
-                    RIDEHAL_ERROR( "remap failed for %" PRIu64 " : %d", frames.frames[0].frameId,
-                                   ret );
-                }
-                if ( true == locked )
-                {
-                    SampleIF::Unlock();
+                    PROFILER_BEGIN();
+                    ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
+                    if ( RIDEHAL_ERROR_NONE == ret )
+                    {
+                        PROFILER_END();
+                        CamFrames_t outFrames;
+                        CamFrame_t frame;
+                        frame.buffer = buffer;
+                        frame.frameId = frames.frames[0].frameId;
+                        frame.timestamp = frames.frames[0].timestamp;
+                        outFrames.frames.push_back( frame );
+                        m_pub.Publish( outFrames );
+                    }
+                    else
+                    {
+                        RIDEHAL_ERROR( "remap failed for %" PRIu64 " : %d",
+                                       frames.frames[0].frameId, ret );
+                    }
+                    (void) SampleIF::Unlock();
                 }
             }
         }

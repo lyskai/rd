@@ -229,8 +229,8 @@ void SamplePostProcCenternet::ProcessUint8( Tensors_t &tensors )
 
     m_pub.Publish( objs );
 
-    RIDEHAL_INFO( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
-                  tensors.frameId );
+    RIDEHAL_DEBUG( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
+                   tensors.frameId );
 }
 
 float SamplePostProcCenternet::ComputeIou( const Road2DObject_t &box1, const Road2DObject_t &box2 )
