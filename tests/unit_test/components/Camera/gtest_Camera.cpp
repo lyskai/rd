@@ -231,9 +231,9 @@ TEST( Camera, SetBuffer_QcarCam )
             ret = pSharedBuffer[i].Free();
             ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         }
-
-        delete pCamera;
     }
+
+    delete pCamera;
 }
 
 TEST( Camera, PauseResume_QcarCam )
@@ -292,9 +292,9 @@ TEST( Camera, PauseResume_QcarCam )
 
         ret = pCamera->Deinit();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-        delete pCamera;
     }
+
+    delete pCamera;
 }
 
 TEST( Camera, RequestMode_QcarCam )
@@ -343,9 +343,9 @@ TEST( Camera, RequestMode_QcarCam )
 
         ret = pCamera->Deinit();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-        delete pCamera;
     }
+
+    delete pCamera;
 }
 
 #ifndef GTEST_RIDEHAL

@@ -791,7 +791,7 @@ RideHalError_e Camera::AllocateBuffer()
     {
         m_pCameraFrames = new CameraFrame_t[m_nBufCnt];
         m_pQcarcamBuffer = new QCarCamBuffer_t[m_nBufCnt];
-        m_qcarcamBuffers.id = m_nInputId;
+        m_qcarcamBuffers.id = m_nStreamId;
         m_qcarcamBuffers.nBuffers = m_nBufCnt;
         m_qcarcamBuffers.pBuffers = m_pQcarcamBuffer;
         m_qcarcamBuffers.colorFmt = GetQcarCamFormat( m_colorFormat );
@@ -909,7 +909,7 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32
             m_nBufCnt = numBuffers;
             m_pCameraFrames = new CameraFrame_t[m_nBufCnt];
             m_pQcarcamBuffer = new QCarCamBuffer_t[m_nBufCnt];
-            m_qcarcamBuffers.id = m_nInputId;
+            m_qcarcamBuffers.id = m_nStreamId;
             m_qcarcamBuffers.nBuffers = m_nBufCnt;
             m_qcarcamBuffers.pBuffers = m_pQcarcamBuffer;
             m_qcarcamBuffers.colorFmt = GetQcarCamFormat( m_colorFormat );
