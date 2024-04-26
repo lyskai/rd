@@ -72,7 +72,7 @@ shareBuffer.imgProps.numPlanes = numPlanes;
 shareBuffer.imgProps.stride[0] = stride0;
 shareBuffer.imgProps.stride[numPlanes-1] = ...;
 shareBuffer.imgProps.actualHeight[0] = actualHeight0;
-shareBuffer.imgProps.actualHeight[numPlanes-1] = actualHeight0;
+shareBuffer.imgProps.actualHeight[numPlanes-1] = actualHeightX;
 shareBuffer.imgProps.extraPadding = extraPadding;
 
 // and then this can be feed into a RideHal Component
@@ -175,7 +175,7 @@ And the RideHal Sample [SharedBufferPool](../tests/sample/include/ridehal/sample
 
 ## 3.3 Allocate Tensor
 
-The [SANITY_TensorAllocate](../tests/unit_test/buffer/gtest_Buffer.cpp#L237) demonstrate that how to allocate buffer for Tensor, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L88)".
+The [SANITY_TensorAllocate](../tests/unit_test/buffer/gtest_Buffer.cpp#L237) demonstrate that how to allocate buffer for Tensor, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L99)".
 
 
 ## 3.4 Convert Image to Tensor
