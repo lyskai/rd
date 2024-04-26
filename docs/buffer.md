@@ -6,7 +6,8 @@
 - [3. RideHal_SharedBuffer_t Examples](#3-ridehal_sharedbuffer_t-examples)
   - [3.1 A RideHal_SharedBuffer_t image for BEV kind of AI model](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model)
   - [3.2 Allocate buffers to hold images](#32-allocate-buffers-to-hold-images)
-  - [3.3 Convert Image to Tensor](#33-convert-image-to-tensor)
+  - [3.3 Allocate Tensor](#33-allocate-tensor)
+  - [3.4 Convert Image to Tensor](#34-convert-image-to-tensor)
 
 # 1. RideHal Buffer Data Structures
 
@@ -172,7 +173,12 @@ But consideration of the life cycle manegement, the implementation will be total
 
 And the RideHal Sample [SharedBufferPool](../tests/sample/include/ridehal/sample/SharedBufferPool.hpp#L126) gives a demo that how to create a ping-pong buffer pool that the buffer can be shared between threads in the process, for more details, check [The RideHal Sample Buffer Life Cycle Management](./sample-buffer-life-cycle-management.md).
 
-## 3.3 Convert Image to Tensor
+## 3.3 Allocate Tensor
+
+The [SANITY_TensorAllocate](../tests/unit_test/buffer/gtest_Buffer.cpp#L237) demonstrate that how to allocate buffer for Tensor, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L88)".
+
+
+## 3.4 Convert Image to Tensor
 
 Here for the component QnnRuntime, the inputs/outputs of this component must be Tensor not Image, so here the API [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L132) can be used to convert the Image to a Tensor.
 
