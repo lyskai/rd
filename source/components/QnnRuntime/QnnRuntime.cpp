@@ -1593,7 +1593,7 @@ RideHalError_e QnnRuntime::GetPerf( QnnRuntime_Perf_t *pPerf )
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
-    pPerf = &m_perf;
+    *pPerf = m_perf;
     return ret;
 }
 

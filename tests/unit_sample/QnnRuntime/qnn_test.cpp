@@ -229,8 +229,12 @@ public:
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_qnn.EnablePerf();
             ret = m_qnn.Start();
+        }
+
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = m_qnn.EnablePerf();
         }
 
         return ret;
