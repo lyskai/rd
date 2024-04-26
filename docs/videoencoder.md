@@ -1,3 +1,13 @@
+*Menu*:
+- [1. RideHal VideoEncoder Data Structures](#1-ridehal-videoencoder-data-structures)
+  - [1.1 The details of image properties.](#11-the-details-of-videoencoder_config_t)
+- [2. RideHal buffer APIs](#2-ridehal-videoencoder-apis)
+- [3. Typical VideoEncoder Use Case](#3-typical-videoencoder-use-cases)
+  - [3.1 Dynamic input/output buffer](#31-dynamic-inputoutput-buffer)
+  - [3.2 Non-Dynamic input/output buffer](#32-non-dynamic-inputoutput-buffer)
+    - [3.2.1 not set input/output buffer by config](#321-not-set-inputoutput-buffer-by-config)
+    - [3.2.2 set input/output buffer by config](#322-set-inputoutput-buffer-by-config)
+
 # 1. RideHal VideoEncoder Data Structures
 
 - [VideoEncoder_Config_t](../include/ridehal/component/VideoEncoder.hpp#L80)
@@ -39,7 +49,10 @@ frameRate (30)
 - [Configure](../include/ridehal/component/VideoEncoder.hpp#L238)
 - [RegisterCallback](../include/ridehal/component/VideoEncoder.hpp#L248)
 
-# 3. Typical VideoEncoder Use Case
+# 3. Typical VideoEncoder Use Cases
+
+- [gtest_VideoEncoder](../tests/unit_test/components/VideoEncoder/gtest_VideoEncoder.cpp)
+- [SampleVideoEncoder](../tests/sample/source/SampleVideoEncoder.cpp)
 
 ## 3.1 Dynamic input/output buffer
 ```c++
@@ -85,8 +98,8 @@ frameRate (30)
     config.outFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264;
     config.bInputDynamicMode = false;
     config.bOutputDynamicMode = false;
-    config.pInputBufferList = nullptr;
-    config.pOutputBufferList = nullptr;
+    config.pInputBufferList = nullptr; // buffer will allocated inside video encoder
+    config.pOutputBufferList = nullptr; // buffer will allocated inside video encoder
 //... Init and Start
     RideHal_SharedBuffer_t *inputList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
     ret = xxx.GetInputBuffers( inputList, config.numInputBufferReq );
