@@ -268,16 +268,16 @@ public:
             m_total += cost;
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                m_totalQnn += perf.qnn;
-                m_totalRpc += perf.rpc;
-                m_totalQnnAcc += perf.qnnAccelerator;
-                m_totalAcc += perf.accelerator;
+                m_totalQnn += perf.entireExecTime;
+                m_totalRpc += perf.rpcExecTimeCPU;
+                m_totalQnnAcc += perf.rpcExecTimeHTP;
+                m_totalAcc += perf.rpcExecTimeAcc;
             }
             printf( "[%s-%s-%d] %d: %.2f ms, perf(us): QNN=%" PRIu64 " RPC=%" PRIu64
                     " QNN ACC=%" PRIu64 " ACC=%" PRIu64 "\n",
                     name.c_str(), s_processorName[processor], m_params.tid, m_iter,
-                    (float) cost / 1000.0, perf.qnn, perf.rpc, perf.qnnAccelerator,
-                    perf.accelerator );
+                    (float) cost / 1000.0, perf.entireExecTime, perf.rpcExecTimeCPU,
+                    perf.rpcExecTimeHTP, perf.rpcExecTimeAcc );
             if ( ( inputs.size() > 0 ) && ( false == s_bDisableDumpingOutputs ) )
             {
                 for ( size_t i = 0; i < m_outputBuffers.size(); i++ )

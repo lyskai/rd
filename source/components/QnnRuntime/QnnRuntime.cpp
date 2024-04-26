@@ -166,7 +166,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
     return ret;
 }
 
-RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *buffer, uint64_t bufferSize )
+RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *pBuffer, uint64_t bufferSize )
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -180,7 +180,7 @@ RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *buffer, uint64_t bufferSiz
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( buffer == nullptr )
+        if ( pBuffer == nullptr )
         {
             RIDEHAL_ERROR( "%s: Buffer is null.", m_Name.c_str() );
             ret = RIDEHAL_ERROR_FAIL;
@@ -193,7 +193,7 @@ RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *buffer, uint64_t bufferSiz
         Qnn_ContextBinarySize_t binaryInfoSize{ 0 };
         const Qnn_ErrorHandle_t retVal =
                 m_QnnFunctionPointers.qnnSystemInterface.systemContextGetBinaryInfo(
-                        m_SystemContext, static_cast<void *>( buffer ), bufferSize, &binaryInfo,
+                        m_SystemContext, static_cast<void *>( pBuffer ), bufferSize, &binaryInfo,
                         &binaryInfoSize );
         if ( QNN_SUCCESS != retVal )
         {
@@ -224,7 +224,7 @@ RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *buffer, uint64_t bufferSiz
     {
         if ( m_QnnFunctionPointers.qnnInterface.contextCreateFromBinary(
                      m_BackendHandle, m_DeviceHandle,
-                     (const QnnContext_Config_t **) m_ContextConfig, static_cast<void *>( buffer ),
+                     (const QnnContext_Config_t **) m_ContextConfig, static_cast<void *>( pBuffer ),
                      bufferSize, &m_Context, m_ProfileBackendHandle ) )
         {
             RIDEHAL_ERROR( "%s: Could not create context from binary.", m_Name.c_str() );
@@ -1072,7 +1072,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t &sharedBu
 }
 
 RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEventId,
-                                                  QnnRuntime_Perf_t *perf )
+                                                  QnnRuntime_Perf_t *pPerf )
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -1086,7 +1086,7 @@ RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEv
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( perf == nullptr )
+        if ( pPerf == nullptr )
         {
             RIDEHAL_ERROR( "Pointer of perf is nullptr!" );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -1109,16 +1109,16 @@ RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEv
         switch ( eventData.type )
         {
             case QNN_PROFILE_EVENTTYPE_EXECUTE:
-                perf->qnn = eventData.value;
+                pPerf->entireExecTime = eventData.value;
                 break;
             case QNN_HTP_PROFILE_EVENTTYPE_GRAPH_EXECUTE_HOST_RPC_TIME_MICROSEC:
-                perf->rpc = eventData.value;
+                pPerf->rpcExecTimeCPU = eventData.value;
                 break;
             case QNN_HTP_PROFILE_EVENTTYPE_GRAPH_EXECUTE_HTP_RPC_TIME_MICROSEC:
-                perf->qnnAccelerator = eventData.value;
+                pPerf->rpcExecTimeHTP = eventData.value;
                 break;
             case QNN_HTP_PROFILE_EVENTTYPE_GRAPH_EXECUTE_ACCEL_TIME_MICROSEC:
-                perf->accelerator = eventData.value;
+                pPerf->rpcExecTimeAcc = eventData.value;
                 break;
             default:
             {
