@@ -158,7 +158,7 @@ The command line template example:
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
 | processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu, gpu] |
-| model_path    | true     | string    | -       | The model path that contain the QNN models |
+| model_path    | true     | string    | -       | The QNN model path |
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
@@ -167,7 +167,7 @@ The command line template example:
 
 ```sh
   -n CNT0 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
 ```
@@ -273,7 +273,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM0/raw \
     -k output_topic -v /sensor/camera/CAM0/remap \
   -n CNT0 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
   -n POSTPROC_CNT0 -t PostProcCenternet \
@@ -289,7 +289,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM1/raw \
     -k output_topic -v /sensor/camera/CAM1/remap \
   -n CNT1 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM1/remap \
     -k output_topic -v /sensor/camera/CAM1/qnn \
   -n POSTPROC_CNT1 -t PostProcCenternet \
@@ -305,7 +305,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM2/raw \
     -k output_topic -v /sensor/camera/CAM2/remap \
   -n CNT2 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM2/remap \
     -k output_topic -v /sensor/camera/CAM2/qnn \
   -n POSTPROC_CNT2 -t PostProcCenternet \
@@ -321,7 +321,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM3/raw \
     -k output_topic -v /sensor/camera/CAM3/remap \
   -n CNT3 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM3/remap \
     -k output_topic -v /sensor/camera/CAM3/qnn \
   -n POSTPROC_CNT3 -t PostProcCenternet \
@@ -350,7 +350,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM0/uyvy \
     -k output_topic -v /sensor/camera/CAM0/remap \
   -n CNT0 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
   -n POSTPROC_CNT0 -t PostProcCenternet \
@@ -366,7 +366,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM1/raw \
     -k output_topic -v /sensor/camera/CAM1/remap \
   -n CNT1 -t Qnn -k processor -v htp0 \
-    -k model_path -v /data/pkg-aarch64-qos222/opt/ridehal/data/centernet \
+    -k model_path -v data/centernet/program.bin \
     -k input_topic -v /sensor/camera/CAM1/remap \
     -k output_topic -v /sensor/camera/CAM1/qnn \
   -n POSTPROC_CNT1 -t PostProcCenternet \
