@@ -25,7 +25,9 @@ typedef struct
 typedef struct
 {
     QCarCamInput_t *pCameraInputs; /* pointer to the list of qcarcam inputs info */
-    uint32_t numInputs;            /* num of qcarcam inputs */
+    QCarCamInputModes_t
+            *pCamInputModes; /* pointer to the list of qcarcam input modes for each input */
+    uint32_t numInputs;      /* num of qcarcam inputs */
 } CameraInputs_t;
 
 /// @brief callback for camera frame done
@@ -40,7 +42,7 @@ typedef struct Camera_Config
 {
     bool bAllocator;              /* Flag to indicate if component is buffer allocator*/
     bool bRequestMode;            /* Flag to set request buffer mode */
-    uint32_t streamId;            /* Camera steam id */
+    uint32_t streamId;            /* Camera stream id */
     uint32_t inputId;             /* Camera input id */
     uint32_t ispUserCase;         /* ISP user case defined by qcarcam */
     uint32_t width;               /* Frame width */
@@ -148,7 +150,6 @@ private:
     QCarCamBuffer_t *m_pQcarcamBuffer = nullptr;
     QCarCamBufferList_t m_qcarcamBuffers;
     QCarCamHndl_t m_QcarCamHndl;
-    CameraInputs_t m_sCameraInputsInfo;
 };   // class Camera
 
 }   // namespace component

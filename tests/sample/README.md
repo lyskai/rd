@@ -69,6 +69,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md) for how to g
 | pool_size | false    | int       | 4       | The image memory pool size |
 | format    | false    | string    | "nv12"  | The camera frame format, options from [nv12, uyvy] |
 | frame_drop_patten | false | int  | 0       | The frame drop patten defined by qcarcam |
+| stream_id | false    | int       | 0       | The camera stream id |
 | isp_use_case | false | int       | 3       | The ISP use case |
 | op_mode   | false    | int       | 2       | The input operation mode, 1: Inline ISP, 2: Injection to ISP. |
 | topic     | true     | string    | -       | The output topic name |

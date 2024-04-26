@@ -50,7 +50,7 @@ private:
 
 private:
     Camera m_camera;
-    Camera_Config_t m_camConfig;
+    Camera_Config_t m_camConfig = { 0 };
 
     std::string m_topicName;
 
