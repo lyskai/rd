@@ -53,9 +53,10 @@ typedef struct
 } C2D_Config_t;
 
 
-/// @brief Component C2D
-///
-/// C2D convert 1 camera frame into RGB and do normalize
+/**
+ * @brief Component C2D
+ * @brief C2D convert 1 camera frame into another format normalize
+ */
 class C2D final : public ComponentIF
 {
 
