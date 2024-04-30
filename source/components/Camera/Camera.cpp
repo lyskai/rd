@@ -2,6 +2,7 @@
 // Confidential & Proprietary.
 
 #include "ridehal/component/Camera.hpp"
+#include <cstring>
 
 namespace ridehal
 {
