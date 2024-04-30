@@ -5,10 +5,10 @@
 ```sh
 docker images # make sure having the RideWare docker loaded
 rideware-toolchain-aarch64-fusion   latest    6f94fb6f5150   2 days ago      9.8GB
-rideware-toolchain-aarch64-fusion   v1.2      6f94fb6f5150   2 days ago      9.8GB
+rideware-toolchain-aarch64-fusion   v1.3      6f94fb6f5150   2 days ago      9.8GB
 
 # if you don't have latest, use docker tag create it
-docker tag rideware-toolchain-aarch64-fusion:v1.2 rideware-toolchain-aarch64-fusion:latest
+docker tag rideware-toolchain-aarch64-fusion:v1.3 rideware-toolchain-aarch64-fusion:latest
 
 cd /opt/sdk
 ./scripts/build/build-target.sh aarch64-qos222 .
