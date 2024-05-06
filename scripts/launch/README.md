@@ -14,7 +14,7 @@ telnet 192.168.1.1
 cd /data
 tar xfv ridehal-aarch64-qos222.tar.gz
 cd pkg-aarch64-qos222/opt/ridehal
-# using ./bin/rhrun to launch the RideHal applicaiton binary
+# using ./bin/rhrun to launch the RideHal application binary
 ./bin/rhrun ./bin/gtest_Buffer
 ./bin/rhrun ./bin/gtest_ComponentIF
 ./bin/rhrun ./bin/gtest_Logger
@@ -32,7 +32,7 @@ adb shell
 cd /data
 tar xfv ridehal-aarch64-hgy.tar.gz
 cd pkg-aarch64-hgy/opt/ridehal
-# using ./bin/rhrun to launch the RideHal applicaiton binary
+# using ./bin/rhrun to launch the RideHal application binary
 ./bin/rhrun ./bin/gtest_Buffer
 ./bin/rhrun ./bin/gtest_ComponentIF
 ./bin/rhrun ./bin/gtest_Logger
