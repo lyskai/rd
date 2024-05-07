@@ -219,6 +219,15 @@ TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY
                  true, true, false, false );
 }
 
+TEST( Remap, DSPSuccessPipeline3Test )   // general success test on CPU for NV12 to BGR, with
+                                         // and without undistortion
+{
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 true, false, false, false );
+}
+
 TEST( Remap, CPUSuccessPipeline1Test )   // general success test on CPU for UYVY/RGB to RGB, with
                                          // and without normalization, no undistortion
 {
@@ -230,7 +239,7 @@ TEST( Remap, CPUSuccessPipeline1Test )   // general success test on CPU for UYVY
                  false, true, false, false );
 }
 
-TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for UYVY/RGB to RGB, with
+TEST( Remap, CPUSuccessPipeline2Test )   // general success test on CPU for UYVY/RGB to RGB, with
                                          // and without normalization, undistortion
 {
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
@@ -239,6 +248,15 @@ TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for UYVY
                  true, false, false, false );
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  true, true, false, false );
+}
+
+TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12 to BGR, with
+                                         // and without undistortion
+{
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 true, false, false, false );
 }
 
 TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB

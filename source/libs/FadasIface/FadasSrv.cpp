@@ -260,6 +260,10 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
         uint32_t batch = pBuffer->imgProps.batchSize;
         int dmaHandle = (int) pBuffer->buffer.dmaHandle;
         size_t sizeOne = ( size_t )( pBuffer->size / batch );
+        RideHal_ImageFormat_e format = pBuffer->imgProps.format;
+        size_t sizePlane0 = pBuffer->imgProps.stride[0] * pBuffer->imgProps.actualHeight[0];
+        size_t sizePlane1 = pBuffer->imgProps.stride[1] * pBuffer->imgProps.actualHeight[1] +
+                            pBuffer->imgProps.extraPadding;
 
         auto it = memMap.find( pBuffer->data() );
         if ( it == memMap.end() )
@@ -310,8 +314,20 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
                 uint32_t status = 0;
                 if ( FADAS_BUF_TYPE_IN == bufferType )
                 {
-                    ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd, sizeOne,
-                                                  offset, batch );
+                    if ( RIDEHAL_IMAGE_FORMAT_NV12 ==
+                         format ) /* register both of plane0 and plane1 for NV12 format, NV12 must
+                                     be input so the batch should be 1. */
+                    {
+                        ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd,
+                                                      sizePlane0, 0, 1 );
+                        ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd,
+                                                      sizePlane1, sizePlane0, 1 );
+                    }
+                    else
+                    {
+                        ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd, sizeOne,
+                                                      offset, batch );
+                    }
                 }
                 else if ( FADAS_BUF_TYPE_OUT == bufferType )
                 {
@@ -340,14 +356,25 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
             {
                 for ( int i = 0; i < batch; i++ )
                 {
-                    (void) FadasRegBuf( bufferType,
-                                        (uint8_t *) pBuffer->data() + offset + sizeOne * i,
-                                        sizeOne );
+                    if ( RIDEHAL_IMAGE_FORMAT_NV12 ==
+                         format ) /* register both of plane0 and plane1 for NV12 format. */
+                    {
+                        (void) FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
+                                            sizePlane0 );
+                        (void) FadasRegBuf( bufferType,
+                                            (uint8_t *) pBuffer->data() + sizeOne * i + sizePlane0,
+                                            sizePlane1 );
+                    }
+                    else
+                    {
+                        (void) FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
+                                            sizeOne );
+                    }
                 }
                 fd = 1;   // virtual fd for CPU&GPU pipeline, indicates that the register is
                           // successful, would not be really used.
             }
-            memMap[ptr] = { fd, size, offset, batch, ptr, sizeOne };
+            memMap[pBuffer->data()] = { fd, size, offset, batch, ptr, sizeOne };
         }
         else
         {
