@@ -17,40 +17,52 @@ namespace ridehal
 namespace component
 {
 
-/// @brief ridehal::ComponentIF
-///
-/// Component Interface
+/**
+ * @brief ComponentIF
+ * Component Interface
+ */
 class ComponentIF
 {
 public:
     ComponentIF() = default;
     ~ComponentIF() = default;
 
-    /// @brief Start the component
-    /// @return RIDEHAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief Start the component
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     virtual RideHalError_e Start() = 0;
 
-    /// @brief Stop the component
-    /// @return RIDEHAL_ERROR_NONE on success, others on failure
+    /**  @brief Stop the component
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     virtual RideHalError_e Stop() = 0;
 
-    /// @brief deinitialize the component
-    /// @return RIDEHAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief deinitialize the component
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     virtual RideHalError_e Deinit();
 
-    /// @brief get the current state of the component
-    /// @return the current state of the component
+    /**
+     * @brief get the current state of the component
+     * @return the current state of the component
+     */
     RideHal_ComponentState_t GetState();
 
-    /// @brief get the name of the component
-    /// @return the name of the component
+    /**
+     * @brief get the name of the component
+     * @return the name of the component
+     */
     const char *GetName();
 
 protected:
-    /// @brief Initialize the component
-    /// @param pName the component unique instance name
-    /// @param level the logger message level
-    /// @return RIDEHAL_ERROR_NONE on success, others on failure
+    /**
+     * @brief Initialize the component
+     * @param[in] pName the component unique instance name
+     * @param[in] level the logger message level
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
     RideHalError_e Init( const char *pName, Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
 protected:

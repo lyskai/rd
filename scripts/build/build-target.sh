@@ -72,6 +72,10 @@ if [[ -v HEXAGON_SDK_ROOT && -v BSP_ROOT ]] ; then
   fi
 fi
 
+if ! [[ -v ENABLE_GCOV ]] ; then
+export ENABLE_GCOV=OFF
+fi
+
 mkdir -p $workdir && cd $workdir || exit 1
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
@@ -80,6 +84,7 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=/opt/ridehal \
     -DCMAKE_PREFIX_PATH=$destdir/opt/ridehal \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DENABLE_GCOV=${ENABLE_GCOV} \
     .. || exit 1
 make -j 16 || exit 1
 
