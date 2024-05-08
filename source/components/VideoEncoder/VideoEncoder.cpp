@@ -160,6 +160,13 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         m_outFormat = pConfig->outFormat;
         m_bInputDynamicMode = pConfig->bInputDynamicMode;
         m_bOutputDynamicMode = pConfig->bOutputDynamicMode;
+        m_numInputBufferReq = pConfig->numInputBufferReq;
+        m_numOutputBufferReq = pConfig->numOutputBufferReq;
+        ret = ValidateConfig( pConfig );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
         if ( RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat )
         {
             m_vidcEncoderData.codec = VIDC_CODEC_HEVC;
@@ -168,16 +175,9 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             m_vidcEncoderData.codec = VIDC_CODEC_H264;
         }
-        ret = SetVidcProfileLevel( pConfig->profile );
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         m_vidcEncoderData.sessionCodec.session = VIDC_SESSION_ENCODE;
         m_vidcEncoderData.sessionCodec.codec = m_vidcEncoderData.codec;
-        m_numInputBufferReq = pConfig->numInputBufferReq;
-        m_numOutputBufferReq = pConfig->numOutputBufferReq;
-        ret = ValidateConfig( pConfig );
+        ret = SetVidcProfileLevel( pConfig->profile );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -369,7 +369,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             RIDEHAL_DEBUG( "Allocating %" PRIu32 " input buffers", m_numInputBufferReq );
             m_pInputList = (RideHal_SharedBuffer_t *) malloc( m_numInputBufferReq *
-                                                             sizeof( RideHal_SharedBuffer_t ) );
+                                                              sizeof( RideHal_SharedBuffer_t ) );
             if ( nullptr == m_pInputList )
             {
                 RIDEHAL_ERROR( "m_inputList malloc failed!" );
@@ -419,7 +419,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         {
             RIDEHAL_DEBUG( "Allocating %" PRIu32 " output buffers", m_numOutputBufferReq );
             m_pOutputList = (RideHal_SharedBuffer_t *) malloc( m_numOutputBufferReq *
-                                                              sizeof( RideHal_SharedBuffer_t ) );
+                                                               sizeof( RideHal_SharedBuffer_t ) );
             if ( nullptr == m_pOutputList )
             {
                 RIDEHAL_ERROR( "m_outputList malloc failed!" );
@@ -903,7 +903,7 @@ RideHalError_e VideoEncoder::GetInputBuffers( RideHal_SharedBuffer_t *pInputList
 
     RIDEHAL_DEBUG( "GetInputBuffers" );
 
-    if ( nullptr != m_pInputList )   // it means dynamic mode
+    if ( nullptr != m_pInputList )   // it means non-dynamic mode
     {
         if ( nullptr == pInputList )
         {
@@ -940,7 +940,7 @@ RideHalError_e VideoEncoder::GetOutputBuffers( RideHal_SharedBuffer_t *pOutputLi
 
     RIDEHAL_DEBUG( "GetOutputBuffers" );
 
-    if ( nullptr != m_pOutputList )   // it means dynamic mode
+    if ( nullptr != m_pOutputList )   // it means non-dynamic mode
     {
         if ( nullptr == pOutputList )
         {
@@ -1063,12 +1063,6 @@ void VideoEncoder::PrintEncoderConfig()
         RIDEHAL_DEBUG( "EncoderConfig: Profile = 0x%x", m_vidcEncoderData.profile.profile );
         RIDEHAL_DEBUG( "EncoderConfig: Level = 0x%x", m_vidcEncoderData.level.level );
     }
-    else
-    {
-        RIDEHAL_DEBUG( "EncoderConfig: Codec = UNKNOWN 0x%x", m_vidcEncoderData.codec );
-        RIDEHAL_DEBUG( "EncoderConfig: Profile = 0x%x", m_vidcEncoderData.profile.profile );
-        RIDEHAL_DEBUG( "EncoderConfig: Level = 0x%x", m_vidcEncoderData.level.level );
-    }
     RIDEHAL_DEBUG( "EncoderConfig: NumPframes = %" PRIu32, m_vidcEncoderData.iPeriod.p_frames );
     RIDEHAL_DEBUG( "EncoderConfig: NumBframes = %" PRIu32, m_vidcEncoderData.iPeriod.b_frames );
     RIDEHAL_DEBUG( "EncoderConfig: InBufferCount = %" PRIu32 " [0 means minimum]",
@@ -1160,6 +1154,11 @@ RideHalError_e VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile
                     }
                 }
             }
+        }
+        else
+        {
+            RIDEHAL_ERROR( "m_outFormat %d not match with profile %d", m_outFormat, profile );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
     }
 
@@ -1381,7 +1380,8 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
 
     if ( ( m_width < 128 ) || ( m_height < 128 ) || ( m_width > 8192 ) || ( m_height > 8192 ) )
     {
-        RIDEHAL_ERROR( "m_width %" PRIu32 " m_height%" PRIu32 " not in range!", m_width, m_height );
+        RIDEHAL_ERROR( "m_width %" PRIu32 " m_height %" PRIu32 " not in range!", m_width,
+                       m_height );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
@@ -1399,8 +1399,7 @@ RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfi
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    if ( ( RIDEHAL_ERROR_NONE == ret ) &&
-         ( RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265 != m_outFormat ) &&
+    if ( ( RIDEHAL_ERROR_NONE == ret ) && ( RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265 != m_outFormat ) &&
          ( RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264 != m_outFormat ) )
     {
         RIDEHAL_ERROR( "output format: %d not supported!", m_outFormat );

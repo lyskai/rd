@@ -96,16 +96,18 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     ret = veTest.Configure( &onTheFlyCmd );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    VideoEncoder_InputFrame_t inputFrame;
-    sharedBuffer = &inputFrame.sharedBuffer;
-    ret = sharedBuffer->Allocate( config.width, config.height, config.inFormat );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    VideoEncoder_InputFrame_t *inputFrame =
+            new VideoEncoder_InputFrame_t[config.numInputBufferReq + 1];
 
     VideoEncoder_OutputFrame_t *outputFrame =
-            new VideoEncoder_OutputFrame_t[config.numOutputBufferReq];
+            new VideoEncoder_OutputFrame_t[config.numOutputBufferReq + 1];
 
     for ( int i = 0; i < config.numOutputBufferReq; i++ )
     {
+        sharedBuffer = &inputFrame[i].sharedBuffer;
+        ret = sharedBuffer->Allocate( config.width, config.height, config.inFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
         sharedBuffer = &outputFrame[i].sharedBuffer;
         RideHal_ImageProps_t imgProps;
         imgProps.batchSize = 1;
@@ -119,30 +121,49 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
         ret = veTest.SubmitOutputFrame( &outputFrame[i] );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
+    ret = veTest.SubmitOutputFrame( &outputFrame[config.numOutputBufferReq - 1] );
+    ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
 
-    inputFrame.timestampNs = 0;
-    inputFrame.pAppMarkData = nullptr;
-    onTheFlyCmd.propID = VIDEO_ENCODER_PROP_BITRATE;
-    onTheFlyCmd.value = 32000;
-    inputFrame.numCmd = 2;
+    sharedBuffer = &outputFrame[config.numOutputBufferReq].sharedBuffer;
+    RideHal_ImageProps_t imgProps;
+    imgProps.batchSize = 1;
+    imgProps.width = config.width;
+    imgProps.height = config.height;
+    imgProps.compressedSize = 118784;
+    imgProps.format = config.outFormat;
+    ret = sharedBuffer->Allocate( &imgProps );
+    // ret = sharedBuffer->Allocate( 118784 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = veTest.SubmitOutputFrame( &outputFrame[config.numOutputBufferReq] );
+    ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
+
     VideoEncoder_OnTheFlyCmd_t *onTheFlyCmds = new VideoEncoder_OnTheFlyCmd_t[2];
     onTheFlyCmds[0].propID = VIDEO_ENCODER_PROP_BITRATE;
     onTheFlyCmds[0].value = 32000;
     onTheFlyCmds[1].propID = VIDEO_ENCODER_PROP_FRAME_RATE;
     onTheFlyCmds[1].value = 20;
-    inputFrame.pOnTheFlyCmd = onTheFlyCmds;
+    for ( int i = 0; i < config.numInputBufferReq; i++ )
+    {
+        inputFrame[i].timestampNs = g_timestamp;
+        inputFrame[i].pAppMarkData = nullptr;
+        inputFrame[i].numCmd = 2;
+        inputFrame[i].pOnTheFlyCmd = onTheFlyCmds;
+        ret = veTest.SubmitInputFrame( &inputFrame[i] );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        g_timestamp += 33333;
+    }
+    ret = veTest.SubmitInputFrame( &inputFrame[config.numInputBufferReq - 1] );
+    ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
 
-    ret = veTest.SubmitInputFrame( &inputFrame );
+    sharedBuffer = &inputFrame[config.numInputBufferReq].sharedBuffer;
+    ret = sharedBuffer->Allocate( config.width, config.height, config.inFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = veTest.SubmitInputFrame( &inputFrame[config.numInputBufferReq] );
+    ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
 
     // wait inputdone siganl
     std::unique_lock<std::mutex> inLock( s_inMutex );
     s_InCondVar.wait( inLock );
-
-    // compare input buffer
-    auto rc = memcmp( &inputFrame.sharedBuffer, &s_sharedInputFrame.sharedBuffer,
-                      sizeof( RideHal_SharedBuffer_t ) );
-    ASSERT_EQ( 0, rc );
 
     // wait outputdone siganl
     std::unique_lock<std::mutex> outLock( s_OutMutex );
@@ -159,13 +180,13 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
-    for ( i = 0; i < config.numInputBufferReq; i++ )
+    for ( i = 0; i < config.numInputBufferReq + 1; i++ )
     {
         ret = outputFrame[i].sharedBuffer.Free();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = inputFrame[i].sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
-    ret = inputFrame.sharedBuffer.Free();
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     delete[] outputFrame;
     delete onTheFlyCmds;
@@ -208,7 +229,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
     RideHal_SharedBuffer_t *inputList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
-
     ret = veTest.GetInputBuffers( inputList, config.numInputBufferReq );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -463,7 +483,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_InitError )
     config.inFormat = RIDEHAL_IMAGE_FORMAT_MAX;
     config.outFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_MAX;
     config.bInputDynamicMode = true;
-    config.bOutputDynamicMode = false;
+    config.bOutputDynamicMode = true;
 
     RideHal_SharedBuffer_t *inBufferList = new RideHal_SharedBuffer_t[8];
     RideHal_SharedBuffer_t *outBufferList = new RideHal_SharedBuffer_t[8];
@@ -521,9 +541,29 @@ TEST( VideoEncoder, SANITY_VideoEncoder_InitError )
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
     config.numOutputBufferReq = 8;
-    ret = veTest.Init( "VideoEncoderErrorTest_bad_buffer", &config );
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_inputlist", &config );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.pInputBufferList = nullptr;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_outputlist", &config );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.pOutputBufferList = nullptr;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_profile", &config );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.profile = VIDEO_ENCODER_PROFILE_H264_MAIN;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_profile2", &config );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
+    ret = veTest.Init( "VideoEncoderErrorTest_ok", &config );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_READY, veTest.GetState() );
 
     for ( i = 0; i < 8; i++ )
     {
@@ -565,11 +605,15 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     ret = veTest1.Start();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
+    ret = veTest1.Configure( nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
     ret = veTest1.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
     ret = veTest1.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
 
     ret = veTest.Init( "VideoEncoderErrorTest", &config );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -592,6 +636,30 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     ret = veTest.RegisterCallback( OnInputDoneCb, OnOutputDoneCb, EventCb, (void *) &veTest );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    RideHal_SharedBuffer_t *outputList = nullptr;
+    ret = veTest.GetOutputBuffers( outputList, config.numOutputBufferReq );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    outputList = new RideHal_SharedBuffer_t[2];
+    ret = veTest.GetOutputBuffers( outputList, 2 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    RideHal_SharedBuffer_t *inputList = nullptr;
+    ret = veTest.GetInputBuffers( inputList, config.numInputBufferReq );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    inputList = new RideHal_SharedBuffer_t[2];
+    ret = veTest.GetInputBuffers( inputList, 2 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = veTest.Configure( nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    VideoEncoder_OnTheFlyCmd_t onTheFlyCmd;
+    onTheFlyCmd.propID = VIDEO_ENCODER_PROP_MAX;
+    ret = veTest.Configure( &onTheFlyCmd );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
     ret = veTest.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
@@ -602,21 +670,25 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     RideHal_SharedBuffer_t sharedBuffer;
     ret = sharedBuffer.Allocate( 128, 128, RIDEHAL_IMAGE_FORMAT_NV12 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     inputFrame.sharedBuffer = sharedBuffer;
     ret = veTest.SubmitInputFrame( &inputFrame );
     ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
-
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = sharedBuffer.Allocate( config.width, config.height, RIDEHAL_IMAGE_FORMAT_RGB888 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     inputFrame.sharedBuffer = sharedBuffer;
     ret = veTest.SubmitInputFrame( &inputFrame );
     ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    ret = sharedBuffer.Allocate( config.width, config.height, RIDEHAL_IMAGE_FORMAT_NV12 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    inputFrame.sharedBuffer = sharedBuffer;
+    ret = veTest.SubmitInputFrame( &inputFrame );
+    ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -634,7 +706,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     outputFrame.sharedBuffer = sharedBuffer;
     ret = veTest.SubmitOutputFrame( &outputFrame );
     ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
-
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -644,7 +715,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     outputFrame.sharedBuffer = sharedBuffer;
     ret = veTest.SubmitOutputFrame( &outputFrame );
     ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
-
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }

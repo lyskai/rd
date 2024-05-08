@@ -74,6 +74,7 @@ typedef enum
 {
     VIDEO_ENCODER_PROP_BITRATE = 0,
     VIDEO_ENCODER_PROP_FRAME_RATE,
+    VIDEO_ENCODER_PROP_MAX
 } VideoEncoder_Prop_e;
 
 /** @brief The VideoEncoder Init Config */
