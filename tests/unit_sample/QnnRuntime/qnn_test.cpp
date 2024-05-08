@@ -43,7 +43,8 @@ static void *LoadRaw( std::string path, size_t &size )
         pOut = malloc( size );
         if ( nullptr != pOut )
         {
-            fread( pOut, 1, size, pFile );
+            auto readSize = fread( pOut, 1, size, pFile );
+            (void) readSize;
         }
         fclose( pFile );
         printf( "load raw %s %d\n", path.c_str(), (int) size );

@@ -49,6 +49,39 @@ setup_env_qos222() {
     fi
 }
 
+setup_env_ubuntu() {
+    if [[ -v UBUNTU_SDK_ROOT ]]; then
+        echo build with UBUNTU SDK
+        echo UBUNTU_SDK_ROOT: $UBUNTU_SDK_ROOT
+        export UBUNTU_HOST=$UBUNTU_SDK_ROOT/sysroots/x86_64-oesdk-linux
+        export UBUNTU_TARGET=$UBUNTU_SDK_ROOT/sysroots/aarch64-oe-linux
+        # export PATH=$UBUNTU_HOST/usr/bin/aarch64-oe-linux:$PATH
+        # Now the gcc toolchain in SDK has issue, use the one installed through
+        # below commands in 20.04, the gcc version is 9.4.0
+        ### apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        ### rm -rf /lib/ld-linux-aarch64.so.1
+        ### ln -sf /usr/aarch64-linux-gnu/lib/ld-2.31.so /lib/ld-linux-aarch64.so.1
+        ### ln -sf /bin/bash /bin/sh
+        export CC=aarch64-linux-gnu-gcc
+        export CXX=aarch64-linux-gnu-g++
+        export LD=aarch64-linux-gnu-ld
+        export AR=aarch64-linux-gnu-ar
+        export AS=aarch64-linux-gnu-as
+        export NM=aarch64-linux-gnu-nm
+        export RANLIB=aarch64-linux-gnu-ranlib
+        export STRIP=aarch64-linux-gnu-strip
+
+        export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-ubuntu.cmake
+        export TOOLCHAIN_SYSROOT=$UBUNTU_TARGET
+
+        sh $homedir/toolchain/build-3rd-party-aarch64-ubuntu.sh $workdir $destdir || \
+            echo "WARNING: build 3rd party libraries failed"
+    else
+        echo please specify the UBUNTU_SDK_ROOT path that contains the sysroots/aarch64-oe-linux
+        exit -1
+    fi
+}
+
 ## Run tests on x86 builds
 case $target in
 aarch64-qos222)
@@ -56,6 +89,9 @@ aarch64-qos222)
     ;;
 aarch64-hgy)
     source /opt/hgy/env.sh
+    ;;
+aarch64-ubuntu)
+    setup_env_ubuntu
     ;;
 esac
 
@@ -110,7 +146,20 @@ aarch64-hgy)
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;
+aarch64-ubuntu)
+    cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
+    cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
+    cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
+    ;;
 esac
+fi
+
+if [ -f LiberationSans-Regular.ttf ]; then
+    cp LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
+else
+    wget https://dl.dafont.com/dl/?f=liberation_sans -O liberation_sans.zip
+    unzip liberation_sans.zip
+    cp LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
 fi
 
 # Create run-time package

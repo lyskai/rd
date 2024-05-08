@@ -50,7 +50,7 @@ And in fact, the RideHal_SharedBuffer_t APIs are based on the platform DMA relat
 // For case that using PMEM or dma-buf to allocate memory,
 // now have the virtual address pData and the uint64 dmaHandle.
 // for QNX, the dmaHandle is cast from pmem_handle_t.
-// for Linux, the dmaHandle is case from int.
+// for Linux, the dmaHandle is cast from int.
 
 RideHal_SharedBuffer_t shareBuffer;
 

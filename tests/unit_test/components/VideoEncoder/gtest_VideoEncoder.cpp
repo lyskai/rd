@@ -249,7 +249,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
 
     for ( i = 0; i < config.numOutputBufferReq; i++ )
     {
-        printf( "outputList[%d].data(): 0x%x\n", i, outputList[i].data() );
+        printf( "outputList[%d].data(): %p\n", i, outputList[i].data() );
     }
 
     // wait inputdone siganl

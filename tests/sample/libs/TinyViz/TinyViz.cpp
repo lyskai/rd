@@ -210,6 +210,7 @@ void TinyViz::rendererThread()
             TTF_OpenFont( "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", 64 );
     if ( !font ) font = TTF_OpenFont( "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 64 );
     if ( !font ) font = TTF_OpenFont( "/data/LiberationSans-Regular.ttf", 64 );
+    if ( !font ) font = TTF_OpenFont( "lib/runtime/LiberationSans-Regular.ttf", 64 );
     for ( auto &cInfo : m_CamInfoMap )
     {
         cInfo.second.initText( ren, font );
@@ -556,10 +557,10 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
             RIDEHAL_DEBUG( "class=%d score=%.3f points=[%.3f %.3f %.3f %.3f]", obj.classId,
                            obj.prob, obj.topX, obj.topY, obj.bottomX, obj.bottomY );
 
-            glLineWidth( 4 / m_WindowCol );
+            // glLineWidth( 4 / m_WindowCol );
             SDL_SetRenderDrawColor( ren, color.r, color.g, color.b, color.a );
             SDL_RenderDrawLines( ren, &points[0], points.size() );
-            glLineWidth( 1 );
+            // glLineWidth( 1 );
         }
     }
 }
