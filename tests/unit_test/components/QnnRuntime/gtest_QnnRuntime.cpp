@@ -1,7 +1,6 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-#include "DataUtil.hpp"
 #include "ridehal/component/QnnRuntime.hpp"
 #include "gtest/gtest.h"
 #include <stdio.h>

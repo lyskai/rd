@@ -5,8 +5,10 @@
 
 #include <map>
 #include <string.h>
+#include <string>
 #include <vector>
 
+#include "DataUtil.hpp"
 #include "DynamicLoadUtil.hpp"
 #include "ridehal/component/ComponentIF.hpp"
 

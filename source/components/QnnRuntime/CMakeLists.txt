@@ -47,7 +47,7 @@ target_include_directories( RideHalQnnRuntime PUBLIC
 )
 
 target_compile_definitions( RideHalQnnRuntime PUBLIC QNN_API= )
-set( TARGET_LIBRARIES RideHalComponentCommon stdc++ cdsprpc fastrpc fastrpc_pmem )
+set( TARGET_LIBRARIES RideHalComponentCommon stdc++ cdsprpc fastrpc )
 
 target_link_libraries( RideHalQnnRuntime PUBLIC ${TARGET_LIBRARIES} )
 

@@ -10,7 +10,7 @@
 #include "QnnProfile.h"
 #include "QnnSampleAppUtils.hpp"
 #include "QnnTypeMacros.hpp"
-
+#include <unistd.h>
 
 using namespace qnn;
 using namespace qnn::tools;
@@ -887,7 +887,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
             remote_register_buf_v2( extDomainId, sharedBuffer.buffer.pData, sharedBuffer.size, 0 );
 #else
             remote_register_buf_v2( extDomainId, sharedBuffer.buffer.pData, sharedBuffer.size,
-                                    (int) sharedBuffer.handle );
+                                    (int) sharedBuffer.buffer.dmaHandle );
 #endif
             auto fd = rpcmem_to_fd( sharedBuffer.buffer.pData );
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
@@ -996,7 +996,8 @@ RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer
                                         sharedBuffer[i].size, 0 );
 #else
                 remote_register_buf_v2( extDomainId, sharedBuffer[i].buffer.pData,
-                                        sharedBuffer[i].size, (int) sharedBuffer[i].handle );
+                                        sharedBuffer[i].size,
+                                        (int) sharedBuffer[i].buffer.dmaHandle );
 #endif
                 auto fd = rpcmem_to_fd( sharedBuffer[i].buffer.pData );
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
