@@ -222,12 +222,13 @@ RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *pBuffer, uint64_t bufferSi
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( m_QnnFunctionPointers.qnnInterface.contextCreateFromBinary(
-                     m_BackendHandle, m_DeviceHandle,
-                     (const QnnContext_Config_t **) m_ContextConfig, static_cast<void *>( pBuffer ),
-                     bufferSize, &m_Context, m_ProfileBackendHandle ) )
+        const Qnn_ErrorHandle_t retVal = m_QnnFunctionPointers.qnnInterface.contextCreateFromBinary(
+                m_BackendHandle, m_DeviceHandle, (const QnnContext_Config_t **) m_ContextConfig,
+                static_cast<void *>( pBuffer ), bufferSize, &m_Context, m_ProfileBackendHandle );
+        if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "%s: Could not create context from binary.", m_Name.c_str() );
+            RIDEHAL_ERROR( "%s: Could not create context from binary. Error is %d ", m_Name.c_str(),
+                           retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -322,11 +323,11 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    if ( numOfUdoPackages != sizeof( pUdoPackages ) / sizeof( pUdoPackages[0] ) )
+    if ( numOfUdoPackages <= 0 )
     {
-        RIDEHAL_ERROR( "%s: Unmatched UdoPackages size. expected: %d, actual: %d ", m_Name.c_str(),
-                       numOfUdoPackages, sizeof( pUdoPackages ) );
+        RIDEHAL_ERROR( "%s: UdoPackages size is less than 0: %d "
+                       "pUdoPackages: %d ",
+                       m_Name.c_str(), numOfUdoPackages );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
@@ -561,8 +562,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         {
             RIDEHAL_INFO( "%s: no op package", m_Name.c_str() );
         }
-        else if ( pConfig->numOfUdoPackages ==
-                  sizeof( pConfig->pUdoPackages ) / sizeof( pConfig->pUdoPackages[0] ) )
+        else if ( pConfig->numOfUdoPackages > 0 )
         {
             RideHalError_e ret = LoadOpPackages( pConfig->pUdoPackages, pConfig->numOfUdoPackages );
             if ( RIDEHAL_ERROR_NONE != ret )
@@ -573,9 +573,9 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
         else
         {
-            RIDEHAL_ERROR( "%s: Unmatched UdoPackages size. expected: %d, actual: %d ",
-                           m_Name.c_str(), pConfig->numOfUdoPackages,
-                           sizeof( pConfig->pUdoPackages ) );
+            RIDEHAL_ERROR( "%s: UdoPackages size is less than 0: %d "
+                           "pUdoPackages: %d ",
+                           m_Name.c_str(), pConfig->numOfUdoPackages );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
