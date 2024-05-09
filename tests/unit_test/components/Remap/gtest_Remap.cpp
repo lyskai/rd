@@ -10,6 +10,134 @@
 using namespace ridehal::common;
 using namespace ridehal::component;
 
+void SetCommonParam( Remap_Config_t *pRemapConfig )
+{
+    pRemapConfig->processor = RIDEHAL_PROCESSOR_HTP0;
+    pRemapConfig->numOfInputs = 2;
+    for ( uint32_t inputId = 0; inputId < pRemapConfig->numOfInputs; inputId++ )
+    {
+        pRemapConfig->inputConfigs[inputId].inputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
+        pRemapConfig->inputConfigs[inputId].inputWidth = 512;
+        pRemapConfig->inputConfigs[inputId].inputHeight = 512;
+        pRemapConfig->inputConfigs[inputId].mapWidth = 256;
+        pRemapConfig->inputConfigs[inputId].mapHeight = 256;
+        pRemapConfig->inputConfigs[inputId].ROI.x = 0;
+        pRemapConfig->inputConfigs[inputId].ROI.y = 0;
+        pRemapConfig->inputConfigs[inputId].ROI.width = 256;
+        pRemapConfig->inputConfigs[inputId].ROI.height = 256;
+    }
+    pRemapConfig->outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    pRemapConfig->outputWidth = 256;
+    pRemapConfig->outputHeight = 256;
+    pRemapConfig->bEnableUndistortion = false;
+    pRemapConfig->bEnableNormalize = false;
+    return;
+}
+
+void FailTest1()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    Remap RemapObj;
+    Remap_Config_t RemapConfig;
+    char pName[10] = "Remap";
+    RideHal_SharedBuffer_t inputs[1];
+    RideHal_SharedBuffer_t output;
+
+    ret = RemapObj.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // start before init
+
+    ret = RemapObj.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // stop before init
+
+    ret = RemapObj.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // deinit before init
+
+    ret = RemapObj.RegBuf( &output, 1, FADAS_BUF_TYPE_OUT );   // register buffer before init
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = RemapObj.DeregBuf( &output, 1 );   // deregister buffer before init
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = RemapObj.Execute( inputs, 1, &output );   // execute before init
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    SetCommonParam( &RemapConfig );
+    ret = RemapObj.Init( pName, &RemapConfig );   // success init
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = RemapObj.Init( pName, &RemapConfig );   // init twice, wrong status
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    return;
+}
+
+void FailTest2()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    Remap RemapObj;
+    Remap_Config_t RemapConfig;
+    char pName[10] = "Remap";
+    RideHal_SharedBuffer_t inputs[1];
+    RideHal_SharedBuffer_t output;
+
+    ret = RemapObj.Init( pName, nullptr );   // null pointer for remap configuration
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.processor = RIDEHAL_PROCESSOR_MAX;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong processor type
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.numOfInputs = RIDEHAL_MAX_INPUTS + 1;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong number of inputs
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong output format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong input format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.bEnableUndistortion = true;
+    RemapConfig.inputConfigs[0].remapTable.pMapX = nullptr;
+    RemapConfig.inputConfigs[0].remapTable.pMapY = nullptr;
+    ret = RemapObj.Init( pName, &RemapConfig );   // null pointer for map table
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    ret = RemapObj.Init( pName, &RemapConfig );   // success init
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = RemapObj.RegBuf( nullptr, 1,
+                           FADAS_BUF_TYPE_OUT );   // null pointer for buffer to be register
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RemapObj.DeregBuf( nullptr, 1 );   // null pointer for buffer to be deregister
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RemapObj.Execute( nullptr, RemapConfig.numOfInputs,
+                            &output );   // null pointer for input buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs,
+                            nullptr );   // null pointer for output buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs + 1,
+                            &output );   // wrong input buffer number
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    return;
+}
+
 void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inputFormatTest,
                   RideHal_ImageFormat_e outputFormatTest, bool bEnableUndistortionTest,
                   bool bEnableNormalizeTest, bool bCheckAccuracyTest, bool bCheckPerformanceTest )
@@ -18,7 +146,6 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
 
     Remap RemapObj;
     Remap_Config_t RemapConfig;
-    Remap_Config_t *pRemapConfig = &RemapConfig;
     char pName[10] = "Remap";
 
     RemapConfig.processor = processorTest;
@@ -124,7 +251,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
             {
                 inputData[i] = i % 256;
             }
-            for ( int i = 0; i < 10; i++ )
+            for ( int i = 0; i < 6; i++ )
             {
                 printf( "inputId = %d, i = %d, data = %d \n", inputId, i, inputData[i] );
             }
@@ -136,7 +263,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
                            RemapConfig.outputHeight, RemapConfig.outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = RemapObj.Init( pName, pRemapConfig );
+    ret = RemapObj.Init( pName, &RemapConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.Start();
@@ -180,7 +307,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
         uint8_t *outputData = (uint8_t *) output.data();
         for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
         {
-            for ( int i = 0; i < 10; i++ )
+            for ( int i = 0; i < 6; i++ )
             {
                 printf( "inputId = %d, i = %d, data = %d \n", inputId, i,
                         outputData[inputId * outputSize + i] );
@@ -259,6 +386,19 @@ TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12
                  true, false, false, false );
 }
 
+TEST( Remap, CPUSuccessPipeline4Test )   // general success test on CPU for NV12 to RGB, with
+                                         // and without normalization, undistortion
+{
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, true, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, true, false, false );
+}
+
 TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
                                      // pipeline, no undistortion and no renormalization
 {
@@ -279,6 +419,12 @@ TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU 
     printf( "CPU general performance test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  false, false, false, true );
+}
+
+TEST( Remap, FailTest )   // fail path tests
+{
+    FailTest1();   // bad status error
+    FailTest2();   // bad arguments error
 }
 
 #ifndef GTEST_RIDEHAL

@@ -54,83 +54,87 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = ComponentIF::Init( pName, level );
-
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to init component!" );
     }
-    else if ( nullptr == pConfig )
-    {
-        RIDEHAL_ERROR( "Empty config pointer!" );
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-    }
     else
     {
-        m_config = *pConfig;
-        m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
-        ret = m_fadasRemapObj.Init( m_config.processor, pName, level );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to init fadas remap!" );
-    }
-    else
-    {
-        ret = m_fadasRemapObj.SetRemapParams(
-                m_config.numOfInputs, m_config.outputWidth, m_config.outputHeight,
-                m_config.outputFormat, m_config.normlzR, m_config.normlzG, m_config.normlzB,
-                m_config.bEnableUndistortion, m_config.bEnableNormalize );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to set parameters!" );
-    }
-    else
-    {
-        for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
+        if ( nullptr == pConfig )
         {
-            ret = m_fadasRemapObj.CreateRemapWorker( inputId,
-                                                     m_config.inputConfigs[inputId].inputFormat,
-                                                     m_config.inputConfigs[inputId].inputWidth,
-                                                     m_config.inputConfigs[inputId].inputHeight,
-                                                     m_config.inputConfigs[inputId].ROI );
+            RIDEHAL_ERROR( "Empty config pointer!" );
+            ComponentIF::Deinit();
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else
+        {
+            m_config = *pConfig;
+            m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
+            ret = m_fadasRemapObj.Init( m_config.processor, pName, level );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Create worker fail at inputId = %d", inputId );
-                break;
+                RIDEHAL_ERROR( "Failed to init fadas remap!" );
             }
-        }
-    }
+            else
+            {
+                ret = m_fadasRemapObj.SetRemapParams(
+                        m_config.numOfInputs, m_config.outputWidth, m_config.outputHeight,
+                        m_config.outputFormat, m_config.normlzR, m_config.normlzG, m_config.normlzB,
+                        m_config.bEnableUndistortion, m_config.bEnableNormalize );
+            }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
-        {
-            ret = m_fadasRemapObj.CreatRemapTable(
-                    inputId, m_config.inputConfigs[inputId].mapWidth,
-                    m_config.inputConfigs[inputId].mapHeight,
-                    m_config.inputConfigs[inputId].remapTable.pMapX,
-                    m_config.inputConfigs[inputId].remapTable.pMapY );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Create remap table fail at inputId = %d", inputId );
-                break;
+                RIDEHAL_ERROR( "Failed to set parameters!" );
+            }
+            else
+            {
+                for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
+                {
+                    ret = m_fadasRemapObj.CreateRemapWorker(
+                            inputId, m_config.inputConfigs[inputId].inputFormat,
+                            m_config.inputConfigs[inputId].inputWidth,
+                            m_config.inputConfigs[inputId].inputHeight,
+                            m_config.inputConfigs[inputId].ROI );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        m_fadasRemapObj.DestroyWorkers();
+                        RIDEHAL_ERROR( "Create worker fail at inputId = %d", inputId );
+                        break;
+                    }
+                }
+            }
+
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
+                {
+                    ret = m_fadasRemapObj.CreatRemapTable(
+                            inputId, m_config.inputConfigs[inputId].mapWidth,
+                            m_config.inputConfigs[inputId].mapHeight,
+                            m_config.inputConfigs[inputId].remapTable.pMapX,
+                            m_config.inputConfigs[inputId].remapTable.pMapY );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        m_fadasRemapObj.DestroyMap();
+                        m_fadasRemapObj.DestroyWorkers();
+                        RIDEHAL_ERROR( "Create remap table fail at inputId = %d", inputId );
+                        break;
+                    }
+                }
+            }
+
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                m_state = RIDEHAL_COMPONENT_STATE_READY;
+            }
+            else
+            {
+                m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
+                m_fadasRemapObj.Deinit();
+                ComponentIF::Deinit();
             }
         }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        m_state = RIDEHAL_COMPONENT_STATE_READY;
-    }
-    else
-    {
-        m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
-        m_fadasRemapObj.DestroyMap();
-        m_fadasRemapObj.DestroyWorkers();
-        m_fadasRemapObj.Deinit();
     }
 
     return ret;

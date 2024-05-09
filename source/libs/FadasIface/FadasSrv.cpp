@@ -180,6 +180,10 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
     {
         s_useRef[coreId]++;
     }
+    else
+    {
+        RIDEHAL_LOGGER_DEINIT();
+    }
 
     return ret;
 }
@@ -1045,10 +1049,12 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
     if ( nullptr == inputs )
     {
         RIDEHAL_ERROR( "NULL pointer for input buffers!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( nullptr == output )
     {
         RIDEHAL_ERROR( "NULL pointer for output buffer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
