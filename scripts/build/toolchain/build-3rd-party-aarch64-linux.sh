@@ -16,13 +16,8 @@ destdir=$2/opt/ridehal
 mkdir -p $destdir || exit 1
 mkdir -p $workdir && cd $workdir || exit 1
 
-# workaround to fix include issues
-CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT"
-CFLAGS="$CFLAGS -I$TOOLCHAIN_SYSROOT/usr/include/linux-ark"
-
-# workaround to fix link issue of standard libs
-LDFLAGS="--sysroot=$TOOLCHAIN_SYSROOT"
-LDFLAGS="$LDFLAGS -L$TOOLCHAIN_SYSROOT/usr/lib/aarch64-linux-gnu"
+export CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT"
+export LDFLAGS="--sysroot=$TOOLCHAIN_SYSROOT"
 
 # build and install SDL2 for TinyViz
 if ! [ -f SDL2-2.0.14.tar.gz ]; then
@@ -36,7 +31,7 @@ fi
 if ! [ -d $destdir/include/SDL2 ]; then
   cd SDL2-2.0.14
   ./configure CXXFLAGS="$CFLAGS" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
-      --prefix=$destdir --host=aarch64-gnu-linux \
+      --prefix=$destdir --host=aarch64-oe-linux \
       --with-sysroot --enable-esd=no
   make -j16
   make install
@@ -56,7 +51,7 @@ if ! [ -f $destdir/lib/libSDL2_gfx.so ]; then
   cd SDL2_gfx-1.0.4
   cp /usr/share/libtool/build-aux/config.sub . && cp /usr/share/libtool/build-aux/config.guess .
   ./configure CXXFLAGS="$CFLAGS" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
-      --prefix=$destdir --host=aarch64-gnu-linux \
+      --prefix=$destdir --host=aarch64-oe-linux \
       --with-sysroot --with-sdl-prefix=$destdir --enable-mmx=no
   make -j16
   make install
@@ -77,7 +72,7 @@ if ! [ -f $destdir/lib/libSDL2_ttf.so ]; then
     cd external/freetype-2.9.1
     ./configure CXXFLAGS="$CFLAGS" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
         --with-png=no \
-        --prefix=$destdir --host=aarch64-gnu-linux --with-sysroot
+        --prefix=$destdir --host=aarch64-oe-linux --with-sysroot
     sed -i '86s/^/# /' ./builds/unix/unix-cc.mk
     make -j16
     make install
@@ -86,7 +81,7 @@ if ! [ -f $destdir/lib/libSDL2_ttf.so ]; then
   export CC="$CC --sysroot=$TOOLCHAIN_SYSROOT"
   ./configure CXXFLAGS="$CFLAGS" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
       --prefix=$destdir --with-sdl-prefix=$destdir \
-      --with-ft-prefix=$destdir --host=aarch64-gnu-linux --with-sysroot
+      --with-ft-prefix=$destdir --host=aarch64-oe-linux --with-sysroot
   sed -i '264d' ./Makefile
   sed -i '264i CFLAGS = ${C_FLAGS} -I${destdir}/include/freetype2 -I${destdir}/include/SDL2 -D_REENTRANT' ./Makefile
   sed -i '279d' ./Makefile

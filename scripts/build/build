@@ -8,7 +8,8 @@
 # 
 # Where targets are:
 #   aarch64-qos222
-#   aarch64-hgy
+#   aarch64-linux
+#   aarch64-ubuntu
 
 target=$1
 

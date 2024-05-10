@@ -41,12 +41,36 @@ setup_env_qos222() {
 
         export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-qos222.cmake
         export TOOLCHAIN_SYSROOT=$BSP_ROOT/install/aarch64le
-
-        sh $homedir/toolchain/build-3rd-party-aarch64-qos222.sh $workdir $destdir || \
-            echo "WARNING: build 3rd party libraries failed"
     else
         source /opt/qos222/env.sh
     fi
+
+    sh $homedir/toolchain/build-3rd-party-aarch64-qos222.sh $workdir $destdir
+}
+
+setup_env_linux() {
+    if [[ -v LINUX_SDK_ROOT ]]; then
+        echo build with LINUX SDK
+        echo LINUX_SDK_ROOT: $LINUX_SDK_ROOT
+        export LINUX_HOST=$LINUX_SDK_ROOT/sysroots/x86_64-oesdk-linux
+        export LINUX_TARGET=$LINUX_SDK_ROOT/sysroots/aarch64-oe-linux
+        export PATH=$LINUX_HOST/usr/bin/aarch64-oe-linux:$PATH
+        export CC=aarch64-oe-linux-gcc
+        export CXX=aarch64-oe-linux-g++
+        export LD=aarch64-oe-linux-ld
+        export AR=aarch64-oe-linux-ar
+        export AS=aarch64-oe-linux-as
+        export NM=aarch64-oe-linux-nm
+        export RANLIB=aarch64-oe-linux-ranlib
+        export STRIP=aarch64-oe-linux-strip
+
+        export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-linux.cmake
+        export TOOLCHAIN_SYSROOT=$LINUX_TARGET
+    else
+        source /opt/hgy/env.sh
+    fi
+
+    sh $homedir/toolchain/build-3rd-party-aarch64-linux.sh $workdir $destdir
 }
 
 setup_env_ubuntu() {
@@ -73,13 +97,12 @@ setup_env_ubuntu() {
 
         export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-ubuntu.cmake
         export TOOLCHAIN_SYSROOT=$UBUNTU_TARGET
-
-        sh $homedir/toolchain/build-3rd-party-aarch64-ubuntu.sh $workdir $destdir || \
-            echo "WARNING: build 3rd party libraries failed"
     else
         echo please specify the UBUNTU_SDK_ROOT path that contains the sysroots/aarch64-oe-linux
         exit -1
     fi
+
+    sh $homedir/toolchain/build-3rd-party-aarch64-ubuntu.sh $workdir $destdir
 }
 
 ## Run tests on x86 builds
@@ -87,8 +110,8 @@ case $target in
 aarch64-qos222)
     setup_env_qos222
     ;;
-aarch64-hgy)
-    source /opt/hgy/env.sh
+aarch64-linux)
+    setup_env_linux
     ;;
 aarch64-ubuntu)
     setup_env_ubuntu
@@ -141,7 +164,7 @@ aarch64-qos222)
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;
-aarch64-hgy)
+aarch64-linux)
     cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp

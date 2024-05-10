@@ -94,19 +94,27 @@ TEST( Buffer, SANITY_ImageAllocateByWHF )
     ASSERT_EQ( sharedBufferM.buffer.size / 7, sharedBufferM.size );
     ASSERT_LE( 1024 * 768 * 3, sharedBufferM.size );
     ASSERT_EQ( 1, sharedBufferM.imgProps.numPlanes );
-    ASSERT_LE( 1024, sharedBufferM.imgProps.stride[0] );
+    ASSERT_LE( 1024 * 3, sharedBufferM.imgProps.stride[0] );
     ASSERT_LE( 768, sharedBufferM.imgProps.actualHeight[0] );
 
     ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    ASSERT_EQ( 0, sharedBufferTs.offset );
-    ASSERT_LE( 1024 * 768 * 3 * 7, sharedBufferTs.size );
-    ASSERT_EQ( RIDEHAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
-    ASSERT_EQ( 4, sharedBufferTs.tensorProps.numDims );
-    ASSERT_EQ( 7, sharedBufferTs.tensorProps.dims[0] );
-    ASSERT_EQ( 768, sharedBufferTs.tensorProps.dims[1] );
-    ASSERT_EQ( 1024, sharedBufferTs.tensorProps.dims[2] );
-    ASSERT_EQ( 3, sharedBufferTs.tensorProps.dims[3] );
+    if ( 1024 * 3 == sharedBuffer.imgProps.stride[0] )
+    {
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( 0, sharedBufferTs.offset );
+        ASSERT_LE( 1024 * 768 * 3 * 7, sharedBufferTs.size );
+        ASSERT_EQ( RIDEHAL_BUFFER_TYPE_TENSOR, sharedBufferTs.type );
+        ASSERT_EQ( 4, sharedBufferTs.tensorProps.numDims );
+        ASSERT_EQ( 7, sharedBufferTs.tensorProps.dims[0] );
+        ASSERT_EQ( 768, sharedBufferTs.tensorProps.dims[1] );
+        ASSERT_EQ( 1024, sharedBufferTs.tensorProps.dims[2] );
+        ASSERT_EQ( 3, sharedBufferTs.tensorProps.dims[3] );
+    }
+    else
+    { /* if has padding along width, image to tensor is not supported */
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+    }
+
 
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );

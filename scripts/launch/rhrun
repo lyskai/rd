@@ -4,10 +4,10 @@
 
 homedir=`pwd`
 
-cdsp0skeldir="/dspfw/image/dsp/cdsp0;/dsplib/image/dsp/cdsp0;/mnt/etc/images;/mnt/etc/images/cdsp0;/mnt/etc/images/dsp;/firmware/image/dsp/cdsp0/;$homedir/lib/dsp"
-cdsp1skeldir="/dspfw/image/dsp/cdsp1;/dsplib/image/dsp/cdsp1;/mnt/etc/images;/mnt/etc/images/cdsp1;/mnt/etc/images/dsp;/firmware/image/dsp/cdsp0/;$homedir/lib/dsp"
+cdsp0skeldir="/vendor/dsp/cdsp;/dspfw/image/dsp/cdsp0;/dsplib/image/dsp/cdsp0;/mnt/etc/images;/mnt/etc/images/cdsp0;/mnt/etc/images/dsp;/firmware/image/dsp/cdsp0/;$homedir/lib/dsp"
+cdsp1skeldir="/vendor/dsp/cdsp1;/dspfw/image/dsp/cdsp1;/dsplib/image/dsp/cdsp1;/mnt/etc/images;/mnt/etc/images/cdsp1;/mnt/etc/images/dsp;/firmware/image/dsp/cdsp0/;$homedir/lib/dsp"
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$homedir/lib/:$homedir/lib/runtime
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64:/lib:/mnt/lib64:$homedir/lib/:$homedir/lib/runtime
 export PATH=$PATH:$homedir/bin
 export CDSP_LIBRARY_PATH=$cdsp0skeldir
 export CDSP0_LIBRARY_PATH=$cdsp0skeldir
