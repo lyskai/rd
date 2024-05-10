@@ -13,4 +13,10 @@ export CDSP_LIBRARY_PATH=$cdsp0skeldir
 export CDSP0_LIBRARY_PATH=$cdsp0skeldir
 export CDSP1_LIBRARY_PATH=$cdsp1skeldir
 
+if [ -f /usr/lib/libEGL_adreno.so ] ; then
+echo setup env for Linux SDL
+export SDL_VIDEO_EGL_DRIVER=/usr/lib/libEGL_adreno.so
+export SDL_VIDEO_GL_DRIVER=/usr/lib/libGLESv2_adreno.so
+fi
+
 $@

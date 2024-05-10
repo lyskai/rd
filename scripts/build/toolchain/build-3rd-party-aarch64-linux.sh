@@ -32,7 +32,7 @@ if ! [ -d $destdir/include/SDL2 ]; then
   cd SDL2-2.0.14
   ./configure CXXFLAGS="$CFLAGS" CFLAGS="$CFLAGS" LDFLAGS="$LDFLAGS" \
       --prefix=$destdir --host=aarch64-oe-linux \
-      --with-sysroot --enable-esd=no
+      --with-sysroot --enable-esd=no --enable-pulseaudio=no
   make -j16
   make install
   cd -

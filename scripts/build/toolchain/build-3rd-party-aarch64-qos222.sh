@@ -32,7 +32,7 @@ if ! [ -d $destdir/include/SDL2 ]; then
   ./configure CXXFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT" \
       CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT" \
       --prefix=$destdir --host=aarch64-unknown-nto-qnx \
-      --with-sysroot --enable-esd=no
+      --with-sysroot --enable-esd=no --enable-pulseaudio=no
   make -j16
   make install
   cd -

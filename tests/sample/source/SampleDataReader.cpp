@@ -11,9 +11,6 @@ namespace ridehal
 namespace sample
 {
 
-
-std::mutex SampleDataReader::s_lock;
-
 static std::string s_rideHalFormatToStr[RIDEHAL_IMAGE_FORMAT_MAX] = {
         ".rgb",  /* RIDEHAL_IMAGE_FORMAT_RGB888 */
         ".bgr",  /* RIDEHAL_IMAGE_FORMAT_BGR888 */
@@ -177,7 +174,6 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     {
         fseek( file, 0, SEEK_SET );
         auto r = fread( image->sharedBuffer.data(), 1, length, file );
-        fclose( file );
         if ( length != r )
         {
             RIDEHAL_ERROR( "failed to read image file %s", path.c_str() );

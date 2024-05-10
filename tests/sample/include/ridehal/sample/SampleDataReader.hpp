@@ -67,8 +67,6 @@ private:
     DataPublisher<CamFrames_t> m_pub;
     RideHal_BufferFlags_t m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
 
-    static std::mutex s_lock;
-
 };   // class SampleDataReader
 
 }   // namespace sample
