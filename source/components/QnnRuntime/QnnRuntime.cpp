@@ -166,7 +166,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
     return ret;
 }
 
-RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *pBuffer, uint64_t bufferSize )
+RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bufferSize )
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -263,7 +263,7 @@ RideHalError_e QnnRuntime::CreateFromBinary( uint8_t *pBuffer, uint64_t bufferSi
 }
 
 
-RideHalError_e QnnRuntime::CreateFromBinary( std::string modelFile )
+RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     if ( -1 == access( modelFile.c_str(), F_OK ) )
@@ -312,7 +312,7 @@ RideHalError_e QnnRuntime::CreateFromBinary( std::string modelFile )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = CreateFromBinary( buffer.get(), bufferSize );
+        ret = CreateFromBinaryBuffer( buffer.get(), bufferSize );
     }
 
     return ret;
@@ -605,7 +605,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             }
             case QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER:
             {
-                ret = CreateFromBinary( pConfig->contextBuffer, pConfig->contextSize );
+                ret = CreateFromBinaryBuffer( pConfig->contextBuffer, pConfig->contextSize );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "Failed to create from binary buffer %d", pConfig->contextSize );
@@ -616,7 +616,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             case QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE:
             default:
             {
-                ret = CreateFromBinary( modelPath );
+                ret = CreateFromBinaryFile( modelPath );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "fail to create from binary file." );
@@ -649,6 +649,11 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_state = RIDEHAL_COMPONENT_STATE_READY;
+    }
+
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        ComponentIF::Deinit();
     }
 
     return ret;

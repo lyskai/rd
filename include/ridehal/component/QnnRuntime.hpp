@@ -208,7 +208,7 @@ private:
      * @param[in] modelPath model path
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e CreateFromBinary( std::string modelPath );
+    RideHalError_e CreateFromBinaryFile( std::string modelPath );
 
     /**
      * @cond QnnRuntime::CreateFromBinary @endcond
@@ -217,7 +217,7 @@ private:
      * @param[in] bufferSize The size of buffer
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e CreateFromBinary( uint8_t *pBuffer, uint64_t bufferSize );
+    RideHalError_e CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bufferSize );
 
     /**
      * @cond QnnRuntime::LoadOpPackages @endcond

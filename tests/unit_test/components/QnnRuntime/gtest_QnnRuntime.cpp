@@ -83,7 +83,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER;
     std::string modelPath = std::string( qnnConfig.modelPath );
     uint64_t bufferSize{ 0 };
@@ -278,6 +278,73 @@ TEST( QnnRuntime, RegisterBuffer )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
+TEST( QnnRuntime, LoadModel )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "QnnRuntime";
+
+    qnnConfig.modelPath = "/var/noexistingfile.bin";
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
+
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    qnnConfig.modelPath = "/var/opt/qride/data/centernet/zero_buffer_size.bin";
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    qnnConfig.modelPath = "/var/opt/qride/data/centernet";
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+}
+
+TEST( QnnRuntime, StateMachine )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    QnnRuntime qnnRuntime;
+
+    QnnRuntime_TensorInfoList_t infoList;
+    ret = qnnRuntime.GetInputInfo( &infoList );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.GetOutputInfo( &infoList );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    RideHal_SharedBuffer_t sharedBuffer[1];
+    ret = qnnRuntime.RegisterBuffers( sharedBuffer, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.DeRegisterBuffers( sharedBuffer, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.EnablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.DisablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    QnnRuntime_Perf_t perf;
+    ret = qnnRuntime.GetPerf( &perf );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 }
 
 
