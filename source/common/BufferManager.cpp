@@ -61,6 +61,7 @@ static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffe
     }
     else
     {
+        /* Invalid type, impossible case */
     }
 
     return str;
@@ -77,7 +78,8 @@ RideHalError_e BufferManager::Init( const char *pName, Logger_Level_e level )
     ret = RIDEHAL_LOGGER_INIT( pName, level );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        fprintf( stderr, "WARINING: failed to init logger for BUFMGR %s: ret = %d\n", pName, ret );
+        (void) fprintf( stderr, "WARINING: failed to init logger for BUFMGR %s: ret = %d\n",
+                        pName ? pName : "null", ret );
     }
     ret = RIDEHAL_ERROR_NONE; /* ignore logger init error */
 
@@ -135,7 +137,7 @@ RideHalError_e BufferManager::Deregister( uint64_t id )
                       sharedBuffer.buffer.pData, sharedBuffer.buffer.dmaHandle,
                       sharedBuffer.buffer.size, sharedBuffer.buffer.id,
                       GetBufferTextInfo( &sharedBuffer ).c_str() );
-        m_bufferMap.erase( it );
+        (void) m_bufferMap.erase( it );
     }
     else
     {

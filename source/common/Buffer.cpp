@@ -13,7 +13,7 @@ namespace common
 
 void RideHal_SharedBuffer::Init()
 {
-    memset( this, 0, sizeof( *this ) );
+    (void) memset( this, 0, sizeof( *this ) );
     this->buffer.pData = nullptr;
     this->buffer.dmaHandle = 0;
     this->buffer.size = 0;
@@ -45,7 +45,7 @@ RideHal_SharedBuffer::RideHal_SharedBuffer( const RideHal_SharedBuffer &rhs )
         case RIDEHAL_BUFFER_TYPE_TENSOR:
             this->tensorProps = rhs.tensorProps;
             break;
-        default:
+        default: /* do nothing for RAW type */
             break;
     }
 }
@@ -64,7 +64,7 @@ RideHal_SharedBuffer &RideHal_SharedBuffer::operator=( const RideHal_SharedBuffe
         case RIDEHAL_BUFFER_TYPE_TENSOR:
             this->tensorProps = rhs.tensorProps;
             break;
-        default:
+        default: /* do nothing for RAW type */
             break;
     }
     return *this;
@@ -93,35 +93,31 @@ RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_
     }
     else
     {
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         ret = RideHal_DmaAllocate( &pData, &dmaHandle, size, flags, usage );
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        this->buffer.pData = pData;
-        this->buffer.dmaHandle = dmaHandle;
-        this->buffer.size = size;
-        this->buffer.usage = usage;
-        this->buffer.flags = flags;
-        this->size = size;
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        ret = pBufferManager->Register( this );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        if ( nullptr != pData )
+        if ( RIDEHAL_ERROR_NONE == ret )
         {
-            (void) RideHal_DmaFree( pData, dmaHandle, size );
+            this->buffer.pData = pData;
+            this->buffer.dmaHandle = dmaHandle;
+            this->buffer.size = size;
+            this->buffer.usage = usage;
+            this->buffer.flags = flags;
+            this->size = size;
         }
-        Init();
+
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = pBufferManager->Register( this );
+        }
+
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            if ( nullptr != pData )
+            {
+                (void) RideHal_DmaFree( pData, dmaHandle, size );
+            }
+            Init();
+        }
     }
 
     return ret;

@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 #include <stdio.h>
 
+#include "ridehal/common/BufferManager.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
 
 using namespace ridehal::common;
@@ -260,6 +261,499 @@ TEST( Buffer, SANITY_TensorAllocate )
     ASSERT_EQ( 4, sharedBuffer.tensorProps.numDims );
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
+static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffer )
+{
+    std::string str = "";
+    std::stringstream ss;
+
+    if ( RIDEHAL_BUFFER_TYPE_RAW == pSharedBuffer->type )
+    {
+        str = "Raw";
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE == pSharedBuffer->type )
+    {
+        ss << "Image format=" << pSharedBuffer->imgProps.format
+           << " batch=" << pSharedBuffer->imgProps.batchSize
+           << " resolution=" << pSharedBuffer->imgProps.width << "x"
+           << pSharedBuffer->imgProps.height;
+        if ( pSharedBuffer->imgProps.format < RIDEHAL_IMAGE_FORMAT_MAX )
+        {
+            ss << " stride=[";
+            for ( uint32_t i = 0; i < pSharedBuffer->imgProps.numPlanes; i++ )
+            {
+                ss << pSharedBuffer->imgProps.stride[i] << ", ";
+            }
+            ss << "] actual height=[";
+            for ( uint32_t i = 0; i < pSharedBuffer->imgProps.numPlanes; i++ )
+            {
+                ss << pSharedBuffer->imgProps.actualHeight[i] << ", ";
+            }
+            ss << "], extraPadding=" << pSharedBuffer->imgProps.extraPadding;
+        }
+        else
+        {
+            ss << " compressedSize=" << pSharedBuffer->imgProps.compressedSize;
+        }
+        str = ss.str();
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_TENSOR == pSharedBuffer->type )
+    {
+        ss << "Tensor type=" << pSharedBuffer->tensorProps.type << " dims=[";
+        for ( uint32_t i = 0; i < pSharedBuffer->tensorProps.numDims; i++ )
+        {
+            ss << pSharedBuffer->tensorProps.dims[i] << ", ";
+        }
+        ss << "]";
+        str = ss.str();
+    }
+    else
+    {
+        /* Invalid type, impossible case */
+    }
+
+    return str;
+}
+
+static bool IsTheSameSharedBuffer( RideHal_SharedBuffer_t &bufferA,
+                                   RideHal_SharedBuffer_t &bufferB )
+{
+    bool bEqual = true;
+    int ret = memcmp( &bufferA.buffer, &bufferB.buffer, sizeof( bufferA.buffer ) );
+    if ( 0 != ret )
+    {
+        printf( "buffer buffer not equal\n" );
+        bEqual = false;
+    }
+
+    if ( ( bufferA.size != bufferB.size ) || ( bufferA.offset != bufferB.offset ) ||
+         ( bufferA.type != bufferB.type ) )
+    {
+        printf( "buffer size/offset/type not equal\n" );
+        bEqual = false;
+    }
+
+    switch ( bufferA.type )
+    {
+        case RIDEHAL_BUFFER_TYPE_IMAGE:
+            ret = memcmp( &bufferA.imgProps, &bufferB.imgProps, sizeof( bufferA.imgProps ) );
+            if ( 0 != ret )
+            {
+                printf( "buffer imgProps not equal\n" );
+                bEqual = false;
+            }
+            break;
+        case RIDEHAL_BUFFER_TYPE_TENSOR:
+            ret = memcmp( &bufferA.tensorProps, &bufferB.tensorProps,
+                          sizeof( bufferA.tensorProps ) );
+            if ( 0 != ret )
+            {
+                printf( "buffer tensorProps not equal\n" );
+                bEqual = false;
+            }
+            break;
+        default: /* do nothing for RAW type */
+            break;
+    }
+
+    if ( false == bEqual )
+    {
+        printf( "bufferA: %s\n", GetBufferTextInfo( &bufferA ).c_str() );
+        printf( "bufferB: %s\n", GetBufferTextInfo( &bufferA ).c_str() );
+    }
+
+    return bEqual;
+}
+
+TEST( Buffer, L2_Buffer )
+{
+    for ( int i = 0; i < (int) RIDEHAL_BUFFER_USAGE_MAX; i++ )
+    {
+        RideHal_BufferUsage_e usage = (RideHal_BufferUsage_e) i;
+        RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_NONE;
+        RideHal_SharedBuffer_t sharedBuffer;
+        auto ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 1024 * 256, usage, flags );
+        ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
+
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 32, usage, flags );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 32, usage, flags );
+        ASSERT_EQ( RIDEHAL_ERROR_ALREADY, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    }
+
+    for ( int i = 0; i < (int) RIDEHAL_BUFFER_USAGE_MAX; i++ )
+    {
+        RideHal_BufferUsage_e usage = (RideHal_BufferUsage_e) i;
+        RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
+        RideHal_SharedBuffer_t sharedBuffer;
+        auto ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 1024 * 256, usage, flags );
+        ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
+
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 32, usage, flags );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 32, usage, flags );
+        ASSERT_EQ( RIDEHAL_ERROR_ALREADY, ret );
+
+        RideHal_SharedBuffer_t sharedBuffer2( sharedBuffer );
+        ASSERT_EQ( IsTheSameSharedBuffer( sharedBuffer, sharedBuffer2 ), true );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        auto ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 64, RIDEHAL_BUFFER_USAGE_MAX );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 64, (RideHal_BufferUsage_e) -2 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    }
+
+    {
+        void *pData;
+        uint64_t dmaHandle;
+
+        auto ret = RideHal_DmaAllocate( &pData, nullptr, 1000000, RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA,
+                                        RIDEHAL_BUFFER_USAGE_DEFAULT );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = RideHal_DmaAllocate( nullptr, &dmaHandle, 1000000, RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA,
+                                   RIDEHAL_BUFFER_USAGE_DEFAULT );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = RideHal_DmaAllocate( &pData, &dmaHandle, 1000000, RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA,
+                                   RIDEHAL_BUFFER_USAGE_DEFAULT );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = RideHal_DmaFree( nullptr, 0, 1000000 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = RideHal_DmaFree( (void *) 0x1, 0, 1000000 );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+#if !defined( __QNXNTO__ ) /* dmaHandle was only used by Linux when do free */
+        ret = RideHal_DmaFree( pData, 0xdeadbeef, 1000000 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+#endif
+
+        ret = RideHal_DmaFree( pData, dmaHandle, 1000000 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+}
+
+static void InitImageProps( RideHal_ImageProps_t &imgProp )
+{
+    imgProp.batchSize = 1;
+    imgProp.format = RIDEHAL_IMAGE_FORMAT_UYVY;
+    imgProp.width = 3840;
+    imgProp.height = 2160;
+    imgProp.stride[0] = 3840 * 2;
+    imgProp.actualHeight[0] = 2160;
+    imgProp.numPlanes = 1;
+    imgProp.extraPadding = 0;
+}
+
+TEST( Buffer, L2_Image )
+{
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        auto ret = sharedBuffer.Allocate( 0, 1920, 2160, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid batch size */
+
+        ret = sharedBuffer.Allocate( 1, 0, 2160, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid width */
+
+        ret = sharedBuffer.Allocate( 1, 1920, 0, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid height */
+
+        ret = sharedBuffer.Allocate( 1, 1920, 1024, RIDEHAL_IMAGE_FORMAT_MAX );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid format */
+
+        ret = sharedBuffer.Allocate( (RideHal_ImageProps_t *) nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps is null */
+
+        ret = sharedBuffer.Allocate( 1, 4096 * 4, 4096 * 4, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret ); /* with large image as not supported by apdf */
+
+        RideHal_ImageProps_t imgProp;
+
+        InitImageProps( imgProp );
+        imgProp.batchSize = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid batch size */
+
+        InitImageProps( imgProp );
+        imgProp.width = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid width */
+
+        InitImageProps( imgProp );
+        imgProp.height = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid height */
+
+        InitImageProps( imgProp );
+        imgProp.stride[0] = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid stride */
+
+        InitImageProps( imgProp );
+        imgProp.actualHeight[0] = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid actualHeight */
+
+        InitImageProps( imgProp );
+        imgProp.numPlanes = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid numPlanes */
+
+        InitImageProps( imgProp );
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_MAX;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
+
+        InitImageProps( imgProp );
+        imgProp.format = ( RideHal_ImageFormat_e )( (int) RIDEHAL_IMAGE_FORMAT_COMPRESSED_MIN - 1 );
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
+
+        InitImageProps( imgProp );
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_COMPRESSED_MAX;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
+
+        InitImageProps( imgProp );
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
+        imgProp.compressedSize = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
+    }
+
+    for ( int i = 0; i < (int) RIDEHAL_IMAGE_FORMAT_MAX; i++ )
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_ImageProps_t imgProp;
+
+        imgProp.batchSize = i + 1;
+        imgProp.format = (RideHal_ImageFormat_e) i;
+        imgProp.width = 3840 / RIDEHAL_IMAGE_FORMAT_MAX * ( i + 1 );
+        imgProp.height = 2160 / RIDEHAL_IMAGE_FORMAT_MAX * ( i + 1 );
+        imgProp.stride[0] = imgProp.width * 3;
+        imgProp.actualHeight[0] = imgProp.height;
+        imgProp.numPlanes = 1;
+        if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == imgProp.format ) ||
+             ( RIDEHAL_IMAGE_FORMAT_P010 == imgProp.format ) )
+        {
+            imgProp.numPlanes = 2;
+            imgProp.stride[1] = imgProp.width * 3;
+            imgProp.actualHeight[1] = ( imgProp.height + 1 ) / 2;
+        }
+        imgProp.extraPadding = 0;
+
+        auto ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_ALREADY, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    for ( int i = 0; i < (int) RIDEHAL_IMAGE_FORMAT_MAX; i++ )
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_ImageFormat_e format = (RideHal_ImageFormat_e) i;
+
+        auto ret = sharedBuffer.Allocate( 1, 1920, 2160, format );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_SharedBuffer_t sharedBuffer3;
+        RideHal_SharedBuffer_t sharedBufferTs;
+
+        auto ret = sharedBuffer.GetSharedBuffer( &sharedBuffer3, 0 );
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+
+        ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+
+        ret = sharedBuffer.Allocate( 3840, 2160, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 3840, 2160, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_ALREADY, ret );
+
+        RideHal_SharedBuffer_t sharedBuffer2( sharedBuffer );
+        ASSERT_EQ( IsTheSameSharedBuffer( sharedBuffer, sharedBuffer2 ), true );
+
+        ret = sharedBuffer.GetSharedBuffer( (RideHal_SharedBuffer_t *) nullptr, 0 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.GetSharedBuffer( &sharedBuffer3, 3 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.GetSharedBuffer( &sharedBuffer3, 0, 3 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.ImageToTensor( (RideHal_SharedBuffer_t *) nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_SharedBuffer_t sharedBufferTs;
+        RideHal_ImageProps_t imgProp;
+
+        imgProp.batchSize = 1;
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_BGR888;
+        imgProp.width = 1013;
+        imgProp.height = 753;
+        imgProp.stride[0] = 1024 * 3;
+        imgProp.actualHeight[0] = 768;
+        imgProp.numPlanes = 1;
+        auto ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_SharedBuffer_t sharedBufferTs;
+        RideHal_ImageProps_t imgProp;
+
+        imgProp.batchSize = 2;
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_BGR888;
+        imgProp.width = 1024;
+        imgProp.height = 763;
+        imgProp.stride[0] = 1024 * 3;
+        imgProp.actualHeight[0] = 768;
+        imgProp.numPlanes = 1;
+        auto ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.ImageToTensor( &sharedBufferTs );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+}
+
+TEST( Buffer, L2_Tensor )
+{
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_TensorProps_t tensorProp = { RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
+                                             { 1, 128, 128, 10 },
+                                             4 };
+
+        auto ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_ALREADY, ret );
+
+        RideHal_SharedBuffer_t sharedBuffer2( sharedBuffer );
+        ASSERT_EQ( IsTheSameSharedBuffer( sharedBuffer, sharedBuffer2 ), true );
+
+        RideHal_SharedBuffer_t sharedBuffer3;
+        ret = sharedBuffer.GetSharedBuffer( &sharedBuffer3, 0 );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+
+        ret = sharedBuffer.ImageToTensor( &sharedBuffer3 );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    }
+}
+
+TEST( Buffer, L2_BufferManager )
+{
+    BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
+    ASSERT_NE( nullptr, pBufferManager );
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        auto ret = sharedBuffer.Allocate( 1920, 1024, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        RideHal_SharedBuffer_t sharedBuffer2;
+
+        ret = pBufferManager->GetSharedBuffer( sharedBuffer.buffer.id, nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = pBufferManager->GetSharedBuffer( sharedBuffer.buffer.id, &sharedBuffer2 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( IsTheSameSharedBuffer( sharedBuffer, sharedBuffer2 ), true );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pBufferManager->GetSharedBuffer( sharedBuffer.buffer.id, &sharedBuffer2 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = pBufferManager->GetSharedBuffer( 0xdeadbeef, &sharedBuffer2 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_TensorProps_t tensorProp = { RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
+                                             { 1, 512, 512, 10 },
+                                             4 };
+
+        auto ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pBufferManager->Deregister( sharedBuffer.buffer.id );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = pBufferManager->Register( nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    }
+
+    {
+        BufferManager bufMgr;
+
+        auto ret = bufMgr.Init( nullptr, LOGGER_LEVEL_ERROR );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
 }
 
 #ifndef GTEST_RIDEHAL

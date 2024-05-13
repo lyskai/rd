@@ -33,7 +33,7 @@ namespace common
 #define RIDEHAL_BUFFER_FLAGS_CACHE_MASK (RideHal_BufferFlags_t) 0x0000000FU
 
 /** @brief RideHal Errors
-/*  Errors for Component API call */
+ *  Errors for Component API call */
 typedef enum
 {
     RIDEHAL_ERROR_NONE = 0,        /**< No error. */

@@ -153,11 +153,11 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
 /**
  * @brief Free the DMA memory
  * @param pData the allocated DMA data address
- * @param pDmaHandle the allocated DMA handle
+ * @param dmaHandle the allocated DMA handle
  * @param size the wanted DMA memory size
  * @return RIDEHAL_ERROR_NONE on success, others on failure
  */
-RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size );
+RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size );
 }   // namespace common
 }   // namespace ridehal
 

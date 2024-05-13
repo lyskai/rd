@@ -81,6 +81,16 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         {
             heapType = ID_DMA_BUF_HEAP_CACHED;
         }
+
+        if ( ( usage < RIDEHAL_BUFFER_USAGE_MAX ) && ( usage >= RIDEHAL_BUFFER_USAGE_DEFAULT ) )
+        {
+            /* usage OK but not used */
+        }
+        else
+        {
+            RIDEHAL_LOG_ERROR( "DmaAllocate with invalid usage: %d", usage );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -123,7 +133,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
     return ret;
 }
 
-RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
+RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     int rc = 0;
@@ -143,10 +153,10 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
             ret = RIDEHAL_ERROR_FAIL;
         }
 
-        rc = close( static_cast<int>( pDmaHandle ) );
+        rc = close( static_cast<int>( dmaHandle ) );
         if ( 0 != rc )
         {
-            RIDEHAL_LOG_ERROR( "DmaFree failed to close buffer %" PRIu64 ": %d", pDmaHandle, rc );
+            RIDEHAL_LOG_ERROR( "DmaFree failed to close buffer %" PRIu64 ": %d", dmaHandle, rc );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }

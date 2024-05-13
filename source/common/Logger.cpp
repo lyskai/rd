@@ -119,7 +119,7 @@ Logger_Level_e Logger::DecideLoggerLevel( std::string name, Logger_Level_e level
 {
     Logger_Level_e loggerLevel = level;
     std::string envName = name + "_RIDEHAL_LOG_LEVEL";
-    char *envValue = getenv( envName.c_str() );
+    const char *envValue = getenv( envName.c_str() );
     if ( nullptr == envValue )
     {
         envName = "RIDEHAL_LOG_LEVEL";
@@ -151,7 +151,7 @@ Logger_Level_e Logger::DecideLoggerLevel( std::string name, Logger_Level_e level
         }
         else
         {
-            fprintf( stderr, "ERROR: invalid env %s=%s\n", envName.c_str(), envValue );
+            (void) fprintf( stderr, "ERROR: invalid env %s=%s\n", envName.c_str(), envValue );
         }
     }
 

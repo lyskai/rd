@@ -48,13 +48,13 @@ void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const ch
         rc = slog2f( hBuffer, 0, SLOG2_INFO, msg );
         if ( 0 != rc )
         {
-            fprintf( stderr, "slog2c error=%d: %s", rc, msg );
+            (void) fprintf( stderr, "slog2c error=%d: %s", rc, msg );
         }
     }
     else
     {
-        fprintf( stderr, "message too long: " );
-        fprintf( stderr, msg );
+        (void) fprintf( stderr, "message too long: " );
+        (void) fprintf( stderr, msg );
     }
 }
 
@@ -91,7 +91,7 @@ RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
             }
             else
             {
-                fprintf( stderr, "ERROR: failed to create slog2 %s: %d\n", pName, rv );
+                (void) fprintf( stderr, "ERROR: failed to create slog2 %s: %d\n", pName, rv );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }

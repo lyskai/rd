@@ -42,7 +42,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         }
 
         /* convert ride hal usage to the PMEM ID */
-        if ( usage < RIDEHAL_BUFFER_USAGE_MAX )
+        if ( ( usage < RIDEHAL_BUFFER_USAGE_MAX ) && ( usage >= RIDEHAL_BUFFER_USAGE_DEFAULT ) )
         {
             pmemID = s_usageToPMemID[usage];
         }
@@ -71,7 +71,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
     return ret;
 }
 
-RideHalError_e RideHal_DmaFree( void *pData, uint64_t pDmaHandle, size_t size )
+RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size )
 {
     int rc = 0;
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
