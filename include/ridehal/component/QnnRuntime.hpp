@@ -309,7 +309,6 @@ private:
     static constexpr size_t CONTEXT_CONFIG_SIZE = 1;
     static constexpr size_t DMA_MEMINFO_MAP_SIZE = 2;
 
-    std::string m_Name;
     Logger *m_pLogger = nullptr;
     RideHal_ProcessorType_e m_BackendType;
     int m_BackendCoreId = 0;

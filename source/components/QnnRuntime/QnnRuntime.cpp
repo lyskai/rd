@@ -91,8 +91,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                 &m_Context );
         if ( QNN_CONTEXT_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "%s: Could not create context, error is %d", m_Name.c_str(),
-                           (int) retVal );
+            RIDEHAL_ERROR( "Could not create context, error is %d", (int) retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -106,7 +105,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                 QNN_LOG_LEVEL_ERROR );
         if ( qnn_wrapper_api::ModelError_t::MODEL_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "%s: Failed in composeGraphs()", m_Name.c_str() );
+            RIDEHAL_ERROR( "Failed in composeGraphs()" );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -115,7 +114,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
     {
         if ( m_GraphsCount != 1 )
         {
-            RIDEHAL_ERROR( "%s: too much graphs", m_Name.c_str() );
+            RIDEHAL_ERROR( "too much graphs" );
             ret = RIDEHAL_ERROR_UNSUPPORTED;
         }
     }
@@ -126,7 +125,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                 ( *m_GraphsInfo )[0].graph, m_ProfileBackendHandle, nullptr );
         if ( QNN_GRAPH_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "%s: Failed in graphFinalize()", m_Name.c_str() );
+            RIDEHAL_ERROR( "Failed in graphFinalize()" );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -147,15 +146,14 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                                                    reinterpret_cast<void *>( saveBuffer.get() ),
                                                    binaryBufferSize, &writtenBufferSize ) )
                 {
-                    RIDEHAL_INFO( "%s: saving cached binary(size = %llu)", m_Name.c_str(),
-                                  writtenBufferSize );
+                    RIDEHAL_INFO( "saving cached binary(size = %llu)", writtenBufferSize );
 
                     auto dataUtilStatus = tools::datautil::writeBinaryToFile(
                             modelFile, "program.bin", (uint8_t *) saveBuffer.get(),
                             writtenBufferSize );
                     if ( tools::datautil::StatusCode::SUCCESS != dataUtilStatus )
                     {
-                        RIDEHAL_ERROR( "%s: Error while writing binary to file.", m_Name.c_str() );
+                        RIDEHAL_ERROR( "Error while writing binary to file." );
                         ret = RIDEHAL_ERROR_FAIL;
                     }
                 }
@@ -173,7 +171,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
 
     if ( 0 == bufferSize )
     {
-        RIDEHAL_ERROR( "%s: Failed to create binary, Buffer size is 0", m_Name.c_str() );
+        RIDEHAL_ERROR( "Failed to create binary, Buffer size is 0" );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
@@ -182,7 +180,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
     {
         if ( pBuffer == nullptr )
         {
-            RIDEHAL_ERROR( "%s: Buffer is null.", m_Name.c_str() );
+            RIDEHAL_ERROR( "Buffer is null." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -197,7 +195,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
                         &binaryInfoSize );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "%s: Failed to get context binary info,", m_Name.c_str() );
+            RIDEHAL_ERROR( "Failed to get context binary info." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -206,7 +204,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
     {
         if ( !copyMetadataToGraphsInfo( binaryInfo, m_GraphsInfo, m_GraphsCount ) )
         {
-            RIDEHAL_ERROR( "%s: Failed to copy metadata.", m_Name.c_str() );
+            RIDEHAL_ERROR( "Failed to copy metadata." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -215,7 +213,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
     {
         if ( nullptr == m_QnnFunctionPointers.qnnInterface.contextCreateFromBinary )
         {
-            RIDEHAL_ERROR( "%s: contextCreateFromBinaryFnHandle is nullptr.", m_Name.c_str() );
+            RIDEHAL_ERROR( "contextCreateFromBinaryFnHandle is nullptr." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -227,8 +225,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
                 static_cast<void *>( pBuffer ), bufferSize, &m_Context, m_ProfileBackendHandle );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "%s: Could not create context from binary. Error is %d ", m_Name.c_str(),
-                           retVal );
+            RIDEHAL_ERROR( "Could not create context from binary. Error is %d ", retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -239,7 +236,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
         {
             if ( nullptr == m_QnnFunctionPointers.qnnInterface.graphRetrieve )
             {
-                RIDEHAL_ERROR( "%s: graphRetrieveFnHandle is nullptr.", m_Name.c_str() );
+                RIDEHAL_ERROR( "graphRetrieveFnHandle is nullptr." );
                 ret = RIDEHAL_ERROR_FAIL;
                 break;
             }
@@ -252,8 +249,8 @@ RideHalError_e QnnRuntime::CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bu
                     &( ( *m_GraphsInfo )[graphIdx].graph ) );
             if ( QNN_SUCCESS != retVal )
             {
-                RIDEHAL_ERROR( "%s: Unable to retrieve graph handle for graph Idx: %d, error is %d",
-                               m_Name.c_str(), graphIdx, (int) retVal );
+                RIDEHAL_ERROR( "Unable to retrieve graph handle for graph Idx: %d, error is %d",
+                               graphIdx, (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -282,8 +279,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
     {
         if ( 0 == bufferSize )
         {
-            RIDEHAL_ERROR( "%s: Received path to an empty file. Nothing to deserialize.",
-                           m_Name.c_str() );
+            RIDEHAL_ERROR( "Received path to an empty file. Nothing to deserialize." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -294,7 +290,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
     {
         if ( !buffer )
         {
-            RIDEHAL_ERROR( "%s: Failed to allocate memory.", m_Name.c_str() );
+            RIDEHAL_ERROR( "Failed to allocate memory." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -305,7 +301,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
                 modelFile, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
         if ( status != tools::datautil::StatusCode::SUCCESS )
         {
-            RIDEHAL_ERROR( "%s: Failed to read binary data.", m_Name.c_str() );
+            RIDEHAL_ERROR( "Failed to read binary data." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -325,9 +321,9 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     if ( numOfUdoPackages <= 0 )
     {
-        RIDEHAL_ERROR( "%s: UdoPackages size is less than 0: %d "
+        RIDEHAL_ERROR( "UdoPackages size is less than 0: %d "
                        "pUdoPackages: %d ",
-                       m_Name.c_str(), numOfUdoPackages );
+                       numOfUdoPackages );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
@@ -342,14 +338,13 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
                             (char *) udoPackage.interfaceProvider, nullptr );
             if ( QNN_BACKEND_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s: Could not register Op Package: %s and interface provider: %s, "
+                RIDEHAL_ERROR( "Could not register Op Package: %s and interface provider: %s, "
                                "error is %d",
-                               m_Name.c_str(), udoPackage.udoLibPath, udoPackage.interfaceProvider,
-                               (int) retVal );
+                               udoPackage.udoLibPath, udoPackage.interfaceProvider, (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
-            RIDEHAL_INFO( "%s: Registered Op Package: %s and interface provider: %s",
-                          m_Name.c_str(), udoPackage.udoLibPath, udoPackage.interfaceProvider );
+            RIDEHAL_INFO( "Registered Op Package: %s and interface provider: %s",
+                          udoPackage.udoLibPath, udoPackage.interfaceProvider );
         }
     }
     return ret;
@@ -364,8 +359,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         RIDEHAL_ERROR( "Failed to init component!" );
     }
-
-    m_Name = pName;
 
     if ( nullptr == pConfig )
     {
@@ -399,15 +392,14 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                     !m_LoadFromCachedBinary, &m_ModelHandle );
             if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
             {
-                RIDEHAL_ERROR(
-                        "%s: failed to get qnn function pointers from model %s(%s), error is %d",
-                        m_Name.c_str(), modelPath.c_str(), s_Backends[m_BackendType], statusCode );
+                RIDEHAL_ERROR( "failed to get qnn function pointers from model %s(%s), error is %d",
+                               modelPath.c_str(), s_Backends[m_BackendType], statusCode );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
         else
         {
-            RIDEHAL_ERROR( "%s: invalid backend type %d", m_Name.c_str(), (int) m_BackendType );
+            RIDEHAL_ERROR( "invalid backend type %d", (int) m_BackendType );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -424,8 +416,8 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                     QnnLog_Callback, logLevel, &m_LogHandle );
             if ( QNN_SUCCESS != retVal )
             {
-                RIDEHAL_WARN( "%s: Unable to initialize logging in the backend. error is %d",
-                              m_Name.c_str(), (int) retVal );
+                RIDEHAL_WARN( "Unable to initialize logging in the backend. error is %d",
+                              (int) retVal );
             }
         }
     }
@@ -436,7 +428,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
         {
-            RIDEHAL_ERROR( "%s: Error initializing QNN System Function Pointers", m_Name.c_str() );
+            RIDEHAL_ERROR( "Error initializing QNN System Function Pointers" );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -447,7 +439,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
              nullptr == m_QnnFunctionPointers.qnnSystemInterface.systemContextGetBinaryInfo ||
              nullptr == m_QnnFunctionPointers.qnnSystemInterface.systemContextFree )
         {
-            RIDEHAL_ERROR( "%s: QNN System function pointers are not populated.", m_Name.c_str() );
+            RIDEHAL_ERROR( "QNN System function pointers are not populated." );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -458,8 +450,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                 m_QnnFunctionPointers.qnnSystemInterface.systemContextCreate( &m_SystemContext );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "%s: Could not create system handle. error is %d", m_Name.c_str(),
-                           (int) retVal );
+            RIDEHAL_ERROR( "Could not create system handle. error is %d", (int) retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -470,8 +461,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                 m_LogHandle, (const QnnBackend_Config_t **) m_BackendConfig, &m_BackendHandle );
         if ( QNN_BACKEND_NO_ERROR != returnStatus )
         {
-            RIDEHAL_ERROR( "%s: Could not initialize backend due to error = %d", m_Name.c_str(),
-                           returnStatus );
+            RIDEHAL_ERROR( "Could not initialize backend due to error = %d", returnStatus );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -483,14 +473,13 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                 m_QnnFunctionPointers.qnnInterface.backendGetApiVersion( &version );
         if ( QNN_BACKEND_NO_ERROR != returnStatus )
         {
-            RIDEHAL_ERROR( "%s: Could not get backend version due to error = %d", m_Name.c_str(),
-                           returnStatus );
+            RIDEHAL_ERROR( "Could not get backend version due to error = %d", returnStatus );
             ret = RIDEHAL_ERROR_FAIL;
         }
-        RIDEHAL_INFO( "%s: QNN version: %u.%u.%u %u.%u.%u", m_Name.c_str(),
-                      version.coreApiVersion.major, version.coreApiVersion.minor,
-                      version.coreApiVersion.patch, version.backendApiVersion.major,
-                      version.backendApiVersion.minor, version.backendApiVersion.patch );
+        RIDEHAL_INFO( "QNN version: %u.%u.%u %u.%u.%u", version.coreApiVersion.major,
+                      version.coreApiVersion.minor, version.coreApiVersion.patch,
+                      version.backendApiVersion.major, version.backendApiVersion.minor,
+                      version.backendApiVersion.patch );
     }
 
 
@@ -500,8 +489,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                 m_LogHandle, &m_PlatformInfo );
         if ( QNN_BACKEND_NO_ERROR != returnStatus )
         {
-            RIDEHAL_ERROR( "%s: Could not get platform information due to error = %d",
-                           m_Name.c_str(), returnStatus );
+            RIDEHAL_ERROR( "Could not get platform information due to error = %d", returnStatus );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -510,13 +498,12 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         if ( QNN_DEVICE_PLATFORM_INFO_VERSION_1 == m_PlatformInfo->version )
         {
-            RIDEHAL_INFO( "%s: numHwDevices = %u", m_Name.c_str(),
-                          m_PlatformInfo->v1.numHwDevices );
+            RIDEHAL_INFO( "numHwDevices = %u", m_PlatformInfo->v1.numHwDevices );
             for ( uint32_t i = 0; i < m_PlatformInfo->v1.numHwDevices; i++ )
             {
                 auto &deviceInfo = m_PlatformInfo->v1.hwDevices[i].v1;
-                RIDEHAL_INFO( "%s: deviceId = %u deviceType = %u numCores = %u", m_Name.c_str(),
-                              deviceInfo.deviceId, deviceInfo.deviceType, deviceInfo.numCores );
+                RIDEHAL_INFO( "deviceId = %u deviceType = %u numCores = %u", deviceInfo.deviceId,
+                              deviceInfo.deviceType, deviceInfo.numCores );
             }
 
             int deviceId = m_BackendCoreId;
@@ -542,14 +529,13 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                         m_LogHandle, configs, &m_DeviceHandle );
                 if ( QNN_BACKEND_NO_ERROR != returnStatus )
                 {
-                    RIDEHAL_ERROR( "%s: Could not create device due to error = %d", m_Name.c_str(),
-                                   returnStatus );
+                    RIDEHAL_ERROR( "Could not create device due to error = %d", returnStatus );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
             }
             else
             {
-                RIDEHAL_ERROR( "%s: invalid backend device id = %d", m_Name.c_str(), deviceId );
+                RIDEHAL_ERROR( "invalid backend device id = %d", deviceId );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -560,22 +546,22 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         if ( pConfig->numOfUdoPackages == 0 )
         {
-            RIDEHAL_INFO( "%s: no op package", m_Name.c_str() );
+            RIDEHAL_INFO( "no op package" );
         }
         else if ( pConfig->numOfUdoPackages > 0 )
         {
             RideHalError_e ret = LoadOpPackages( pConfig->pUdoPackages, pConfig->numOfUdoPackages );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "%s: fail to load package", m_Name.c_str() );
+                RIDEHAL_ERROR( "fail to load package" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
         else
         {
-            RIDEHAL_ERROR( "%s: UdoPackages size is less than 0: %d "
+            RIDEHAL_ERROR( "UdoPackages size is less than 0: %d "
                            "pUdoPackages: %d ",
-                           m_Name.c_str(), pConfig->numOfUdoPackages );
+                           pConfig->numOfUdoPackages );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -589,7 +575,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             m_ContextConfigArray[0].priority = pConfig->priority;
             m_ContextConfig[0] = &m_ContextConfigArray[0];
             m_ContextConfig[1] = nullptr;
-            RIDEHAL_INFO( "%s: set context priority = %d", m_Name.c_str(), pConfig->priority );
+            RIDEHAL_INFO( "set context priority = %d", pConfig->priority );
         }
 
         switch ( pConfig->loadType )
@@ -636,8 +622,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         ret = GetOutputInfo();
     }
 
-    RIDEHAL_INFO( "%s: init %s with backend %s\n", m_Name.c_str(), modelPath,
-                  s_Backends[m_BackendType] );
+    RIDEHAL_INFO( "init %s with backend %s\n", modelPath, s_Backends[m_BackendType] );
 
     if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
          RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
@@ -710,7 +695,7 @@ RideHalError_e QnnRuntime::GetInputInfo()
             }
             else
             {
-                RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported", m_Name.c_str(),
+                RIDEHAL_WARN( "input %s: quantize encoding %d not supported",
                               m_pInputTensor[i].pName, quantizeParams.quantizationEncoding );
             }
             const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
@@ -797,7 +782,7 @@ RideHalError_e QnnRuntime::GetOutputInfo()
             }
             else
             {
-                RIDEHAL_WARN( "%s: input %s: quantize encoding %d not supported", m_Name.c_str(),
+                RIDEHAL_WARN( "input %s: quantize encoding %d not supported",
                               m_pOutputTensor[i].pName, quantizeParams.quantizationEncoding );
             }
             const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
@@ -916,8 +901,8 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
                     m_Context, &desc, 1, &memHandle );
             if ( QNN_SUCCESS != retVal )
             {
-                RIDEHAL_ERROR( "%s: map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                               m_Name.c_str(), sharedBuffer.buffer.pData, fd, sharedBuffer.size,
+                RIDEHAL_ERROR( "map buffer %p(%d, %u, %u) for core %d, error %d\n",
+                               sharedBuffer.buffer.pData, fd, sharedBuffer.size,
                                sharedBuffer.offset, m_BackendCoreId, retVal );
             }
             else
@@ -926,9 +911,8 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
                 info.memHandle = memHandle;
                 info.size = sharedBuffer.size;
                 s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) sharedBuffer.data()] = info;
-                QNN_INFO( "%s: map buffer %p(%d, %u, %u) as %p for core %d", m_Name.c_str(),
-                          sharedBuffer.buffer.pData, fd, sharedBuffer.size, sharedBuffer.offset,
-                          memHandle, m_BackendCoreId );
+                QNN_INFO( "map buffer %p(%d, %u, %u) as %p for core %d", sharedBuffer.buffer.pData,
+                          fd, sharedBuffer.size, sharedBuffer.offset, memHandle, m_BackendCoreId );
             }
         }
         else
@@ -1027,10 +1011,9 @@ RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer
                                                                         &memHandle );
                 if ( QNN_SUCCESS != memRegisterRet )
                 {
-                    RIDEHAL_ERROR( "%s: map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                                   m_Name.c_str(), sharedBuffer[i].buffer.pData, fd,
-                                   sharedBuffer[i].size, sharedBuffer[i].offset, m_BackendCoreId,
-                                   memRegisterRet );
+                    RIDEHAL_ERROR( "map buffer %p(%d, %u, %u) for core %d, error %d\n",
+                                   sharedBuffer[i].buffer.pData, fd, sharedBuffer[i].size,
+                                   sharedBuffer[i].offset, m_BackendCoreId, memRegisterRet );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
@@ -1039,7 +1022,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer
                     info.memHandle = memHandle;
                     info.size = sharedBuffer[i].size;
                     s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) sharedBuffer[i].data()] = info;
-                    RIDEHAL_INFO( "%s: map buffer %p(%d, %u, %u) as %p for core %d", m_Name.c_str(),
+                    RIDEHAL_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
                                   sharedBuffer[i].buffer.pData, fd, sharedBuffer[i].size,
                                   sharedBuffer[i].offset, memHandle, m_BackendCoreId );
                 }
@@ -1243,8 +1226,7 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                     m_BackendHandle, QNN_PROFILE_LEVEL_BASIC, &m_ProfileBackendHandle );
             if ( QNN_GRAPH_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s: failed to create profile. error is %d", m_Name.c_str(),
-                               (int) retVal );
+                RIDEHAL_ERROR( "failed to create profile. error is %d", (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -1257,7 +1239,7 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                 graphInfo.numOutputTensors, m_ProfileBackendHandle, nullptr );
         if ( QNN_GRAPH_NO_ERROR != executeStatus )
         {
-            RIDEHAL_ERROR( "%s: QNN failed %d", m_Name.c_str(), executeStatus );
+            RIDEHAL_ERROR( "QNN failed %d", executeStatus );
             ret = RIDEHAL_ERROR_FAIL;
         }
         else
@@ -1408,7 +1390,7 @@ RideHalError_e QnnRuntime::Deinit()
             if ( QNN_PROFILE_NO_ERROR != retVal )
             {
                 RIDEHAL_ERROR( "%s:Could not free backend profile handle. error is %d",
-                               m_Name.c_str(), (int) retVal );
+                               (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -1422,8 +1404,7 @@ RideHalError_e QnnRuntime::Deinit()
                     m_QnnFunctionPointers.qnnInterface.contextFree( m_Context, nullptr );
             if ( QNN_CONTEXT_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s:Could not free context. error is %d", m_Name.c_str(),
-                               (int) retVal );
+                RIDEHAL_ERROR( "%s:Could not free context. error is %d", (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             m_Context = nullptr;
@@ -1446,8 +1427,7 @@ RideHalError_e QnnRuntime::Deinit()
                     m_QnnFunctionPointers.qnnInterface.deviceFree( m_DeviceHandle );
             if ( QNN_CONTEXT_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s:Could not free device handle. Error is %d", m_Name.c_str(),
-                               (int) retVal );
+                RIDEHAL_ERROR( "%s:Could not free device handle. Error is %d", (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             m_DeviceHandle = nullptr;
@@ -1470,8 +1450,7 @@ RideHalError_e QnnRuntime::Deinit()
                 m_QnnFunctionPointers.qnnInterface.backendFree( m_BackendHandle );
         if ( QNN_BACKEND_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "%s:Could not terminate backend. Error is %d", m_Name.c_str(),
-                           (int) retVal );
+            RIDEHAL_ERROR( "%s:Could not terminate backend. Error is %d", (int) retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -1485,7 +1464,7 @@ RideHalError_e QnnRuntime::Deinit()
             if ( QNN_SUCCESS != retVal )
             {
                 RIDEHAL_WARN( "%s:Unable to terminate logging in the backend. Error is %d",
-                              m_Name.c_str(), (int) retVal );
+                              (int) retVal );
             }
         }
     }
@@ -1494,7 +1473,7 @@ RideHalError_e QnnRuntime::Deinit()
     {
         if ( m_LoadFromCachedBinary && ( nullptr != m_GraphsInfo ) )
         {
-            RIDEHAL_DEBUG( "%s:Cleaning up graph Info structures.", m_Name.c_str() );
+            RIDEHAL_DEBUG( "Cleaning up graph Info structures." );
             qnn_wrapper_api::freeGraphsInfo( &m_GraphsInfo, m_GraphsCount );
         }
     }
