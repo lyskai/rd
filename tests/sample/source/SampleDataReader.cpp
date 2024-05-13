@@ -150,8 +150,6 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     FILE *file = nullptr;
     size_t length = 0;
 
-    std::lock_guard<std::mutex> l( s_lock );
-
     file = fopen( path.c_str(), "rb" );
     if ( nullptr == file )
     {
