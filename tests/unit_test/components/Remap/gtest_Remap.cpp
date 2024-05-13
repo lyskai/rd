@@ -181,6 +181,8 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
         RemapConfig.normlzB.add = 0.0;
     }
 
+    RideHal_SharedBuffer_t mapXBuffer[RemapConfig.numOfInputs];
+    RideHal_SharedBuffer_t mapYBuffer[RemapConfig.numOfInputs];
     if ( bEnableUndistortionTest == true )
     {
         for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
@@ -190,14 +192,12 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
             uint32_t inputWidth = RemapConfig.inputConfigs[inputId].inputWidth;
             uint32_t inputHeight = RemapConfig.inputConfigs[inputId].inputHeight;
             uint32_t mapSize = mapWidth * mapHeight * sizeof( float );
-            RideHal_SharedBuffer_t mapXBuffer;
-            RideHal_SharedBuffer_t mapYBuffer;
-            ret = mapXBuffer.Allocate( mapSize );
+            ret = mapXBuffer[inputId].Allocate( mapSize );
             ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-            ret = mapYBuffer.Allocate( mapSize );
+            ret = mapYBuffer[inputId].Allocate( mapSize );
             ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-            float *mapX = (float *) mapXBuffer.data();
-            float *mapY = (float *) mapYBuffer.data();
+            float *mapX = (float *) mapXBuffer[inputId].data();
+            float *mapY = (float *) mapYBuffer[inputId].data();
             for ( int i = 0; i < mapHeight; i++ )
             {
                 for ( int j = 0; j < mapWidth; j++ )
@@ -320,6 +320,27 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
 
     ret = RemapObj.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    if ( bEnableUndistortionTest == true )
+    {
+        for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+        {
+
+            ret = mapXBuffer[inputId].Free();
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            ret = mapYBuffer[inputId].Free();
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+    }
 
     return;
 }
