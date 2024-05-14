@@ -42,25 +42,35 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_TensorProps_t *pTen
 
     if ( nullptr == pTensorProps )
     {
+        RIDEHAL_LOG_ERROR( "pTensorProps is nullptr" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( ( pTensorProps->numDims > RIDEHAL_NUM_TENSOR_DIMS ) ||
-              ( pTensorProps->type >= RIDEHAL_TENSOR_TYPE_MAX ) )
+              ( pTensorProps->type >= RIDEHAL_TENSOR_TYPE_MAX ) ||
+              ( pTensorProps->type < RIDEHAL_TENSOR_TYPE_INT_8 ) )
     {
+        RIDEHAL_LOG_ERROR( "pTensorProps has invalid numDims or type" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( nullptr != this->buffer.pData )
     {
+        RIDEHAL_LOG_ERROR( "tensor is already allocated" );
         ret = RIDEHAL_ERROR_ALREADY;
     }
     else
     {
         /* check each dimension is reasonable */
-        for ( i = 0; ( i < pTensorProps->numDims ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
+        for ( i = 0; i < pTensorProps->numDims; i++ )
         {
             if ( 0 == pTensorProps->dims[i] )
             {
+                RIDEHAL_LOG_ERROR( "pTensorProps dims[%u] is 0", i );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                break;
             }
         }
     }

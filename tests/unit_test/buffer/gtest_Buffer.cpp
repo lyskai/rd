@@ -368,12 +368,20 @@ static bool IsTheSameSharedBuffer( RideHal_SharedBuffer_t &bufferA,
 
 TEST( Buffer, L2_Buffer )
 {
+    RideHalError_e ret;
     for ( int i = 0; i < (int) RIDEHAL_BUFFER_USAGE_MAX; i++ )
     {
         RideHal_BufferUsage_e usage = (RideHal_BufferUsage_e) i;
         RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_NONE;
         RideHal_SharedBuffer_t sharedBuffer;
-        auto ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 1024 * 256, usage, flags );
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 1024 * 256, usage, flags );
+#if !defined( __QNXNTO__ )
+        if ( RIDEHAL_ERROR_UNSUPPORTED == ret )
+        {
+            printf( "Linux has no /dev/dma_heap/system-uncached, skip uncached buffer test" );
+            break;
+        }
+#endif
         ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
 
         ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 32, usage, flags );
@@ -394,8 +402,11 @@ TEST( Buffer, L2_Buffer )
         RideHal_BufferUsage_e usage = (RideHal_BufferUsage_e) i;
         RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
         RideHal_SharedBuffer_t sharedBuffer;
-        auto ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 1024 * 256, usage, flags );
+#if defined( __QNXNTO__ )
+        /* not do this for Linux, see device crashed */
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 1024 * 256, usage, flags );
         ASSERT_EQ( RIDEHAL_ERROR_NOMEM, ret );
+#endif
 
         ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 32, usage, flags );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -415,7 +426,7 @@ TEST( Buffer, L2_Buffer )
 
     {
         RideHal_SharedBuffer_t sharedBuffer;
-        auto ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 64, RIDEHAL_BUFFER_USAGE_MAX );
+        ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 64, RIDEHAL_BUFFER_USAGE_MAX );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
         ret = sharedBuffer.Allocate( (size_t) 1024 * 1024 * 64, (RideHal_BufferUsage_e) -2 );
@@ -426,8 +437,8 @@ TEST( Buffer, L2_Buffer )
         void *pData;
         uint64_t dmaHandle;
 
-        auto ret = RideHal_DmaAllocate( &pData, nullptr, 1000000, RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA,
-                                        RIDEHAL_BUFFER_USAGE_DEFAULT );
+        ret = RideHal_DmaAllocate( &pData, nullptr, 1000000, RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA,
+                                   RIDEHAL_BUFFER_USAGE_DEFAULT );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
         ret = RideHal_DmaAllocate( nullptr, &dmaHandle, 1000000, RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA,
@@ -444,8 +455,11 @@ TEST( Buffer, L2_Buffer )
         ret = RideHal_DmaFree( (void *) 0x1, 0, 1000000 );
         ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 #if !defined( __QNXNTO__ ) /* dmaHandle was only used by Linux when do free */
-        ret = RideHal_DmaFree( pData, 0xdeadbeef, 1000000 );
+        ret = RideHal_DmaFree( pData, (uint64_t) -1, 1000000 );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = RideHal_DmaFree( pData, (uint64_t) 0x7FFFFFFF, 1000000 );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 #endif
 
         ret = RideHal_DmaFree( pData, dmaHandle, 1000000 );
@@ -479,6 +493,9 @@ TEST( Buffer, L2_Image )
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid height */
 
         ret = sharedBuffer.Allocate( 1, 1920, 1024, RIDEHAL_IMAGE_FORMAT_MAX );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid format */
+
+        ret = sharedBuffer.Allocate( 1, 1920, 1024, (RideHal_ImageFormat_e) -5 );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* invalid format */
 
         ret = sharedBuffer.Allocate( (RideHal_ImageProps_t *) nullptr );
@@ -521,6 +538,11 @@ TEST( Buffer, L2_Image )
 
         InitImageProps( imgProp );
         imgProp.format = RIDEHAL_IMAGE_FORMAT_MAX;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
+
+        InitImageProps( imgProp );
+        imgProp.format = (RideHal_ImageFormat_e) -5;
         ret = sharedBuffer.Allocate( &imgProp );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
 
@@ -670,11 +692,14 @@ TEST( Buffer, L2_Image )
 
 TEST( Buffer, L2_Tensor )
 {
+    for ( uint32_t i = 0; i < (uint32_t) RIDEHAL_TENSOR_TYPE_MAX; i++ )
     {
         RideHal_SharedBuffer_t sharedBuffer;
-        RideHal_TensorProps_t tensorProp = { RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
-                                             { 1, 128, 128, 10 },
-                                             4 };
+        RideHal_TensorProps_t tensorProp = {
+                (RideHal_TensorType_e) i,
+                { i + 1, 1024 * ( i + 1 ) / RIDEHAL_TENSOR_TYPE_MAX,
+                  1024 * ( RIDEHAL_TENSOR_TYPE_MAX - i ) / RIDEHAL_TENSOR_TYPE_MAX, 10 },
+                4 };
 
         auto ret = sharedBuffer.Allocate( &tensorProp );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -697,6 +722,38 @@ TEST( Buffer, L2_Tensor )
 
         ret = sharedBuffer.Free();
         ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_TensorProps_t tensorProp = { RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
+                                             { 1, 1024, 768, 3 },
+                                             RIDEHAL_NUM_TENSOR_DIMS + 3 };
+
+        auto ret = sharedBuffer.Allocate( (RideHal_TensorProps_t *) nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+
+        ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        tensorProp.numDims = 4;
+        tensorProp.dims[2] = 0;
+
+        ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        tensorProp.numDims = 4;
+        tensorProp.dims[2] = 768;
+        tensorProp.type = RIDEHAL_TENSOR_TYPE_MAX;
+
+        ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        tensorProp.type = (RideHal_TensorType_e) -3;
+
+        ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     }
 }
 

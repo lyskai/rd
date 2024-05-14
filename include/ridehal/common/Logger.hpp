@@ -43,7 +43,7 @@ namespace common
 #define RIDEHAL_DECLARE_LOGGER() Logger m_logger
 
 /** @brief Do initialization of the logger. */
-#define RIDEHAL_LOGGER_INIT( pName, level ) m_logger.Init( pName, level )
+#define RIDEHAL_LOGGER_INIT( pName, level ) m_logger.Init( ( pName ), ( level ) )
 
 /** @brief Do deinitialization of the logger. */
 #define RIDEHAL_LOGGER_DEINIT() m_logger.Deinit()
@@ -60,7 +60,7 @@ namespace common
  * Do log a message by calling the API Log of the logger.
  */
 #define RIDEHAL_LOGGER_LOG( logger, level, format, ... )                                           \
-    ( logger ).Log( level, "%s:%d " format, __FILE__, __LINE__, ##__VA_ARGS__ )
+    ( logger ).Log( ( level ), "%s:%d " format, __FILE__, __LINE__, ##__VA_ARGS__ )
 
 
 /** @brief Do log a verbose level message within a class API.
@@ -134,7 +134,8 @@ typedef enum
     LOGGER_LEVEL_DEBUG,   /**< The level for the debug message */
     LOGGER_LEVEL_INFO,    /**< The level for the information message */
     LOGGER_LEVEL_WARN,    /**< The level for the warning message */
-    LOGGER_LEVEL_ERROR    /**< The level for the error message */
+    LOGGER_LEVEL_ERROR,   /**< The level for the error message */
+    LOGGER_LEVEL_MAX
 } Logger_Level_e;
 
 
@@ -241,6 +242,9 @@ private:
      */
     Logger_Level_e DecideLoggerLevel( std::string name, Logger_Level_e level );
 
+#ifdef LOGGER_UNIT_TEST
+public:
+#endif
     static void DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const char *pFormat,
                             va_list args );
     static RideHalError_e DefaultCreate( const char *pName, Logger_Level_e level,

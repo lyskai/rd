@@ -136,6 +136,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
 RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    int fd = static_cast<int>( dmaHandle );
     int rc = 0;
 
     if ( nullptr == pData )
@@ -143,8 +144,12 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size )
         RIDEHAL_LOG_ERROR( "DmaFree with pData is nullptr" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
+    else if ( fd < 0 )
+    {
+        RIDEHAL_LOG_ERROR( "DmaFree with invalid dmaHandle" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
     {
         rc = munmap( pData, size );
         if ( 0 != rc )
@@ -153,7 +158,7 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size )
             ret = RIDEHAL_ERROR_FAIL;
         }
 
-        rc = close( static_cast<int>( dmaHandle ) );
+        rc = close( fd );
         if ( 0 != rc )
         {
             RIDEHAL_LOG_ERROR( "DmaFree failed to close buffer %" PRIu64 ": %d", dmaHandle, rc );

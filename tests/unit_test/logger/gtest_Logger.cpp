@@ -3,7 +3,9 @@
 
 #include "gtest/gtest.h"
 #include <stdio.h>
+#include <stdlib.h>
 
+#define LOGGER_UNIT_TEST
 #include "ridehal/common/Logger.hpp"
 
 using namespace ridehal::common;
@@ -96,22 +98,22 @@ public:
     {
         std::string rst;
         RIDEHAL_VERBOSE( "a=%d", 1234 );
-        rst = MSG_PREFIX( Test, 1 ) + std::string( "VERBOSE: a=1234" );
+        rst = MSG_PREFIX( TEST, 1 ) + std::string( "VERBOSE: a=1234" );
         ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_VERBOSE( "str=%s a=%d", "hello world", 1234 );
-        rst = MSG_PREFIX( Test, 1 ) + std::string( "VERBOSE: str=hello world a=1234" );
+        rst = MSG_PREFIX( TEST, 1 ) + std::string( "VERBOSE: str=hello world a=1234" );
         ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_INFO( "a=%u c=%.3f", (uint32_t) 1234, 1.23431 );
-        rst = MSG_PREFIX( Test, 1 ) + std::string( "INFO: a=1234 c=1.234" );
+        rst = MSG_PREFIX( TEST, 1 ) + std::string( "INFO: a=1234 c=1.234" );
         ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_ERROR( "A Fatal error: 0x%x", 0xdeadbeef );
-        rst = MSG_PREFIX( Test, 1 ) + std::string( "ERROR: A Fatal error: 0xdeadbeef" );
+        rst = MSG_PREFIX( TEST, 1 ) + std::string( "ERROR: A Fatal error: 0xdeadbeef" );
         ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
     }
@@ -124,12 +126,12 @@ public:
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_INFO( "a=%u c=%.3f", (uint32_t) 1234, 1.23431 );
-        rst = MSG_PREFIX( Test, 1 ) + std::string( "INFO: a=1234 c=1.234" );
+        rst = MSG_PREFIX( TEST, 1 ) + std::string( "INFO: a=1234 c=1.234" );
         ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
 
         RIDEHAL_ERROR( "A Fatal error: 0x%x", 0xdeadbeef );
-        rst = MSG_PREFIX( Test, 1 ) + std::string( "ERROR: A Fatal error: 0xdeadbeef" );
+        rst = MSG_PREFIX( TEST, 1 ) + std::string( "ERROR: A Fatal error: 0xdeadbeef" );
         ASSERT_EQ( rst, std::string( s_LoggerMsg ) );
         s_LoggerMsg[0] = '\0';
     }
@@ -150,19 +152,223 @@ TEST( Logger, SANITY_Logger )
     ret = Logger::Setup( UserLog, UserLoggerHandleCreate, UserLoggerHandleDestroy );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = loggerUser.Init( "Test", LOGGER_LEVEL_VERBOSE );
+    unsetenv( "RIDEHAL_LOG_LEVEL" );
+    unsetenv( "TEST_RIDEHAL_LOG_LEVEL" );
+
+    ret = loggerUser.Init( "TEST", LOGGER_LEVEL_VERBOSE );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     loggerUser.TestLoggerVerbose();
     ret = loggerUser.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = loggerUser.Init( "Test", LOGGER_LEVEL_INFO );
+    ret = loggerUser.Init( "TEST", LOGGER_LEVEL_INFO );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     loggerUser.TestLoggerInfo();
     ret = loggerUser.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     TestDefaultLogger();
+}
+
+static void TestLoggerLog2( Logger &logger, Logger_Level_e level, const char *pFormat, ... )
+{
+    va_list args;
+
+    va_start( args, pFormat );
+    logger.Log( level, pFormat, args );
+    va_end( args );
+}
+
+TEST( Logger, L2_Logger )
+{
+
+    (void) Logger::Setup( UserLog, UserLoggerHandleCreate, UserLoggerHandleDestroy );
+
+    unsetenv( "RIDEHAL_LOG_LEVEL" );
+    unsetenv( "TEST_L2_RIDEHAL_LOG_LEVEL" );
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+
+        logger.Log( LOGGER_LEVEL_ERROR, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        TestLoggerLog2( logger, LOGGER_LEVEL_ERROR, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Init( nullptr, LOGGER_LEVEL_INFO );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_MAX );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = logger.Init( "TEST_L2", (Logger_Level_e) -7 );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_INFO );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        TestLoggerLog2( logger, LOGGER_LEVEL_VERBOSE, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        TestLoggerLog2( logger, LOGGER_LEVEL_ERROR, "Hello %d", 1234 );
+        ASSERT_EQ( std::string( "TEST_L2 Hello 1234" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_INFO );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+    }
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+        setenv( "TEST_L2_RIDEHAL_LOG_LEVEL", "VERBOSE", 1 );
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_INFO );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        logger.Log( LOGGER_LEVEL_VERBOSE, "Hello" );
+        ASSERT_EQ( std::string( "TEST_L2 Hello" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+        setenv( "TEST_L2_RIDEHAL_LOG_LEVEL", "DEBUG", 1 );
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_INFO );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        logger.Log( LOGGER_LEVEL_VERBOSE, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        logger.Log( LOGGER_LEVEL_DEBUG, "Hello" );
+        ASSERT_EQ( std::string( "TEST_L2 Hello" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+        setenv( "TEST_L2_RIDEHAL_LOG_LEVEL", "INFO", 1 );
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_DEBUG );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        logger.Log( LOGGER_LEVEL_DEBUG, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        logger.Log( LOGGER_LEVEL_INFO, "Hello" );
+        ASSERT_EQ( std::string( "TEST_L2 Hello" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+        setenv( "TEST_L2_RIDEHAL_LOG_LEVEL", "WARN", 1 );
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_ERROR );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        logger.Log( LOGGER_LEVEL_INFO, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        logger.Log( LOGGER_LEVEL_WARN, "Hello" );
+        ASSERT_EQ( std::string( "TEST_L2 Hello" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+        setenv( "TEST_L2_RIDEHAL_LOG_LEVEL", "ERROR", 1 );
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        logger.Log( LOGGER_LEVEL_WARN, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        logger.Log( LOGGER_LEVEL_ERROR, "Hello" );
+        ASSERT_EQ( std::string( "TEST_L2 Hello" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHalError_e ret;
+        Logger logger;
+        setenv( "TEST_L2_RIDEHAL_LOG_LEVEL", "invalid_level", 1 );
+        ret = logger.Init( "TEST_L2", LOGGER_LEVEL_INFO );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        logger.Log( LOGGER_LEVEL_DEBUG, "Hello" );
+        ASSERT_EQ( std::string( "" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        logger.Log( LOGGER_LEVEL_INFO, "Hello" );
+        ASSERT_EQ( std::string( "TEST_L2 Hello" ), std::string( s_LoggerMsg ) );
+        s_LoggerMsg[0] = '\0';
+
+        ret = logger.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    unsetenv( "TEST_L2_RIDEHAL_LOG_LEVEL" );
+}
+
+
+static void TestLoggerDefaultL2( Logger_Handle_t handle, Logger_Level_e level, const char *pFormat,
+                                 ... )
+{
+    va_list args;
+
+    va_start( args, pFormat );
+    Logger::DefaultLog( handle, level, pFormat, args );
+    va_end( args );
+}
+
+TEST( Logger, L2_LoggerDefault )
+{
+    RideHalError_e ret;
+    {
+        Logger_Handle_t handle;
+        ret = Logger::DefaultCreate( nullptr, LOGGER_LEVEL_INFO, &handle );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = Logger::DefaultCreate( "DEFAULT", LOGGER_LEVEL_INFO, nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = Logger::DefaultCreate( "DEFAULT", LOGGER_LEVEL_INFO, &handle );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        TestLoggerDefaultL2( handle, LOGGER_LEVEL_INFO, "Hello World" );
+#if defined( __QNXNTO__ )
+        /* test large message */
+        char msg[1024] = { 0 };
+        memset( msg, 'A', sizeof( msg ) - 1 );
+        TestLoggerDefaultL2( handle, LOGGER_LEVEL_INFO, msg );
+#endif
+    }
 }
 
 #ifndef GTEST_RIDEHAL

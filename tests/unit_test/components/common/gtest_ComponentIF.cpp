@@ -24,7 +24,7 @@ public:
     {
         RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-        ret = ComponentIF::Init( pName );
+        ret = ComponentIF::Init( pName, level );
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             // DO real initialize using pConfig.
@@ -104,6 +104,8 @@ public:
 
         return ret;
     }
+
+    RideHalError_e DeinitIF() { return ComponentIF::Deinit(); }
 };
 
 TEST( ComponentIF, SANITY_ComponentIF )
@@ -116,9 +118,10 @@ TEST( ComponentIF, SANITY_ComponentIF )
     {
         ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
 
-        ret = cifTest.Init( "test", &config );
+        ret = cifTest.Init( "TEST", &config );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         ASSERT_EQ( RIDEHAL_COMPONENT_STATE_READY, cifTest.GetState() );
+        ASSERT_EQ( std::string( "TEST" ), std::string( cifTest.GetName() ) );
 
         ret = cifTest.Start();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -131,6 +134,62 @@ TEST( ComponentIF, SANITY_ComponentIF )
         ret = cifTest.Deinit();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, cifTest.GetState() );
+    }
+}
+
+TEST( ComponentIF, L2_ComponentIF )
+{
+    {
+        ComponentIFTest cifTest;
+        ComponentIFTest_Config_t config = { 10 };
+        RideHalError_e ret;
+
+        ret = cifTest.Init( "TEST", &config );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = cifTest.Init( "TEST", &config );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+        ret = cifTest.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = cifTest.DeinitIF();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        ComponentIFTest cifTest;
+        ComponentIFTest_Config_t config = { 10 };
+        RideHalError_e ret;
+
+        ret = cifTest.Init( nullptr, &config );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    }
+
+    {
+        ComponentIFTest cifTest;
+        ComponentIFTest_Config_t config = { 10 };
+        RideHalError_e ret;
+
+        ret = cifTest.Init( "TEST_ERROR", &config, LOGGER_LEVEL_MAX );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = cifTest.DeinitIF();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        ComponentIFTest cifTest;
+        ComponentIFTest cifTest1;
+        ComponentIFTest_Config_t config = { 10 };
+        RideHalError_e ret;
+
+        /* generally OK that 2 component has the same name but it was not suggested */
+        ret = cifTest.Init( "TEST", &config );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = cifTest1.Init( "TEST", &config );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 }
 

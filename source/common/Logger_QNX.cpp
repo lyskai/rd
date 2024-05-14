@@ -33,7 +33,7 @@ void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const ch
                          va_list args )
 {
     char msg[RIDEHAL_LOG_MSG_MAX_LEN];
-    slog2_buffer_t hBuffer = (slog2_buffer_t) hHandle;
+    slog2_buffer_t hBuffer = static_cast<slog2_buffer_t>( hHandle );
     int len = 0;
     int rc;
 
@@ -86,8 +86,8 @@ RideHalError_e Logger::DefaultCreate( const char *pName, Logger_Level_e level,
             int rv = slog2_register( &bufferConfig, &hBuffer, SLOG2_TRY_REUSE_BUFFER_SET );
             if ( ( 0 == rv ) && ( nullptr != hBuffer ) )
             {
-                *pHandle = (Logger_Handle_t) hBuffer;
-                s_slog2Map[pName] = (Logger_Handle_t) hBuffer;
+                *pHandle = static_cast<Logger_Handle_t>( hBuffer );
+                s_slog2Map[pName] = static_cast<Logger_Handle_t>( hBuffer );
             }
             else
             {

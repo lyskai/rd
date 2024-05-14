@@ -65,6 +65,10 @@ RideHalError_e Logger::Init( const char *pName, Logger_Level_e level )
     {
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
+    else if ( ( level >= LOGGER_LEVEL_MAX ) || ( level < LOGGER_LEVEL_VERBOSE ) )
+    {
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
     else if ( m_hHandle != nullptr )
     {
         ret = RIDEHAL_ERROR_BAD_STATE;

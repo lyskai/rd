@@ -13,7 +13,11 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( RIDEHAL_COMPONENT_STATE_INITIAL != m_state )
+    if ( nullptr == pName )
+    {
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( RIDEHAL_COMPONENT_STATE_INITIAL != m_state )
     {
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
@@ -24,8 +28,8 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
         if ( RIDEHAL_ERROR_NONE != ret )
         {
             (void) fprintf( stderr,
-                            "WARINING: failed to create logger for component %s: ret = %d\n",
-                            pName ? pName : "null", ret );
+                            "WARINING: failed to create logger for component %s: ret = %d\n", pName,
+                            ret );
         }
         ret = RIDEHAL_ERROR_NONE;
     }

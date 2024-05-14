@@ -70,7 +70,7 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
     uint32_t i = 0;
 
     if ( ( 0 == batchSize ) || ( 0 == width ) || ( 0 == height ) ||
-         ( format >= RIDEHAL_IMAGE_FORMAT_MAX ) )
+         ( format >= RIDEHAL_IMAGE_FORMAT_MAX ) || ( format < RIDEHAL_IMAGE_FORMAT_RGB888 ) )
     {
         RIDEHAL_LOG_ERROR( "invalid args: batchSize=%u, width=%u, height=%u, format=%d", batchSize,
                            width, height, format );
@@ -106,13 +106,17 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
             this->imgProps.height = height;
             this->imgProps.numPlanes = numPlanes;
             this->type = RIDEHAL_BUFFER_TYPE_IMAGE;
+            RIDEHAL_LOG_VERBOSE( "PlaneDef for image %ux%u format %s\n", width, height,
+                                 s_rideHalFormatToString[format] );
         }
     }
 
-    RIDEHAL_LOG_VERBOSE( "PlaneDef for image %ux%u format %s\n", width, height,
-                         s_rideHalFormatToString[format] );
-    for ( i = 0; ( i < numPlanes ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
+    for ( i = 0; i < numPlanes; i++ )
     {
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            break;
+        }
         planeDef.nPlaneIndex = i + 1;
         status = PDQueryPlaneDef( eColorFormat, nUsage, &frameRes, &planeDef, 0 );
         if ( PD_OK == status )
@@ -132,7 +136,7 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
                     planeDef.nPlanePaddingSize );
             this->imgProps.stride[i] = planeDef.nActualStride;
             this->imgProps.actualHeight[i] = planeDef.nActualPlaneBufHeight;
-            size += planeDef.nActualStride * planeDef.nActualPlaneBufHeight;
+            size += (size_t) planeDef.nActualStride * planeDef.nActualPlaneBufHeight;
             if ( i == ( numPlanes - 1 ) )
             {
                 this->imgProps.extraPadding = planeDef.nPlanePaddingSize;
@@ -183,7 +187,7 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
     size_t size = 0;
     uint32_t i = 0;
     uint32_t bpp = 0;
-    uint32_t div = 0;
+    uint32_t divider = 0;
 
     if ( nullptr == pImgProps )
     {
@@ -204,6 +208,11 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( pImgProps->format >= RIDEHAL_IMAGE_FORMAT_COMPRESSED_MAX )
+    {
+        RIDEHAL_LOG_ERROR( "invalid args: format=%d", pImgProps->format );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( pImgProps->format < RIDEHAL_IMAGE_FORMAT_RGB888 )
     {
         RIDEHAL_LOG_ERROR( "invalid args: format=%d", pImgProps->format );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -241,9 +250,9 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
         {
             bpp = s_rideHalFormatToBytesPerPixel[pImgProps->format];
             /* check each plane def is reasonable */
-            for ( i = 0; ( i < pImgProps->numPlanes ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
+            for ( i = 0; i < pImgProps->numPlanes; i++ )
             {
-                div = s_rideHalFormatToHeightDividerPerPlanes[pImgProps->format][i];
+                divider = s_rideHalFormatToHeightDividerPerPlanes[pImgProps->format][i];
                 if ( ( pImgProps->width * bpp ) > pImgProps->stride[i] )
                 {
                     RIDEHAL_LOG_ERROR( "given stride %u(<%u) too small for plane %u for format %d",
@@ -251,23 +260,29 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
                                        pImgProps->format );
                     ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 }
-                else if ( ( pImgProps->height / div ) > pImgProps->actualHeight[i] )
+                else if ( ( pImgProps->height / divider ) > pImgProps->actualHeight[i] )
                 {
                     RIDEHAL_LOG_ERROR(
                             "given actual height %u(<%u) too small for plane %u for format %d",
-                            pImgProps->actualHeight[i], pImgProps->height / div, i,
+                            pImgProps->actualHeight[i], pImgProps->height / divider, i,
                             pImgProps->format );
                     ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 }
                 else
                 {
+                    /* OK */
+                }
+
+                if ( RIDEHAL_ERROR_NONE != ret )
+                {
+                    break;
                 }
             }
             if ( RIDEHAL_ERROR_NONE == ret )
             {
                 for ( i = 0; i < pImgProps->numPlanes; i++ )
                 {
-                    size += pImgProps->stride[i] * pImgProps->actualHeight[i];
+                    size += (size_t) pImgProps->stride[i] * pImgProps->actualHeight[i];
                 }
                 size += pImgProps->extraPadding;
                 size = size * pImgProps->batchSize;
@@ -402,7 +417,7 @@ RideHalError_e RideHal_SharedBuffer::ImageToTensor( RideHal_SharedBuffer *pShare
         pSharedBuffer->tensorProps.dims[1] = this->imgProps.height;
         pSharedBuffer->tensorProps.dims[2] = this->imgProps.width;
         pSharedBuffer->tensorProps.dims[3] = s_rideHalFormatToBytesPerPixel[this->imgProps.format];
-        pSharedBuffer->size = this->imgProps.batchSize * this->imgProps.height *
+        pSharedBuffer->size = (size_t) this->imgProps.batchSize * this->imgProps.height *
                               this->imgProps.width *
                               s_rideHalFormatToBytesPerPixel[this->imgProps.format];
     }

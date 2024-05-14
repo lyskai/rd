@@ -54,10 +54,10 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.20.0/cmake-3.20.0
     && cd /tmp && rm -rf /tmp/cmake-3.20.0*
 
 # Install lconv
-RUN wget https://github.com/linux-test-project/lcov/releases/download/v1.14/lcov-1.14.tar.gz -P /tmp --no-check-certificate \
-    && cd /tmp && tar -zxf lcov-1.14.tar.gz && cd lcov-1.14 \
+RUN wget https://github.com/linux-test-project/lcov/releases/download/v1.16/lcov-1.16.tar.gz -P /tmp --no-check-certificate \
+    && cd /tmp && tar -zxf lcov-1.16.tar.gz && cd lcov-1.16 \
     && make -j8 && make install \
-    && cd /tmp && rm -rf /tmp/lcov-1.14*
+    && cd /tmp && rm -rf /tmp/lcov-1.16*
 
 # Install python packages
 RUN apt-get update && add-apt-repository ppa:deadsnakes/ppa \
