@@ -978,10 +978,10 @@ RideHalError_e Camera::QueryInputs()
     do
     {
         status = QCarCamQueryInputs( NULL, 0, &inputCount );
-        if ( QCARCAM_RET_OK != status )
+        if ( ( QCARCAM_RET_OK != status ) || ( 0 == inputCount ) )
         {
             queryCount ++;
-            std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+            std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
         }
         else
         {
