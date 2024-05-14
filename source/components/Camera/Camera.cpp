@@ -3,6 +3,9 @@
 
 #include "ridehal/component/Camera.hpp"
 #include <cstring>
+#include <thread>
+
+#define MAX_QUERY_TIMES (20)
 
 namespace ridehal
 {
@@ -677,7 +680,7 @@ CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pframeinfo )
 {
     uint32_t frameIndex = 0;
     QCarCamRet_e status = QCARCAM_RET_OK;
-    QCarCamFrameInfo_t frameInformation;
+    QCarCamFrameInfo_t frameInformation = {0};
     CameraFrame_t *pCameraFrame = nullptr;
     uint64_t timeout = 0;
 
@@ -969,9 +972,22 @@ RideHalError_e Camera::QueryInputs()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
     uint32_t inputCount = 0;
+    uint32_t queryCount = 0;
     s_cameraInputsInfo.numInputs = 0;
 
-    status = QCarCamQueryInputs( NULL, 0, &inputCount );
+    do
+    {
+        status = QCarCamQueryInputs( NULL, 0, &inputCount );
+        if ( QCARCAM_RET_OK != status )
+        {
+            queryCount ++;
+            std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+        }
+        else
+        {
+            break;
+        }
+    } while ((0 == inputCount) && (queryCount < MAX_QUERY_TIMES));
 
     if ( QCARCAM_RET_OK != status )
     {
@@ -994,6 +1010,9 @@ RideHalError_e Camera::QueryInputs()
         }
         else
         {
+            memset( s_cameraInputsInfo.pCamInputModes, 0,
+                    sizeof( QCarCamInputModes_t ) * inputCount );
+
             status = QCarCamQueryInputs( s_cameraInputsInfo.pCameraInputs, inputCount,
                                          &s_cameraInputsInfo.numInputs );
 
@@ -1005,8 +1024,6 @@ RideHalError_e Camera::QueryInputs()
             }
             else
             {
-                memset( s_cameraInputsInfo.pCamInputModes, 0,
-                        sizeof( QCarCamInputModes_t ) * inputCount );
                 for ( uint32_t i = 0; ( i < inputCount ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
                 {
                     RIDEHAL_LOG_INFO( "Available camera input id: %u, numModes = %u",

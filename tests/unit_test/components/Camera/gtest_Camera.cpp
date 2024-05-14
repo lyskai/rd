@@ -348,6 +348,287 @@ TEST( Camera, RequestMode_QcarCam )
     delete pCamera;
 }
 
+TEST( Camera, Negative_QcarCam )
+{
+    RideHalError_e ret;
+    char componentName[20] = "Camera";
+
+    /* Negative - config is nullptr */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Init( componentName, nullptr, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+        delete pCamera;
+    }
+
+
+    /* Negative - camConfig.bufCnt is 0 */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
+
+        char componentName[20] = "Camera";
+        Camera_Config_t camConfig;
+        camConfig.bAllocator = true;
+        camConfig.bRequestMode = false;
+        camConfig.inputId = camInputs.pCameraInputs[0].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.width = pCamInputModes->pModes[0].sources[0].width;
+        camConfig.height = pCamInputModes->pModes[0].sources[0].height;
+        camConfig.bufCnt = 0;
+        camConfig.streamId = 0;
+        camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
+        camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+        (void)pCamera->Deinit();
+        delete pCamera;
+    }
+
+    /* Negative - start in invalid state */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Start();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+        delete pCamera;
+    }
+
+    /* Negative - stop in invalid state */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Stop();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+        delete pCamera;
+    }
+
+    /* Negative - deinit in invalid state */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+        delete pCamera;
+    }
+
+    /* Negative - pause in invalid state */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Pause();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+        delete pCamera;
+    }
+
+    /* Negative - resume in invalid state */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Resume();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+        delete pCamera;
+    }
+
+    /* Negative - GetInputsInfo with null input */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        delete pCamera;
+    }
+
+    /* Negative - UYVY */
+    {
+        Camera *pCamera = new Camera;
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
+
+        char componentName[20] = "Camera";
+        Camera_Config_t camConfig;
+        camConfig.bAllocator = true;
+        camConfig.bRequestMode = false;
+        camConfig.inputId = camInputs.pCameraInputs[0].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.width = pCamInputModes->pModes[0].sources[0].width;
+        camConfig.height = pCamInputModes->pModes[0].sources[0].height;
+        camConfig.bufCnt = 4;
+        camConfig.streamId = 0;
+        camConfig.format = RIDEHAL_IMAGE_FORMAT_UYVY;
+        camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        (void)pCamera->Deinit();
+        delete pCamera;
+    }
+
+    /* Negative - SetBuffer with nullptr */
+    {
+        RideHalError_e ret;
+        Camera *pCamera = new Camera;
+
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
+
+        Camera_Config_t camConfig;
+        camConfig.bAllocator = false;
+        camConfig.bRequestMode = false;
+        camConfig.inputId = camInputs.pCameraInputs[0].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.width = pCamInputModes->pModes[0].sources[0].width;
+        camConfig.height = pCamInputModes->pModes[0].sources[0].height;
+        camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
+        camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
+        camConfig.streamId = 0;
+        RideHal_SharedBuffer_t *pSharedBuffer = nullptr;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+        delete pCamera;
+    }
+
+    /* Negative - SetBuffer in invalid state */
+    {
+        RideHalError_e ret;
+        Camera *pCamera = new Camera;
+
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        RideHal_SharedBuffer_t *pSharedBuffer = new RideHal_SharedBuffer_t[BUFFFER_COUNT];
+        ret = pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+        delete pCamera;
+    }
+
+    /* Negative - RequestFrame with nullptr input */
+    {
+        RideHalError_e ret;
+        Camera *pCamera = new Camera;
+
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
+
+        Camera_Config_t camConfig;
+        camConfig.bAllocator = true;
+        camConfig.bRequestMode = true;
+        camConfig.inputId = camInputs.pCameraInputs[0].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.width = pCamInputModes->pModes[0].sources[0].width;
+        camConfig.height = pCamInputModes->pModes[0].sources[0].height;
+        camConfig.bufCnt = BUFFFER_COUNT;
+        camConfig.streamId = 0;
+        camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
+        camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Start();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->RequestFrame( nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+        (void)pCamera->Stop();
+        (void)pCamera->Deinit();
+        delete pCamera;
+    }
+
+    /* Negative - RequestFrame in invalid state */
+    {
+        RideHalError_e ret;
+        Camera *pCamera = new Camera;
+
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
+
+        Camera_Config_t camConfig;
+        camConfig.bAllocator = true;
+        camConfig.bRequestMode = true;
+        camConfig.inputId = camInputs.pCameraInputs[0].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.width = pCamInputModes->pModes[0].sources[0].width;
+        camConfig.height = pCamInputModes->pModes[0].sources[0].height;
+        camConfig.bufCnt = BUFFFER_COUNT;
+        camConfig.streamId = 0;
+        camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
+        camConfig.format = RIDEHAL_IMAGE_FORMAT_NV12;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        CameraFrame_t Frame;
+        ret = pCamera->RequestFrame( &Frame );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+        (void)pCamera->Stop();
+        (void)pCamera->Deinit();
+        delete pCamera;
+    }
+}
+
 #ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )
 {
