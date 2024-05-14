@@ -24,7 +24,7 @@ namespace component
 #define VIDEO_ENCODER_MAX_DEV_CMD_BUFFER_SIZE 256
 #define VIDEO_ENCODER_WAIT_TIMEOUT_1_SEC 1000
 
-#define ARRAY_SIZE( a ) ( sizeof( a ) / sizeof( a[0] ) )
+#define ARRAY_SIZE( a ) ( sizeof( ( a ) ) / sizeof( ( a )[0] ) )
 
 typedef struct
 {
@@ -1095,7 +1095,7 @@ vidc_color_format_type VideoEncoder::GetVidcFormat( RideHal_ImageFormat_e format
 RideHalError_e VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-    uint32_t i, num, level = 0;
+    uint32_t i, num = 0;
     const ProfileLevel_t *pTable = nullptr;
     uint32_t mbPerFrame = 0, mbPerSec = 0;
     uint64_t samplePerFrame = 0, samplePerSec = 0;
@@ -1134,7 +1134,7 @@ RideHalError_e VideoEncoder::SetVidcProfileLevel( VideoEncoder_Profile_e profile
         else if ( ( RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat ) &&
                   ( profile >= VIDEO_ENCODER_PROFILE_HEVC_MAIN ) )
         {
-            samplePerFrame = m_height * m_width;
+            samplePerFrame = (uint64_t) m_height * m_width;
             samplePerSec = samplePerFrame * m_frameRate;
             RIDEHAL_DEBUG( "samplePerFrame %" PRIu64 " samplePerSec %" PRIu64, samplePerFrame,
                            samplePerSec );
@@ -1362,6 +1362,7 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
             m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         default:
+            RIDEHAL_ERROR( "Unknown event_type: %d", pEvent->event_type );
             break;
     }
     return 0;
@@ -1375,7 +1376,6 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length, void *cdata )
 
 RideHalError_e VideoEncoder::ValidateConfig( const VideoEncoder_Config_t *pConfig )
 {
-    int32_t i = 0;
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( m_width < 128 ) || ( m_height < 128 ) || ( m_width > 8192 ) || ( m_height > 8192 ) )
@@ -1817,7 +1817,10 @@ RideHalError_e VideoEncoder::FreeOutputBuffer()
                                " failed! rc=0x%x",
                                i, rc );
             }
-            if ( false == m_bOutputConfigBuffer ) ret = m_pOutputList[i].Free();
+            if ( false == m_bOutputConfigBuffer )
+            {
+                ret = m_pOutputList[i].Free();
+            }
         }
         RIDEHAL_DEBUG( "Free m_pOutputList" );
         free( m_pOutputList );
@@ -1856,7 +1859,10 @@ RideHalError_e VideoEncoder::FreeInputBuffer()
                                " failed! rc=0x%x",
                                i, rc );
             }
-            if ( false == m_bInputConfigBuffer ) ret = m_pInputList[i].Free();
+            if ( false == m_bInputConfigBuffer )
+            {
+                ret = m_pInputList[i].Free();
+            }
         }
         RIDEHAL_DEBUG( "Free m_pInputList" );
         free( m_pInputList );
