@@ -5,8 +5,8 @@
   - [1.3 The details of Remap_MapTable_t](#13-remap_maptable_t)
 - [2. RideHal remap APIs](#2-ridehal-remap-apis)
   - [2.1 The details of Remap::Init](#21-remapinit)
-  - [2.2 The details of Remap::RegBuf](#22-remapregbuf)
-  - [2.3 The details of Remap::DeregBuf](#23-remapderegbuf)
+  - [2.2 The details of Remap::RegisterBuffers](#22-remapRegisterBuffers)
+  - [2.3 The details of Remap::DeRegisterBuffers](#23-remapdeRegisterBuffers)
   - [2.4 The details of Remap::Start](#24-remapstart)
   - [2.5 The details of Remap::Stop](#25-remapstop)
   - [2.6 The details of Remap::Deinit](#26-remapdeinit)
@@ -14,6 +14,7 @@
 - [3. Typical use case](#3-typical-use-case)
   - [3.1 Set configurations](#31-set-configurations)
   - [3.2 Call flow](#32-call-flow)
+  - [3.3 Supported pipelines](#33-supported-pipelines)
 
 # 1. RideHal Remap Data Structures
 ## 1.1 The details of Remap_Config_t
@@ -46,10 +47,10 @@ The structure [Remap_MapTable_t](../include/ridehal/component/Remap.hpp#L36) con
 # 2. RideHal remap APIs 
 ## 2.1 The details of Remap::Init
 [Remap::Init](../include/ridehal/component/Remap.hpp#L90) do all the initialization work for a remap pipeline, including initialize the CPU&DSP processor and logger, create remap worker, create remap map. It should be called at the beginning of pipeline.
-## 2.2 The details of Remap::RegBuf
-[Remap::RegBuf](../include/ridehal/component/Remap.hpp#L101) register buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at execute step.
-## 2.3 The details of Remap::DeregBuf
-[Remap::DeregBuf](../include/ridehal/component/Remap.hpp#L111) deregister buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at deinit step.
+## 2.2 The details of Remap::RegisterBuffers
+[Remap::RegisterBuffers](../include/ridehal/component/Remap.hpp#L101) register buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at execute step.
+## 2.3 The details of Remap::DeRegisterBuffers
+[Remap::DeRegisterBuffers](../include/ridehal/component/Remap.hpp#L111) deregister buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at deinit step.
 ## 2.4 The details of Remap::Start
 [Remap::Start](../include/ridehal/component/Remap.hpp#L118) start the remap pipeline, empty for now.
 ## 2.5 The details of Remap::Stop
@@ -125,15 +126,29 @@ The typical call flow of a Ridehal Remap pipeline is showed as below codes:
     RideHal_SharedBuffer_t output;
     ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
                            RemapConfig.outputHeight, RemapConfig.outputFormat );
-    ret = RemapObj.RegBuf( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
-    ret = RemapObj.RegBuf( &output, 1, FADAS_BUF_TYPE_OUT );
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
+    ret = RemapObj.RegisterBuffers( &output, 1, FADAS_BUF_TYPE_OUT );
     ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );
-    ret = RemapObj.DeregBuf( inputs, RemapConfig.numOfInputs );
-    ret = RemapObj.DeregBuf( &output, 1 );
+    ret = RemapObj.DeRegisterBuffers( inputs, RemapConfig.numOfInputs );
+    ret = RemapObj.DeRegisterBuffers( &output, 1 );
     ret = RemapObj.Deinit();
 ```
 Generally, user should call Init API once at the beginning of the pipeline and call Deinit API once at the ending of the pipeline.
-Calling of RegBuf and DeregBuf API for input/output buffer is optional, if the register step is not done by user explicitly, it would be done in Execute API implicitly. 
+Calling of RegisterBuffers and DeRegisterBuffers API for input/output buffer is optional, if the register step is not done by user explicitly, it would be done in Execute API implicitly. 
+## 3.3 Supported pipelines
+The supported remap pipelines for different input/output image format on each processor are listed below. In which Y means supported, N means unsupported. And norm means pipeline with normalization, corresponding to bEnableNormalize = true in the configuration parameters.
+```
+                    DSP processor       CPU processor
+RGB  to RGB                Y                   Y
+RGB  to RGB norm           N                   N
+UYVY to RGB                Y                   Y
+UYVY to BGR                Y                   Y
+UYVY to RGB norm           Y                   Y
+NV12 to BGR                Y                   Y
+NV12 to RGB                N                   Y
+NV12 to RGB norm           N                   Y
+```
+
 
 Reference:
 - [gtest_Remap](../tests/unit_test/components/Remap/gtest_Remap.cpp)

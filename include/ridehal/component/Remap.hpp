@@ -91,24 +91,24 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @cond Remap::RegBuf @endcond
+     * @cond Remap::RegisterBuffers @endcond
      * @brief Register buffers for remap
      * @param[in] pBuffers a list of buffers to be registeer
      * @param[in] numBuffers number of buffers
      * @param[in] bufferType buffer type, could be IN, OUT, INOUT
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e RegBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
-                           FadasBufType_e bufferType );
+    RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
+                                    FadasBufType_e bufferType );
 
     /**
-     * @cond Remap::DeregBuf @endcond
+     * @cond Remap::DeRegisterBuffers @endcond
      * @brief Deregister buffers for remap
      * @param[in] pBuffers a list of buffers to be deregister
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e DeregBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
      * @cond Remap::Start @endcond

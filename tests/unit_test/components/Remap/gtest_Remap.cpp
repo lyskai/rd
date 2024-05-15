@@ -53,10 +53,11 @@ void FailTest1()
     ret = RemapObj.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // deinit before init
 
-    ret = RemapObj.RegBuf( &output, 1, FADAS_BUF_TYPE_OUT );   // register buffer before init
+    ret = RemapObj.RegisterBuffers( &output, 1,
+                                    FADAS_BUF_TYPE_OUT );   // register buffer before init
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
-    ret = RemapObj.DeregBuf( &output, 1 );   // deregister buffer before init
+    ret = RemapObj.DeRegisterBuffers( &output, 1 );   // deregister buffer before init
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
     ret = RemapObj.Execute( inputs, 1, &output );   // execute before init
@@ -116,11 +117,12 @@ void FailTest2()
     ret = RemapObj.Init( pName, &RemapConfig );   // success init
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = RemapObj.RegBuf( nullptr, 1,
-                           FADAS_BUF_TYPE_OUT );   // null pointer for buffer to be register
+    ret = RemapObj.RegisterBuffers(
+            nullptr, 1,
+            FADAS_BUF_TYPE_OUT );   // null pointer for buffer to be register
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
-    ret = RemapObj.DeregBuf( nullptr, 1 );   // null pointer for buffer to be deregister
+    ret = RemapObj.DeRegisterBuffers( nullptr, 1 );   // null pointer for buffer to be deregister
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = RemapObj.Execute( nullptr, RemapConfig.numOfInputs,
@@ -427,10 +429,10 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     ret = RemapObj.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = RemapObj.RegBuf( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = RemapObj.RegBuf( &output, 1, FADAS_BUF_TYPE_OUT );
+    ret = RemapObj.RegisterBuffers( &output, 1, FADAS_BUF_TYPE_OUT );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( bCheckPerformanceTest == true )
@@ -452,10 +454,10 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
-    ret = RemapObj.DeregBuf( inputs, RemapConfig.numOfInputs );
+    ret = RemapObj.DeRegisterBuffers( inputs, RemapConfig.numOfInputs );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = RemapObj.DeregBuf( &output, 1 );
+    ret = RemapObj.DeRegisterBuffers( &output, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( bCheckAccuracyTest == true )

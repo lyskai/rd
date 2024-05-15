@@ -189,8 +189,8 @@ RideHalError_e Remap::Deinit()
     return ret;
 }
 
-RideHalError_e Remap::RegBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
-                              FadasBufType_e bufferType )
+RideHalError_e Remap::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
+                                       FadasBufType_e bufferType )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -223,7 +223,8 @@ RideHalError_e Remap::RegBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t n
     return ret;
 }
 
-RideHalError_e Remap::DeregBuf( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers )
+RideHalError_e Remap::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                         uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
