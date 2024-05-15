@@ -5,7 +5,7 @@
 #include <cstring>
 #include <thread>
 
-#define MAX_QUERY_TIMES (20)
+#define MAX_QUERY_TIMES ( 20 )
 
 namespace ridehal
 {
@@ -397,17 +397,26 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
         QCarCamFrameDropConfig_t frameDropConfig = { 0 };
         frameDropConfig.frameDropPeriod = GetNumBitsOfInteger( pConfig->camFrameDropPat );
         frameDropConfig.frameDropPattern = pConfig->camFrameDropPat;
-        status = QCarCamSetParam( m_QcarCamHndl, QCARCAM_STREAM_CONFIG_PARAM_FRAME_DROP_CONTROL,
-                                  &frameDropConfig, sizeof( frameDropConfig ) );
-        if ( QCARCAM_RET_OK != status )
+
+        if ( ( 1 <= frameDropConfig.frameDropPeriod ) && ( 32 >= frameDropConfig.frameDropPeriod ) )
         {
-            RIDEHAL_ERROR( "QCARCAM_PARAM_FRAME_RATE failed ret %d", ret );
-            ret = RIDEHAL_ERROR_FAIL;
-            m_state = RIDEHAL_COMPONENT_STATE_ERROR;
+            status = QCarCamSetParam( m_QcarCamHndl, QCARCAM_STREAM_CONFIG_PARAM_FRAME_DROP_CONTROL,
+                                      &frameDropConfig, sizeof( frameDropConfig ) );
+            if ( QCARCAM_RET_OK != status )
+            {
+                RIDEHAL_ERROR( "QCARCAM_PARAM_FRAME_RATE failed ret %d", ret );
+                ret = RIDEHAL_ERROR_FAIL;
+                m_state = RIDEHAL_COMPONENT_STATE_ERROR;
+            }
+            else
+            {
+                RIDEHAL_INFO( "QCARCAM_PARAM_FRAME_RATE Success" );
+            }
         }
         else
         {
-            RIDEHAL_INFO( "QCARCAM_PARAM_FRAME_RATE Success" );
+            RIDEHAL_ERROR( "skip invalid frame drop config %d %d", frameDropConfig.frameDropPeriod,
+                           frameDropConfig.frameDropPattern );
         }
     }
 
@@ -680,7 +689,7 @@ CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pframeinfo )
 {
     uint32_t frameIndex = 0;
     QCarCamRet_e status = QCARCAM_RET_OK;
-    QCarCamFrameInfo_t frameInformation = {0};
+    QCarCamFrameInfo_t frameInformation = { 0 };
     CameraFrame_t *pCameraFrame = nullptr;
     uint64_t timeout = 0;
 
@@ -980,14 +989,14 @@ RideHalError_e Camera::QueryInputs()
         status = QCarCamQueryInputs( NULL, 0, &inputCount );
         if ( ( QCARCAM_RET_OK != status ) || ( 0 == inputCount ) )
         {
-            queryCount ++;
+            queryCount++;
             std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
         }
         else
         {
             break;
         }
-    } while ((0 == inputCount) && (queryCount < MAX_QUERY_TIMES));
+    } while ( ( 0 == inputCount ) && ( queryCount < MAX_QUERY_TIMES ) );
 
     if ( QCARCAM_RET_OK != status )
     {

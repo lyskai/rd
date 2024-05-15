@@ -136,7 +136,7 @@ TEST( Camera, SANITY_QcarCam )
                 pCamInputModes->pModes[0].sources[0].height );
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[i].inputId;
@@ -187,7 +187,7 @@ TEST( Camera, SetBuffer_QcarCam )
                 pCamInputModes->pModes[0].sources[0].height );
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = false;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[i].inputId;
@@ -253,7 +253,7 @@ TEST( Camera, PauseResume_QcarCam )
                 pCamInputModes->pModes[0].sources[0].height );
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[i].inputId;
@@ -313,7 +313,7 @@ TEST( Camera, RequestMode_QcarCam )
                 pCamInputModes->pModes[0].sources[0].height );
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = true;
         camConfig.inputId = camInputs.pCameraInputs[i].inputId;
@@ -377,7 +377,7 @@ TEST( Camera, Coverage_QcarCam )
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -392,7 +392,7 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-        (void)pCamera->Deinit();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -482,7 +482,7 @@ TEST( Camera, Coverage_QcarCam )
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -497,7 +497,7 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-        (void)pCamera->Deinit();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -512,7 +512,7 @@ TEST( Camera, Coverage_QcarCam )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = false;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -561,7 +561,7 @@ TEST( Camera, Coverage_QcarCam )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = true;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -585,8 +585,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->RequestFrame( nullptr );
         ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-        (void)pCamera->Stop();
-        (void)pCamera->Deinit();
+        (void) pCamera->Stop();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -601,7 +601,7 @@ TEST( Camera, Coverage_QcarCam )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = true;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -623,8 +623,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->RequestFrame( &Frame );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
-        (void)pCamera->Stop();
-        (void)pCamera->Deinit();
+        (void) pCamera->Stop();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -638,7 +638,7 @@ TEST( Camera, Coverage_QcarCam )
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
         char componentName[20] = "Camera";
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -653,7 +653,7 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-        (void)pCamera->Deinit();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -668,7 +668,7 @@ TEST( Camera, Coverage_QcarCam )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -686,8 +686,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
-        (void)pCamera->Stop();
-        (void)pCamera->Deinit();
+        (void) pCamera->Stop();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -702,7 +702,7 @@ TEST( Camera, Coverage_QcarCam )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -726,8 +726,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->ReleaseFrame( nullptr );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
-        (void)pCamera->Stop();
-        (void)pCamera->Deinit();
+        (void) pCamera->Stop();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
@@ -742,7 +742,7 @@ TEST( Camera, Coverage_QcarCam )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
 
-        Camera_Config_t camConfig;
+        Camera_Config_t camConfig = { 0 };
         camConfig.bAllocator = true;
         camConfig.bRequestMode = false;
         camConfig.inputId = camInputs.pCameraInputs[0].inputId;
@@ -764,8 +764,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->ReleaseFrame( &Frame );
         ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
-        (void)pCamera->Stop();
-        (void)pCamera->Deinit();
+        (void) pCamera->Stop();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 
