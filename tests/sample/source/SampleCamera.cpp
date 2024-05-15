@@ -121,19 +121,27 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             RIDEHAL_ERROR( "no topic\n" );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
+
+        m_bIgnoreError = Get( config, "ignore_error", false );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         ret = m_camera.Init( (char *) name.c_str(), &m_camConfig );
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = m_camera.RegisterCallback( SampleCamera::FrameCallBack,
+                                             SampleCamera::EventCallBack, (void *) this );
+        }
+        else
+        {
+            if ( m_bIgnoreError )
+            {
+                RIDEHAL_ERROR( "Init failed: %d, ignore it\n" );
+                ret = RIDEHAL_ERROR_NONE;
+            }
+        }
     }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        ret = m_camera.RegisterCallback( SampleCamera::FrameCallBack, SampleCamera::EventCallBack,
-                                         (void *) this );
-    }
-
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -148,6 +156,12 @@ RideHalError_e SampleCamera::Start()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     ret = m_camera.Start();
+
+    if ( m_bIgnoreError )
+    {
+        RIDEHAL_ERROR( "Start failed: %d, ignore it\n" );
+        ret = RIDEHAL_ERROR_NONE;
+    }
 
     return ret;
 }

@@ -72,6 +72,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md) for how to g
 | stream_id | false    | int       | 0       | The camera stream id |
 | isp_use_case | false | int       | 3       | The ISP use case |
 | op_mode   | false    | int       | 2       | The input operation mode, 1: Inline ISP, 2: Injection to ISP. |
+| ignore_error | false | bool      | false   | Ignore the error of Camera Init&Start |
 | topic     | true     | string    | -       | The output topic name |
 
 The command line template example:
