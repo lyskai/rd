@@ -138,6 +138,164 @@ void FailTest2()
     return;
 }
 
+void FailTest3()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    Remap RemapObj;
+    Remap_Config_t RemapConfig;
+    char pName[10] = "Remap";
+
+    SetCommonParam( &RemapConfig );
+    ret = RemapObj.Init( pName, &RemapConfig );   // success init
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    RideHal_SharedBuffer_t inputs[RemapConfig.numOfInputs];
+    RideHal_SharedBuffer_t output;
+
+    ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
+                           RemapConfig.outputHeight, RemapConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RIDEHAL_IMAGE_FORMAT_NV12 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong input format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth + 1,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong input width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight + 1,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong input height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( 2, RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong input batch
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
+                           RemapConfig.outputHeight, RIDEHAL_IMAGE_FORMAT_BGR888 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong output format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth + 1,
+                           RemapConfig.outputHeight, RemapConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong output width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
+                           RemapConfig.outputHeight + 1, RemapConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong output height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = output.Allocate( RemapConfig.numOfInputs + 1, RemapConfig.outputWidth,
+                           RemapConfig.outputHeight, RemapConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // wrong output batch
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    return;
+}
+
+void FailTest4()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    int32_t fd = 0;
+
+    Remap RemapObj;
+    Remap_Config_t RemapConfig;
+    char pName[10] = "Remap";
+    RideHal_SharedBuffer_t inputs[1];
+    RideHal_SharedBuffer_t output;
+    FadasRemap FadasRemapObj;
+
+    ret = FadasRemapObj.Init( RIDEHAL_PROCESSOR_HTP1, pName,
+                              LOGGER_LEVEL_ERROR );   // init with dsp1
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    fd = FadasRemapObj.RegBuf( nullptr,
+                               FADAS_BUF_TYPE_OUT );   // null pointer for buffer to be register
+    ASSERT_EQ( -1, fd );
+
+    fd = FadasRemapObj.RegBuf( &inputs[0], FADAS_BUF_TYPE_OUT );   // not image buffer
+    ASSERT_EQ( -1, fd );
+
+    FadasRemapObj.DeregBuf( nullptr );   // null pointer for buffer to be deregister
+
+    return;
+}
+
 void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inputFormatTest,
                   RideHal_ImageFormat_e outputFormatTest, bool bEnableUndistortionTest,
                   bool bEnableNormalizeTest, bool bCheckAccuracyTest, bool bCheckPerformanceTest )
@@ -446,6 +604,8 @@ TEST( Remap, FailTest )   // fail path tests
 {
     FailTest1();   // bad status error
     FailTest2();   // bad arguments error
+    FailTest3();   // wrong input&output buffer
+    FailTest4();   // cover error path in FadasSrv.cpp
 }
 
 #ifndef GTEST_RIDEHAL
