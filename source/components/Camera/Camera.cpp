@@ -398,7 +398,12 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
         frameDropConfig.frameDropPeriod = GetNumBitsOfInteger( pConfig->camFrameDropPat );
         frameDropConfig.frameDropPattern = pConfig->camFrameDropPat;
 
-        if ( ( 1 <= frameDropConfig.frameDropPeriod ) && ( 32 >= frameDropConfig.frameDropPeriod ) )
+        if ( 0 == pConfig->camFrameDropPat )
+        {
+            RIDEHAL_INFO( "Ignore frame drop config" );
+        }
+        else if ( ( 1 <= frameDropConfig.frameDropPeriod ) &&
+                  ( 32 >= frameDropConfig.frameDropPeriod ) )
         {
             status = QCarCamSetParam( m_QcarCamHndl, QCARCAM_STREAM_CONFIG_PARAM_FRAME_DROP_CONTROL,
                                       &frameDropConfig, sizeof( frameDropConfig ) );
