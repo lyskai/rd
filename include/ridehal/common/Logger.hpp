@@ -1,5 +1,5 @@
-#ifndef _RIDEHAL_LOGGER_HPP_
-#define _RIDEHAL_LOGGER_HPP_
+#ifndef RIDEHAL_LOGGER_HPP
+#define RIDEHAL_LOGGER_HPP
 
 #include "ridehal/common/Types.hpp"
 #include <mutex>
@@ -22,8 +22,8 @@ namespace common
  *
  * class ComponentA {
  *   RideHalError_e Init( const char *pName, const char *pName, Logger_Level_e level ) {
- *     RideHalError_e ret = RIDEHAL_LOGGER_INIT(); // do logger Init at the begin
- *     ... // those the RIDEHAL_VERBOSE|DEBUG|INFO|WARN|ERROR related macros can be used.
+ *     RideHalError_e ret = RIDEHAL_LOGGER_INIT(); # do logger Init at the begin
+ *     ... # those the RIDEHAL_VERBOSE|DEBUG|INFO|WARN|ERROR related macros can be used.
  *     RIDEHAL_INFO( "componentA: Init" );
  *  }
  *
@@ -31,7 +31,7 @@ namespace common
  *     RideHalError_e ret;
  *     ...
  *     RIDEHAL_INFO( "componentA: Deinit" );
- *     ret = RIDEHAL_LOGGER_DEINIT(); // Do logger Deinit at the end
+ *     ret = RIDEHAL_LOGGER_DEINIT(); # Do logger Deinit at the end
  *  }
  *
  *  private:
@@ -267,4 +267,4 @@ private:
 }   // namespace common
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_LOGGER_HPP_
+#endif   // RIDEHAL_LOGGER_HPP

@@ -79,7 +79,7 @@ RideHalError_e BufferManager::Init( const char *pName, Logger_Level_e level )
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         (void) fprintf( stderr, "WARINING: failed to init logger for BUFMGR %s: ret = %d\n",
-                        pName ? pName : "null", ret );
+                        ( pName != nullptr ) ? pName : "null", ret );
     }
     ret = RIDEHAL_ERROR_NONE; /* ignore logger init error */
 

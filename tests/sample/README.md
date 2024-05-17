@@ -341,7 +341,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k topic -v /sensor/camera/CAM0/raw \
   -n C2D0 -t C2D -k batch_size -v 1 \
     -k input_width0 -v 1928 -k input_height0 -v 1208 -k input_format0 -v nv12 \
-	-k roi_x0 -v 0 -k roi_y0 -v 0 -k roi_width0 -v 1928 -k roi_height0 -v 1208 \
+    -k roi_x0 -v 0 -k roi_y0 -v 0 -k roi_width0 -v 1928 -k roi_height0 -v 1208 \
     -k output_width -v 1928 -k output_height -v 1208 -k output_format -v uyvy \
     -k input_topic -v /sensor/camera/CAM0/raw \
     -k output_topic -v /sensor/camera/CAM0/uyvy \

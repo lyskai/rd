@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_SHARED_BUFFER_HPP_
-#define _RIDEHAL_SHARED_BUFFER_HPP_
+#ifndef RIDEHAL_SHARED_BUFFER_HPP
+#define RIDEHAL_SHARED_BUFFER_HPP
 
 #include "ridehal/common/Types.hpp"
 
@@ -121,7 +121,7 @@ public:
      * @brief get the valid buffer virtual address
      * @return the valid buffer virtual address
      */
-    void *data() const { return (void *) ( (uintptr_t) buffer.pData + offset ); }
+    void *data() const { return (void *) ( ( (uint8_t *) buffer.pData ) + offset ); }
 
     /**
      * @brief Convert the shared buffer type from image to tensor
@@ -161,4 +161,4 @@ RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size );
 }   // namespace common
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_SHARED_BUFFER_HPP_
+#endif   // RIDEHAL_SHARED_BUFFER_HPP

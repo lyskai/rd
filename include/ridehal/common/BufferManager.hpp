@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_BUFFER_MANAGER_HPP_
-#define _RIDEHAL_BUFFER_MANAGER_HPP_
+#ifndef RIDEHAL_BUFFER_MANAGER_HPP
+#define RIDEHAL_BUFFER_MANAGER_HPP
 
 #include <map>
 #include <mutex>
@@ -77,4 +77,4 @@ private:
 }   // namespace common
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_BUFFER_MANAGER_HPP_
+#endif   // RIDEHAL_BUFFER_MANAGER_HPP

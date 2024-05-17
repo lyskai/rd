@@ -92,6 +92,9 @@ Below is a demo command to check the RideHal logs:
 
 ```sh
 slog2info | grep ridehal
+
+# below command to clear logs
+slog2info -c
 ```
 
 ### 3.1.2 For Linux, the default used log system is syslog.
@@ -104,6 +107,10 @@ Below is a demo command to check the RideHal logs:
 
 ```sh
 journalctl   | grep ridehal
+
+# below command to clear logs
+journalctl --flush --rotate --vacuum-size=1
+journalctl --flush --rotate --vacuum-time=1s
 ```
 
 ## 3.2 Direct the RideHal logger message to the standard output(stdout)

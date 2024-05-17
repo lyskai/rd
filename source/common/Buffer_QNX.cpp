@@ -64,7 +64,7 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
         }
         else
         {
-            *pDmaHandle = static_cast<uint64_t>( ( uintptr_t )(void *) pmemHandle );
+            *pDmaHandle = static_cast<uint64_t>( (uintptr_t) pmemHandle );
         }
     }
 

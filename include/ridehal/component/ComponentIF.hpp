@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_COMPONENT_IF_HPP_
-#define _RIDEHAL_COMPONENT_IF_HPP_
+#ifndef RIDEHAL_COMPONENT_IF_HPP
+#define RIDEHAL_COMPONENT_IF_HPP
 
 #include <string>
 
@@ -75,4 +75,4 @@ protected:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_COMPONENT_IF_HPP_
+#endif   // RIDEHAL_COMPONENT_IF_HPP

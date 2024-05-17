@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_TYPES_HPP_
-#define _RIDEHAL_TYPES_HPP_
+#ifndef RIDEHAL_TYPES_HPP
+#define RIDEHAL_TYPES_HPP
 
 #include <cinttypes>
 #include <cstddef>
@@ -190,4 +190,4 @@ typedef enum
 }   // namespace common
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_TYPES_HPP_
+#endif   // RIDEHAL_TYPES_HPP
