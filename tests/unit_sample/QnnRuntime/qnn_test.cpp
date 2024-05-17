@@ -84,6 +84,7 @@ typedef struct
     int tid; /* deploy this on which thread */
     int delayMs = 0;
     int periodMs = 0;
+    int batchMultiplier = 1;
 } QnnTest_Parameters_t;
 
 static std::string GetTensorInfoStr( QnnRuntime_TensorInfo_t &info )
@@ -117,6 +118,7 @@ public:
         auto &modelPath = m_params.modelPath;
         auto processor = m_params.processor;
         auto &inputs = m_params.inputs;
+        const int batchMultiplier = m_params.batchMultiplier;
         printf( "[%s] Test models %s run %d nLoops on processor %d with %" PRIu64 " inputs\n",
                 name.c_str(), modelPath.c_str(), m_params.nLoops, processor, inputs.size() );
 
@@ -170,7 +172,9 @@ public:
             auto &info = m_inputInfoList.pInfo[i];
             printf( "[%s] input %" PRIu64 " name=%s %s\n", name.c_str(), i, info.pName,
                     GetTensorInfoStr( info ).c_str() );
-            ret = m_inputBuffers[i].Allocate( &info.properties );
+            RideHal_TensorProps_t tensorProperties = info.properties;
+            tensorProperties.dims[0] = tensorProperties.dims[0] * batchMultiplier;
+            ret = m_inputBuffers[i].Allocate( &tensorProperties );
             if ( RIDEHAL_ERROR_NONE == ret )
             {
                 if ( i < inputs.size() )
@@ -219,7 +223,9 @@ public:
             auto &info = m_outputInfoList.pInfo[i];
             printf( "[%s] output %" PRIu64 " name=%s %s\n", name.c_str(), i, info.pName,
                     GetTensorInfoStr( info ).c_str() );
-            ret = m_outputBuffers[i].Allocate( &info.properties );
+            RideHal_TensorProps_t tensorProperties = info.properties;
+            tensorProperties.dims[0] = tensorProperties.dims[0] * batchMultiplier;
+            ret = m_outputBuffers[i].Allocate( &tensorProperties );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 printf( "[%s] Failed to allocate buffer for output %" PRIu64 "\n", name.c_str(),
@@ -402,7 +408,8 @@ bool ThreadMain( int nLoops, std::vector<std::shared_ptr<QnnTestRunner>> runners
 int Usage( char *prog, int error )
 {
     printf( "usage: %s"
-            " -n name -m model_path -p processor [-t tid] [-l nLoops] [-i input.raw]* [-P period] "
+            " -n name -m model_path -p processor [-b batch_multiplier][-t tid] [-l nLoops] [-i "
+            "input.raw]* [-P period] "
             "[-S start] [-d]\n"
             "  With below options to create a QNN tester:\n"
             "    -n name: The unique QNN tester name, must be before options -m/-p/-l/-i/-P/-S\n"
@@ -411,6 +418,8 @@ int Usage( char *prog, int error )
             "    -t tid: The thread id to run the QNN model, those tester with the same tid run\n"
             "      sequentially in the same thread\n"
             "    -p processor: The processor, 0: HTP0, 1: HTP1, 2: CPU, 3:GPU\n"
+            "    -b batch_multiplier:  Specifies the value with which the batch value in input and "
+            "output tensors dimensions will be multiplied.\n"
             "    -l nLoops: optional, specify the iterations that to call QNN Execute\n"
             "    -i input.raw: optional, specify the input raw file to the QNN model, repeat this\n"
             "      option if the QNN model has multiple inputs\n"
@@ -429,7 +438,7 @@ int main( int argc, char *argv[] )
     std::vector<QnnTest_Parameters_t> paramsList;
 
     int flags, opt;
-    while ( ( opt = getopt( argc, argv, "n:m:p:t:l:i:P:S:dh" ) ) != -1 )
+    while ( ( opt = getopt( argc, argv, "n:m:p:b:t:l:i:P:S:dh" ) ) != -1 )
     {
         switch ( opt )
         {
@@ -457,6 +466,12 @@ int main( int argc, char *argv[] )
                     printf( "invalid processor %s for %s\n", optarg, params.name.c_str() );
                     return -1;
                 }
+                break;
+            }
+            case 'b':
+            {
+                QnnTest_Parameters_t &params = paramsList.back();
+                params.batchMultiplier = atoi( optarg );
                 break;
             }
             case 't':

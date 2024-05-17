@@ -822,8 +822,7 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfoList_t *pList )
     return ret;
 }
 
-Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
-                                             const Qnn_Tensor_t &tensor )
+Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t *pSharedBuffer )
 {
 
     Qnn_MemHandle_t memHandle = nullptr;
@@ -841,7 +840,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
 #else
     // #warning QnnRuntime build with old version QNN SDK that do not support DMA buffer with
     // offset.
-    if ( 0 != sharedBuffer.offset )
+    if ( 0 != pSharedBuffer->offset )
     {
         RIDEHAL_ERROR( "Tensor offset is not zero in qnn ealier version!" );
         ret = RIDEHAL_ERROR_FAIL;
@@ -857,7 +856,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
-        auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) sharedBuffer.data() );
+        auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffer->data() );
         if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
         {
             int domain = CDSP_DOMAIN_ID;
@@ -867,26 +866,28 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
             }
 
             Qnn_MemDescriptor_t desc;
-            desc.memShape.numDim = QNN_TENSOR_GET_RANK( &tensor );
-            desc.memShape.dimSize = QNN_TENSOR_GET_DIMENSIONS( &tensor );
-            desc.dataType = QNN_TENSOR_GET_DATA_TYPE( &tensor );
+            desc.memShape.numDim = pSharedBuffer->tensorProps.numDims;
+            desc.memShape.dimSize = (uint32_t *) pSharedBuffer->tensorProps.dims;
+            desc.dataType = SwitchToQnnDataType( pSharedBuffer->tensorProps.type );
 
             int client = 0;   // NOTE: default is 0
             int extDomainId = get_extended_domains_id( domain, client );
 #if defined( __QNXNTO__ )
-            remote_register_buf_v2( extDomainId, sharedBuffer.buffer.pData, sharedBuffer.size, 0 );
+            remote_register_buf_v2( extDomainId, pSharedBuffer->buffer.pData,
+                                    pSharedBuffer->buffer.size, 0 );
 #else
-            remote_register_buf_v2( extDomainId, sharedBuffer.buffer.pData, sharedBuffer.size,
-                                    (int) sharedBuffer.buffer.dmaHandle );
+            remote_register_buf_v2( extDomainId, pSharedBuffer->buffer.pData,
+                                    pSharedBuffer->buffer.size,
+                                    (int) pSharedBuffer->buffer.dmaHandle );
 #endif
-            auto fd = rpcmem_to_fd( sharedBuffer.buffer.pData );
+            auto fd = rpcmem_to_fd( pSharedBuffer->buffer.pData );
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
             QnnMemHtp_Descriptor_t htpDesc;
             htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
-            htpDesc.size = sharedBuffer.size;
+            htpDesc.size = pSharedBuffer->size;
             htpDesc.sharedBufferConfig.fd = fd;
-            htpDesc.sharedBufferConfig.offset = sharedBuffer.offset;
+            htpDesc.sharedBufferConfig.offset = pSharedBuffer->offset;
 
             desc.memShape.shapeConfig = nullptr;
             desc.memType = QNN_MEM_TYPE_CUSTOM;
@@ -902,17 +903,18 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
             if ( QNN_SUCCESS != retVal )
             {
                 RIDEHAL_ERROR( "map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                               sharedBuffer.buffer.pData, fd, sharedBuffer.size,
-                               sharedBuffer.offset, m_BackendCoreId, retVal );
+                               pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
+                               pSharedBuffer->offset, m_BackendCoreId, retVal );
             }
             else
             {
                 QnnRuntime::DmaMemInfo_t info;
                 info.memHandle = memHandle;
-                info.size = sharedBuffer.size;
-                s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) sharedBuffer.data()] = info;
-                QNN_INFO( "map buffer %p(%d, %u, %u) as %p for core %d", sharedBuffer.buffer.pData,
-                          fd, sharedBuffer.size, sharedBuffer.offset, memHandle, m_BackendCoreId );
+                info.size = pSharedBuffer->buffer.size;
+                s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffer->data()] = info;
+                QNN_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
+                          pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
+                          pSharedBuffer->offset, memHandle, m_BackendCoreId );
             }
         }
         else
@@ -926,7 +928,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t &share
 }
 
 
-RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer,
+RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *sharedBuffer,
                                             uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -975,17 +977,17 @@ RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer
 
                 Qnn_MemDescriptor_t desc;
                 desc.memShape.numDim = sharedBuffer[i].tensorProps.numDims;
-                desc.memShape.dimSize = sharedBuffer[i].tensorProps.dims;
+                desc.memShape.dimSize = (uint32_t *) sharedBuffer[i].tensorProps.dims;
                 desc.dataType = SwitchToQnnDataType( sharedBuffer[i].tensorProps.type );
 
                 int client = 0;   // NOTE: default is 0
                 int extDomainId = get_extended_domains_id( domain, client );
 #if defined( __QNXNTO__ )
                 remote_register_buf_v2( extDomainId, sharedBuffer[i].buffer.pData,
-                                        sharedBuffer[i].size, 0 );
+                                        sharedBuffer[i].buffer.size, 0 );
 #else
                 remote_register_buf_v2( extDomainId, sharedBuffer[i].buffer.pData,
-                                        sharedBuffer[i].size,
+                                        sharedBuffer[i].buffer.size,
                                         (int) sharedBuffer[i].buffer.dmaHandle );
 #endif
                 auto fd = rpcmem_to_fd( sharedBuffer[i].buffer.pData );
@@ -1020,7 +1022,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer
                 {
                     QnnRuntime::DmaMemInfo_t info;
                     info.memHandle = memHandle;
-                    info.size = sharedBuffer[i].size;
+                    info.size = sharedBuffer[i].buffer.size;
                     s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) sharedBuffer[i].data()] = info;
                     RIDEHAL_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
                                   sharedBuffer[i].buffer.pData, fd, sharedBuffer[i].size,
@@ -1038,8 +1040,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer
     return ret;
 }
 
-Qnn_MemHandle_t QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t &sharedBuffer,
-                                          const Qnn_Tensor_t &tensor )
+Qnn_MemHandle_t QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t *pSharedBuffer )
 {
 
     Qnn_MemHandle_t memHandle = nullptr;
@@ -1053,7 +1054,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t &sharedBu
     if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
          RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
     {
-        memHandle = GetMemHandleHTP( sharedBuffer, tensor );
+        memHandle = GetMemHandleHTP( pSharedBuffer );
     }
 
 
@@ -1172,7 +1173,6 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
     std::vector<Qnn_Tensor_t> inputs;
     std::vector<Qnn_Tensor_t> outputs;
 
-    Qnn_ErrorHandle_t executeStatus = QNN_GRAPH_NO_ERROR;
     auto graphInfo = ( *m_GraphsInfo )[0];
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -1181,11 +1181,12 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         {
             inputs.push_back( graphInfo.inputTensors[i] );
             // HTP
-            Qnn_MemHandle_t memHandle = GetMemHandle( pInputs[i], inputs[i] );
+            Qnn_MemHandle_t memHandle = GetMemHandle( (RideHal_SharedBuffer_t *) ( pInputs + i ) );
             if ( nullptr != memHandle )
             {
                 QNN_TENSOR_SET_MEM_TYPE( &inputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
                 QNN_TENSOR_SET_MEM_HANDLE( &inputs[i], memHandle );
+                QNN_TENSOR_SET_DIMENSIONS( &inputs[i], (uint32_t *) pInputs[i].tensorProps.dims );
             }
             else
             {
@@ -1193,6 +1194,7 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                 Qnn_ClientBuffer_t clientBuffer = { (uint8_t *) pInputs[i].data(),
                                                     (uint32_t) pInputs[i].size };
                 QNN_TENSOR_SET_CLIENT_BUF( &inputs[i], clientBuffer );
+                QNN_TENSOR_SET_DIMENSIONS( &inputs[i], (uint32_t *) pInputs[i].tensorProps.dims );
             }
         }
     }
@@ -1202,11 +1204,12 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         for ( uint32_t i = 0; i < graphInfo.numOutputTensors; i++ )
         {
             outputs.push_back( graphInfo.outputTensors[i] );
-            Qnn_MemHandle_t memHandle = GetMemHandle( pOutputs[i], outputs[i] );
+            Qnn_MemHandle_t memHandle = GetMemHandle( (RideHal_SharedBuffer_t *) ( pOutputs + i ) );
             if ( nullptr != memHandle )
             {
                 QNN_TENSOR_SET_MEM_TYPE( &outputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
                 QNN_TENSOR_SET_MEM_HANDLE( &outputs[i], memHandle );
+                QNN_TENSOR_SET_DIMENSIONS( &outputs[i], (uint32_t *) pOutputs[i].tensorProps.dims );
             }
             else
             {
@@ -1214,6 +1217,7 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                 Qnn_ClientBuffer_t clientBuffer = { (uint8_t *) pOutputs[i].data(),
                                                     (uint32_t) pOutputs[i].size };
                 QNN_TENSOR_SET_CLIENT_BUF( &outputs[i], clientBuffer );
+                QNN_TENSOR_SET_DIMENSIONS( &outputs[i], (uint32_t *) pOutputs[i].tensorProps.dims );
             }
         }
     }
@@ -1234,7 +1238,7 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        executeStatus = m_QnnFunctionPointers.qnnInterface.graphExecute(
+        const Qnn_ErrorHandle_t executeStatus = m_QnnFunctionPointers.qnnInterface.graphExecute(
                 graphInfo.graph, inputs.data(), graphInfo.numInputTensors, outputs.data(),
                 graphInfo.numOutputTensors, m_ProfileBackendHandle, nullptr );
         if ( QNN_GRAPH_NO_ERROR != executeStatus )
@@ -1298,7 +1302,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers()
     return ret;
 }
 
-RideHalError_e QnnRuntime::DeRegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer,
+RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *sharedBuffer,
                                               uint32_t numBuffers )
 {
 

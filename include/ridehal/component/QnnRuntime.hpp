@@ -178,20 +178,22 @@ public:
     /**
      * @cond QnnRuntime::RegisterBuffers @endcond
      * @brief Rigister memory with specific shared buffers
-     * @param[in] sharedBuffer Pointer to shared buffers
+     * @param[in] pSharedBuffers Pointer to shared buffers
      * @param[in] numBuffers The number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e RegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer, uint32_t numBuffers );
+    RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
+                                    uint32_t numBuffers );
 
     /**
      * @cond QnnRuntime::DeRegisterBuffers @endcond
      * @brief DeRigister memory with specific shared buffers
-     * @param[in] sharedBuffer Pointer to shared buffers
+     * @param[in] pSharedBuffers Pointer to shared buffers
      * @param[in] numBuffers The number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e DeRegisterBuffers( RideHal_SharedBuffer_t *sharedBuffer, uint32_t numBuffers );
+    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
+                                      uint32_t numBuffers );
 
 private:
     /**
@@ -235,8 +237,7 @@ private:
      * @param[in] tensor Qnn defined tensor
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t &sharedBuffer,
-                                     const Qnn_Tensor_t &tensor );
+    Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t *pSharedBuffer );
 
     /**
      * @cond QnnRuntime::GetMemHandle @endcond
@@ -245,8 +246,7 @@ private:
      * @param[in] tensor Qnn defined tensor
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    Qnn_MemHandle_t GetMemHandle( const RideHal_SharedBuffer_t &sharedBuffer,
-                                  const Qnn_Tensor_t &tensor );
+    Qnn_MemHandle_t GetMemHandle( const RideHal_SharedBuffer_t *pSharedBuffer );
 
     /**
      * @cond QnnRuntime::DeRegisterBuffers @endcond

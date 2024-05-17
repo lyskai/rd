@@ -66,6 +66,31 @@ TEST( QnnRuntime, SANITY_General )
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    /****** Dynamic dimension test ******/
+    const uint32_t batchSize = 3;
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        auto ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        tensorInputList.pInfo[i].properties.dims[0] = batchSize;
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        auto ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        tensorOutputList.pInfo[i].properties.dims[0] = batchSize;
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    /****** Dynamic dimension test ******/
+
+
     ret = qnnRuntime.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
