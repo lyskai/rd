@@ -35,7 +35,7 @@
   Run the create-ridehal-base-docker.sh, a docker container named ridehal-toolchain-base-env would be created. If you want to rerun this container, just simply run the run-ridehal-base-docker.sh.
 
 - Step 3: Build ridehal package
-  The first time you created the ridehal-toolchain-base-env docker container, a directory named "data" will be created under this path. You need to copy platform CRM toolchain SDK and QNN SDK to "data" path, which would be shown in "/data" path in docker container. Then you need to untar the SDK packages, and rename QNN SDK folder to "qnn_sdk", rename hgy sdk folder to "linux", rename ubuntu sdk folder to "ubuntu".
+  The first time you created the ridehal-toolchain-base-env docker container, a directory named "toolchain" will be created under this path. You need to copy platform CRM toolchain SDK and QNN SDK to "toolchain" path, which would be shown in "/opt/toolchain" path in docker container. Then you need to untar the SDK packages, and rename QNN SDK folder to "qnn_sdk", rename hgy sdk folder to "linux", rename ubuntu sdk folder to "ubuntu".
   Rerun this container, switch to "/opt/sdk/ridehal" path, then use the scripts to build ridehal package:
     - QOS222:
       ```

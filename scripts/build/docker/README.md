@@ -6,14 +6,14 @@ The ridehal-toolchain base docker provides a basic host toolchain environment th
 ## How to build ridehal-toolchain-base docker
 
 - Step 1: Prepare basic docker image
-  The basic docker image is ubuntu 22.04, user can get the docker image in two methods.
+  The basic docker image is ubuntu 20.04, user can get the docker image in two methods.
   - method 1: pull the image with command
     ```
-    sudo docker pull ubuntu:22.04
+    sudo docker pull ubuntu:20.04
     ```
   - method 2: get the image is from existed docker image package:
     ```
-    sudo docker load -i ubuntu-22.04.tar
+    sudo docker load -i ubuntu-20.04.tar
     ```
     Then use the command to show docker image id:
     ```
@@ -26,7 +26,7 @@ The ridehal-toolchain base docker provides a basic host toolchain environment th
     ```
     Then tag the docker image with image id:
     ```
-    sudo docker tag 52882761a72a ubuntu:22.04
+    sudo docker tag 52882761a72a ubuntu:20.04
     ```
 
 - Step 2: build ridehal-toolchain-base docker image
