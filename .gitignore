@@ -4,3 +4,5 @@ run-*
 *.tar*
 hexagon_Release_*
 prebuilt
+dependency
+data

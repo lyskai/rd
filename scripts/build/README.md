@@ -1,44 +1,54 @@
 # Build scripts for RideHal
 
 *Menu*:
-- [How to build the RideHal package with RideHal build docker](#how-to-build-the-ridehal-package-with-ridehal-build-docker)
-- [How to build the RideHal package with QNX BSP Snapdragon_Auto.QX.4.4.0](#how-to-build-the-ridehal-package-with-qnx-bsp-snapdragon_autoqx440)
-- [How to build the RideHal package with Snapdragon_Auto.HGY.4.1.6.0.r1 Linux SDK](#how-to-build-the-ridehal-package-with-snapdragon_autohgy4160r1-linux-sdk)
-- [How to build the RideHal package with Snapdragon_Auto.HGY.4.1.6.0.r1 Ubuntu SDK](#how-to-build-the-ridehal-package-with-snapdragon_autohgy4160r1-ubuntu-sdk)
-- [How to run](#how-to-run)
+- [Build scripts for RideHal](#build-scripts-for-ridehal)
+  - [How to build the RideHal package with RideHal base docker](#how-to-build-the-ridehal-package-with-ridehal-base-docker)
+  - [How to build the RideHal package with QNX BSP Snapdragon\_Auto.QX.4.4.0](#how-to-build-the-ridehal-package-with-qnx-bsp-snapdragon_autoqx440)
+  - [How to build the RideHal package with Snapdragon\_Auto.HGY.4.1.6.0.r1 Linux SDK](#how-to-build-the-ridehal-package-with-snapdragon_autohgy4160r1-linux-sdk)
+  - [How to build the RideHal package with Snapdragon\_Auto.HGY.4.1.6.0.r1 Ubuntu SDK](#how-to-build-the-ridehal-package-with-snapdragon_autohgy4160r1-ubuntu-sdk)
+  - [How to run](#how-to-run)
 
-## How to build the RideHal package with RideHal build docker
+## How to build the RideHal package with RideHal base docker
+- Step 1: build the ridehal-toolchain-base docker image.
+  Reference: [Guide to build ridehal-toolchain-base docker](docker/README.md)
 
-```sh
-docker images # make sure having the RideWare docker loaded
-rideware-toolchain-aarch64-fusion   latest    6f94fb6f5150   2 days ago      9.8GB
-rideware-toolchain-aarch64-fusion   v1.3      6f94fb6f5150   2 days ago      9.8GB
+- Step 2: create the ridehal-toolchain-base docker container
+  - Create a script named create-ridehal-base-docker.sh, fill the below shell commands:
+    ```
+    #!/bin/bash
 
-# if you don't have latest, use docker tag create it
-docker tag rideware-toolchain-aarch64-fusion:v1.3 rideware-toolchain-aarch64-fusion:latest
+    export CONTAINER_NAME="ridehal-toolchain-base-env"
+    echo $CONTAINER_NAME
+    sudo xhost +
+    if [ ! -d $PWD/toolchain ]; then
+        mkdir $PWD/toolchain
+    fi
+    sudo docker run --net=host --pid=host -it --privileged --name $CONTAINER_NAME -v $PWD/ridehal:/opt/sdk/ridehal -v $PWD/toolchain:/opt/toolchain ridehal-toolchain-base:v1.0 /bin/bash
+    ```
+  - Create a script named run-ridehal-base-docker.sh, fill the below shell commands:
+    ```
+    #!/bin/bash
 
-# if want to build with QNN SDK
-source /path/to/QNN_SDK/bin/envsetup.sh
-# for example:  source ~/qnn-release/qaisw-v2.16.0.231027072756_64280-auto/bin/envsetup.sh
-docker run -it \
-        -v $PWD/ridehal:/opt/sdk \
-        -v $QNN_SDK_ROOT/:/opt/qnn_sdk \
-        --net=host --privileged -v /dev/bus/usb:/dev/bus/usb \
-        --rm rideware-toolchain-aarch64-fusion:latest bash
+    sudo docker start ridehal-toolchain-base-env
+    sudo docker exec -ti ridehal-toolchain-base-env /bin/bash
+    ```
+  Run the create-ridehal-base-docker.sh, a docker container named ridehal-toolchain-base-env would be created. If you want to rerun this container, just simply run the run-ridehal-base-docker.sh.
 
-# if has QNN SDK run the below command, else skip the below command
-source /opt/qnn_sdk/bin/envsetup.sh
-
-cd /opt/sdk
-./scripts/build/build-target.sh aarch64-qos222 .
-# the ridehal-aarch64-qos222.tar.gz is the build out package for QNX
-
-./scripts/build/build-target.sh aarch64-linux .
-# the ridehal-aarch64-linux.tar.gz is the build out package for HGY Linux
-
-./scripts/build/build-target.sh aarch64-ubuntu .
-# the ridehal-aarch64-ubuntu.tar.gz is the build out package for HGY Ubuntu
-```
+- Step 3: Build ridehal package
+  The first time you created the ridehal-toolchain-base-env docker container, a directory named "data" will be created under this path. You need to copy platform CRM toolchain SDK and QNN SDK to "data" path, which would be shown in "/data" path in docker container. Then you need to untar the SDK packages, and rename QNN SDK folder to "qnn_sdk", rename hgy sdk folder to "linux", rename ubuntu sdk folder to "ubuntu".
+  Rerun this container, switch to "/opt/sdk/ridehal" path, then use the scripts to build ridehal package:
+    - QOS222:
+      ```
+      ./scripts/build/build-target.sh aarch64-qos222 .
+      ```
+    - HGY Linux:
+      ```
+      ./scripts/build/build-target.sh aarch64-linux .
+      ```
+    - HGY Ubuntu:
+      ```
+      ./scripts/build/build-target.sh aarch64-ubuntu .
+      ```
 
 ## How to build the RideHal package with QNX BSP Snapdragon_Auto.QX.4.4.0
 
@@ -103,4 +113,5 @@ cd /path/to/ridehal
 
 ## How to run
 For how to run the RideHal package, check this [README](../launch/README.md).
+
 

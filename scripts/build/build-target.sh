@@ -22,6 +22,13 @@ destdir=$topdir/run-$target
 # Package name
 pkgname=$topdir/ridehal-$target.tar.gz
 
+# Get dependent packages
+export THIRD_PARTY_DIR=$topdir/third_party
+sh $topdir/scripts/build/toolchain/get-3rd-party.sh
+
+# Get RideHal Toolchain path
+export RIDEHAL_TOOLCHAIN_PATH=/opt/toolchain
+
 setup_env_qos222() {
     if [[ -v BSP_ROOT ]]; then
         echo build with QNX CRM
@@ -42,13 +49,44 @@ setup_env_qos222() {
         export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-qos222.cmake
         export TOOLCHAIN_SYSROOT=$BSP_ROOT/install/aarch64le
     else
+        if [ ! -d /opt/qos222 ]; then
+            if [ ! -d $RIDEHAL_TOOLCHAIN_PATH/qos222 ];then
+                echo "qos222 toolchain not found under $RIDEHAL_TOOLCHAIN_PATH path"
+                exit -1
+            else
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qos222 /opt/qos222
+            fi
+        fi
         source /opt/qos222/env.sh
+        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+            source $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh
+        fi
     fi
 
     sh $homedir/toolchain/build-3rd-party-aarch64-qos222.sh $workdir $destdir
 }
 
 setup_env_linux() {
+    if ! [[ -v LINUX_SDK_ROOT ]]; then
+        if [ ! -d /opt/linux ]; then
+            if [ ! -d $RIDEHAL_TOOLCHAIN_PATH/linux ];then
+                echo "hgy linux toolchain not found under $RIDEHAL_TOOLCHAIN_PATH path"
+                exit -1
+            else
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/linux /opt/linux
+            fi
+        fi
+
+        export LINUX_SDK_ROOT=/opt/linux
+        if [ ! -d $LINUX_SDK_ROOT/sysroots/aarch64-oe-linux/usr/include ]; then
+            cd $LINUX_SDK_ROOT
+            echo y | sh ./oecore-x86_64-aarch64-toolchain-nodistro.0.sh -d .
+        fi
+        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+            source $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh
+        fi
+    fi
+
     if [[ -v LINUX_SDK_ROOT ]]; then
         echo build with LINUX SDK
         echo LINUX_SDK_ROOT: $LINUX_SDK_ROOT
@@ -67,13 +105,29 @@ setup_env_linux() {
         export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-linux.cmake
         export TOOLCHAIN_SYSROOT=$LINUX_TARGET
     else
-        source /opt/hgy/env.sh
+        echo please specify the LINUX_SDK_ROOT path that contains the sysroots/aarch64-oe-linux
+        exit -1
     fi
 
     sh $homedir/toolchain/build-3rd-party-aarch64-linux.sh $workdir $destdir
 }
 
 setup_env_ubuntu() {
+    if ! [[ -v UBUNTU_SDK_ROOT ]]; then
+        if [ ! -d /opt/ubuntu ]; then
+            if [ ! -d $RIDEHAL_TOOLCHAIN_PATH/ubuntu ];then
+                echo "hgy ubuntu toolchain not found under $RIDEHAL_TOOLCHAIN_PATH path"
+                exit -1
+            else
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/ubuntu /opt/ubuntu
+            fi
+        fi
+        export UBUNTU_SDK_ROOT=/opt/ubuntu
+        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+            source $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh
+        fi
+    fi
+
     if [[ -v UBUNTU_SDK_ROOT ]]; then
         echo build with UBUNTU SDK
         echo UBUNTU_SDK_ROOT: $UBUNTU_SDK_ROOT
@@ -191,3 +245,4 @@ tar -C $topdir --xform="s/run/pkg/" --exclude="*.a" \
     --exclude="*.la" --exclude="include" --exclude="share" \
     --exclude="cmake" \
     --use-compress-program=pigz -cf $pkgname run-$target
+

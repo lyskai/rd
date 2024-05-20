@@ -25,14 +25,14 @@ RUN ln -fs /bin/bash /bin/sh \
     openssh-client git git-lfs diffstat \
     && rm -rf /var/cache/apk/* && rm -rf /var/lib/apt/lists/*
 
-# Install QNN Linux dependency
+# Install QNN Linux third_party
 RUN apt-get update && apt install -y libncurses5 libgl1 libgtk-3-dev libasound2-dev \
     libnss3 nodejs npm libgbm-dev desktop-file-utils \
     && add-apt-repository 'deb http://cz.archive.ubuntu.com/ubuntu jammy main universe' \
     && apt-get update && apt install -y \
     flatbuffers-compiler libflatbuffers-dev rename \
     gcc-aarch64-linux-gnu g++-aarch64-linux-gnu \
-    && ln -sf /usr/aarch64-linux-gnu/lib/ld-2.31.so /usr/lib/ld-linux-aarch64.so.1 \
+    && ln -sf /usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 /lib/ld-linux-aarch64.so.1 \
     && export npm_config_cache=/tmp/npm \
     && npm cache clean -f && npm install -g n && n 14.17.4 \
     && npm i -g npm@6.14.14 \
