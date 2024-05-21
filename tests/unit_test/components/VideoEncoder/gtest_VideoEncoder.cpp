@@ -96,6 +96,13 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     ret = veTest.Configure( &onTheFlyCmd );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    RideHal_SharedBuffer_t *inputList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
+    ret = veTest.GetInputBuffers( inputList, config.numInputBufferReq );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    RideHal_SharedBuffer_t *outputList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
+    ret = veTest.GetOutputBuffers( outputList, config.numOutputBufferReq );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
     VideoEncoder_InputFrame_t *inputFrame =
             new VideoEncoder_InputFrame_t[config.numInputBufferReq + 1];
 
@@ -165,6 +172,9 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     std::unique_lock<std::mutex> inLock( s_inMutex );
     s_InCondVar.wait( inLock );
 
+    ret = veTest.SubmitInputFrame( &inputFrame[0] );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     // wait outputdone siganl
     std::unique_lock<std::mutex> outLock( s_OutMutex );
     s_OutCondVar.wait( outLock );
@@ -189,6 +199,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     }
 
     delete[] outputFrame;
+    delete[] inputList;
+    delete[] outputList;
     delete onTheFlyCmds;
 }
 
@@ -328,7 +340,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
-    for ( i = 0; i < config.numInputBufferReq; i++ )
+    for ( i = 0; i < config.numInputBufferReq - 1; i++ )
     {
         VideoEncoder_InputFrame_t inputFrame;
         inputFrame.sharedBuffer = inBufferList[i];
@@ -338,6 +350,20 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         g_timestamp += 33333;
     }
+    VideoEncoder_OnTheFlyCmd_t *onTheFlyCmds = new VideoEncoder_OnTheFlyCmd_t[2];
+    onTheFlyCmds[0].propID = VIDEO_ENCODER_PROP_BITRATE;
+    onTheFlyCmds[0].value = 32000;
+    onTheFlyCmds[1].propID = VIDEO_ENCODER_PROP_MAX;
+    onTheFlyCmds[1].value = 20;
+    VideoEncoder_InputFrame_t inputFrame;
+    inputFrame.sharedBuffer = inBufferList[config.numInputBufferReq - 1];
+    inputFrame.timestampNs = g_timestamp;
+    inputFrame.pAppMarkData = nullptr;
+    inputFrame.numCmd = 2;
+    inputFrame.pOnTheFlyCmd = onTheFlyCmds;
+    ret = veTest.SubmitInputFrame( &inputFrame );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    g_timestamp += 33333;
 
     // wait inputdone siganl
     std::unique_lock<std::mutex> inLock( s_inMutex );
@@ -368,6 +394,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
 
     delete[] inBufferList;
     delete[] outBufferList;
+    delete onTheFlyCmds;
 }
 
 TEST( VideoEncoder, SANITY_VideoEncoder_Resolution )
@@ -455,6 +482,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Resolution )
     config.width = 3840;
     config.height = 2160;
     config.bitRate = 20000000;
+    config.inFormat = RIDEHAL_IMAGE_FORMAT_P010;
     ret = veTest.Init( "VideoEncoderResolution_3840x2160", &config );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_READY, veTest.GetState() );
@@ -561,9 +589,21 @@ TEST( VideoEncoder, SANITY_VideoEncoder_InitError )
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
     config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
-    ret = veTest.Init( "VideoEncoderErrorTest_ok", &config );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_READY, veTest.GetState() );
+    config.width = 1920;
+    config.height = 1080;
+    config.bInputDynamicMode = false;
+    config.pInputBufferList = inBufferList;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_inbuffer", &config );
+    ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
+
+    config.bInputDynamicMode = true;
+    config.pInputBufferList = nullptr;
+    config.bOutputDynamicMode = false;
+    config.pOutputBufferList = outBufferList;
+    ret = veTest.Init( "VideoEncoderErrorTest_bad_outbuffer", &config );
+    ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest.GetState() );
 
     for ( i = 0; i < 8; i++ )
     {
@@ -602,6 +642,9 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
 
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_INITIAL, veTest1.GetState() );
 
+    ret = veTest1.Init( nullptr, nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
     ret = veTest1.Start();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
@@ -623,6 +666,16 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = veTest.RegisterCallback( nullptr, nullptr, nullptr, nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = veTest.RegisterCallback( OnInputDoneCb, nullptr, nullptr, nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = veTest.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = veTest.RegisterCallback( OnInputDoneCb, OnOutputDoneCb, nullptr, nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = veTest.Start();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     VideoEncoder_InputFrame_t inputFrame;
@@ -665,6 +718,9 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     ASSERT_EQ( RIDEHAL_COMPONENT_STATE_RUNNING, veTest.GetState() );
 
     ret = veTest.SubmitInputFrame( nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = veTest.SubmitInputFrame( &inputFrame );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     RideHal_SharedBuffer_t sharedBuffer;

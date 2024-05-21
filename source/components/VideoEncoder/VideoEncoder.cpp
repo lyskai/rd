@@ -162,11 +162,6 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         m_bOutputDynamicMode = pConfig->bOutputDynamicMode;
         m_numInputBufferReq = pConfig->numInputBufferReq;
         m_numOutputBufferReq = pConfig->numOutputBufferReq;
-        ret = ValidateConfig( pConfig );
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265 == m_outFormat )
         {
             m_vidcEncoderData.codec = VIDC_CODEC_HEVC;
@@ -177,6 +172,11 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
         }
         m_vidcEncoderData.sessionCodec.session = VIDC_SESSION_ENCODE;
         m_vidcEncoderData.sessionCodec.codec = m_vidcEncoderData.codec;
+        ret = ValidateConfig( pConfig );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
         ret = SetVidcProfileLevel( pConfig->profile );
     }
 
@@ -292,7 +292,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
                               (uint8_t *) ( &m_vidcEncoderData.bitrate ) );
     }
 
-    if ( RIDEHAL_ERROR_NONE == ret && ( 0 != m_vidcEncoderData.profile.profile ) )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         RIDEHAL_DEBUG( "Setting VIDC_I_PROFILE" );
         ret = SetDrvProperty( m_vidcEncoderData.pIoHandle, VIDC_I_PROFILE,
@@ -300,7 +300,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
                               (uint8_t *) ( &m_vidcEncoderData.profile ) );
     }
 
-    if ( ( RIDEHAL_ERROR_NONE == ret ) && ( 0 != m_vidcEncoderData.level.level ) )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
         RIDEHAL_DEBUG( "Setting VIDC_I_LEVEL" );
         ret = SetDrvProperty( m_vidcEncoderData.pIoHandle, VIDC_I_LEVEL, sizeof( vidc_level_type ),
@@ -562,7 +562,7 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
     }
 
     if ( ( RIDEHAL_ERROR_NONE == ret ) &&
-         ( ( nullptr == pInput ) || ( nullptr == &pInput->sharedBuffer ) ) )
+         ( ( nullptr == pInput ) || ( nullptr == pInput->sharedBuffer.data() ) ) )
     {
         RIDEHAL_ERROR( "Not submitting empty inputBuffer!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
