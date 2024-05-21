@@ -378,7 +378,10 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
                 fd = 1;   // virtual fd for CPU&GPU pipeline, indicates that the register is
                           // successful, would not be really used.
             }
-            memMap[pBuffer->data()] = { fd, size, offset, batch, ptr, sizeOne };
+            if ( 0 < fd )
+            {
+                memMap[pBuffer->data()] = { fd, size, offset, batch, ptr, sizeOne };
+            }
         }
         else
         {
@@ -483,6 +486,12 @@ RideHalError_e FadasRemap::SetRemapParams( uint32_t numOfInputs, uint32_t output
                                            bool bEnableNormalize )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    for ( int i = 0; i < RIDEHAL_MAX_INPUTS; i++ )
+    {
+        m_workerPtrs[i] = 0;
+        m_remapPtrs[i] = 0;
+    }
 
     if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 != outputFormat ) &&
          ( RIDEHAL_IMAGE_FORMAT_BGR888 != outputFormat ) )
@@ -694,7 +703,6 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
         {
             FadasRemapPipeline_e pipeline = RemapGetPipelineCPU(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
-
             if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for CPU!" );
@@ -1128,19 +1136,20 @@ RideHalError_e FadasRemap::DestroyWorkers()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
+    for ( int i = 0; i < RIDEHAL_MAX_INPUTS; i++ )
     {
-        for ( int i = 0; i < m_numOfInputs; i++ )
+        if ( 0 != m_workerPtrs[i] )
         {
-            FadasIface_FadasRemap_DestroyWorkers(
-                    0, m_workerPtrs[i] );   // handle not really need for DestroyWorkers
-        }
-    }
-    else
-    {
-        for ( int i = 0; i < m_numOfInputs; i++ )
-        {
-            FadasRemap_DestroyWorkers( reinterpret_cast<void *>( m_workerPtrs[i] ) );
+            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
+            {
+                FadasIface_FadasRemap_DestroyWorkers(
+                        0, m_workerPtrs[i] );   // handle not really need for DestroyWorkers
+            }
+            else
+            {
+                FadasRemap_DestroyWorkers( reinterpret_cast<void *>( m_workerPtrs[i] ) );
+            }
         }
     }
 
@@ -1151,19 +1160,20 @@ RideHalError_e FadasRemap::DestroyMap()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
+    for ( int i = 0; i < RIDEHAL_MAX_INPUTS; i++ )
     {
-        for ( int i = 0; i < m_numOfInputs; i++ )
+        if ( 0 != m_remapPtrs[i] )
         {
-            FadasIface_FadasRemap_DestroyMap(
-                    0, m_remapPtrs[i] );   // handle not really need for DestroyMap
-        }
-    }
-    else
-    {
-        for ( int i = 0; i < m_numOfInputs; i++ )
-        {
-            FadasRemap_DestroyMap( reinterpret_cast<FadasRemapMap *>( m_remapPtrs[i] ) );
+            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
+                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
+            {
+                FadasIface_FadasRemap_DestroyMap(
+                        0, m_remapPtrs[i] );   // handle not really need for DestroyMap
+            }
+            else
+            {
+                FadasRemap_DestroyMap( reinterpret_cast<FadasRemapMap *>( m_remapPtrs[i] ) );
+            }
         }
     }
 

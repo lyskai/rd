@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_REMAP_HPP_
-#define _RIDEHAL_REMAP_HPP_
+#ifndef RIDEHAL_REMAP_HPP
+#define RIDEHAL_REMAP_HPP
 
 #include <cinttypes>
 #include <inttypes.h>
@@ -153,4 +153,4 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_REMAP_HPP_
+#endif   // RIDEHAL_REMAP_HPP

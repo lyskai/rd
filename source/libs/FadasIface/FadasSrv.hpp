@@ -1,7 +1,7 @@
 //  Copyright 2020-2022 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-#ifndef _QRIDE_FADAS_SRV_HPP_
-#define _QRIDE_FADAS_SRV_HPP_
+#ifndef QRIDE_FADAS_SRV_HPP
+#define QRIDE_FADAS_SRV_HPP
 
 #include <fadas.h>
 #include <map>
@@ -130,4 +130,4 @@ private:
 }   // namespace libs
 }   // namespace ridehal
 
-#endif   // _QRIDE_FADAS_SRV_HPP_
+#endif   // QRIDE_FADAS_SRV_HPP

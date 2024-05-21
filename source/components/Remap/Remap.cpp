@@ -68,8 +68,8 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
         }
         else
         {
-            m_config = *pConfig;
             m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
+            m_config = *pConfig;
             ret = m_fadasRemapObj.Init( m_config.processor, pName, level );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -81,45 +81,40 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
                         m_config.numOfInputs, m_config.outputWidth, m_config.outputHeight,
                         m_config.outputFormat, m_config.normlzR, m_config.normlzG, m_config.normlzB,
                         m_config.bEnableUndistortion, m_config.bEnableNormalize );
-            }
 
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to set parameters!" );
-            }
-            else
-            {
-                for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
+                if ( RIDEHAL_ERROR_NONE != ret )
                 {
-                    ret = m_fadasRemapObj.CreateRemapWorker(
-                            inputId, m_config.inputConfigs[inputId].inputFormat,
-                            m_config.inputConfigs[inputId].inputWidth,
-                            m_config.inputConfigs[inputId].inputHeight,
-                            m_config.inputConfigs[inputId].ROI );
-                    if ( RIDEHAL_ERROR_NONE != ret )
-                    {
-                        m_fadasRemapObj.DestroyWorkers();
-                        RIDEHAL_ERROR( "Create worker fail at inputId = %d", inputId );
-                        break;
-                    }
+                    RIDEHAL_ERROR( "Failed to set parameters!" );
                 }
-            }
-
-            if ( RIDEHAL_ERROR_NONE == ret )
-            {
-                for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
+                else
                 {
-                    ret = m_fadasRemapObj.CreatRemapTable(
-                            inputId, m_config.inputConfigs[inputId].mapWidth,
-                            m_config.inputConfigs[inputId].mapHeight,
-                            m_config.inputConfigs[inputId].remapTable.pMapX,
-                            m_config.inputConfigs[inputId].remapTable.pMapY );
-                    if ( RIDEHAL_ERROR_NONE != ret )
+                    for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
                     {
-                        m_fadasRemapObj.DestroyMap();
-                        m_fadasRemapObj.DestroyWorkers();
-                        RIDEHAL_ERROR( "Create remap table fail at inputId = %d", inputId );
-                        break;
+                        ret = m_fadasRemapObj.CreateRemapWorker(
+                                inputId, m_config.inputConfigs[inputId].inputFormat,
+                                m_config.inputConfigs[inputId].inputWidth,
+                                m_config.inputConfigs[inputId].inputHeight,
+                                m_config.inputConfigs[inputId].ROI );
+                        if ( RIDEHAL_ERROR_NONE != ret )
+                        {
+                            RIDEHAL_ERROR( "Create worker fail at inputId = %d", inputId );
+                            m_fadasRemapObj.DestroyMap();
+                            m_fadasRemapObj.DestroyWorkers();
+                            break;
+                        }
+
+                        ret = m_fadasRemapObj.CreatRemapTable(
+                                inputId, m_config.inputConfigs[inputId].mapWidth,
+                                m_config.inputConfigs[inputId].mapHeight,
+                                m_config.inputConfigs[inputId].remapTable.pMapX,
+                                m_config.inputConfigs[inputId].remapTable.pMapY );
+                        if ( RIDEHAL_ERROR_NONE != ret )
+                        {
+                            RIDEHAL_ERROR( "Create remap table fail at inputId = %d", inputId );
+                            m_fadasRemapObj.DestroyMap();
+                            m_fadasRemapObj.DestroyWorkers();
+                            break;
+                        }
                     }
                 }
             }

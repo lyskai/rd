@@ -34,7 +34,7 @@ void SetCommonParam( Remap_Config_t *pRemapConfig )
     return;
 }
 
-void FailTest1()
+void CoverTest1()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -73,7 +73,7 @@ void FailTest1()
     return;
 }
 
-void FailTest2()
+void CoverTest2()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -107,6 +107,22 @@ void FailTest2()
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     SetCommonParam( &RemapConfig );
+    RemapConfig.processor = RIDEHAL_PROCESSOR_HTP0;
+    RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    RemapConfig.bEnableNormalize = true;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong dsp pipeline
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.processor = RIDEHAL_PROCESSOR_CPU;
+    RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    RemapConfig.bEnableNormalize = true;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong cpu pipeline
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
     RemapConfig.bEnableUndistortion = true;
     RemapConfig.inputConfigs[0].remapTable.pMapX = nullptr;
     RemapConfig.inputConfigs[0].remapTable.pMapY = nullptr;
@@ -114,7 +130,8 @@ void FailTest2()
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     SetCommonParam( &RemapConfig );
-    ret = RemapObj.Init( pName, &RemapConfig );   // success init
+    ret = RemapObj.Init( pName, &RemapConfig,
+                         LOGGER_LEVEL_MAX );   // success init with invalid logger level
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.RegisterBuffers(
@@ -140,7 +157,7 @@ void FailTest2()
     return;
 }
 
-void FailTest3()
+void CoverTest3()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -218,6 +235,27 @@ void FailTest3()
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_INOUT );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    inputs[0].buffer.size++;
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // invalid input buffer
+    ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    inputs[0].buffer.size--;
+    ret = RemapObj.DeRegisterBuffers( inputs, RemapConfig.numOfInputs );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
     ret = output.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -261,6 +299,20 @@ void FailTest3()
     ret = output.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    ret = output.Allocate( RemapConfig.numOfInputs, RemapConfig.outputWidth,
+                           RemapConfig.outputHeight, RemapConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.RegisterBuffers( &output, 1, FADAS_BUF_TYPE_INOUT );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    output.buffer.size++;
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );   // invalid  output buffer
+    ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+    output.buffer.size--;
+    ret = RemapObj.DeRegisterBuffers( &output, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
     {
         ret = inputs[inputId].Free();
@@ -270,7 +322,53 @@ void FailTest3()
     return;
 }
 
-void FailTest4()
+void CoverTest4()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    Remap RemapObj;
+    Remap_Config_t RemapConfig;
+    char pName[10] = "Remap";
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.processor = RIDEHAL_PROCESSOR_HTP1;
+    ret = RemapObj.Init( pName, &RemapConfig );   // success init with dsp1
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    RideHal_SharedBuffer_t inputs[RemapConfig.numOfInputs];
+    RideHal_SharedBuffer_t output;
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs,
+                                    FADAS_BUF_TYPE_MAX );   // register with wrong buffer type
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    ret = RemapObj.DeRegisterBuffers( inputs, RemapConfig.numOfInputs );   // deregister with dsp1
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    inputs[0].imgProps.batchSize++;
+    ret = RemapObj.RegisterBuffers(
+            inputs, RemapConfig.numOfInputs,
+            FADAS_BUF_TYPE_IN );   // register with mismatch image batch size
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+    inputs[0].imgProps.batchSize--;
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    return;
+}
+
+void CoverTest5()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     int32_t fd = 0;
@@ -527,7 +625,7 @@ TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY
                  true, true, false, false );
 }
 
-TEST( Remap, DSPSuccessPipeline3Test )   // general success test on CPU for NV12 to BGR, with
+TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12/UYVY to BGR, with
                                          // and without undistortion
 {
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
@@ -558,7 +656,8 @@ TEST( Remap, CPUSuccessPipeline2Test )   // general success test on CPU for UYVY
                  true, true, false, false );
 }
 
-TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12 to BGR, with
+#if defined( __QNXNTO__ )                // nv12 input format on CPU is not supported in HGY
+TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12/UYVY to BGR, with
                                          // and without undistortion
 {
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
@@ -579,6 +678,7 @@ TEST( Remap, CPUSuccessPipeline4Test )   // general success test on CPU for NV12
     SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
                  true, true, false, false );
 }
+#endif
 
 TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
                                      // pipeline, no undistortion and no renormalization
@@ -602,12 +702,13 @@ TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU 
                  false, false, false, true );
 }
 
-TEST( Remap, FailTest )   // fail path tests
+TEST( Remap, CoverTest )   // fail path tests
 {
-    FailTest1();   // bad status error
-    FailTest2();   // bad arguments error
-    FailTest3();   // wrong input&output buffer
-    FailTest4();   // cover error path in FadasSrv.cpp
+    CoverTest1();   // bad status error
+    CoverTest2();   // bad arguments error
+    CoverTest3();   // wrong input&output buffer
+    CoverTest4();   // cover error paths in RegisterBuffers
+    CoverTest5();   // call FadasRemap class directly
 }
 
 #ifndef GTEST_RIDEHAL
