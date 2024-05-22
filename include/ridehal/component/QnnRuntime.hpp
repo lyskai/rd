@@ -61,7 +61,7 @@ typedef struct
     RideHal_ProcessorType_e backendType;             /**<Preprocessor type */
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;  /**<Qnn priority */
     QnnRuntime_UdoPackage_t *pUdoPackages = nullptr; /**<The pointer to QnnRuntime udo package */
-    size_t numOfUdoPackages = 0;                     /**<The number of udo packages */
+    int numOfUdoPackages = 0;                        /**<The number of udo packages */
 } QnnRuntime_Config_t;
 
 /** @brief QnnRuntime tensor information */
@@ -228,7 +228,7 @@ private:
      * @param[in] numOfUdoPackages The number of udo packages
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages, size_t numOfUdoPackages );
+    RideHalError_e LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages, int numOfUdoPackages );
 
     /**
      * @cond QnnRuntime::GetMemHandleHTP @endcond

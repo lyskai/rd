@@ -17,7 +17,7 @@ TEST( QnnRuntime, SANITY_General )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
+    qnnConfig.modelPath = "data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     QnnRuntime_UdoPackage_t udoPackage;
     // udoPackage.udoLibPath = "libQnnAutoAiswOpPackage.so";
@@ -107,7 +107,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
+    qnnConfig.modelPath = "data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER;
     std::string modelPath = std::string( qnnConfig.modelPath );
@@ -178,7 +178,7 @@ TEST( QnnRuntime, Perf )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
+    qnnConfig.modelPath = "data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -249,7 +249,7 @@ TEST( QnnRuntime, RegisterBuffer )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet/program.bin";
+    qnnConfig.modelPath = "data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -314,17 +314,17 @@ TEST( QnnRuntime, LoadModel )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.modelPath = "/var/noexistingfile.bin";
+    qnnConfig.modelPath = "data/noexistingfile.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
 
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet/zero_buffer_size.bin";
+    qnnConfig.modelPath = "data/centernet/zero_buffer_size.bin";
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    qnnConfig.modelPath = "/var/opt/qride/data/centernet";
+    qnnConfig.modelPath = "data/centernet";
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
@@ -370,6 +370,90 @@ TEST( QnnRuntime, StateMachine )
     QnnRuntime_Perf_t perf;
     ret = qnnRuntime.GetPerf( &perf );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+}
+
+TEST( QnnRuntime, LoadOpPackage )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "QnnRuntime";
+
+    qnnConfig.modelPath = "data/bevdet/program.bin";
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    const size_t numOfUdoPackages = 1;
+    QnnRuntime_UdoPackage_t udoPackages[numOfUdoPackages];
+    qnnConfig.numOfUdoPackages = -1;
+
+    // numOfUdoPackages is - 1;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    //  pUdoPackages is null
+    qnnConfig.pUdoPackages = nullptr;
+    qnnConfig.numOfUdoPackages = numOfUdoPackages;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    // invalid so
+    udoPackages[0].udoLibPath = "invalid.so";
+    udoPackages[0].interfaceProvider = "AutoAiswOpPackageInterfaceProvider";
+    qnnConfig.pUdoPackages = udoPackages;
+    qnnConfig.numOfUdoPackages = numOfUdoPackages;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    udoPackages[0].udoLibPath = "libQnnAutoAiswOpPackage.so";
+    udoPackages[0].interfaceProvider = "AutoAiswOpPackageInterfaceProvider";
+    qnnConfig.pUdoPackages = udoPackages;
+    qnnConfig.numOfUdoPackages = numOfUdoPackages;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetInputInfo( &tensorInputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 

@@ -315,15 +315,19 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
 }
 
 RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages,
-                                           size_t numOfUdoPackages )
+                                           int numOfUdoPackages )
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     if ( numOfUdoPackages <= 0 )
     {
-        RIDEHAL_ERROR( "UdoPackages size is less than 0: %d "
-                       "pUdoPackages: %d ",
-                       numOfUdoPackages );
+        RIDEHAL_ERROR( "UdoPackages size is less than 0: %d", numOfUdoPackages );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    if ( pUdoPackages == nullptr )
+    {
+        RIDEHAL_ERROR( "pUdoPackages is null" );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
@@ -331,20 +335,23 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
     {
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            QnnRuntime_UdoPackage_t udoPackage = pUdoPackages[i];
+            QnnRuntime_UdoPackage_t *pUdoPackage = pUdoPackages + i;
+            RIDEHAL_INFO( "Registered Op Package: %s and interface provider: %s",
+                          pUdoPackage->udoLibPath, pUdoPackage->interfaceProvider );
             const Qnn_ErrorHandle_t retVal =
                     m_QnnFunctionPointers.qnnInterface.backendRegisterOpPackage(
-                            m_BackendHandle, (char *) udoPackage.udoLibPath,
-                            (char *) udoPackage.interfaceProvider, nullptr );
+                            m_BackendHandle, (char *) pUdoPackage->udoLibPath,
+                            (char *) pUdoPackage->interfaceProvider, nullptr );
             if ( QNN_BACKEND_NO_ERROR != retVal )
             {
                 RIDEHAL_ERROR( "Could not register Op Package: %s and interface provider: %s, "
                                "error is %d",
-                               udoPackage.udoLibPath, udoPackage.interfaceProvider, (int) retVal );
+                               pUdoPackage->udoLibPath, pUdoPackage->interfaceProvider,
+                               (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             RIDEHAL_INFO( "Registered Op Package: %s and interface provider: %s",
-                          udoPackage.udoLibPath, udoPackage.interfaceProvider );
+                          pUdoPackage->udoLibPath, pUdoPackage->interfaceProvider );
         }
     }
     return ret;
@@ -559,9 +566,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
         else
         {
-            RIDEHAL_ERROR( "UdoPackages size is less than 0: %d "
-                           "pUdoPackages: %d ",
-                           pConfig->numOfUdoPackages );
+            RIDEHAL_ERROR( "UdoPackages size is less than 0: %d", pConfig->numOfUdoPackages );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }

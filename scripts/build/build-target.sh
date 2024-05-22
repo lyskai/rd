@@ -214,16 +214,19 @@ if [ -f $QNN_SDK_ROOT/lib/aarch64-qnx/libQnnHtp.so ];  then
 # Install QNN Runtime dependencies
 case $target in
 aarch64-qos222)
+    cp -vf $QNN_SDK_ROOT/bin/aarch64-qnx/* $destdir/opt/ridehal/bin
     cp -vf $QNN_SDK_ROOT/lib/aarch64-qnx/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;
 aarch64-linux)
+    cp -vf $QNN_SDK_ROOT/bin/aarch64-rh-linux-gcc9.3/* $destdir/opt/ridehal/bin
     cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;
 aarch64-ubuntu)
+    cp -vf $QNN_SDK_ROOT/bin/aarch64-rh-linux-gcc9.3/* $destdir/opt/ridehal/bin
     cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
