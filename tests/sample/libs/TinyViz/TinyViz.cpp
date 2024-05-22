@@ -216,8 +216,8 @@ void TinyViz::rendererThread()
         cInfo.second.initText( ren, font );
     }
 
-    HelpWindowInfo helpWindow;
-    helpWindow.init( ren, font );
+    // HelpWindowInfo helpWindow;
+    // helpWindow.init( ren, font );
 
     m_NumTextures.init( 400, *ren, *font );
 
@@ -258,7 +258,7 @@ void TinyViz::rendererThread()
             }
         }   // if( m_WindowCol == 1 )
 
-        m_ShowHelp ? helpWindow.render( ren ) : helpWindow.renderF1( ren );
+        // m_ShowHelp ? helpWindow.render( ren ) : helpWindow.renderF1( ren );
 
         if ( isActive && !m_PauseRenderer )
         {
@@ -277,7 +277,7 @@ void TinyViz::rendererThread()
     }
 
     m_NumTextures.release();
-    helpWindow.close();
+    // helpWindow.close();
     for ( auto &cInfo : m_CamInfoMap )
     {
         cInfo.second.closeText();
