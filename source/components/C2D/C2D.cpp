@@ -38,14 +38,14 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
         {
             for ( uint32_t i = 0; i < m_numOfInputs; i++ )
             {
-                m_inputResolutions[i].width = pConfig->inputConfigs->inputResolution.width;
-                m_inputResolutions[i].height = pConfig->inputConfigs->inputResolution.height;
-                m_inputFormats[i] = pConfig->inputConfigs->inputFormat;
+                m_inputResolutions[i].width = pConfig->inputConfigs[i].inputResolution.width;
+                m_inputResolutions[i].height = pConfig->inputConfigs[i].inputResolution.height;
+                m_inputFormats[i] = pConfig->inputConfigs[i].inputFormat;
 
-                if ( pConfig->inputConfigs->ROI.topX >= 0 &&
-                     pConfig->inputConfigs->ROI.topX <= m_inputResolutions[i].width )
+                if ( pConfig->inputConfigs[i].ROI.topX >= 0 &&
+                     pConfig->inputConfigs[i].ROI.topX <= m_inputResolutions[i].width )
                 {
-                    m_rois[i].topX = pConfig->inputConfigs->ROI.topX;
+                    m_rois[i].topX = pConfig->inputConfigs[i].ROI.topX;
                 }
                 else
                 {
@@ -54,10 +54,10 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                     break;
                 }
 
-                if ( pConfig->inputConfigs->ROI.topY >= 0 &&
-                     pConfig->inputConfigs->ROI.topY <= m_inputResolutions[i].height )
+                if ( pConfig->inputConfigs[i].ROI.topY >= 0 &&
+                     pConfig->inputConfigs[i].ROI.topY <= m_inputResolutions[i].height )
                 {
-                    m_rois[i].topY = pConfig->inputConfigs->ROI.topY;
+                    m_rois[i].topY = pConfig->inputConfigs[i].ROI.topY;
                 }
                 else
                 {
@@ -66,11 +66,11 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                     break;
                 }
 
-                if ( pConfig->inputConfigs->ROI.width >= 0 &&
-                     pConfig->inputConfigs->ROI.width <=
+                if ( pConfig->inputConfigs[i].ROI.width >= 0 &&
+                     pConfig->inputConfigs[i].ROI.width <=
                              m_inputResolutions[i].width - m_rois[i].topX )
                 {
-                    m_rois[i].width = pConfig->inputConfigs->ROI.width;
+                    m_rois[i].width = pConfig->inputConfigs[i].ROI.width;
                 }
                 else
                 {
@@ -79,11 +79,11 @@ RideHalError_e C2D::Init( const char *pName, const C2D_Config_t *pConfig, Logger
                     break;
                 }
 
-                if ( pConfig->inputConfigs->ROI.height >= 0 &&
-                     pConfig->inputConfigs->ROI.height <=
+                if ( pConfig->inputConfigs[i].ROI.height >= 0 &&
+                     pConfig->inputConfigs[i].ROI.height <=
                              m_inputResolutions[i].height - m_rois[i].topY )
                 {
-                    m_rois[i].height = pConfig->inputConfigs->ROI.height;
+                    m_rois[i].height = pConfig->inputConfigs[i].ROI.height;
                 }
                 else
                 {
