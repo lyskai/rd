@@ -32,6 +32,8 @@ RideHalError_e ComponentIF::Init( const char *pName, Logger_Level_e level )
                             ret );
         }
         ret = RIDEHAL_ERROR_NONE;
+        RIDEHAL_INFO( "RideHal version %d.%d.%d", RIDEHAL_VERSION_MAJOR, RIDEHAL_VERSION_MINOR,
+                      RIDEHAL_VERSION_PATCH );
     }
 
     return ret;
