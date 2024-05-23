@@ -1,0 +1,37 @@
+image: ridehal-toolchain-base:v1.0
+
+stages:
+  - start
+  - build
+  - test
+
+start:
+  stage: start
+  script: echo "Start ridehal CI jobs ..."
+  tags:
+    - ridehal-dev
+  only:
+    - merge_requests
+  timeout: 1h
+
+build QNX qos222-es8:
+  stage: build
+  script:
+    - echo "Start building ridehal for QNX qos222-es8"
+    - ln -sf /data/toolchain/qos222-es8 /opt/qos222
+    - source /data/QNN/qnn-v2.16/bin/envsetup.sh
+    - ./scripts/build/build-target.sh aarch64-qos222 .
+    - rm -rf /opt/qos222
+  artifacts:
+    name: "ridehal-aarch64-qos222-es8.tar.gz"
+    when: on_success
+    expire_in: 1 day
+    paths:
+      - ridehal-aarch64-qos222.tar.gz
+  tags:
+    - ridehal-dev
+  only:
+    - merge_requests
+  timeout: 1h
+
+  timeout: 1h
