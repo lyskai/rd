@@ -126,12 +126,14 @@ void CoverTest2()
     RemapConfig.bEnableUndistortion = true;
     RemapConfig.inputConfigs[0].remapTable.pMapX = nullptr;
     RemapConfig.inputConfigs[0].remapTable.pMapY = nullptr;
+    setenv( "RIDEHAL_FADAS_CLIENT_ID", "15", 1 );
     ret = RemapObj.Init( pName, &RemapConfig );   // null pointer for map table
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
     SetCommonParam( &RemapConfig );
     ret = RemapObj.Init( pName, &RemapConfig,
-                         LOGGER_LEVEL_MAX );   // success init with invalid logger level
+                         LOGGER_LEVEL_MAX );   // success init with invalid logger level and invalid
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = RemapObj.RegisterBuffers(
@@ -603,35 +605,35 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     return;
 }
 
-TEST( Remap, DSPSuccessPipeline1Test )   // general success test on DSP for UYVY/RGB to RGB, with
-                                         // and without normalization, no undistortion
+TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
+                                     // pipeline, no undistortion and no renormalization
 {
+    printf( "DSP general accuracy test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, true, false, false );
+                 false, false, true, false );
+    printf( "CPU general accuracy test\n" );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, true, false );
 }
 
-TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY/RGB to RGB, with
-                                         // and without normalization, undistortion
+TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU backend, RGB to
+                                        // RGB pipeline, no undistortion and no renormalization
 {
+    printf( "DSP general performance test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 true, true, false, false );
+                 false, false, false, true );
+    printf( "CPU general performance test\n" );
+    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, false, true );
 }
 
-TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12/UYVY to BGR, with
-                                         // and without undistortion
+TEST( Remap, CoverTest )   // fail path tests
 {
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
-                 false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
-                 true, false, false, false );
+    CoverTest1();   // bad status error
+    CoverTest2();   // bad arguments error
+    CoverTest3();   // wrong input&output buffer
+    CoverTest4();   // cover error paths in RegisterBuffers
+    CoverTest5();   // call FadasRemap class directly
 }
 
 TEST( Remap, CPUSuccessPipeline1Test )   // general success test on CPU for UYVY/RGB to RGB, with
@@ -680,35 +682,35 @@ TEST( Remap, CPUSuccessPipeline4Test )   // general success test on CPU for NV12
 }
 #endif
 
-TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
-                                     // pipeline, no undistortion and no renormalization
+TEST( Remap, DSPSuccessPipeline1Test )   // general success test on DSP for UYVY/RGB to RGB, with
+                                         // and without normalization, no undistortion
 {
-    printf( "DSP general accuracy test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, false, true, false );
-    printf( "CPU general accuracy test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, false, true, false );
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 false, true, false, false );
 }
 
-TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU backend, RGB to
-                                        // RGB pipeline, no undistortion and no renormalization
+TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY/RGB to RGB, with
+                                         // and without normalization, undistortion
 {
-    printf( "DSP general performance test\n" );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, false, false, true );
-    printf( "CPU general performance test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 false, false, false, true );
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 true, true, false, false );
 }
 
-TEST( Remap, CoverTest )   // fail path tests
+TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12/UYVY to BGR, with
+                                         // and without undistortion
 {
-    CoverTest1();   // bad status error
-    CoverTest2();   // bad arguments error
-    CoverTest3();   // wrong input&output buffer
-    CoverTest4();   // cover error paths in RegisterBuffers
-    CoverTest5();   // call FadasRemap class directly
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 true, false, false, false );
 }
 
 #ifndef GTEST_RIDEHAL

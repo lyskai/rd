@@ -17,7 +17,7 @@ remote_handle64 FadasSrv::s_handle64[RIDEHAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
 bool FadasSrv::s_initialized[RIDEHAL_PROCESSOR_MAX] = { false, false, false, false };
 uint64_t FadasSrv::s_useRef[RIDEHAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
 std::map<void *, FadasSrv::MemInfo> FadasSrv::s_memMaps[RIDEHAL_PROCESSOR_MAX];
-int FadasSrv::s_client = 1;
+long int FadasSrv::s_client = 1;
 
 extern "C"
 {
@@ -44,15 +44,22 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     std::string envName = "RIDEHAL_FADAS_CLIENT_ID";
-    char *envValue = getenv( envName.c_str() );
+    const char *envValue = getenv( envName.c_str() );
     if ( nullptr != envValue )
     {
-        s_client = atoi( envValue );
+        char *endptr;
+        errno = 0;
+        s_client = strtol( envValue, &endptr, 10 );
+        if ( 0 != errno )
+        {
+            RIDEHAL_INFO( "Invalid client reset to 1!" );
+            s_client = 1;
+        }
     }
     if ( ( 0 > s_client ) || ( 12 < s_client ) )
     {
-        s_client = 1;
         RIDEHAL_INFO( "Invalid client id = %d, reset to 1!", s_client );
+        s_client = 1;
     }
 
     std::string uriFadas = FadasIface_URI;
@@ -76,20 +83,11 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
     if ( 0 == s_handle64[coreId] )
     {
         // Use unsigned PD for DSP
-        if ( remote_session_control )
-        {
-            struct remote_rpc_control_unsigned_module data;
-            data.enable = 1;
-            data.domain = domain;
-            int nErr = remote_session_control( DSPRPC_CONTROL_UNSIGNED_MODULE,
-                                               reinterpret_cast<void *>( &data ), sizeof( data ) );
-        }
-        else
-        {
-            RIDEHAL_ERROR( "Unsigned PD not supported on this device!" );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
-
+        struct remote_rpc_control_unsigned_module data;
+        data.enable = 1;
+        data.domain = domain;
+        int nErr = remote_session_control( DSPRPC_CONTROL_UNSIGNED_MODULE,
+                                           reinterpret_cast<void *>( &data ), sizeof( data ) );
         auto retVal = FadasIface_open( uri, &handle64 );
         if ( AEE_SUCCESS != retVal )
         {
@@ -106,8 +104,8 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        int32_t ans = 0xFFFFFFFF;
-        FadasIface_FadasInit( handle64, &ans );
+        int32_t ans = FADAS_ERROR_MAX;
+        (void) FadasIface_FadasInit( handle64, &ans );
         if ( FADAS_ERROR_NONE != ans )
         {
             RIDEHAL_ERROR( "FAILED:  FadasIface_FadasInit - 0x%x", ans );
@@ -142,8 +140,8 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
     ret = RIDEHAL_LOGGER_INIT( pName, level );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        fprintf( stderr, "WARINING: failed to create logger for FadasSrv %s: ret = %d\n", pName,
-                 ret );
+        (void) fprintf( stderr, "WARINING: failed to create logger for FadasSrv %s: ret = %d\n",
+                        pName, ret );
         ret = RIDEHAL_ERROR_NONE; /* ignore logger init error */
     }
 
@@ -182,7 +180,7 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
     }
     else
     {
-        RIDEHAL_LOGGER_DEINIT();
+        (void) RIDEHAL_LOGGER_DEINIT();
     }
 
     return ret;
@@ -211,7 +209,11 @@ RideHalError_e FadasSrv::Deinit()
             if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
                  ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
-                FadasIface_FadasDeInit( s_handle64[m_processor] );
+                if ( AEE_SUCCESS != FadasIface_FadasDeInit( s_handle64[m_processor] ) )
+                {
+                    RIDEHAL_ERROR( "FadasIface_FadasDeInit failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
             }
             else
             {
@@ -229,7 +231,7 @@ RideHalError_e FadasSrv::Deinit()
     ret = RIDEHAL_LOGGER_DEINIT();
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        fprintf( stderr, "WARINING: failed to deinit logger for FadasSrv: ret = %d\n", ret );
+        (void) fprintf( stderr, "WARINING: failed to deinit logger for FadasSrv: ret = %d\n", ret );
         ret = RIDEHAL_ERROR_NONE; /* ignore logger deinit error */
     }
 
@@ -265,9 +267,9 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
         int dmaHandle = (int) pBuffer->buffer.dmaHandle;
         size_t sizeOne = ( size_t )( pBuffer->size / batch );
         RideHal_ImageFormat_e format = pBuffer->imgProps.format;
-        size_t sizePlane0 = pBuffer->imgProps.stride[0] * pBuffer->imgProps.actualHeight[0];
-        size_t sizePlane1 = pBuffer->imgProps.stride[1] * pBuffer->imgProps.actualHeight[1] +
-                            pBuffer->imgProps.extraPadding;
+        uint32_t sizePlane0 = pBuffer->imgProps.stride[0] * pBuffer->imgProps.actualHeight[0];
+        uint32_t sizePlane1 = pBuffer->imgProps.stride[1] * pBuffer->imgProps.actualHeight[1] +
+                              pBuffer->imgProps.extraPadding;
 
         auto it = memMap.find( pBuffer->data() );
         if ( it == memMap.end() )
@@ -360,19 +362,35 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
             {
                 for ( int i = 0; i < batch; i++ )
                 {
+                    FadasError_e retVal;
                     if ( RIDEHAL_IMAGE_FORMAT_NV12 ==
                          format ) /* register both of plane0 and plane1 for NV12 format. */
                     {
-                        (void) FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
-                                            sizePlane0 );
-                        (void) FadasRegBuf( bufferType,
-                                            (uint8_t *) pBuffer->data() + sizeOne * i + sizePlane0,
-                                            sizePlane1 );
+                        retVal = FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
+                                              sizePlane0 );
+                        if ( FADAS_ERROR_NONE != retVal )
+                        {
+                            RIDEHAL_ERROR( "FadasRegBuf failed!" );
+                            fd = -1;
+                        }
+                        retVal = FadasRegBuf(
+                                bufferType, (uint8_t *) pBuffer->data() + sizeOne * i + sizePlane0,
+                                sizePlane1 );
+                        if ( FADAS_ERROR_NONE != retVal )
+                        {
+                            RIDEHAL_ERROR( "FadasRegBuf failed!" );
+                            fd = -1;
+                        }
                     }
                     else
                     {
-                        (void) FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
-                                            sizeOne );
+                        retVal = FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
+                                              sizeOne );
+                        if ( FADAS_ERROR_NONE != retVal )
+                        {
+                            RIDEHAL_ERROR( "FadasRegBuf failed!" );
+                            fd = -1;
+                        }
                     }
                 }
                 fd = 1;   // virtual fd for CPU&GPU pipeline, indicates that the register is
@@ -443,7 +461,7 @@ void FadasSrv::DeregBuf( void *pBuffer )
             uint32_t batch = it->second.batch;
             void *ptr = it->second.ptr;
             size_t sizeOne = it->second.sizeOne;
-            memMap.erase( it );
+            (void) memMap.erase( it );
 
             if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
                  ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
@@ -456,16 +474,33 @@ void FadasSrv::DeregBuf( void *pBuffer )
                 }
                 int client = s_client;
                 extDomainId = get_extended_domains_id( domain, client );
-                FadasIface_FadasDeregBuf( handle64, fd, sizeOne, offset, batch );
-                FadasIface_munmap( handle64, fd, (uint32_t) size );
-                fastrpc_munmap( extDomainId, fd, ptr, size );
+                AEEResult retVal;
+                retVal = FadasIface_FadasDeregBuf( handle64, fd, sizeOne, offset, batch );
+                if ( AEE_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "FadasIface_FadasDeregBuf failed!" );
+                }
+                retVal = FadasIface_munmap( handle64, fd, (uint32_t) size );
+                if ( AEE_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "FadasIface_munmap failed!" );
+                }
+                retVal = fastrpc_munmap( extDomainId, fd, ptr, size );
+                if ( AEE_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "fastrpc_munmap failed!" );
+                }
                 remote_register_buf_v2( extDomainId, ptr, size, -1 );
             }
             else
             {
                 for ( int i = 0; i < batch; i++ )
                 {
-                    FadasDeregBuf( (uint8_t *) pBuffer + sizeOne * i );
+                    FadasError_e retVal = FadasDeregBuf( (uint8_t *) pBuffer + sizeOne * i );
+                    if ( FADAS_ERROR_NONE != retVal )
+                    {
+                        RIDEHAL_ERROR( "FadasDeregBuf failed!" );
+                    }
                 }
             }
         }
@@ -1092,6 +1127,10 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
+            else
+            {
+                RIDEHAL_INFO( "Input image property check pass for id=%d!", inputId );
+            }
         }
 
         if ( m_outputFormat != output->imgProps.format )
@@ -1113,6 +1152,10 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
         {
             RIDEHAL_ERROR( "Batch in output buffer and config not match!" );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else
+        {
+            RIDEHAL_INFO( "Output image property check pass!" );
         }
 
         if ( RIDEHAL_ERROR_NONE == ret )
@@ -1143,12 +1186,22 @@ RideHalError_e FadasRemap::DestroyWorkers()
             if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
                  ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
-                FadasIface_FadasRemap_DestroyWorkers(
-                        0, m_workerPtrs[i] );   // handle not really need for DestroyWorkers
+                AEEResult retVal = FadasIface_FadasRemap_DestroyWorkers( 0, m_workerPtrs[i] );
+                if ( AEE_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "Destroy worker failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
             }
             else
             {
-                FadasRemap_DestroyWorkers( reinterpret_cast<void *>( m_workerPtrs[i] ) );
+                FadasError_e retVal =
+                        FadasRemap_DestroyWorkers( reinterpret_cast<void *>( m_workerPtrs[i] ) );
+                if ( FADAS_ERROR_NONE != retVal )
+                {
+                    RIDEHAL_ERROR( "Destroy worker failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
             }
         }
     }
@@ -1167,12 +1220,22 @@ RideHalError_e FadasRemap::DestroyMap()
             if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
                  ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
             {
-                FadasIface_FadasRemap_DestroyMap(
-                        0, m_remapPtrs[i] );   // handle not really need for DestroyMap
+                AEEResult retVal = FadasIface_FadasRemap_DestroyMap( 0, m_remapPtrs[i] );
+                if ( AEE_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "Destroy map failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
             }
             else
             {
-                FadasRemap_DestroyMap( reinterpret_cast<FadasRemapMap *>( m_remapPtrs[i] ) );
+                FadasError_e retVal = FadasRemap_DestroyMap(
+                        reinterpret_cast<FadasRemapMap *>( m_remapPtrs[i] ) );
+                if ( FADAS_ERROR_NONE != retVal )
+                {
+                    RIDEHAL_ERROR( "Destroy map failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
             }
         }
     }

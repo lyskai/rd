@@ -63,7 +63,11 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
         if ( nullptr == pConfig )
         {
             RIDEHAL_ERROR( "Empty config pointer!" );
-            ComponentIF::Deinit();
+            RideHalError_e retVal = ComponentIF::Deinit();
+            if ( RIDEHAL_ERROR_NONE != retVal )
+            {
+                RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
+            }
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
         else
@@ -98,8 +102,17 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
                         if ( RIDEHAL_ERROR_NONE != ret )
                         {
                             RIDEHAL_ERROR( "Create worker fail at inputId = %d", inputId );
-                            m_fadasRemapObj.DestroyMap();
-                            m_fadasRemapObj.DestroyWorkers();
+                            RideHalError_e retVal;
+                            retVal = m_fadasRemapObj.DestroyMap();
+                            if ( RIDEHAL_ERROR_NONE != retVal )
+                            {
+                                RIDEHAL_ERROR( "Destroy map failed!" );
+                            }
+                            retVal = m_fadasRemapObj.DestroyWorkers();
+                            if ( RIDEHAL_ERROR_NONE != retVal )
+                            {
+                                RIDEHAL_ERROR( "Destroy worker failed!" );
+                            }
                             break;
                         }
 
@@ -111,8 +124,17 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
                         if ( RIDEHAL_ERROR_NONE != ret )
                         {
                             RIDEHAL_ERROR( "Create remap table fail at inputId = %d", inputId );
-                            m_fadasRemapObj.DestroyMap();
-                            m_fadasRemapObj.DestroyWorkers();
+                            RideHalError_e retVal;
+                            retVal = m_fadasRemapObj.DestroyMap();
+                            if ( RIDEHAL_ERROR_NONE != retVal )
+                            {
+                                RIDEHAL_ERROR( "Destroy map failed!" );
+                            }
+                            retVal = m_fadasRemapObj.DestroyWorkers();
+                            if ( RIDEHAL_ERROR_NONE != retVal )
+                            {
+                                RIDEHAL_ERROR( "Destroy worker failed!" );
+                            }
                             break;
                         }
                     }
@@ -126,8 +148,17 @@ RideHalError_e Remap::Init( const char *pName, const Remap_Config_t *pConfig, Lo
             else
             {
                 m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
-                m_fadasRemapObj.Deinit();
-                ComponentIF::Deinit();
+                RideHalError_e retVal;
+                retVal = m_fadasRemapObj.Deinit();
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    RIDEHAL_ERROR( "Deinit fadas remap failed!" );
+                }
+                retVal = ComponentIF::Deinit();
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
+                }
             }
         }
     }
@@ -147,37 +178,25 @@ RideHalError_e Remap::Deinit()
     else
     {
         ret = m_fadasRemapObj.DestroyMap();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Destroy map failed!" );
+        }
+        ret = m_fadasRemapObj.DestroyWorkers();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Destroy worker failed!" );
+        }
+        ret = m_fadasRemapObj.Deinit();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Deinit fadas remap failed!" );
+        }
+        ret = ComponentIF::Deinit();
 
         if ( RIDEHAL_ERROR_NONE != ret )
         {
-            RIDEHAL_ERROR( "Failed to destroy map!" );
-        }
-        else
-        {
-            ret = m_fadasRemapObj.DestroyWorkers();
-        }
-
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to destroy worker!" );
-        }
-        else
-        {
-            ret = m_fadasRemapObj.Deinit();
-        }
-
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to deinit fadas remap!" );
-        }
-        else
-        {
-            ret = ComponentIF::Deinit();
-        }
-
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to deinit component!" );
+            RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
         }
     }
 

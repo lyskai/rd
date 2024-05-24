@@ -70,7 +70,7 @@ private:
     static uint64_t s_useRef[RIDEHAL_PROCESSOR_MAX];
     static bool s_initialized[RIDEHAL_PROCESSOR_MAX];
     static std::map<void *, MemInfo> s_memMaps[RIDEHAL_PROCESSOR_MAX];
-    static int s_client;
+    static long int s_client;
 
 protected:
     RIDEHAL_DECLARE_LOGGER();
@@ -91,15 +91,15 @@ public:
     RideHalError_e CreateRemapWorker( uint32_t inputId, RideHal_ImageFormat_e inputFormat,
                                       uint32_t inputWidth, uint32_t inputHeight, FadasROI_t ROI );
     RideHalError_e RemapRun( const RideHal_SharedBuffer_t *inputs,
-                             const RideHal_SharedBuffer_t *outputs );
+                             const RideHal_SharedBuffer_t *output );
     RideHalError_e DestroyWorkers();
     RideHalError_e DestroyMap();
 
 private:
     RideHalError_e RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
-                                const RideHal_SharedBuffer_t *outputs );
+                                const RideHal_SharedBuffer_t *output );
     RideHalError_e RemapRunDSP( const RideHal_SharedBuffer_t *inputs,
-                                const RideHal_SharedBuffer_t *outputs );
+                                const RideHal_SharedBuffer_t *output );
     FadasRemapPipeline_e RemapGetPipelineCPU( RideHal_ImageFormat_e inputFormat,
                                               RideHal_ImageFormat_e outputFormat,
                                               bool bEnableNormalize );
