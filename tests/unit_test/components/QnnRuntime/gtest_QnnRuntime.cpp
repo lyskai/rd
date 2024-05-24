@@ -1,6 +1,7 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
+#define QNNRUNTIME_UNIT_TEST
 #include "ridehal/component/QnnRuntime.hpp"
 #include "gtest/gtest.h"
 #include <stdio.h>
@@ -117,11 +118,28 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     std::shared_ptr<uint8_t> buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize] );
     qnn::tools::datautil::readBinaryFromFile(
             modelPath, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
+
+    // buffer is null
+    qnnConfig.contextBuffer = nullptr;
+    qnnConfig.contextSize = bufferSize;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    // buffer size is 0
+    qnnConfig.contextBuffer = buffer.get();
+    qnnConfig.contextSize = 0;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    // buffer size is incorrect
+    qnnConfig.contextBuffer = buffer.get();
+    qnnConfig.contextSize = 8;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    // correct loading
     qnnConfig.contextBuffer = buffer.get();
     qnnConfig.contextSize = bufferSize;
-
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -331,6 +349,10 @@ TEST( QnnRuntime, LoadModel )
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    // pConfig is null
+    ret = qnnRuntime.Init( pName, nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 }
 
 TEST( QnnRuntime, StateMachine )
@@ -385,9 +407,9 @@ TEST( QnnRuntime, LoadOpPackage )
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     const size_t numOfUdoPackages = 1;
     QnnRuntime_UdoPackage_t udoPackages[numOfUdoPackages];
-    qnnConfig.numOfUdoPackages = -1;
 
     // numOfUdoPackages is - 1;
+    qnnConfig.numOfUdoPackages = -1;
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
@@ -456,6 +478,97 @@ TEST( QnnRuntime, LoadOpPackage )
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
+TEST( QnnRuntime, DataType )
+{
+    QnnRuntime qnnRuntime;
+    EXPECT_EQ( QNN_DATATYPE_INT_8, qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_INT_8 ) );
+    EXPECT_EQ( QNN_DATATYPE_INT_16, qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_INT_16 ) );
+    EXPECT_EQ( QNN_DATATYPE_INT_32, qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_INT_32 ) );
+    EXPECT_EQ( QNN_DATATYPE_INT_64, qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_INT_64 ) );
+    EXPECT_EQ( QNN_DATATYPE_UINT_8, qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UINT_8 ) );
+    EXPECT_EQ( QNN_DATATYPE_UINT_16,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UINT_16 ) );
+    EXPECT_EQ( QNN_DATATYPE_UINT_32,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UINT_32 ) );
+    EXPECT_EQ( QNN_DATATYPE_UINT_64,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UINT_64 ) );
+    EXPECT_EQ( QNN_DATATYPE_FLOAT_16,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_FLOAT_16 ) );
+    EXPECT_EQ( QNN_DATATYPE_FLOAT_32,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_FLOAT_32 ) );
+    EXPECT_EQ( QNN_DATATYPE_FLOAT_64,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_FLOAT_64 ) );
+    EXPECT_EQ( QNN_DATATYPE_SFIXED_POINT_8,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8 ) );
+    EXPECT_EQ( QNN_DATATYPE_SFIXED_POINT_16,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16 ) );
+    EXPECT_EQ( QNN_DATATYPE_SFIXED_POINT_32,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32 ) );
+    EXPECT_EQ( QNN_DATATYPE_UFIXED_POINT_8,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8 ) );
+    EXPECT_EQ( QNN_DATATYPE_UFIXED_POINT_16,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16 ) );
+    EXPECT_EQ( QNN_DATATYPE_UFIXED_POINT_32,
+               qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32 ) );
+
+
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_INT_8, qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_INT_8 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_INT_16,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_INT_16 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_INT_32,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_INT_32 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_INT_64,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_INT_64 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UINT_8,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UINT_8 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UINT_16,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UINT_16 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UINT_32,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UINT_32 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UINT_64,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UINT_64 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_FLOAT_16,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_FLOAT_16 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_FLOAT_32,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_FLOAT_32 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_FLOAT_64,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_FLOAT_64 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_SFIXED_POINT_8 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_SFIXED_POINT_16 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_SFIXED_POINT_32 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UFIXED_POINT_8 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UFIXED_POINT_16 ) );
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UFIXED_POINT_32 ) );
+}
+
+TEST( QnnRuntime, CreateModelFromSo )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "QnnRuntime";
+
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_CPU;
+    qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
+    std::string modelPath = std::string( qnnConfig.modelPath );
+
+    // invalid path
+    qnnConfig.modelPath = "invalid.so";
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    EXPECT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    qnnConfig.modelPath = "data/centernet/libqride_centernet.so";
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    EXPECT_EQ( RIDEHAL_ERROR_FAIL, ret );
+}
 
 #ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )

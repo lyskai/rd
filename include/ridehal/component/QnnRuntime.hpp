@@ -288,13 +288,17 @@ private:
      */
     RideHalError_e GeneratePerf();
 
+#ifdef QNNRUNTIME_UNIT_TEST
+public:
+#endif
+
     /**
      * @cond QnnRuntime::SwitchFromQnnDataType @endcond
      * @brief Stwich qnn defined data type to ridehal defined tensor type
      * @param[in] dataType qnn defined data type
      * @return RideHal_TensorType_e ridehal defined tensor type
      */
-    inline RideHal_TensorType_e SwitchFromQnnDataType( Qnn_DataType_t dataType );
+    RideHal_TensorType_e SwitchFromQnnDataType( Qnn_DataType_t dataType );
 
     /**
      * @cond QnnRuntime::SwitchFromQnnDataType @endcond
@@ -302,7 +306,7 @@ private:
      * @param[in] tensorType ridehal defined tensor type
      * @return Qnn_DataType_t qnn defined data type
      */
-    inline Qnn_DataType_t SwitchToQnnDataType( RideHal_TensorType_e tensorType );
+    Qnn_DataType_t SwitchToQnnDataType( RideHal_TensorType_e tensorType );
 
 
 private:

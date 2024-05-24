@@ -105,7 +105,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                 QNN_LOG_LEVEL_ERROR );
         if ( qnn_wrapper_api::ModelError_t::MODEL_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Failed in composeGraphs()" );
+            RIDEHAL_ERROR( "Failed in composeGraphs(), error is %d", retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -149,7 +149,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                     RIDEHAL_INFO( "saving cached binary(size = %llu)", writtenBufferSize );
 
                     auto dataUtilStatus = tools::datautil::writeBinaryToFile(
-                            modelFile, "program.bin", (uint8_t *) saveBuffer.get(),
+                            modelFile, "programGenFromSo.bin", (uint8_t *) saveBuffer.get(),
                             writtenBufferSize );
                     if ( tools::datautil::StatusCode::SUCCESS != dataUtilStatus )
                     {
@@ -386,27 +386,24 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
     }
 
-    const std::string modelPath = std::string( pConfig->modelPath );
-    m_LoadFromCachedBinary = ( pConfig->loadType == QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE ||
-                               pConfig->loadType == QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER );
+    std::string modelPath;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        modelPath = std::string( pConfig->modelPath );
+        m_LoadFromCachedBinary = ( pConfig->loadType == QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_FILE ||
+                                   pConfig->loadType == QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER );
+    }
+
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( (int) m_BackendType < (int) RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_MAX )
+        auto statusCode = dynamicloadutil::getQnnFunctionPointers(
+                s_Backends[m_BackendType], modelPath, &m_QnnFunctionPointers, &m_BackendHandle,
+                !m_LoadFromCachedBinary, &m_ModelHandle );
+        if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
         {
-            auto statusCode = dynamicloadutil::getQnnFunctionPointers(
-                    s_Backends[m_BackendType], modelPath, &m_QnnFunctionPointers, &m_BackendHandle,
-                    !m_LoadFromCachedBinary, &m_ModelHandle );
-            if ( dynamicloadutil::StatusCode::SUCCESS != statusCode )
-            {
-                RIDEHAL_ERROR( "failed to get qnn function pointers from model %s(%s), error is %d",
-                               modelPath.c_str(), s_Backends[m_BackendType], statusCode );
-                ret = RIDEHAL_ERROR_FAIL;
-            }
-        }
-        else
-        {
-            RIDEHAL_ERROR( "invalid backend type %d", (int) m_BackendType );
+            RIDEHAL_ERROR( "failed to get qnn function pointers from model %s(%s), error is %d",
+                           modelPath.c_str(), s_Backends[m_BackendType], statusCode );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -489,61 +486,68 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                       version.backendApiVersion.patch );
     }
 
-
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        const auto returnStatus = m_QnnFunctionPointers.qnnInterface.deviceGetPlatformInfo(
-                m_LogHandle, &m_PlatformInfo );
-        if ( QNN_BACKEND_NO_ERROR != returnStatus )
+        if ( pConfig->backendType != RIDEHAL_PROCESSOR_CPU )
         {
-            RIDEHAL_ERROR( "Could not get platform information due to error = %d", returnStatus );
-            ret = RIDEHAL_ERROR_FAIL;
+            const auto returnStatus = m_QnnFunctionPointers.qnnInterface.deviceGetPlatformInfo(
+                    m_LogHandle, &m_PlatformInfo );
+            if ( QNN_DEVICE_NO_ERROR != returnStatus )
+            {
+                RIDEHAL_ERROR( "Could not get platform information due to error = %d",
+                               returnStatus );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
         }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( QNN_DEVICE_PLATFORM_INFO_VERSION_1 == m_PlatformInfo->version )
+        if ( pConfig->backendType != RIDEHAL_PROCESSOR_CPU )
         {
-            RIDEHAL_INFO( "numHwDevices = %u", m_PlatformInfo->v1.numHwDevices );
-            for ( uint32_t i = 0; i < m_PlatformInfo->v1.numHwDevices; i++ )
+            if ( QNN_DEVICE_PLATFORM_INFO_VERSION_1 == m_PlatformInfo->version )
             {
-                auto &deviceInfo = m_PlatformInfo->v1.hwDevices[i].v1;
-                RIDEHAL_INFO( "deviceId = %u deviceType = %u numCores = %u", deviceInfo.deviceId,
-                              deviceInfo.deviceType, deviceInfo.numCores );
-            }
-
-            int deviceId = m_BackendCoreId;
-            int core_Id = 0;
-
-            if ( deviceId < (int) m_PlatformInfo->v1.numHwDevices )
-            {
-                QnnDevice_HardwareDeviceInfo_t hwDevice = m_PlatformInfo->v1.hwDevices[deviceId];
-                QnnDevice_PlatformInfo_t platformInfo = {
-                        .version = QNN_DEVICE_PLATFORM_INFO_VERSION_1,
-                        .v1 =
-                                {
-                                        .numHwDevices = 1,
-                                        .hwDevices = &hwDevice,
-                                },
-                };
-                QnnDevice_Config_t deviceConfig = {
-                        .option = QNN_DEVICE_CONFIG_OPTION_PLATFORM_INFO,
-                        .hardwareInfo = &platformInfo,
-                };
-                const QnnDevice_Config_t *configs[] = { &deviceConfig, nullptr };
-                const auto returnStatus = m_QnnFunctionPointers.qnnInterface.deviceCreate(
-                        m_LogHandle, configs, &m_DeviceHandle );
-                if ( QNN_BACKEND_NO_ERROR != returnStatus )
+                RIDEHAL_INFO( "numHwDevices = %u", m_PlatformInfo->v1.numHwDevices );
+                for ( uint32_t i = 0; i < m_PlatformInfo->v1.numHwDevices; i++ )
                 {
-                    RIDEHAL_ERROR( "Could not create device due to error = %d", returnStatus );
+                    auto &deviceInfo = m_PlatformInfo->v1.hwDevices[i].v1;
+                    RIDEHAL_INFO( "deviceId = %u deviceType = %u numCores = %u",
+                                  deviceInfo.deviceId, deviceInfo.deviceType, deviceInfo.numCores );
+                }
+
+                int deviceId = m_BackendCoreId;
+                int core_Id = 0;
+
+                if ( deviceId < (int) m_PlatformInfo->v1.numHwDevices )
+                {
+                    QnnDevice_HardwareDeviceInfo_t hwDevice =
+                            m_PlatformInfo->v1.hwDevices[deviceId];
+                    QnnDevice_PlatformInfo_t platformInfo = {
+                            .version = QNN_DEVICE_PLATFORM_INFO_VERSION_1,
+                            .v1 =
+                                    {
+                                            .numHwDevices = 1,
+                                            .hwDevices = &hwDevice,
+                                    },
+                    };
+                    QnnDevice_Config_t deviceConfig = {
+                            .option = QNN_DEVICE_CONFIG_OPTION_PLATFORM_INFO,
+                            .hardwareInfo = &platformInfo,
+                    };
+                    const QnnDevice_Config_t *configs[] = { &deviceConfig, nullptr };
+                    const auto returnStatus = m_QnnFunctionPointers.qnnInterface.deviceCreate(
+                            m_LogHandle, configs, &m_DeviceHandle );
+                    if ( QNN_BACKEND_NO_ERROR != returnStatus )
+                    {
+                        RIDEHAL_ERROR( "Could not create device due to error = %d", returnStatus );
+                        ret = RIDEHAL_ERROR_FAIL;
+                    }
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "invalid backend device id = %d", deviceId );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
-            }
-            else
-            {
-                RIDEHAL_ERROR( "invalid backend device id = %d", deviceId );
-                ret = RIDEHAL_ERROR_FAIL;
             }
         }
     }
@@ -1591,7 +1595,7 @@ RideHalError_e QnnRuntime::GetPerf( QnnRuntime_Perf_t *pPerf )
     return ret;
 }
 
-inline RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType )
+RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType )
 {
     RideHal_TensorType_e tensorType;
     switch ( dataType )
@@ -1671,7 +1675,7 @@ inline RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t da
     return tensorType;
 }
 
-inline Qnn_DataType_t QnnRuntime::SwitchToQnnDataType( RideHal_TensorType_e tensorType )
+Qnn_DataType_t QnnRuntime::SwitchToQnnDataType( RideHal_TensorType_e tensorType )
 {
     Qnn_DataType_t dataType;
     switch ( tensorType )
