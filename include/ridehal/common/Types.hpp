@@ -174,16 +174,16 @@ typedef struct
 typedef enum
 {
     RIDEHAL_COMPONENT_STATE_INITIAL = 0,    /**< the initial state */
-    RIDEHAL_COMPONENT_STATE_INITIALIZING,   /**< the state druing initializing */
+    RIDEHAL_COMPONENT_STATE_INITIALIZING,   /**< the state during initializing */
     RIDEHAL_COMPONENT_STATE_READY,          /**< the ready state */
-    RIDEHAL_COMPONENT_STATE_STATING,        /**< the starting state */
+    RIDEHAL_COMPONENT_STATE_STATING,        /**< the state during starting */
     RIDEHAL_COMPONENT_STATE_RUNNING,        /**< the running state */
-    RIDEHAL_COMPONENT_STATE_STOPING,        /**< the stoping state */
+    RIDEHAL_COMPONENT_STATE_STOPING,        /**< the state during stopping */
     RIDEHAL_COMPONENT_STATE_ERROR,          /**< the error state */
-    RIDEHAL_COMPONENT_STATE_PAUSING,        /**< the pausing state */
+    RIDEHAL_COMPONENT_STATE_PAUSING,        /**< the state during pausing */
     RIDEHAL_COMPONENT_STATE_PAUSE,          /**< the paused state */
-    RIDEHAL_COMPONENT_STATE_RESUMING,       /**< the resuming state */
-    RIDEHAL_COMPONENT_STATE_DEINITIALIZING, /**< the state druing deinitializing */
+    RIDEHAL_COMPONENT_STATE_RESUMING,       /**< the state during resuming */
+    RIDEHAL_COMPONENT_STATE_DEINITIALIZING, /**< the state during deinitializing */
     RIDEHAL_COMPONENT_STATE_MAX
 } RideHal_ComponentState_t;
 
