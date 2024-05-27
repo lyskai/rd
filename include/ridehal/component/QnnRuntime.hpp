@@ -1,7 +1,7 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
-#ifndef _RIDEHAL_QNN_RUNTIME_HPP_
-#define _RIDEHAL_QNN_RUNTIME_HPP_
+#ifndef RIDEHAL_QNN_RUNTIME_HPP
+#define RIDEHAL_QNN_RUNTIME_HPP
 
 #include <map>
 #include <string.h>
@@ -199,18 +199,18 @@ private:
     /**
      * @cond QnnRuntime::CreateFromModelSo @endcond
      * @brief Create qnn model from .so file
-     * @param[in] modelPath model path
+     * @param[in] modelFile model path
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e CreateFromModelSo( std::string modelPath );
+    RideHalError_e CreateFromModelSo( std::string modelFile );
 
     /**
      * @cond QnnRuntime::CreateFromBinary @endcond
      * @brief Create qnn model from .bin file
-     * @param[in] modelPath model path
+     * @param[in] modelFile model path
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e CreateFromBinaryFile( std::string modelPath );
+    RideHalError_e CreateFromBinaryFile( std::string modelFile );
 
     /**
      * @cond QnnRuntime::CreateFromBinary @endcond
@@ -325,7 +325,7 @@ private:
 
     QnnFunctionPointers m_QnnFunctionPointers;
 
-    QnnBackend_Config_t **m_BackendConfig = nullptr;
+    const QnnBackend_Config_t **m_BackendConfig = nullptr;
     QnnSystemContext_Handle_t m_SystemContext = nullptr;
     Qnn_ContextHandle_t m_Context = nullptr;
     QnnContext_Config_t *m_ContextConfig[CONTEXT_CONFIG_SIZE + 1] = { nullptr };
@@ -336,7 +336,7 @@ private:
     qnn_wrapper_api::GraphInfo_t **m_GraphsInfo = nullptr;
     uint32_t m_GraphsCount = 0;
 
-    qnn_wrapper_api::GraphConfigInfo_t **m_GraphConfigsInfo = nullptr;
+    const qnn_wrapper_api::GraphConfigInfo_t **m_GraphConfigsInfo = nullptr;
     uint32_t m_GraphConfigsInfoCount = 0;
 
     const QnnDevice_PlatformInfo_t *m_PlatformInfo;
@@ -353,12 +353,12 @@ private:
     static std::map<uint8_t *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
     QnnRuntime_Perf_t m_perf;
     bool m_bEnabelPerf = true;
-    QnnRuntime_TensorInfo_t *m_pInputTensor;
+    QnnRuntime_TensorInfo_t *m_pInputTensor = nullptr;
     size_t m_pInputTensorNum = 0;
-    QnnRuntime_TensorInfo_t *m_pOutputTensor;
+    QnnRuntime_TensorInfo_t *m_pOutputTensor = nullptr;
     size_t m_pOutputTensorNum = 0;
 };   // QnnRuntime
 
 }   // namespace component
 }   // namespace ridehal
-#endif   // _RIDEHAL_QNN_RUNTIME_HPP_
+#endif   // RIDEHAL_QNN_RUNTIME_HPP

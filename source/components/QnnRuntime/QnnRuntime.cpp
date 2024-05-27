@@ -70,6 +70,7 @@ void QnnLog_Callback( const char *fmt, QnnLog_Level_t logLevel, uint64_t timesta
             Logger::GetDefault().Log( LOGGER_LEVEL_ERROR, fmt, args );
             break;
         default:
+            Logger::GetDefault().Log( LOGGER_LEVEL_VERBOSE, fmt, args );
             break;
     }
 }
@@ -139,23 +140,21 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
         {
             std::unique_ptr<uint8_t[]> saveBuffer( new uint8_t[binaryBufferSize] );
             Qnn_ContextBinarySize_t writtenBufferSize;
-            if ( nullptr != saveBuffer )
-            {
-                if ( QNN_GRAPH_NO_ERROR == m_QnnFunctionPointers.qnnInterface.contextGetBinary(
-                                                   m_Context,
-                                                   reinterpret_cast<void *>( saveBuffer.get() ),
-                                                   binaryBufferSize, &writtenBufferSize ) )
-                {
-                    RIDEHAL_INFO( "saving cached binary(size = %llu)", writtenBufferSize );
 
-                    auto dataUtilStatus = tools::datautil::writeBinaryToFile(
-                            modelFile, "programGenFromSo.bin", (uint8_t *) saveBuffer.get(),
-                            writtenBufferSize );
-                    if ( tools::datautil::StatusCode::SUCCESS != dataUtilStatus )
-                    {
-                        RIDEHAL_ERROR( "Error while writing binary to file." );
-                        ret = RIDEHAL_ERROR_FAIL;
-                    }
+            if ( QNN_GRAPH_NO_ERROR == m_QnnFunctionPointers.qnnInterface.contextGetBinary(
+                                               m_Context,
+                                               reinterpret_cast<void *>( saveBuffer.get() ),
+                                               binaryBufferSize, &writtenBufferSize ) )
+            {
+                RIDEHAL_INFO( "saving cached binary(size = %llu)", writtenBufferSize );
+
+                auto dataUtilStatus = tools::datautil::writeBinaryToFile(
+                        modelFile, "programGenFromSo.bin", (uint8_t *) saveBuffer.get(),
+                        writtenBufferSize );
+                if ( tools::datautil::StatusCode::SUCCESS != dataUtilStatus )
+                {
+                    RIDEHAL_ERROR( "Error while writing binary to file." );
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
             }
         }
@@ -413,16 +412,14 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         QnnLog_Error_t logError;
         auto logLevel = QNN_LOG_LEVEL_WARN;
 
-        qnn::log::Logger::createLogger( QnnLog_Callback, logLevel, &logError );
-        if ( RIDEHAL_ERROR_NONE == ret )
+        (void) qnn::log::Logger::createLogger( QnnLog_Callback, logLevel, &logError );
+
+        const Qnn_ErrorHandle_t retVal = m_QnnFunctionPointers.qnnInterface.logCreate(
+                QnnLog_Callback, logLevel, &m_LogHandle );
+        if ( QNN_SUCCESS != retVal )
         {
-            const Qnn_ErrorHandle_t retVal = m_QnnFunctionPointers.qnnInterface.logCreate(
-                    QnnLog_Callback, logLevel, &m_LogHandle );
-            if ( QNN_SUCCESS != retVal )
-            {
-                RIDEHAL_WARN( "Unable to initialize logging in the backend. error is %d",
-                              (int) retVal );
-            }
+            RIDEHAL_WARN( "Unable to initialize logging in the backend. error is %d",
+                          (int) retVal );
         }
     }
 
@@ -561,7 +558,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         }
         else if ( pConfig->numOfUdoPackages > 0 )
         {
-            RideHalError_e ret = LoadOpPackages( pConfig->pUdoPackages, pConfig->numOfUdoPackages );
+            ret = LoadOpPackages( pConfig->pUdoPackages, pConfig->numOfUdoPackages );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "fail to load package" );
@@ -647,7 +644,11 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        ComponentIF::Deinit();
+        const RideHalError_e retVal = ComponentIF::Deinit();
+        if ( RIDEHAL_ERROR_NONE != retVal )
+        {
+            RIDEHAL_ERROR( "ComponentIF Deinit failed, error is %d", retVal );
+        }
     }
 
     return ret;
@@ -937,7 +938,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t *pShar
 }
 
 
-RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *sharedBuffer,
+RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffer,
                                             uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -954,7 +955,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *shared
     // offset.
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( 0 != sharedBuffer[i].offset )
+        if ( 0 != pSharedBuffer[i].offset )
         {
             ret = RIDEHAL_ERROR_FAIL;
         }
@@ -975,7 +976,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *shared
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
         for ( size_t i = 0; i < numBuffers; ++i )
         {
-            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) sharedBuffer[i].data() );
+            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffer[i].data() );
             if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
             {
                 int domain = CDSP_DOMAIN_ID;
@@ -985,28 +986,28 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *shared
                 }
 
                 Qnn_MemDescriptor_t desc;
-                desc.memShape.numDim = sharedBuffer[i].tensorProps.numDims;
-                desc.memShape.dimSize = (uint32_t *) sharedBuffer[i].tensorProps.dims;
-                desc.dataType = SwitchToQnnDataType( sharedBuffer[i].tensorProps.type );
+                desc.memShape.numDim = pSharedBuffer[i].tensorProps.numDims;
+                desc.memShape.dimSize = (uint32_t *) pSharedBuffer[i].tensorProps.dims;
+                desc.dataType = SwitchToQnnDataType( pSharedBuffer[i].tensorProps.type );
 
                 int client = 0;   // NOTE: default is 0
                 int extDomainId = get_extended_domains_id( domain, client );
 #if defined( __QNXNTO__ )
-                remote_register_buf_v2( extDomainId, sharedBuffer[i].buffer.pData,
-                                        sharedBuffer[i].buffer.size, 0 );
+                remote_register_buf_v2( extDomainId, pSharedBuffer[i].buffer.pData,
+                                        pSharedBuffer[i].buffer.size, 0 );
 #else
-                remote_register_buf_v2( extDomainId, sharedBuffer[i].buffer.pData,
-                                        sharedBuffer[i].buffer.size,
-                                        (int) sharedBuffer[i].buffer.dmaHandle );
+                remote_register_buf_v2( extDomainId, pSharedBuffer[i].buffer.pData,
+                                        pSharedBuffer[i].buffer.size,
+                                        (int) pSharedBuffer[i].buffer.dmaHandle );
 #endif
-                auto fd = rpcmem_to_fd( sharedBuffer[i].buffer.pData );
+                auto fd = rpcmem_to_fd( pSharedBuffer[i].buffer.pData );
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
                 QnnMemHtp_Descriptor_t htpDesc;
                 htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
-                htpDesc.size = sharedBuffer[i].size;
+                htpDesc.size = pSharedBuffer[i].size;
                 htpDesc.sharedBufferConfig.fd = fd;
-                htpDesc.sharedBufferConfig.offset = sharedBuffer[i].offset;
+                htpDesc.sharedBufferConfig.offset = pSharedBuffer[i].offset;
 
                 desc.memShape.shapeConfig = nullptr;
                 desc.memType = QNN_MEM_TYPE_CUSTOM;
@@ -1023,19 +1024,19 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *shared
                 if ( QNN_SUCCESS != memRegisterRet )
                 {
                     RIDEHAL_ERROR( "map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                                   sharedBuffer[i].buffer.pData, fd, sharedBuffer[i].size,
-                                   sharedBuffer[i].offset, m_BackendCoreId, memRegisterRet );
+                                   pSharedBuffer[i].buffer.pData, fd, pSharedBuffer[i].size,
+                                   pSharedBuffer[i].offset, m_BackendCoreId, memRegisterRet );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
                     QnnRuntime::DmaMemInfo_t info;
                     info.memHandle = memHandle;
-                    info.size = sharedBuffer[i].buffer.size;
-                    s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) sharedBuffer[i].data()] = info;
+                    info.size = pSharedBuffer[i].buffer.size;
+                    s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffer[i].data()] = info;
                     RIDEHAL_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
-                                  sharedBuffer[i].buffer.pData, fd, sharedBuffer[i].size,
-                                  sharedBuffer[i].offset, memHandle, m_BackendCoreId );
+                                  pSharedBuffer[i].buffer.pData, fd, pSharedBuffer[i].size,
+                                  pSharedBuffer[i].offset, memHandle, m_BackendCoreId );
                 }
             }
             else
@@ -1298,7 +1299,13 @@ RideHalError_e QnnRuntime::DeRegisterBuffers()
         {
             auto ptr = kv.first;
             auto &info = kv.second;
-            m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+            const auto retVal =
+                    m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+            if ( QNN_SUCCESS != retVal )
+            {
+                RIDEHAL_ERROR( "Failed to DeRegister memory. error is %d", (int) retVal );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
             if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
                  RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
             {
@@ -1311,7 +1318,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers()
     return ret;
 }
 
-RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *sharedBuffer,
+RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffer,
                                               uint32_t numBuffers )
 {
 
@@ -1346,12 +1353,18 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *shar
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
         for ( size_t i = 0; i < numBuffers; ++i )
         {
-            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) sharedBuffer[i].data() );
+            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffer[i].data() );
             if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
             {
                 auto ptr = it->first;
                 auto &info = it->second;
-                m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+                const auto retVal =
+                        m_QnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+                if ( QNN_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "Failed to DeRegister memory. error is %d", (int) retVal );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
                 if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
                      RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
                 {
@@ -1359,7 +1372,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *shar
                 }
             }
 
-            s_DmaMemInfoMap[m_BackendCoreId].erase( it );
+            (void) s_DmaMemInfoMap[m_BackendCoreId].erase( it );
         }
     }
 
@@ -1402,8 +1415,7 @@ RideHalError_e QnnRuntime::Deinit()
                     m_QnnFunctionPointers.qnnInterface.profileFree( m_ProfileBackendHandle );
             if ( QNN_PROFILE_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s:Could not free backend profile handle. error is %d",
-                               (int) retVal );
+                RIDEHAL_ERROR( "Could not free backend profile handle. error is %d", (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -1417,7 +1429,7 @@ RideHalError_e QnnRuntime::Deinit()
                     m_QnnFunctionPointers.qnnInterface.contextFree( m_Context, nullptr );
             if ( QNN_CONTEXT_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s:Could not free context. error is %d", (int) retVal );
+                RIDEHAL_ERROR( "Could not free context. error is %d", (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             m_Context = nullptr;
@@ -1428,7 +1440,13 @@ RideHalError_e QnnRuntime::Deinit()
     {
         if ( nullptr != m_SystemContext )
         {
-            m_QnnFunctionPointers.qnnSystemInterface.systemContextFree( m_SystemContext );
+            const auto retVal =
+                    m_QnnFunctionPointers.qnnSystemInterface.systemContextFree( m_SystemContext );
+            if ( QNN_SUCCESS != retVal )
+            {
+                RIDEHAL_ERROR( "Failed to free system context. error is %d", (int) retVal );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
         }
     }
 
@@ -1440,7 +1458,7 @@ RideHalError_e QnnRuntime::Deinit()
                     m_QnnFunctionPointers.qnnInterface.deviceFree( m_DeviceHandle );
             if ( QNN_CONTEXT_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "%s:Could not free device handle. Error is %d", (int) retVal );
+                RIDEHAL_ERROR( "Could not free device handle. Error is %d", (int) retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             m_DeviceHandle = nullptr;
@@ -1451,8 +1469,13 @@ RideHalError_e QnnRuntime::Deinit()
     {
         if ( nullptr != m_PlatformInfo )
         {
-            m_QnnFunctionPointers.qnnInterface.deviceFreePlatformInfo( m_LogHandle,
-                                                                       m_PlatformInfo );
+            const auto retVal = m_QnnFunctionPointers.qnnInterface.deviceFreePlatformInfo(
+                    m_LogHandle, m_PlatformInfo );
+            if ( QNN_SUCCESS != retVal )
+            {
+                RIDEHAL_ERROR( "Failed to free device platform info. error is %d", (int) retVal );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
             m_PlatformInfo = nullptr;
         }
     }
@@ -1463,7 +1486,7 @@ RideHalError_e QnnRuntime::Deinit()
                 m_QnnFunctionPointers.qnnInterface.backendFree( m_BackendHandle );
         if ( QNN_BACKEND_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "%s:Could not terminate backend. Error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Could not terminate backend. Error is %d", (int) retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -1476,7 +1499,7 @@ RideHalError_e QnnRuntime::Deinit()
                     m_QnnFunctionPointers.qnnInterface.logFree( m_LogHandle );
             if ( QNN_SUCCESS != retVal )
             {
-                RIDEHAL_WARN( "%s:Unable to terminate logging in the backend. Error is %d",
+                RIDEHAL_WARN( "Unable to terminate logging in the backend. Error is %d",
                               (int) retVal );
             }
         }
@@ -1487,7 +1510,13 @@ RideHalError_e QnnRuntime::Deinit()
         if ( m_LoadFromCachedBinary && ( nullptr != m_GraphsInfo ) )
         {
             RIDEHAL_DEBUG( "Cleaning up graph Info structures." );
-            qnn_wrapper_api::freeGraphsInfo( &m_GraphsInfo, m_GraphsCount );
+            const qnn_wrapper_api::ModelError_t retVal =
+                    qnn_wrapper_api::freeGraphsInfo( &m_GraphsInfo, m_GraphsCount );
+            if ( qnn_wrapper_api::MODEL_NO_ERROR != retVal )
+            {
+                RIDEHAL_ERROR( "failed to free graph info. Error is %d", (int) retVal );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
         }
     }
 
@@ -1597,7 +1626,7 @@ RideHalError_e QnnRuntime::GetPerf( QnnRuntime_Perf_t *pPerf )
 
 RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType )
 {
-    RideHal_TensorType_e tensorType;
+    RideHal_TensorType_e tensorType = RIDEHAL_TENSOR_TYPE_UINT_8;
     switch ( dataType )
     {
         case QNN_DATATYPE_INT_8:
@@ -1677,7 +1706,7 @@ RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType 
 
 Qnn_DataType_t QnnRuntime::SwitchToQnnDataType( RideHal_TensorType_e tensorType )
 {
-    Qnn_DataType_t dataType;
+    Qnn_DataType_t dataType = QNN_DATATYPE_UINT_8;
     switch ( tensorType )
     {
         case RIDEHAL_TENSOR_TYPE_INT_8:
