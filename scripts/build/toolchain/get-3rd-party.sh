@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+# Confidential & Proprietary.
 
 if [ ! -d $THIRD_PARTY_DIR ]; then
         mkdir $THIRD_PARTY_DIR
