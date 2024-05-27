@@ -921,9 +921,9 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t *pShar
                 info.memHandle = memHandle;
                 info.size = pSharedBuffer->buffer.size;
                 s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffer->data()] = info;
-                QNN_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
-                          pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
-                          pSharedBuffer->offset, memHandle, m_BackendCoreId );
+                RIDEHAL_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
+                              pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
+                              pSharedBuffer->offset, memHandle, m_BackendCoreId );
             }
         }
         else

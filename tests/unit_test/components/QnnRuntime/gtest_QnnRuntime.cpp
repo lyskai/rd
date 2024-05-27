@@ -20,10 +20,6 @@ TEST( QnnRuntime, SANITY_General )
 
     qnnConfig.modelPath = "data/centernet/program.bin";
     qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
-    QnnRuntime_UdoPackage_t udoPackage;
-    // udoPackage.udoLibPath = "libQnnAutoAiswOpPackage.so";
-    // udoPackage.interfaceProvider = "AutoAiswOpPackageInterfaceProvider";
-    // qnnConfig.udoPackages.push_back( udoPackage );
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -66,31 +62,6 @@ TEST( QnnRuntime, SANITY_General )
 
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-    /****** Dynamic dimension test ******/
-    const uint32_t batchSize = 3;
-    for ( int i = 0; i < inputNum; ++i )
-    {
-        auto ret = inputs[i].Free();
-        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-        tensorInputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
-        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    }
-
-    for ( int i = 0; i < outputNum; ++i )
-    {
-        auto ret = outputs[i].Free();
-        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-        tensorOutputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
-        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    }
-
-    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    /****** Dynamic dimension test ******/
-
 
     ret = qnnRuntime.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -568,6 +539,90 @@ TEST( QnnRuntime, CreateModelFromSo )
     qnnConfig.modelPath = "data/centernet/libqride_centernet.so";
     ret = qnnRuntime.Init( pName, pQnnConfig );
     EXPECT_EQ( RIDEHAL_ERROR_FAIL, ret );
+}
+
+TEST( QnnRuntime, DynamicBatchSize )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "QnnRuntime";
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetInputInfo( &tensorInputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    /****** Dynamic dimension test ******/
+    uint32_t batchSize = 10;
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        tensorInputList.pInfo[i].properties.dims[0] = batchSize;
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        tensorOutputList.pInfo[i].properties.dims[0] = batchSize;
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    batchSize = 3;
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        inputs[i].tensorProps.dims[0] = batchSize;
+        inputs[i].size = inputs[i].buffer.size / 10 * 3;
+    }
+
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        outputs[i].tensorProps.dims[0] = batchSize;
+        outputs[i].size = outputs[i].buffer.size / 10 * 3;
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    /****** Dynamic dimension test ******/
+
+
+    ret = qnnRuntime.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 #ifndef GTEST_RIDEHAL
