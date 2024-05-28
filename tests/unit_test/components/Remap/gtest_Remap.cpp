@@ -70,6 +70,9 @@ void CoverTest1()
     ret = RemapObj.Init( pName, &RemapConfig );   // init twice, wrong status
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
+    ret = RemapObj.Deinit();   // success deinit
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     return;
 }
 
@@ -86,25 +89,33 @@ void CoverTest2()
     ret = RemapObj.Init( pName, nullptr );   // null pointer for remap configuration
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
+    setenv( "RIDEHAL_FADAS_CLIENT_ID", "15", 1 );   // wrong client id
     SetCommonParam( &RemapConfig );
     RemapConfig.processor = RIDEHAL_PROCESSOR_MAX;
     ret = RemapObj.Init( pName, &RemapConfig );   // wrong processor type
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
+    setenv( "RIDEHAL_FADAS_CLIENT_ID", "-1", 1 );   // wrong client id
     SetCommonParam( &RemapConfig );
     RemapConfig.numOfInputs = RIDEHAL_MAX_INPUTS + 1;
     ret = RemapObj.Init( pName, &RemapConfig );   // wrong number of inputs
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
+    setenv( "RIDEHAL_FADAS_CLIENT_ID", "a", 1 );   // wrong client id
     SetCommonParam( &RemapConfig );
     RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
     ret = RemapObj.Init( pName, &RemapConfig );   // wrong output format
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
+    setenv( "RIDEHAL_FADAS_CLIENT_ID", "1", 1 );
     SetCommonParam( &RemapConfig );
     RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
     ret = RemapObj.Init( pName, &RemapConfig );   // wrong input format
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
     SetCommonParam( &RemapConfig );
     RemapConfig.processor = RIDEHAL_PROCESSOR_HTP0;
@@ -115,21 +126,19 @@ void CoverTest2()
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     SetCommonParam( &RemapConfig );
-    RemapConfig.processor = RIDEHAL_PROCESSOR_CPU;
+    RemapConfig.processor = RIDEHAL_PROCESSOR_GPU;
     RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
     RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
     RemapConfig.bEnableNormalize = true;
-    ret = RemapObj.Init( pName, &RemapConfig );   // wrong cpu pipeline
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong cpu&gpu pipeline
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     SetCommonParam( &RemapConfig );
     RemapConfig.bEnableUndistortion = true;
     RemapConfig.inputConfigs[0].remapTable.pMapX = nullptr;
     RemapConfig.inputConfigs[0].remapTable.pMapY = nullptr;
-    setenv( "RIDEHAL_FADAS_CLIENT_ID", "15", 1 );
     ret = RemapObj.Init( pName, &RemapConfig );   // null pointer for map table
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
-    unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
     SetCommonParam( &RemapConfig );
     ret = RemapObj.Init( pName, &RemapConfig,
@@ -155,6 +164,9 @@ void CoverTest2()
     ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs + 1,
                             &output );   // wrong input buffer number
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RemapObj.Deinit();   // success deinit
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     return;
 }
@@ -315,6 +327,14 @@ void CoverTest3()
     ret = output.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs, FADAS_BUF_TYPE_IN );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs,
+                                    FADAS_BUF_TYPE_IN );   // register twice
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = RemapObj.Deinit();   // success deinit with registered buffers
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
     {
         ret = inputs[inputId].Free();
@@ -337,7 +357,6 @@ void CoverTest4()
     ret = RemapObj.Init( pName, &RemapConfig );   // success init with dsp1
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     RideHal_SharedBuffer_t inputs[RemapConfig.numOfInputs];
-    RideHal_SharedBuffer_t output;
 
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
     {
@@ -348,10 +367,7 @@ void CoverTest4()
     }
 
     ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs,
-                                    FADAS_BUF_TYPE_MAX );   // register with wrong buffer type
-    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
-
-    ret = RemapObj.DeRegisterBuffers( inputs, RemapConfig.numOfInputs );   // deregister with dsp1
+                                    FADAS_BUF_TYPE_IN );   // success register buffer
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     inputs[0].imgProps.batchSize++;
@@ -360,6 +376,13 @@ void CoverTest4()
             FADAS_BUF_TYPE_IN );   // register with mismatch image batch size
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
     inputs[0].imgProps.batchSize--;
+
+    ret = RemapObj.DeRegisterBuffers( inputs, RemapConfig.numOfInputs );   // deregister with dsp1
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = RemapObj.RegisterBuffers( inputs, RemapConfig.numOfInputs,
+                                    FADAS_BUF_TYPE_MAX );   // register with wrong buffer type
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
     {

@@ -117,8 +117,10 @@ private:
     uint32_t m_mapWidths[RIDEHAL_MAX_INPUTS];
     uint32_t m_mapHeights[RIDEHAL_MAX_INPUTS];
     FadasROI_t m_ROIs[RIDEHAL_MAX_INPUTS];
-    uint64 m_workerPtrs[RIDEHAL_MAX_INPUTS];
-    uint64 m_remapPtrs[RIDEHAL_MAX_INPUTS];
+    uint64 m_workerPtrsDSP[RIDEHAL_MAX_INPUTS];
+    uint64 m_remapPtrsDSP[RIDEHAL_MAX_INPUTS];
+    void *m_workerPtrsCPU[RIDEHAL_MAX_INPUTS];
+    FadasRemapMap_t *m_remapPtrsCPU[RIDEHAL_MAX_INPUTS];
     FadasNormlzParams_t m_normlz[3];
     uint32_t m_outputWidth;
     uint32_t m_outputHeight;
