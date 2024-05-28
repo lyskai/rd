@@ -7,31 +7,44 @@ stages:
 
 start:
   stage: start
-  script: echo "Start ridehal CI jobs ..."
+  script:
+    - echo "Start ridehal CI jobs ..."
+  except:
+    changes:
+      - docs/**/*
+      - README.md
+      - scripts/build/README.md
+      - scripts/build/docker/**/*
   tags:
     - ridehal-dev
   only:
     - merge_requests
   timeout: 1h
 
-build QNX qos222-es8:
+
+build ridehal:
   stage: build
   script:
-    - echo "Start building ridehal for QNX qos222-es8"
-    - ln -sf /data/toolchain/qos222-es8 /opt/qos222
-    - source /data/QNN/qnn-v2.16/bin/envsetup.sh
-    - ./scripts/build/build-target.sh aarch64-qos222 .
-    - rm -rf /opt/qos222
+    - echo "Start building ridehal"
+    - python3 /data/scripts/gitlab-ci/get_build_config.py
+    - sh /data/scripts/gitlab-ci/build_package.sh
+    - mkdir packages
+    - cp /data/packages/ridehal/ridehal-aarch64-*.tar.gz ./packages
+  except:
+    changes:
+      - docs/**/*
+      - README.md
+      - scripts/build/README.md
+      - scripts/build/docker/**/*
   artifacts:
-    name: "ridehal-aarch64-qos222-es8.tar.gz"
+    name: "ridehal-build-packages"
     when: on_success
-    expire_in: 1 day
+    expire_in: 3 hours
     paths:
-      - ridehal-aarch64-qos222.tar.gz
+      - packages
   tags:
     - ridehal-dev
   only:
     - merge_requests
   timeout: 1h
 
-  timeout: 1h

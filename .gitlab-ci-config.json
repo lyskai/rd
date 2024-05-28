@@ -1,0 +1,37 @@
+{
+  "toolchain": 
+  [
+    {
+      "name": "qos222",
+      "version": 
+      [
+        "es8",
+	"es12"
+      ]
+    },
+
+    {
+      "name": "linux",
+      "version": 
+      [
+        "es15"
+      ]
+    },
+    
+    {
+      "name": "ubuntu",
+      "version": 
+      [
+        "es15"
+      ]
+    }
+  ],
+
+  "qnn-sdk":
+  {
+    "version":
+    [
+      "v2.16"
+    ]
+  }
+}
