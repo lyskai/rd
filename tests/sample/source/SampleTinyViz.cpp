@@ -157,8 +157,8 @@ void SampleTinyViz::CamThreadMain( uint32_t idx )
 
     while ( false == m_stop )
     {
-        CamFrames_t frames;
-        CamFrame_t frame;
+        DataFrames_t frames;
+        DataFrame_t frame;
         ret = camSub.Receive( frames );
         if ( 0 == ret )
         {

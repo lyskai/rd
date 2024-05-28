@@ -108,7 +108,7 @@ void SamplePostProcCenternet::ThreadMain()
     RideHalError_e ret;
     while ( false == m_stop )
     {
-        Tensors_t tensors;
+        DataFrames_t tensors;
         ret = m_sub.Receive( tensors );
         if ( RIDEHAL_ERROR_NONE == ret )
         {
@@ -119,30 +119,30 @@ void SamplePostProcCenternet::ThreadMain()
     }
 }
 
-void SamplePostProcCenternet::ProcessUint8( Tensors_t &tensors )
+void SamplePostProcCenternet::ProcessUint8( DataFrames_t &tensors )
 {
-    RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n", tensors.frameId,
-                   tensors.timestamp );
+    RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n", tensors.FrameId( 0 ),
+                   tensors.Timestamp( 0 ) );
 
     Road2DObjects_t objs;
 
-    auto &hm_ = tensors.tensors[0].buffer->sharedBuffer;
-    auto &wh_ = tensors.tensors[1].buffer->sharedBuffer;
-    auto &offset_ = tensors.tensors[2].buffer->sharedBuffer;
+    auto &hm_ = tensors.SharedBuffer( 0 );
+    auto &wh_ = tensors.SharedBuffer( 1 );
+    auto &offset_ = tensors.SharedBuffer( 2 );
 
     int H = (int) hm_.tensorProps.dims[1];
     int W = (int) hm_.tensorProps.dims[2];
     int classNum = (int) hm_.tensorProps.dims[3];
 
     uint8_t *hm = (uint8_t *) hm_.data();
-    float hmScale = tensors.tensors[0].quantScale;
-    int32_t hmOffset = tensors.tensors[0].quantOffset;
+    float hmScale = tensors.QuantScale( 0 );
+    int32_t hmOffset = tensors.QuantOffset( 0 );
     uint8_t *wh = (uint8_t *) wh_.data();
-    float whScale = tensors.tensors[1].quantScale;
-    int32_t whOffset = tensors.tensors[1].quantOffset;
+    float whScale = tensors.QuantScale( 1 );
+    int32_t whOffset = tensors.QuantOffset( 1 );
     uint8_t *reg = (uint8_t *) offset_.data();
-    float regScale = tensors.tensors[2].quantScale;
-    int32_t regOffset = tensors.tensors[2].quantOffset;
+    float regScale = tensors.QuantScale( 2 );
+    int32_t regOffset = tensors.QuantOffset( 2 );
     const int kernel_size = 7;
 
     std::vector<int> class_ids;
@@ -213,7 +213,7 @@ void SamplePostProcCenternet::ProcessUint8( Tensors_t &tensors )
                             objs.objs.push_back( det );
                             RIDEHAL_DEBUG( "[frame %" PRIu64 "- %" PRIu64
                                            "] class=%d score=%.3f points=[%.3f %.3f %.3f %.3f]",
-                                           tensors.frameId, objs.objs.size() - 1, det.classId,
+                                           tensors.FrameId( 0 ), objs.objs.size() - 1, det.classId,
                                            det.prob, det.topX, det.topY, det.bottomX, det.bottomY );
                         }
                     }
@@ -224,13 +224,13 @@ void SamplePostProcCenternet::ProcessUint8( Tensors_t &tensors )
 
     NMS( objs.objs, m_NMSThreshold );
 
-    objs.frameId = tensors.frameId;
-    objs.timestamp = tensors.timestamp;
+    objs.frameId = tensors.FrameId( 0 );
+    objs.timestamp = tensors.Timestamp( 0 );
 
     m_pub.Publish( objs );
 
     RIDEHAL_DEBUG( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
-                   tensors.frameId );
+                   tensors.FrameId( 0 ) );
 }
 
 float SamplePostProcCenternet::ComputeIou( const Road2DObject_t &box1, const Road2DObject_t &box2 )

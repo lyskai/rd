@@ -65,7 +65,7 @@ public:
     // For protecting display buffer & bbBoxes
     // wrap with unique_ptr is needed for map initialization (mutex is not move-able)
     std::unique_ptr<std::mutex> mutex;
-    CamFrame_t camFrame;
+    DataFrame_t camFrame;
 
     SDL_Texture *tex = nullptr;
 

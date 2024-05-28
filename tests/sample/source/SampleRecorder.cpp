@@ -79,8 +79,8 @@ void SampleRecorder::ThreadMain()
     uint32_t num = 0;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
-        CamFrame_t frame;
+        DataFrames_t frames;
+        DataFrame_t frame;
         ret = m_sub.Receive( frames );
         if ( RIDEHAL_ERROR_NONE == ret )
         {

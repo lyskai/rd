@@ -31,7 +31,7 @@ public:
     bool stop() override;
 
     bool addCamera( const std::string camName ) override;
-    bool addData( const std::string camName, CamFrame_t & ) override;
+    bool addData( const std::string camName, DataFrame_t & ) override;
     bool addData( const std::string camName, Road2DObjects_t & ) override;
 
 private:

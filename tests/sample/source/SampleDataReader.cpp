@@ -197,7 +197,7 @@ void SampleDataReader::ThreadMain()
     uint64_t frameId = 0;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
+        DataFrames_t frames;
         ret = RIDEHAL_ERROR_NONE;
         auto start = std::chrono::high_resolution_clock::now();
         PROFILER_BEGIN();
@@ -218,13 +218,13 @@ void SampleDataReader::ThreadMain()
                 }
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    CamFrame_t frame;
+                    DataFrame_t frame;
                     struct timespec ts;
                     clock_gettime( CLOCK_MONOTONIC, &ts );
                     frame.buffer = buffer;
                     frame.frameId = frameId++;
                     frame.timestamp = ts.tv_sec * 1000000000 + ts.tv_nsec;
-                    frames.frames.push_back( frame );
+                    frames.Add( frame );
                 }
                 else
                 {

@@ -55,7 +55,7 @@ private:
 
     bool m_stop;
 
-    std::vector<DataSubscriber<CamFrames_t>> m_camSubs;
+    std::vector<DataSubscriber<DataFrames_t>> m_camSubs;
     std::vector<DataSubscriber<Road2DObjects_t>> m_objSubs;
 
     TinyViz m_tinyViz;

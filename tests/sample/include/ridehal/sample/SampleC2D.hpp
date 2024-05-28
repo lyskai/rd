@@ -61,8 +61,8 @@ private:
     SharedBufferPool m_imagePool;
     bool m_stop;
 
-    DataSubscriber<CamFrames_t> m_sub;
-    DataPublisher<CamFrames_t> m_pub;
+    DataSubscriber<DataFrames_t> m_sub;
+    DataPublisher<DataFrames_t> m_pub;
 
     C2D m_c2d;
 };   // class SampleC2D
@@ -71,4 +71,3 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDEHAL_SAMPLE_C2D_HPP_
-

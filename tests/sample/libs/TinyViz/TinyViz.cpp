@@ -139,7 +139,7 @@ bool TinyViz::addCamera( const std::string camName )
     return true;
 }
 
-bool TinyViz::addData( const std::string camName, CamFrame_t &data )
+bool TinyViz::addData( const std::string camName, DataFrame_t &data )
 {
     RIDEHAL_DEBUG( "Adding frame for %s %" PRIu64 ", timestamp %" PRIu64, camName.c_str(),
                    data.frameId, data.timestamp );

@@ -249,12 +249,12 @@ void SampleRemap::ThreadMain()
     RideHalError_e ret;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
+        DataFrames_t frames;
         ret = m_sub.Receive( frames );
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n",
-                           frames.frames[0].frameId, frames.frames[0].timestamp );
+                           frames.FrameId( 0 ), frames.Timestamp( 0 ) );
             std::shared_ptr<SharedBuffer_t> buffer = m_imagePool.Get();
             if ( nullptr != buffer )
             {
@@ -272,18 +272,18 @@ void SampleRemap::ThreadMain()
                     if ( RIDEHAL_ERROR_NONE == ret )
                     {
                         PROFILER_END();
-                        CamFrames_t outFrames;
-                        CamFrame_t frame;
+                        DataFrames_t outFrames;
+                        DataFrame_t frame;
                         frame.buffer = buffer;
-                        frame.frameId = frames.frames[0].frameId;
-                        frame.timestamp = frames.frames[0].timestamp;
-                        outFrames.frames.push_back( frame );
+                        frame.frameId = frames.FrameId( 0 );
+                        frame.timestamp = frames.Timestamp( 0 );
+                        outFrames.Add( frame );
                         m_pub.Publish( outFrames );
                     }
                     else
                     {
-                        RIDEHAL_ERROR( "remap failed for %" PRIu64 " : %d",
-                                       frames.frames[0].frameId, ret );
+                        RIDEHAL_ERROR( "remap failed for %" PRIu64 " : %d", frames.FrameId( 0 ),
+                                       ret );
                     }
                     (void) SampleIF::Unlock();
                 }

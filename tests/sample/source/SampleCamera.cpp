@@ -14,8 +14,8 @@ SampleCamera ::~SampleCamera() {}
 
 void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 {
-    CamFrames_t frames;
-    CamFrame_t frame;
+    DataFrames_t frames;
+    DataFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
     pSharedBuffer->sharedBuffer = pFrame->sharedBuffer;
     pSharedBuffer->pubHandle = (uint64_t) pFrame->frameIndex;
@@ -43,7 +43,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
     frame.frameId = m_frameId++;
     frame.buffer = buffer;
     frame.timestamp = pFrame->timestamp;
-    frames.frames.push_back( frame );
+    frames.Add( frame );
     m_pub.Publish( frames );
 }
 

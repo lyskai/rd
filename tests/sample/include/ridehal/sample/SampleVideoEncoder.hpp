@@ -75,11 +75,11 @@ private:
     std::thread m_thread;
     bool m_stop;
 
-    DataSubscriber<CamFrames_t> m_sub;
-    DataPublisher<CamFrames_t> m_pub;
+    DataSubscriber<DataFrames_t> m_sub;
+    DataPublisher<DataFrames_t> m_pub;
 
     std::mutex m_lock;
-    std::map<uint64_t, CamFrame_t> m_camFrameMap;
+    std::map<uint64_t, DataFrame_t> m_camFrameMap;
     std::queue<FrameInfo> m_frameInfoQueue;
 };   // class SampleVideoEncoder
 

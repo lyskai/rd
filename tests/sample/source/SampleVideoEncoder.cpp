@@ -34,8 +34,8 @@ void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInpu
 
 void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOutputFrame )
 {
-    CamFrames_t frames;
-    CamFrame_t frame;
+    DataFrames_t frames;
+    DataFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
 
     pSharedBuffer->sharedBuffer = pOutputFrame->sharedBuffer;
@@ -62,7 +62,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.frameId = info.frameId;
         frame.buffer = buffer;
         frame.timestamp = info.timestamp;
-        frames.frames.push_back( frame );
+        frames.Add( frame );
         m_pub.Publish( frames );
         RIDEHAL_DEBUG( "OutFrameCallback for frameId %" PRIu64 " type %d size %" PRIu32,
                        info.frameId, pOutputFrame->frameType, pOutputFrame->sharedBuffer.size );
@@ -226,8 +226,8 @@ void SampleVideoEncoder::ThreadMain()
     RideHalError_e ret;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
-        CamFrame_t frame;
+        DataFrames_t frames;
+        DataFrame_t frame;
         ret = m_sub.Receive( frames );
         if ( 0 == ret )
         {

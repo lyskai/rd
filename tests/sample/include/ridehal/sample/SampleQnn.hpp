@@ -61,8 +61,8 @@ private:
 
     std::vector<SharedBufferPool> m_tensorPools;
 
-    DataSubscriber<CamFrames_t> m_sub;
-    DataPublisher<Tensors_t> m_pub;
+    DataSubscriber<DataFrames_t> m_sub;
+    DataPublisher<DataFrames_t> m_pub;
 
     QnnRuntime m_qnn;
 };   // class SampleQnn

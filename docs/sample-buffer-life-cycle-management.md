@@ -35,8 +35,8 @@ Refer [SampleCamera::FrameCallBack](../tests/sample/source/SampleCamera.cpp#L26)
 ```c++
 void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 {
-    CamFrames_t frames;
-    CamFrame_t frame;
+    DataFrames_t frames;
+    DataFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
     pSharedBuffer->sharedBuffer = pFrame->sharedBuffer;
     pSharedBuffer->pubHandle = (uint64_t) pFrame->frameIndex;
@@ -72,8 +72,8 @@ void SampleVideoEncoder::ThreadMain()
     RideHalError_e ret;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
-        CamFrame_t frame;
+        DataFrames_t frames;
+        DataFrame_t frame;
         ret = m_sub.Receive( frames );
         if ( 0 == ret )
         {
@@ -118,8 +118,8 @@ Refer [SampleVideoEncoder::OutFrameCallback](../tests/sample/source/SampleVideoE
 ```c++
 void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOutputFrame )
 {
-    CamFrames_t frames;
-    CamFrame_t frame;
+    DataFrames_t frames;
+    DataFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
 
     pSharedBuffer->sharedBuffer = pOutputFrame->sharedBuffer;

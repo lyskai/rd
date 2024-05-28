@@ -57,8 +57,8 @@ private:
     SharedBufferPool m_imagePool;
     bool m_stop;
 
-    DataSubscriber<CamFrames_t> m_sub;
-    DataPublisher<CamFrames_t> m_pub;
+    DataSubscriber<DataFrames_t> m_sub;
+    DataPublisher<DataFrames_t> m_pub;
 
     Remap m_remap;
 };   // class SampleRemap

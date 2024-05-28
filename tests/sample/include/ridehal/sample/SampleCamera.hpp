@@ -54,7 +54,7 @@ private:
 
     std::string m_topicName;
 
-    DataPublisher<CamFrames_t> m_pub;
+    DataPublisher<DataFrames_t> m_pub;
     uint64_t m_frameId = 0;
 
     /* if true, ignore any camera Init or Start error */

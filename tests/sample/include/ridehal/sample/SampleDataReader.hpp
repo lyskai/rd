@@ -64,7 +64,7 @@ private:
     std::vector<SharedBufferPool> m_imagePools;
     bool m_stop;
 
-    DataPublisher<CamFrames_t> m_pub;
+    DataPublisher<DataFrames_t> m_pub;
     RideHal_BufferFlags_t m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
 
 };   // class SampleDataReader
@@ -73,4 +73,3 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDEHAL_SAMPLE_DATAREADER_HPP_
-

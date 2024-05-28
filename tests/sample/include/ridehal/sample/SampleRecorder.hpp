@@ -49,7 +49,7 @@ private:
     std::thread m_thread;
     bool m_stop;
 
-    DataSubscriber<CamFrames_t> m_sub;
+    DataSubscriber<DataFrames_t> m_sub;
 
     uint32_t m_maxImages = 1000;
     FILE *m_file = nullptr;

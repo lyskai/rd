@@ -43,7 +43,7 @@ public:
 private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
     void ThreadMain();
-    void ProcessUint8( Tensors_t &inputsFrame );
+    void ProcessUint8( DataFrames_t &inputsFrame );
     void NMS( std::vector<Road2DObject_t> &boxes, float thres );
     float ComputeIou( const Road2DObject_t &box1, const Road2DObject_t &box2 );
 
@@ -63,7 +63,7 @@ private:
     float m_scoreThreshold = 0.6;
     float m_NMSThreshold = 0.6;
 
-    DataSubscriber<Tensors_t> m_sub;
+    DataSubscriber<DataFrames_t> m_sub;
     DataPublisher<Road2DObjects_t> m_pub;
 };   // class SamplePostProcCenternet
 

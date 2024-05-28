@@ -32,7 +32,7 @@ public:
     virtual bool stop() = 0;
 
     virtual bool addCamera( const std::string camName ) = 0;
-    virtual bool addData( const std::string camName, CamFrame_t & ) = 0;
+    virtual bool addData( const std::string camName, DataFrame_t & ) = 0;
     virtual bool addData( const std::string camName, Road2DObjects_t & ) = 0;
 };
 }   // namespace sample

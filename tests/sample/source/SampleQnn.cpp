@@ -138,25 +138,33 @@ void SampleQnn::ThreadMain()
     RideHalError_e ret;
     while ( false == m_stop )
     {
-        CamFrames_t frames;
+        DataFrames_t frames;
         ret = m_sub.Receive( frames );
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n",
-                           frames.frames[0].frameId, frames.frames[0].timestamp );
+                           frames.FrameId( 0 ), frames.Timestamp( 0 ) );
             std::vector<RideHal_SharedBuffer_t> inputs;
             std::vector<RideHal_SharedBuffer_t> outputs;
             std::vector<std::shared_ptr<SharedBuffer_t>> outputBuffers;
             for ( auto &frame : frames.frames )
             {
                 RideHal_SharedBuffer_t sharedBuffer;
-                ret = frame.buffer->sharedBuffer.ImageToTensor( &sharedBuffer );
-                if ( RIDEHAL_ERROR_NONE != ret )
+                if ( RIDEHAL_BUFFER_TYPE_IMAGE == frame.BufferType() )
                 {
-                    RIDEHAL_ERROR( "QNN failed to do image to tensor convert for frameId %" PRIu64
-                                   ": ret = %d",
-                                   frames.frames[0].frameId, ret );
-                    break;
+                    ret = frame.SharedBuffer().ImageToTensor( &sharedBuffer );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        RIDEHAL_ERROR(
+                                "QNN failed to do image to tensor convert for frameId %" PRIu64
+                                ": ret = %d",
+                                frames.FrameId( 0 ), ret );
+                        break;
+                    }
+                }
+                else
+                {
+                    sharedBuffer = frame.SharedBuffer();
                 }
                 inputs.push_back( sharedBuffer );
             }
@@ -190,7 +198,7 @@ void SampleQnn::ThreadMain()
                     else
                     {
                         RIDEHAL_ERROR( "QNN Execute failed for %" PRIu64 " : %d",
-                                       frames.frames[0].frameId, ret );
+                                       frames.FrameId( 0 ), ret );
                     }
                     (void) SampleIF::Unlock();
                 }
@@ -198,26 +206,26 @@ void SampleQnn::ThreadMain()
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                Tensors_t outTensors;
+                DataFrames_t outTensors;
                 size_t index = 0;
                 for ( auto &buffer : outputBuffers )
                 {
-                    Tensor_t tensor;
+                    DataFrame_t tensor;
                     tensor.buffer = buffer;
+                    tensor.frameId = frames.FrameId( 0 );
+                    tensor.timestamp = frames.Timestamp( 0 );
                     tensor.name = m_outputInfoList.pInfo[index].pName;
                     tensor.quantScale = m_outputInfoList.pInfo[index].quantScale;
                     tensor.quantOffset = m_outputInfoList.pInfo[index].quantOffset;
-                    outTensors.tensors.push_back( tensor );
+                    outTensors.Add( tensor );
                     index++;
                 }
-                outTensors.frameId = frames.frames[0].frameId;
-                outTensors.timestamp = frames.frames[0].timestamp;
                 m_pub.Publish( outTensors );
             }
             else
             {
                 RIDEHAL_ERROR( "QNN Execute failed for frameId %" PRIu64 ": ret = %d",
-                               frames.frames[0].frameId, ret );
+                               frames.FrameId( 0 ), ret );
             }
         }
     }
