@@ -267,12 +267,12 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
         else
         {
             QCarCamInputModes_t *pCamInputModes = nullptr;
-            for ( uint32_t i = 0; ( i < camInputsInfo.numInputs ) && ( nullptr == pCamInputModes );
-                  i++ )
+            for ( uint32_t i = 0; i < camInputsInfo.numInputs; i++ )
             {
                 if ( camInputsInfo.pCameraInputs[i].inputId == m_nInputId )
                 {
                     pCamInputModes = &camInputsInfo.pCamInputModes[i];
+                    break;
                 }
             }
 
@@ -402,8 +402,7 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
         {
             RIDEHAL_INFO( "Ignore frame drop config" );
         }
-        else if ( ( 1 <= frameDropConfig.frameDropPeriod ) &&
-                  ( 32 >= frameDropConfig.frameDropPeriod ) )
+        else
         {
             status = QCarCamSetParam( m_QcarCamHndl, QCARCAM_STREAM_CONFIG_PARAM_FRAME_DROP_CONTROL,
                                       &frameDropConfig, sizeof( frameDropConfig ) );
@@ -417,11 +416,6 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
             {
                 RIDEHAL_INFO( "QCARCAM_PARAM_FRAME_RATE Success" );
             }
-        }
-        else
-        {
-            RIDEHAL_ERROR( "skip invalid frame drop config %d %d", frameDropConfig.frameDropPeriod,
-                           frameDropConfig.frameDropPattern );
         }
     }
 
@@ -578,13 +572,13 @@ RideHalError_e Camera::Deinit()
             }
         }
 
-        if ( m_pCameraFrames )
+        if ( nullptr != m_pCameraFrames )
         {
             delete[] m_pCameraFrames;
             m_pCameraFrames = nullptr;
         }
 
-        if ( m_pQcarcamBuffer )
+        if ( nullptr != m_pQcarcamBuffer )
         {
             delete[] m_pQcarcamBuffer;
             m_pQcarcamBuffer = nullptr;
@@ -857,12 +851,12 @@ RideHalError_e Camera::AllocateBuffer()
             {
                 RIDEHAL_ERROR( "QCarCamSetBuffers error ret %d  handle %lu", status,
                                m_QcarCamHndl );
-                if ( m_pCameraFrames )
+                if ( nullptr != m_pCameraFrames )
                 {
                     delete[] m_pCameraFrames;
                     m_pCameraFrames = nullptr;
                 }
-                if ( m_pQcarcamBuffer )
+                if ( nullptr != m_pQcarcamBuffer )
                 {
                     delete[] m_pQcarcamBuffer;
                     m_pQcarcamBuffer = nullptr;
@@ -890,7 +884,7 @@ RideHalError_e Camera::FreeBuffer()
 
     RIDEHAL_INFO( "Camera::FreeBuffer" );
 
-    if ( m_pCameraFrames )
+    if ( nullptr != m_pCameraFrames )
     {
         for ( uint32_t i = 0; i < m_nBufCnt; i++ )
         {
@@ -1024,8 +1018,8 @@ RideHalError_e Camera::QueryInputs()
         }
         else
         {
-            memset( s_cameraInputsInfo.pCamInputModes, 0,
-                    sizeof( QCarCamInputModes_t ) * inputCount );
+            (void) memset( s_cameraInputsInfo.pCamInputModes, 0,
+                           sizeof( QCarCamInputModes_t ) * inputCount );
 
             status = QCarCamQueryInputs( s_cameraInputsInfo.pCameraInputs, inputCount,
                                          &s_cameraInputsInfo.numInputs );
@@ -1038,7 +1032,7 @@ RideHalError_e Camera::QueryInputs()
             }
             else
             {
-                for ( uint32_t i = 0; ( i < inputCount ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
+                for ( uint32_t i = 0; i < inputCount; i++ )
                 {
                     RIDEHAL_LOG_INFO( "Available camera input id: %u, numModes = %u",
                                       s_cameraInputsInfo.pCameraInputs[i].inputId,
@@ -1059,6 +1053,7 @@ RideHalError_e Camera::QueryInputs()
                                                s_cameraInputsInfo.pCameraInputs[i].inputId,
                                                status );
                             ret = RIDEHAL_ERROR_FAIL;
+                            break;
                         }
                         else
                         {
