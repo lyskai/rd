@@ -170,6 +170,16 @@ setup_env_ubuntu() {
         exit -1
     fi
 
+    if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
+        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+            ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
+        else
+            echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
+            exit -1
+        fi
+    fi
+    source /opt/qnn_sdk/bin/envsetup.sh
+
     sh $homedir/toolchain/build-3rd-party-aarch64-ubuntu.sh $workdir $destdir
 }
 
@@ -254,6 +264,13 @@ else
     wget https://dl.dafont.com/dl/?f=liberation_sans -O liberation_sans.zip
     unzip liberation_sans.zip
     cp LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
+fi
+
+if [ -d $QNN_SDK_ROOT/model ]; then
+    if [ ! -d $destdir/opt/ridehal/data ]; then
+        mkdir -p $destdir/opt/ridehal/data
+    fi
+    cp -r $QNN_SDK_ROOT/model/* $destdir/opt/ridehal/data
 fi
 
 # Create run-time package
