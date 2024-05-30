@@ -219,7 +219,7 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
             }
 
             auto c2dStatus =
-                    c2dDraw( targetSurfaceId, C2D_TARGET_ROTATE_0, 0, 0, 0, &c2dObject, 1 );
+                    c2dDraw( targetSurfaceId, C2D_TARGET_ROTATE_0, nullptr, 0, 0, &c2dObject, 1 );
             if ( C2D_STATUS_OK != c2dStatus )
             {
                 ret = RIDEHAL_ERROR_FAIL;
@@ -318,7 +318,7 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
         {
             for ( size_t k = 0; k < m_numOfInputs; k++ )
             {
-                bufferAddr = (void *) ( (uintptr_t) pOutputBuffer[i].data() + k * outputSize );
+                bufferAddr = (void *) ( (uint8_t *) pOutputBuffer[i].data() + k * outputSize );
                 if ( m_outputBufferSurfaceMap.find( bufferAddr ) != m_outputBufferSurfaceMap.end() )
                 {
                     continue;
@@ -361,7 +361,7 @@ RideHalError_e C2D::DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInput
             {
                 auto c2dStatus =
                         c2dDestroySurface( m_inputBufferSurfaceMap[bufferAddr].surface_id );
-                m_inputBufferSurfaceMap.erase( bufferAddr );
+                (void) m_inputBufferSurfaceMap.erase( bufferAddr );
             }
         }
     }
@@ -389,11 +389,11 @@ RideHalError_e C2D::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutp
         {
             for ( size_t k = 0; k < m_numOfInputs; k++ )
             {
-                bufferAddr = (void *) ( (uintptr_t) pOutputBuffer[i].data() + k * outputSize );
+                bufferAddr = (void *) ( (uint8_t *) pOutputBuffer[i].data() + k * outputSize );
                 if ( m_outputBufferSurfaceMap.find( bufferAddr ) != m_outputBufferSurfaceMap.end() )
                 {
                     auto c2dStatus = c2dDestroySurface( m_outputBufferSurfaceMap[bufferAddr] );
-                    m_outputBufferSurfaceMap.erase( bufferAddr );
+                    (void) m_outputBufferSurfaceMap.erase( bufferAddr );
                 }
             }
         }
@@ -429,7 +429,7 @@ RideHalError_e C2D::GetTargetSurface( const RideHal_SharedBuffer_t *pSharedBuffe
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     uint32_t outputSize = pSharedBuffer->size / m_numOfInputs;
-    void *bufferAddr = (void *) ( (uintptr_t) pSharedBuffer->data() + batchIdx * outputSize );
+    void *bufferAddr = (void *) ( (uint8_t *) pSharedBuffer->data() + batchIdx * outputSize );
 
     /* Check if output buffer is registered */
     if ( m_outputBufferSurfaceMap.find( bufferAddr ) == m_outputBufferSurfaceMap.end() )
@@ -464,13 +464,17 @@ RideHalError_e C2D::CreateSourceSurface( const RideHal_SharedBuffer_t *pSharedBu
         case RIDEHAL_IMAGE_FORMAT_UYVY:
         case RIDEHAL_IMAGE_FORMAT_NV12:
         case RIDEHAL_IMAGE_FORMAT_P010:
-            ret = CreateYUVSurface( pSharedBuffer, &surfaceId, format, width, height, stride0,
-                                    stride1, actualHeight0, isSource );
+            ret = CreateYUVSurface( bufferAddr, &surfaceId, format, width, height, stride0, stride1,
+                                    actualHeight0, isSource );
             break;
         case RIDEHAL_IMAGE_FORMAT_RGB888:
         case RIDEHAL_IMAGE_FORMAT_BGR888:
-            ret = CreateRGBSurface( pSharedBuffer, &surfaceId, format, width, height, stride0,
+            ret = CreateRGBSurface( bufferAddr, &surfaceId, format, width, height, stride0,
                                     isSource );
+            break;
+        default:
+            RIDEHAL_ERROR( "Unsupported C2D image format" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             break;
     }
 
@@ -515,20 +519,24 @@ RideHalError_e C2D::CreateTargetSurface( const RideHal_SharedBuffer_t *pSharedBu
 
     bool isSource = false;
     uint32_t outputSize = pSharedBuffer->size / m_numOfInputs;
-    void *bufferAddr = (void *) ( (uintptr_t) pSharedBuffer->data() + batchIdx * outputSize );
+    void *bufferAddr = (void *) ( (uint8_t *) pSharedBuffer->data() + batchIdx * outputSize );
 
     switch ( format )
     {
         case RIDEHAL_IMAGE_FORMAT_UYVY:
         case RIDEHAL_IMAGE_FORMAT_NV12:
         case RIDEHAL_IMAGE_FORMAT_P010:
-            ret = CreateYUVSurface( pSharedBuffer, surfaceId, format, width, height, stride0,
-                                    stride1, actualHeight0, isSource );
+            ret = CreateYUVSurface( bufferAddr, surfaceId, format, width, height, stride0, stride1,
+                                    actualHeight0, isSource );
             break;
         case RIDEHAL_IMAGE_FORMAT_RGB888:
         case RIDEHAL_IMAGE_FORMAT_BGR888:
-            ret = CreateRGBSurface( pSharedBuffer, surfaceId, format, width, height, stride0,
+            ret = CreateRGBSurface( bufferAddr, surfaceId, format, width, height, stride0,
                                     isSource );
+            break;
+        default:
+            RIDEHAL_ERROR( "Unsupported C2D image format" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             break;
     }
     if ( ret == RIDEHAL_ERROR_NONE )
@@ -538,25 +546,25 @@ RideHalError_e C2D::CreateTargetSurface( const RideHal_SharedBuffer_t *pSharedBu
     return ret;
 }
 
-RideHalError_e C2D::CreateYUVSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
-                                      uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                      uint32_t width, uint32_t height, uint32_t stride0,
-                                      uint32_t stride1, uint32_t actualHeight0, bool isSource )
+RideHalError_e C2D::CreateYUVSurface( void *bufferAddr, uint32_t *surfaceId,
+                                      RideHal_ImageFormat_e format, uint32_t width, uint32_t height,
+                                      uint32_t stride0, uint32_t stride1, uint32_t actualHeight0,
+                                      bool isSource )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     C2D_YUV_SURFACE_DEF surfaceDef;
-    memset( &surfaceDef, 0, sizeof( C2D_YUV_SURFACE_DEF ) );
+    (void) memset( &surfaceDef, 0, sizeof( C2D_YUV_SURFACE_DEF ) );
 
-    surfaceDef.plane0 = pSharedBuffer->data();
+    surfaceDef.plane0 = bufferAddr;
     surfaceDef.plane1 = (void *) ( (uint8_t *) surfaceDef.plane0 + stride0 * actualHeight0 );
     surfaceDef.format = GetC2DFormatType( format );
     surfaceDef.width = width;
     surfaceDef.height = height;
     surfaceDef.stride0 = stride0;
     surfaceDef.stride1 = stride1;
-    surfaceDef.phys0 = (void *) 1;   // any nonzero value
-    surfaceDef.phys1 = (void *) 1;   // any nonzero value
+    surfaceDef.phys0 = surfaceDef.plane0;   // any nonzero value
+    surfaceDef.phys1 = surfaceDef.plane1;   // any nonzero value
 
     auto c2dStatus = c2dCreateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
@@ -573,23 +581,21 @@ RideHalError_e C2D::CreateYUVSurface( const RideHal_SharedBuffer_t *pSharedBuffe
     return ret;
 }
 
-RideHalError_e C2D::CreateRGBSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
-                                      uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                      uint32_t width, uint32_t height, uint32_t stride,
-                                      bool isSource )
+RideHalError_e C2D::CreateRGBSurface( void *bufferAddr, uint32_t *surfaceId,
+                                      RideHal_ImageFormat_e format, uint32_t width, uint32_t height,
+                                      uint32_t stride, bool isSource )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     C2D_RGB_SURFACE_DEF surfaceDef;
-    memset( &surfaceDef, 0, sizeof( C2D_RGB_SURFACE_DEF ) );
+    (void) memset( &surfaceDef, 0, sizeof( C2D_RGB_SURFACE_DEF ) );
 
-
-    surfaceDef.buffer = pSharedBuffer->data();
+    surfaceDef.buffer = bufferAddr;
     surfaceDef.format = GetC2DFormatType( format );
     surfaceDef.width = width;
     surfaceDef.height = height;
     surfaceDef.stride = stride;
-    surfaceDef.phys = (void *) 1;   // any nonzero value
+    surfaceDef.phys = surfaceDef.buffer;   // any nonzero value
     auto c2dStatus = c2dCreateSurface(
             surfaceId, isSource ? C2D_SOURCE : C2D_TARGET,
             static_cast<C2D_SURFACE_TYPE>( C2D_SURFACE_RGB_HOST | C2D_SURFACE_WITH_PHYS ),

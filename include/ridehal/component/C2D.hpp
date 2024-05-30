@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_C2D_HPP_
-#define _RIDEHAL_C2D_HPP_
+#ifndef RIDEHAL_C2D_HPP
+#define RIDEHAL_C2D_HPP
 
 #include <c2d2.h>
 #include <cinttypes>
@@ -208,10 +208,10 @@ private:
      * @param[in] isSource identifies source/target surface
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e CreateYUVSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
-                                     uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                     uint32_t width, uint32_t height, uint32_t stride0,
-                                     uint32_t stride1, uint32_t actualHeight0, bool isSource );
+    RideHalError_e CreateYUVSurface( void *bufferAddr, uint32_t *surfaceId,
+                                     RideHal_ImageFormat_e format, uint32_t width, uint32_t height,
+                                     uint32_t stride0, uint32_t stride1, uint32_t actualHeight0,
+                                     bool isSource );
     /**
      * @cond C2D::CreateRGBSurface @endcond
      * @brief Create RGB source/target surface
@@ -224,10 +224,9 @@ private:
      * @param[in] isSource identifies source/target surface
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e CreateRGBSurface( const RideHal_SharedBuffer_t *pSharedBuffer,
-                                     uint32_t *surfaceId, RideHal_ImageFormat_e format,
-                                     uint32_t width, uint32_t height, uint32_t stride,
-                                     bool isSource );
+    RideHalError_e CreateRGBSurface( void *bufferAddr, uint32_t *surfaceId,
+                                     RideHal_ImageFormat_e format, uint32_t width, uint32_t height,
+                                     uint32_t stride, bool isSource );
     /**
      * @cond C2D::GetC2DFormatType @endcond
      * @brief Convert image format to C2D format type
@@ -250,5 +249,5 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_C2D_HPP_
+#endif   // RIDEHAL_C2D_HPP
 
