@@ -106,16 +106,28 @@ void CoverTest2()
     setenv( "RIDEHAL_FADAS_CLIENT_ID", "a", 1 );   // wrong client id
     SetCommonParam( &RemapConfig );
     RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
-    ret = RemapObj.Init( pName, &RemapConfig );   // wrong output format
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong output format for DSP
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
 
     setenv( "RIDEHAL_FADAS_CLIENT_ID", "1", 1 );
     SetCommonParam( &RemapConfig );
     RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
-    ret = RemapObj.Init( pName, &RemapConfig );   // wrong input format
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong input format for DSP
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     unsetenv( "RIDEHAL_FADAS_CLIENT_ID" );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
+    RemapConfig.processor = RIDEHAL_PROCESSOR_CPU;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong output format for CPU
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    SetCommonParam( &RemapConfig );
+    RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
+    RemapConfig.processor = RIDEHAL_PROCESSOR_CPU;
+    ret = RemapObj.Init( pName, &RemapConfig );   // wrong input format for CPU
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     SetCommonParam( &RemapConfig );
     RemapConfig.processor = RIDEHAL_PROCESSOR_HTP0;
@@ -733,6 +745,10 @@ TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  false, false, false, false );
     SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 true, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 false, false, false, false );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
                  true, false, false, false );
 }
 
