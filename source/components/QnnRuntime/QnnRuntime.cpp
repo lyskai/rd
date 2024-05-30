@@ -938,7 +938,7 @@ Qnn_MemHandle_t QnnRuntime::GetMemHandleHTP( const RideHal_SharedBuffer_t *pShar
 }
 
 
-RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffer,
+RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
                                             uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -955,7 +955,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pShare
     // offset.
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( 0 != pSharedBuffer[i].offset )
+        if ( 0 != pSharedBuffers[i].offset )
         {
             ret = RIDEHAL_ERROR_FAIL;
         }
@@ -976,7 +976,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pShare
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
         for ( size_t i = 0; i < numBuffers; ++i )
         {
-            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffer[i].data() );
+            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffers[i].data() );
             if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
             {
                 int domain = CDSP_DOMAIN_ID;
@@ -986,28 +986,28 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pShare
                 }
 
                 Qnn_MemDescriptor_t desc;
-                desc.memShape.numDim = pSharedBuffer[i].tensorProps.numDims;
-                desc.memShape.dimSize = (uint32_t *) pSharedBuffer[i].tensorProps.dims;
-                desc.dataType = SwitchToQnnDataType( pSharedBuffer[i].tensorProps.type );
+                desc.memShape.numDim = pSharedBuffers[i].tensorProps.numDims;
+                desc.memShape.dimSize = (uint32_t *) pSharedBuffers[i].tensorProps.dims;
+                desc.dataType = SwitchToQnnDataType( pSharedBuffers[i].tensorProps.type );
 
                 int client = 0;   // NOTE: default is 0
                 int extDomainId = get_extended_domains_id( domain, client );
 #if defined( __QNXNTO__ )
-                remote_register_buf_v2( extDomainId, pSharedBuffer[i].buffer.pData,
-                                        pSharedBuffer[i].buffer.size, 0 );
+                remote_register_buf_v2( extDomainId, pSharedBuffers[i].buffer.pData,
+                                        pSharedBuffers[i].buffer.size, 0 );
 #else
-                remote_register_buf_v2( extDomainId, pSharedBuffer[i].buffer.pData,
-                                        pSharedBuffer[i].buffer.size,
-                                        (int) pSharedBuffer[i].buffer.dmaHandle );
+                remote_register_buf_v2( extDomainId, pSharedBuffers[i].buffer.pData,
+                                        pSharedBuffers[i].buffer.size,
+                                        (int) pSharedBuffers[i].buffer.dmaHandle );
 #endif
-                auto fd = rpcmem_to_fd( pSharedBuffer[i].buffer.pData );
+                auto fd = rpcmem_to_fd( pSharedBuffers[i].buffer.pData );
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
                 QnnMemHtp_Descriptor_t htpDesc;
                 htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
-                htpDesc.size = pSharedBuffer[i].size;
+                htpDesc.size = pSharedBuffers[i].size;
                 htpDesc.sharedBufferConfig.fd = fd;
-                htpDesc.sharedBufferConfig.offset = pSharedBuffer[i].offset;
+                htpDesc.sharedBufferConfig.offset = pSharedBuffers[i].offset;
 
                 desc.memShape.shapeConfig = nullptr;
                 desc.memType = QNN_MEM_TYPE_CUSTOM;
@@ -1024,19 +1024,19 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pShare
                 if ( QNN_SUCCESS != memRegisterRet )
                 {
                     RIDEHAL_ERROR( "map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                                   pSharedBuffer[i].buffer.pData, fd, pSharedBuffer[i].size,
-                                   pSharedBuffer[i].offset, m_BackendCoreId, memRegisterRet );
+                                   pSharedBuffers[i].buffer.pData, fd, pSharedBuffers[i].size,
+                                   pSharedBuffers[i].offset, m_BackendCoreId, memRegisterRet );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
                     QnnRuntime::DmaMemInfo_t info;
                     info.memHandle = memHandle;
-                    info.size = pSharedBuffer[i].buffer.size;
-                    s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffer[i].data()] = info;
+                    info.size = pSharedBuffers[i].buffer.size;
+                    s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffers[i].data()] = info;
                     RIDEHAL_INFO( "map buffer %p(%d, %u, %u) as %p for core %d",
-                                  pSharedBuffer[i].buffer.pData, fd, pSharedBuffer[i].size,
-                                  pSharedBuffer[i].offset, memHandle, m_BackendCoreId );
+                                  pSharedBuffers[i].buffer.pData, fd, pSharedBuffers[i].size,
+                                  pSharedBuffers[i].offset, memHandle, m_BackendCoreId );
                 }
             }
             else
@@ -1318,7 +1318,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers()
     return ret;
 }
 
-RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffer,
+RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
                                               uint32_t numBuffers )
 {
 
@@ -1353,7 +1353,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
         std::lock_guard<std::mutex> l( s_DmaMemInfoMapLock[m_BackendCoreId] );
         for ( size_t i = 0; i < numBuffers; ++i )
         {
-            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffer[i].data() );
+            auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffers[i].data() );
             if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
             {
                 auto ptr = it->first;
