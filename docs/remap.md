@@ -142,11 +142,13 @@ The supported remap pipelines for different input/output image format on each pr
 RGB  to RGB                Y                   Y
 RGB  to RGB norm           N                   N
 UYVY to RGB                Y                   Y
-UYVY to BGR                Y                   Y
 UYVY to RGB norm           Y                   Y
-NV12 to BGR                Y                   Y
+UYVY to BGR                Y                   N
+UYVY to BGR norm           N                   N
 NV12 to RGB                N                   Y
 NV12 to RGB norm           N                   Y
+NV12 to BGR                Y                   Y
+NV12 to BGR norm           N                   N
 ```
 
 
