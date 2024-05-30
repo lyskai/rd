@@ -91,7 +91,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( width, height, format, usage, flags );
         RIDEHAL_DEBUG( "%s image[%u] %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
-                       m_name.c_str(), width, height, idx, sharedBuffer.size, sharedBuffer.data(),
+                       m_name.c_str(), idx, width, height, sharedBuffer.size, sharedBuffer.data(),
                        sharedBuffer.buffer.dmaHandle, ret );
     }
 
@@ -115,7 +115,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
         RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
         ret = sharedBuffer.Allocate( batchSize, width, height, format, usage, flags );
         RIDEHAL_DEBUG( "%s image[%u] %u %ux%u allocated with size=%u data=%p handle=%llu ret=%d\n",
-                       m_name.c_str(), batchSize, width, height, idx, sharedBuffer.size,
+                       m_name.c_str(), idx, batchSize, width, height, sharedBuffer.size,
                        sharedBuffer.data(), sharedBuffer.buffer.dmaHandle, ret );
     }
 

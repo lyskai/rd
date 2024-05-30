@@ -222,7 +222,7 @@ void SampleDataReader::ThreadMain()
                     struct timespec ts;
                     clock_gettime( CLOCK_MONOTONIC, &ts );
                     frame.buffer = buffer;
-                    frame.frameId = frameId++;
+                    frame.frameId = frameId;
                     frame.timestamp = ts.tv_sec * 1000000000 + ts.tv_nsec;
                     frames.Add( frame );
                 }
@@ -242,6 +242,7 @@ void SampleDataReader::ThreadMain()
             PROFILER_END();
             m_pub.Publish( frames );
             index++;
+            frameId++;
         }
         else if ( RIDEHAL_ERROR_ALREADY == ret )
         {
