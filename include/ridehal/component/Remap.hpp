@@ -22,11 +22,8 @@ namespace component
 {
 
 /*=================================================================================================
-** Constant and Macros
+** Typedefs
 =================================================================================================*/
-
-/** @addtogroup qcarcam_constants
-@{ */
 
 /** @brief remap tables for input images */
 typedef struct
@@ -63,17 +60,12 @@ typedef struct
     bool bEnableNormalize;                                /**<enable normalization or not*/
 } Remap_Config_t;
 
-/** @} */ /* end_addtogroup Remap constants */
-
 class Remap : public ComponentIF
 {
 
     /*=================================================================================================
     ** API Functions
     =================================================================================================*/
-
-    /** @addtogroup Remap functions
-    @{ */
 
 public:
     Remap();
@@ -141,8 +133,6 @@ public:
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
-
-    /** @} */ /* end_addtogroup Remap functions */
 
 private:
     FadasRemap m_fadasRemapObj;
