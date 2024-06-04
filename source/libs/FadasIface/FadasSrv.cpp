@@ -1,4 +1,4 @@
-//  Copyright 2020-2022 Qualcomm Technologies, Inc. All rights reserved.
+//  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 #include "FadasSrv.hpp"
 
@@ -243,6 +243,297 @@ remote_handle64 FadasSrv::GetRemoteHandle64()
     return s_handle64[m_processor];
 }
 
+int32_t FadasSrv::FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer )
+{
+    int ret = AEE_SUCCESS;
+    int32_t fd = -1;
+    int extDomainId = 0;
+    int domain = CDSP_DOMAIN_ID;
+    if ( RIDEHAL_PROCESSOR_HTP1 == m_processor )
+    {
+        domain = CDSP1_DOMAIN_ID;
+    }
+    int client = s_client;
+    auto handle64 = s_handle64[m_processor];
+
+    extDomainId = get_extended_domains_id( domain, client );
+
+    void *ptr = pBuffer->buffer.pData;
+    size_t size = pBuffer->buffer.size;
+
+    fd = rpcmem_to_fd( ptr );
+    if ( fd < 0 )
+    {
+#if defined( __QNXNTO__ )
+        remote_register_buf_v2( extDomainId, ptr, size, 0 );
+#else
+        remote_register_buf_v2( extDomainId, ptr, size, (int) pBuffer->buffer.dmaHandle );
+#endif
+        fd = rpcmem_to_fd( (void *) ptr );
+        if ( fd < 0 )
+        {
+            RIDEHAL_ERROR( "rpcmem_to_fd failed, fd = %d", fd );
+            ret = AEE_EFAILED;
+        }
+    }
+
+    if ( AEE_SUCCESS == ret )
+    {
+        ret = fastrpc_mmap( extDomainId, fd, ptr, 0, size, FASTRPC_MAP_FD_DELAYED );
+        if ( ( AEE_EALREADY != ret ) && ( AEE_SUCCESS != ret ) )
+        {
+            RIDEHAL_ERROR( "Failed to fastrpc_mmap ptr %p(%d, %llu): ret = %d\n", ptr, fd, size,
+                           ret );
+            fd = -1;
+        }
+        else
+        {
+            ret = AEE_SUCCESS;
+        }
+    }
+
+    if ( AEE_SUCCESS == ret )
+    {
+        ret = FadasIface_mmap( handle64, fd, (uint32_t) size );
+        if ( AEE_SUCCESS != ret )
+        {
+            RIDEHAL_ERROR( "Failed to map ptr %p(%d, %llu): ret = %d\n", ptr, fd, size, ret );
+            fd = -1;
+        }
+    }
+
+    return fd;
+}
+
+int32_t FadasSrv::FadasMemMapCPU( const RideHal_SharedBuffer_t *pBuffer )
+{
+    (void) pBuffer;
+    return 1; /* virtual fd for CPU&GPU pipeline, indicates that the register is
+               * successful, would not be really used. */
+}
+
+int32_t FadasSrv::FadasMemMap( const RideHal_SharedBuffer_t *pBuffer )
+{
+    int32_t fd = -1;
+
+    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
+    {
+        fd = FadasMemMapDSP( pBuffer );
+    }
+    else
+    {
+        fd = FadasMemMapCPU( pBuffer );
+    }
+
+    return fd;
+}
+
+RideHalError_e FadasSrv::FadasRegisterBufDSP( FadasBufType_e bufType, uint8_t *bufPtr,
+                                              int32_t bufFd, uint32_t bufSize, uint32_t bufOffset,
+                                              uint32_t batch )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    auto handle64 = s_handle64[m_processor];
+
+    FadasIface_FadasBufType_e bufTypeDsp;
+    if ( FADAS_BUF_TYPE_IN == bufType )
+    {
+        bufTypeDsp = FADAS_BUF_TYPE_IN_NSP;
+    }
+    else if ( FADAS_BUF_TYPE_OUT == bufType )
+    {
+        bufTypeDsp = FADAS_BUF_TYPE_OUT_NSP;
+    }
+    else
+    {
+        bufTypeDsp = FADAS_BUF_TYPE_INOUT_NSP;
+    }
+
+    (void) bufPtr; /* not used by DSP */
+    int nErr = FadasIface_FadasRegBuf( handle64, bufTypeDsp, bufFd, bufSize, bufOffset, batch );
+    if ( AEE_SUCCESS != nErr )
+    {
+        RIDEHAL_ERROR( "FadasIface_FadasRegBuf fail: %d!", nErr );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    return ret;
+}
+
+RideHalError_e FadasSrv::FadasRegisterBufCPU( FadasBufType_e bufType, uint8_t *bufPtr,
+                                              int32_t bufFd, uint32_t bufSize, uint32_t bufOffset,
+                                              uint32_t batch )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    FadasError_e nErr = FADAS_ERROR_NONE;
+    uint8_t *ptr = bufPtr;
+
+    (void) bufFd; /* not used by CPU */
+    ptr += bufOffset;
+    for ( uint32_t i = 0; i < batch; i++ )
+    {
+        nErr = FadasRegBuf( bufType, ptr, bufSize );
+        if ( FADAS_ERROR_NONE != nErr )
+        {
+            RIDEHAL_ERROR( "FadasRegBuf fail: %d!", nErr );
+            ret = RIDEHAL_ERROR_FAIL;
+            break;
+        }
+        ptr += bufSize;
+    }
+
+    return ret;
+}
+
+RideHalError_e FadasSrv::FadasRegisterBuf( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
+                                           uint32_t bufSize, uint32_t bufOffset, uint32_t batch )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
+    {
+        ret = FadasRegisterBufDSP( bufType, bufPtr, bufFd, bufSize, bufOffset, batch );
+    }
+    else
+    {
+        ret = FadasRegisterBufCPU( bufType, bufPtr, bufFd, bufSize, bufOffset, batch );
+    }
+
+    return ret;
+}
+
+int32_t FadasSrv::RegisterImage( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e bufferType )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    int32_t fd = -1;
+
+    auto &memMap = s_memMaps[m_processor];
+    auto handle64 = s_handle64[m_processor];
+    uint8_t *ptr = (uint8_t *) pBuffer->buffer.pData;
+    size_t size = pBuffer->buffer.size;
+    size_t offset = pBuffer->offset;
+    uint32_t batch = pBuffer->imgProps.batchSize;
+    size_t sizeOne = ( size_t )( pBuffer->size / batch );
+    RideHal_ImageFormat_e format = pBuffer->imgProps.format;
+    uint32_t sizePlane0 = pBuffer->imgProps.stride[0] * pBuffer->imgProps.actualHeight[0];
+    uint32_t sizePlane1 = pBuffer->imgProps.stride[1] * pBuffer->imgProps.actualHeight[1] +
+                          pBuffer->imgProps.extraPadding;
+
+    auto it = memMap.find( pBuffer->data() );
+    if ( it == memMap.end() )
+    {
+        fd = FadasMemMap( pBuffer );
+        if ( fd >= 0 )
+        {
+            if ( FADAS_BUF_TYPE_IN == bufferType )
+            {
+                if ( RIDEHAL_IMAGE_FORMAT_NV12 == format )
+                { /* register both of plane0 and plane1 for NV12 format, NV12 must be input so the
+                   * batch should be 1. */
+                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizePlane0, 0, 1 );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        RIDEHAL_ERROR( "FadasIface_FadasRegBuf failed!" );
+                        fd = -1;
+                    }
+                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizePlane1, sizePlane0, 1 );
+                }
+                else
+                {
+                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizeOne, offset, batch );
+                }
+            }
+            else
+            {
+                ret = FadasRegisterBuf( bufferType, ptr, fd, sizeOne, offset, batch );
+            }
+
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                memMap[pBuffer->data()] = { fd, size, offset, batch, ptr, sizeOne };
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Register Buffer(%p, %d, %d) failed!", ptr, fd, bufferType );
+                fd = -1;
+            }
+        }
+    }
+    else
+    {
+        if ( pBuffer->buffer.pData != it->second.ptr )
+        {
+            RIDEHAL_ERROR( "Shared buffer already registered, but stored ptr not match, stored %d "
+                           "and given %d",
+                           it->second.ptr, pBuffer->buffer.pData );
+        }
+        else if ( pBuffer->buffer.size != it->second.size )
+        {
+            RIDEHAL_ERROR( "Shared buffer already registered, but stored size not match, "
+                           "stored %d "
+                           "and given %d",
+                           it->second.size, pBuffer->buffer.size );
+        }
+        else if ( pBuffer->offset != it->second.offset )
+        {
+            RIDEHAL_ERROR( "Shared buffer already registered, but stored offset not match, "
+                           "stored %d "
+                           "and given %d",
+                           it->second.offset, pBuffer->offset );
+        }
+        else if ( pBuffer->imgProps.batchSize != it->second.batch )
+        {
+            RIDEHAL_ERROR( "Shared buffer already registered, but stored batch not match, "
+                           "stored %d "
+                           "and given %d",
+                           it->second.batch, pBuffer->imgProps.batchSize );
+        }
+        else
+        {
+            fd = it->second.fd;
+        };
+    }
+
+    return fd;
+}
+
+int32_t FadasSrv::RegisterTensor( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e bufferType )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    int32_t fd = -1;
+    uint8_t *ptr = (uint8_t *) pBuffer->buffer.pData;
+    size_t size = pBuffer->buffer.size;
+    size_t offset = pBuffer->offset;
+    size_t sizeOne = pBuffer->size;
+    uint32_t batch = 1;
+
+    auto &memMap = s_memMaps[m_processor];
+    auto it = memMap.find( pBuffer->data() );
+    if ( it == memMap.end() )
+    {
+        fd = FadasMemMap( pBuffer );
+        if ( fd >= 0 )
+        {
+            ret = FadasRegisterBuf( bufferType, ptr, fd, sizeOne, offset, batch );
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                memMap[pBuffer->data()] = { fd, size, offset, batch, ptr, sizeOne };
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Register Buffer(%p, %d, %d) failed!", ptr, fd, bufferType );
+                fd = -1;
+            }
+        }
+    }
+    else
+    {
+        fd = it->second.fd;
+    }
+
+    return fd;
+}
+
 int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e bufferType )
 {
     std::lock_guard<std::mutex> l( s_coreLock[m_processor] );
@@ -252,191 +543,21 @@ int32_t FadasSrv::RegBuf( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e 
     {
         RIDEHAL_ERROR( "null buffer!" );
     }
-    else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pBuffer->type )
+    else if ( ( bufferType <= FADAS_BUF_TYPE_NONE ) || ( bufferType >= FADAS_BUF_TYPE_END ) )
     {
-        RIDEHAL_ERROR( "Shared buffer type is not image!" );
+        RIDEHAL_ERROR( "invalid buffer type!" );
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE == pBuffer->type )
+    {
+        fd = RegisterImage( pBuffer, bufferType );
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuffer->type )
+    {
+        fd = RegisterTensor( pBuffer, bufferType );
     }
     else
     {
-        auto &memMap = s_memMaps[m_processor];
-        auto handle64 = s_handle64[m_processor];
-        void *ptr = pBuffer->buffer.pData;
-        size_t size = pBuffer->buffer.size;
-        size_t offset = pBuffer->offset;
-        uint32_t batch = pBuffer->imgProps.batchSize;
-        int dmaHandle = (int) pBuffer->buffer.dmaHandle;
-        size_t sizeOne = ( size_t )( pBuffer->size / batch );
-        RideHal_ImageFormat_e format = pBuffer->imgProps.format;
-        uint32_t sizePlane0 = pBuffer->imgProps.stride[0] * pBuffer->imgProps.actualHeight[0];
-        uint32_t sizePlane1 = pBuffer->imgProps.stride[1] * pBuffer->imgProps.actualHeight[1] +
-                              pBuffer->imgProps.extraPadding;
-
-        auto it = memMap.find( pBuffer->data() );
-        if ( it == memMap.end() )
-        {
-            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) ||
-                 ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
-            {
-                int extDomainId = 0;
-                int domain = CDSP_DOMAIN_ID;
-                if ( RIDEHAL_PROCESSOR_HTP1 == m_processor )
-                {
-                    domain = CDSP1_DOMAIN_ID;
-                }
-                int client = s_client;
-                extDomainId = get_extended_domains_id( domain, client );
-
-                fd = rpcmem_to_fd( ptr );
-                if ( fd < 0 )
-                {
-#if defined( __QNXNTO__ )
-                    remote_register_buf_v2( extDomainId, ptr, size, 0 );
-#else
-                    remote_register_buf_v2( extDomainId, ptr, size, dmaHandle );
-#endif
-                    fd = rpcmem_to_fd( (void *) pBuffer->buffer.pData );
-                    if ( fd < 0 )
-                    {
-                        RIDEHAL_ERROR( "rpcmem_to_fd failed, fd = %d", fd );
-                    }
-                }
-
-                auto nErr = fastrpc_mmap( extDomainId, fd, ptr, 0, size, FASTRPC_MAP_FD_DELAYED );
-                if ( ( AEE_EALREADY != nErr ) && ( AEE_SUCCESS != nErr ) )
-                {
-                    RIDEHAL_ERROR( "Failed to fastrpc_mmap ptr %p(%d, %llu): ret = %d\n", ptr, fd,
-                                   size, nErr );
-                    fd = -1;
-                }
-
-                auto ret = FadasIface_mmap( handle64, fd, (uint32_t) size );
-                if ( AEE_SUCCESS != ret )
-                {
-                    RIDEHAL_ERROR( "Failed to map ptr %p(%d, %llu): ret = %d\n", ptr, fd, size,
-                                   ret );
-                    fd = -1;
-                }
-
-                uint32_t status = 0;
-                if ( FADAS_BUF_TYPE_IN == bufferType )
-                {
-                    if ( RIDEHAL_IMAGE_FORMAT_NV12 ==
-                         format ) /* register both of plane0 and plane1 for NV12 format, NV12 must
-                                     be input so the batch should be 1. */
-                    {
-                        ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd,
-                                                      sizePlane0, 0, 1 );
-                        if ( AEE_SUCCESS != ret )
-                        {
-                            RIDEHAL_ERROR( "FadasIface_FadasRegBuf failed!" );
-                            fd = -1;
-                        }
-                        ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd,
-                                                      sizePlane1, sizePlane0, 1 );
-                    }
-                    else
-                    {
-                        ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_IN_NSP, fd, sizeOne,
-                                                      offset, batch );
-                    }
-                }
-                else if ( FADAS_BUF_TYPE_OUT == bufferType )
-                {
-                    ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_OUT_NSP, fd, sizeOne,
-                                                  offset, batch );
-                }
-                else if ( FADAS_BUF_TYPE_INOUT == bufferType )
-                {
-                    ret = FadasIface_FadasRegBuf( handle64, FADAS_BUF_TYPE_INOUT_NSP, fd, sizeOne,
-                                                  offset, batch );
-                }
-                else
-                {
-                    RIDEHAL_ERROR( "Wrong buffer type = %d", bufferType );
-                    fd = -1;
-                }
-
-                if ( ( AEE_SUCCESS != ret ) || ( FADAS_ERROR_NONE != (FadasError_e) status ) )
-                {
-                    RIDEHAL_ERROR( "Failed to register ptr %p(%d, %llu): ret = %d\n", ptr, fd, size,
-                                   ret );
-                    fd = -1;
-                }
-            }
-            else
-            {
-                for ( int i = 0; i < batch; i++ )
-                {
-                    FadasError_e retVal;
-                    if ( RIDEHAL_IMAGE_FORMAT_NV12 ==
-                         format ) /* register both of plane0 and plane1 for NV12 format. */
-                    {
-                        retVal = FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
-                                              sizePlane0 );
-                        if ( FADAS_ERROR_NONE != retVal )
-                        {
-                            RIDEHAL_ERROR( "FadasRegBuf failed!" );
-                            fd = -1;
-                        }
-                        retVal = FadasRegBuf(
-                                bufferType, (uint8_t *) pBuffer->data() + sizeOne * i + sizePlane0,
-                                sizePlane1 );
-                    }
-                    else
-                    {
-                        retVal = FadasRegBuf( bufferType, (uint8_t *) pBuffer->data() + sizeOne * i,
-                                              sizeOne );
-                    }
-
-                    if ( FADAS_ERROR_NONE != retVal )
-                    {
-                        RIDEHAL_ERROR( "FadasRegBuf failed!" );
-                        fd = -1;
-                    }
-                }
-                fd = 1;   // virtual fd for CPU&GPU pipeline, indicates that the register is
-                          // successful, would not be really used.
-            }
-            if ( 0 < fd )
-            {
-                memMap[pBuffer->data()] = { fd, size, offset, batch, ptr, sizeOne };
-            }
-        }
-        else
-        {
-            if ( pBuffer->buffer.pData != it->second.ptr )
-            {
-                RIDEHAL_ERROR(
-                        "Shared buffer already registered, but stored ptr not match, stored %d "
-                        "and given %d",
-                        it->second.ptr, pBuffer->buffer.pData );
-            }
-            else if ( pBuffer->buffer.size != it->second.size )
-            {
-                RIDEHAL_ERROR( "Shared buffer already registered, but stored size not match, "
-                               "stored %d "
-                               "and given %d",
-                               it->second.size, pBuffer->buffer.size );
-            }
-            else if ( pBuffer->offset != it->second.offset )
-            {
-                RIDEHAL_ERROR( "Shared buffer already registered, but stored offset not match, "
-                               "stored %d "
-                               "and given %d",
-                               it->second.offset, pBuffer->offset );
-            }
-            else if ( pBuffer->imgProps.batchSize != it->second.batch )
-            {
-                RIDEHAL_ERROR( "Shared buffer already registered, but stored batch not match, "
-                               "stored %d "
-                               "and given %d",
-                               it->second.batch, pBuffer->imgProps.batchSize );
-            }
-            else
-            {
-                fd = it->second.fd;
-            };
-        }
+        RIDEHAL_ERROR( "Shared buffer type is %d!", pBuffer->type );
     }
 
     return fd;

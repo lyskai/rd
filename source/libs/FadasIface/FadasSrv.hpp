@@ -1,4 +1,4 @@
-//  Copyright 2020-2022 Qualcomm Technologies, Inc. All rights reserved.
+//  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 #ifndef QRIDE_FADAS_SRV_HPP
 #define QRIDE_FADAS_SRV_HPP
@@ -64,6 +64,19 @@ protected:
 private:
     RideHalError_e InitCPU();
     RideHalError_e InitDSP( RideHal_ProcessorType_e coreId );
+    int32_t FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer );
+    int32_t FadasMemMapCPU( const RideHal_SharedBuffer_t *pBuffer );
+    int32_t FadasMemMap( const RideHal_SharedBuffer_t *pBuffer );
+    RideHalError_e FadasRegisterBufDSP( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
+                                        uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
+    RideHalError_e FadasRegisterBufCPU( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
+                                        uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
+    RideHalError_e FadasRegisterBuf( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
+                                     uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
+    int32_t RegisterImage( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e bufferType );
+    int32_t RegisterTensor( const RideHal_SharedBuffer_t *pBuffer, FadasBufType_e bufferType );
+
+private:
     static std::mutex s_coreLock[RIDEHAL_PROCESSOR_MAX];
     static std::mutex s_FadasLock;
     static remote_handle64 s_handle64[RIDEHAL_PROCESSOR_MAX];
