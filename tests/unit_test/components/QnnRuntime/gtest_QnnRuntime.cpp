@@ -283,6 +283,10 @@ TEST( QnnRuntime, RegisterBuffer )
     ret = qnnRuntime.RegisterBuffers( inputs, inputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    // Register same buffer again
+    ret = qnnRuntime.RegisterBuffers( inputs, inputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     ret = qnnRuntime.DeRegisterBuffers( inputs, inputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 

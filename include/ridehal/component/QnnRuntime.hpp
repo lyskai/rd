@@ -231,22 +231,24 @@ private:
     RideHalError_e LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages, int numOfUdoPackages );
 
     /**
-     * @cond QnnRuntime::GetMemHandleHTP @endcond
-     * @brief Get HTP memory handle
-     * @param[in] sharedBuffer shared buffer
-     * @param[in] tensor Qnn defined tensor
+     * @cond QnnRuntime::RegisterBuffer @endcond
+     * @brief Register Buffer on HTP memory and get the handle
+     * @param[in] pSharedBuffer pointer shared buffer
+     * @param[out] pMemHandle pointer to HTP memory handle
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    Qnn_MemHandle_t GetMemHandleHTP( const RideHal_SharedBuffer_t *pSharedBuffer );
+    RideHalError_e RegisterBuffer( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                   Qnn_MemHandle_t *pMemHandle );
 
     /**
      * @cond QnnRuntime::GetMemHandle @endcond
      * @brief Get HTP memory handle
-     * @param[in] sharedBuffer shared buffer
-     * @param[in] tensor Qnn defined tensor
+     * @param[in] pSharedBuffer pointer shared buffer
+     * @param[out] pMemHandle pointer to HTP memory handle
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    Qnn_MemHandle_t GetMemHandle( const RideHal_SharedBuffer_t *pSharedBuffer );
+    RideHalError_e GetMemHandle( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                 Qnn_MemHandle_t *pMemHandle );
 
     /**
      * @cond QnnRuntime::DeRegisterBuffers @endcond
@@ -345,6 +347,7 @@ private:
     {
         Qnn_MemHandle_t memHandle;
         size_t size;
+        int32_t fd;
     } DmaMemInfo_t;
 
     // NOTE: this is for now used by HTP backend only, HTP has 2 instance as max
