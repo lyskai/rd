@@ -916,6 +916,7 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
                 QnnRuntime::DmaMemInfo_t info;
                 info.memHandle = *pMemHandle;
                 info.size = pSharedBuffer->buffer.size;
+                info.fd = fd;
                 s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffer->data()] = info;
                 RIDEHAL_INFO( "succeed to register map buffer %p(%d, %u, %u) as %p for core %d",
                               pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
@@ -933,6 +934,9 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
         {
             auto &info = it->second;
             *pMemHandle = info.memHandle;
+            RIDEHAL_DEBUG( "already register map buffer %p(%d, %u, %u) as %p for core %d",
+                           pSharedBuffer->buffer.pData, info.fd, pSharedBuffer->size,
+                           pSharedBuffer->offset, *pMemHandle, m_BackendCoreId );
         }
     }
 
@@ -1288,7 +1292,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
         for ( size_t i = 0; i < numBuffers; ++i )
         {
             auto it = s_DmaMemInfoMap[m_BackendCoreId].find( (uint8_t *) pSharedBuffers[i].data() );
-            if ( it == s_DmaMemInfoMap[m_BackendCoreId].end() )
+            if ( it != s_DmaMemInfoMap[m_BackendCoreId].end() )
             {
                 auto ptr = it->first;
                 auto &info = it->second;
@@ -1299,14 +1303,31 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
                     RIDEHAL_ERROR( "Failed to DeRegister memory. error is %d", (int) retVal );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
+                else
+                {
+                    RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %u, %u) as %p for core %d",
+                                  pSharedBuffers[i].buffer.pData, info.fd, pSharedBuffers[i].size,
+                                  pSharedBuffers[i].offset, info.memHandle, m_BackendCoreId );
+                }
                 if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
                      RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
                 {
                     remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
                 }
+                (void) s_DmaMemInfoMap[m_BackendCoreId].erase( it );
+            }
+            else
+            {
+                RIDEHAL_ERROR( "buffer hasn't been registered yet %p(%u, %u) for core %d",
+                               pSharedBuffers[i].buffer.pData, pSharedBuffers[i].size,
+                               pSharedBuffers[i].offset, m_BackendCoreId );
+                ret = RIDEHAL_ERROR_OUT_OF_BOUND;
             }
 
-            (void) s_DmaMemInfoMap[m_BackendCoreId].erase( it );
+            if ( ret != RIDEHAL_ERROR_NONE )
+            {
+                break;
+            }
         }
     }
 
