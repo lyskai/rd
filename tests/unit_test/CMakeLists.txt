@@ -3,7 +3,7 @@
 
 set( GTEST_RIDEHAL_SOURCES gtest_RideHal.cpp )
 set( GTEST_RIDEHAL_INCLUDES ${PROJECT_SOURCE_DIR}/include )
-set( GTEST_RIDEHAL_LIBS gtest RideHal )
+set( GTEST_RIDEHAL_LIBS gtest RideHal RideHalTestUtils)
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     add_link_options("-lregex") # gtest main need this

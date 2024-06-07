@@ -3,12 +3,16 @@
 
 #include "gtest/gtest.h"
 #include <chrono>
+#include <cmath>
 #include <stdio.h>
+#include <string>
 
+#include "md5_utils.hpp"
 #include "ridehal/component/Remap.hpp"
 
 using namespace ridehal::common;
 using namespace ridehal::component;
+using namespace ridehal::test::utils;
 
 void SetCommonParam( Remap_Config_t *pRemapConfig )
 {
@@ -638,6 +642,228 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     }
 
     return;
+}
+
+void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inputFormatTest,
+                RideHal_ImageFormat_e outputFormatTest, uint32_t inputWidthTest,
+                uint32_t inputHeightTest, uint32_t outputWidthTest, uint32_t outputHeightTest,
+                std::string pathTest, std::string goldenPath )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    Remap RemapObj;
+    Remap_Config_t RemapConfig;
+    char pName[10] = "Remap";
+
+    RemapConfig.processor = processorTest;
+    RemapConfig.numOfInputs = 2;
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        RemapConfig.inputConfigs[inputId].inputFormat = inputFormatTest;
+        RemapConfig.inputConfigs[inputId].inputWidth = inputWidthTest;
+        RemapConfig.inputConfigs[inputId].inputHeight = inputHeightTest;
+        RemapConfig.inputConfigs[inputId].mapWidth = outputWidthTest;
+        RemapConfig.inputConfigs[inputId].mapHeight = outputHeightTest;
+        RemapConfig.inputConfigs[inputId].ROI.x = 0;
+        RemapConfig.inputConfigs[inputId].ROI.y = 0;
+        RemapConfig.inputConfigs[inputId].ROI.width = outputWidthTest;
+        RemapConfig.inputConfigs[inputId].ROI.height = outputHeightTest;
+    }
+    RemapConfig.outputFormat = outputFormatTest;
+    RemapConfig.outputWidth = outputWidthTest;
+    RemapConfig.outputHeight = outputHeightTest;
+    RemapConfig.bEnableUndistortion = false;
+    RemapConfig.bEnableNormalize = true;
+
+    RemapConfig.normlzR.sub = 123.675;
+    RemapConfig.normlzR.mul = 1.f / 58.395;
+    RemapConfig.normlzR.add = 0.f;
+    RemapConfig.normlzG.sub = 116.28;
+    RemapConfig.normlzG.mul = 1.f / 57.12;
+    RemapConfig.normlzG.add = 0.f;
+    RemapConfig.normlzB.sub = 103.53;
+    RemapConfig.normlzB.mul = 1.f / 57.375;
+    RemapConfig.normlzB.add = 0.f;
+
+
+    RideHal_SharedBuffer_t inputs[RemapConfig.numOfInputs];
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
+                                        RemapConfig.inputConfigs[inputId].inputHeight,
+                                        RemapConfig.inputConfigs[inputId].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    size_t inputSize[RIDEHAL_MAX_INPUTS];
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_UYVY )
+        {
+            inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
+                                 RemapConfig.inputConfigs[inputId].inputHeight * 2;
+        }
+        else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_RGB888 )
+        {
+            inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
+                                 RemapConfig.inputConfigs[inputId].inputHeight * 3;
+        }
+        else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_NV12 )
+        {
+            inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
+                                 RemapConfig.inputConfigs[inputId].inputHeight * 1.5;
+        }
+    }
+
+    FILE *file1 = nullptr;
+    size_t length1 = 0;
+    file1 = fopen( pathTest.c_str(), "rb" );
+    if ( nullptr == file1 )
+    {
+        printf( "could not open image file %s\n", pathTest.c_str() );
+    }
+    else
+    {
+        for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+        {
+            fseek( file1, 0, SEEK_END );
+            length1 = (size_t) ftell( file1 );
+            if ( inputs[0].size != length1 )
+            {
+                printf( "image file %s size not match, need %d but got %d\n", pathTest.c_str(),
+                        (int) inputs[0].size, (int) length1 );
+            }
+            else
+            {
+                fseek( file1, 0, SEEK_SET );
+                auto r = fread( inputs[inputId].data(), 1, length1, file1 );
+                if ( length1 != r )
+                {
+                    printf( "failed to read image file %s at id=%d, need %d but read %d\n",
+                            pathTest.c_str(), inputId, (int) length1, (int) r );
+                }
+            }
+        }
+        fclose( file1 );
+    }
+
+    RideHal_ImageProps_t imgProp;
+    imgProp.batchSize = RemapConfig.numOfInputs;
+    imgProp.width = RemapConfig.outputWidth;
+    imgProp.height = RemapConfig.outputHeight;
+    imgProp.format = RemapConfig.outputFormat;
+    imgProp.stride[0] = RemapConfig.outputWidth * 3;
+    imgProp.actualHeight[0] = RemapConfig.outputHeight;
+    imgProp.extraPadding = 0;
+    imgProp.numPlanes = 1;
+
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( &imgProp );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    memset( output.data(), 0, output.size );
+
+    ret = RemapObj.Init( pName, &RemapConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    RideHal_SharedBuffer_t golden;
+    ret = golden.Allocate( &imgProp );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    FILE *file2 = nullptr;
+    size_t length2 = 0;
+    file2 = fopen( goldenPath.c_str(), "rb" );
+    if ( nullptr == file2 )
+    {
+        printf( "could not open golden file %s\n", goldenPath.c_str() );
+    }
+    else
+    {
+        fseek( file2, 0, SEEK_END );
+        length2 = (size_t) ftell( file2 );
+        if ( golden.size != length2 )
+        {
+            printf( "golden file %s size not match, need %d but got %d\n", goldenPath.c_str(),
+                    (int) golden.size, (int) length2 );
+        }
+        else
+        {
+            fseek( file2, 0, SEEK_SET );
+            auto r = fread( golden.data(), 1, length2, file2 );
+            if ( length2 != r )
+            {
+                printf( "failed to read golden file %s, need %d but read %d\n", pathTest.c_str(),
+                        (int) length2, (int) r );
+            }
+        }
+        fclose( file2 );
+    }
+
+    std::string md5Output = MD5Sum( output.data(), output.size );
+    printf( "output md5 = %s\n", md5Output.c_str() );
+    std::string md5Golden = MD5Sum( golden.data(), output.size );
+    printf( "golden md5 = %s\n", md5Golden.c_str() );
+
+    if ( md5Output != md5Golden )   // check cosine similarity if md5 not match
+    {
+        size_t outputSize = output.size;
+        uint8_t *outputData = (uint8_t *) output.data();
+        uint8_t *goldenData = (uint8_t *) golden.data();
+        float dot = 0.0;
+        float norm1 = 1e-10;
+        float norm2 = 1e-10;
+        int miss = 0;
+        for ( int i = 0; i < outputSize; i++ )
+        {
+            if ( outputData[i] != goldenData[i] )
+            {
+                miss++;
+                if ( miss < 10 )
+                {
+                    printf( "data not match at i=%d, output=%d, golden=%d\n", i, outputData[i],
+                            goldenData[i] );
+                }
+            }
+            dot = dot + outputData[i] * goldenData[i];
+            norm1 = norm1 + outputData[i] * outputData[i];
+            norm2 = norm2 + goldenData[i] * goldenData[i];
+        }
+        float cos = dot / sqrt( norm1 * norm2 );
+        printf( "cosine similarity = %f\n", cos );
+        printf( "miss data number = %d\n", miss );
+    }
+
+    ret = RemapObj.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
+    {
+        ret = inputs[inputId].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = golden.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    return;
+}
+
+TEST( Remap, ImageAccuracyTest )   // image pipeline md5 accuracy tests
+{
+    // md5 of 0.uyvy is 5b1ae2203a9d97aeafe65e997f3beebc
+    // md5 of golden_cpu.rgb is fc6d358d384083b177f3e30d781060dc
+    // md5 of golden_dsp.rgb is dbdd4bb16db3aab9e4cd3401671f07c4
+    printf( "DSP image accuracy test\n" );
+    ImageTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
+               1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_dsp.rgb" );
+    printf( "CPU image accuracy test\n" );
+    ImageTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
+               1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_cpu.rgb" );
 }
 
 TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
