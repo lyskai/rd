@@ -12,7 +12,7 @@ target_link_libraries(FadasIfaceStub PUBLIC cdsprpc)
 add_library(Ride::Hal::Libs::FadasIfaceStub ALIAS FadasIfaceStub)
 install(TARGETS FadasIfaceStub DESTINATION lib)
 
-add_library(FadasIface SHARED FadasSrv.cpp FadasPlr.cpp)
+add_library(FadasIface SHARED FadasSrv.cpp FadasRemap.cpp FadasPlr.cpp)
 target_include_directories(FadasIface PUBLIC ${HEADERS_DIR})
 target_compile_definitions(FadasIface PUBLIC USE_FADAS_DSP)
 target_link_libraries(FadasIface PUBLIC FadasIfaceStub fadas)
