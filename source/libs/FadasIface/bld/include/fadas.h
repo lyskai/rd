@@ -775,4 +775,5 @@ extern "C"
 
 
 #include <fadasRemap.h>
+#include <fadasVM.h>
 #endif /* FADAS_H */

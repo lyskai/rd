@@ -106,6 +106,23 @@ struct FadasNormlzParams_t
     float  add;
 };
 
+struct Pt3D_t
+{
+    float x;
+    float y;
+    float z;
+};
+
+struct Grid2D_t
+{
+    float tlX;
+    float tlY;
+    float brX;
+    float brY;
+    float cellSizeX;
+    float cellSizeY;
+};
+
 AEEResult FadasInit(rout int32_t status);
 
 AEEResult FadasVersion(rout sequence<uint8_t> version);
@@ -167,6 +184,31 @@ AEEResult FadasDeregBuf(in     int32_t            bufFd,
                         in     uint32_t           bufSize,
                         in     uint32_t           bufOffset,
                         in     uint32_t           batchSize);
+
+AEEResult PointPillarCreate( in Pt3D_t pPlrSize,
+                             in Pt3D_t pMinRange,
+                             in Pt3D_t pMaxRange,
+                             in uint32_t maxNumPtsIn,
+                             in uint32_t numInFeatureDim,
+                             in uint32_t maxNumPlrs,
+                             in uint32_t maxNumPtsPerPlr,
+                             in uint32_t numOutFeatureDim,
+                             rout uint64_t phPreProc );
+
+AEEResult PointPillarRun( in uint64_t hPreProc,
+                          in uint32_t numPts,
+                          in int32_t fdInPts,
+                          in uint32_t inPtsOffset,
+                          in uint32_t inPtsSize,
+                          in int32_t fdOutPlrs,
+                          in uint32_t outPlrsOffset,
+                          in uint32_t outPlrsSize,
+                          in int32_t fdOutFeature,
+                          in uint32_t outFeatureOffset,
+                          in uint32_t outFeatureSize,
+                          rout uint32_t pNumOutPlrs );
+
+AEEResult PointPillarDestroy( in uint64_t hPreProc );
 
 };
 

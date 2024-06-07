@@ -17,6 +17,7 @@ set( TARGET_LIBRARIES
     RideHalCamera
     RideHalRemap
     RideHalVideoEncoder
+    RideHalPointPillarPreProc
 )
 
 if( NOT TARGET RideHalQnnRuntime )

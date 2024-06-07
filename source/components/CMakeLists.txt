@@ -22,6 +22,7 @@ install(TARGETS RideHalComponentCommon DESTINATION lib)
 
 add_subdirectory(C2D)
 add_subdirectory(Camera)
+add_subdirectory(PointPillar)
 add_subdirectory(QnnRuntime)
 add_subdirectory(Remap)
 add_subdirectory(VideoEncoder)

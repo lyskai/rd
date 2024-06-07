@@ -507,3 +507,99 @@ AEEResult FadasIface_FadasDeregBuf( remote_handle64 handle, int32_t bufFd, uint3
 
     return ret;
 }
+
+
+AEEResult FadasIface_PointPillarCreate( remote_handle64 handle, const FadasIface_Pt3D_t *pPlrSize,
+                                        const FadasIface_Pt3D_t *pMinRange,
+                                        const FadasIface_Pt3D_t *pMaxRange, uint32_t maxNumPtsIn,
+                                        uint32_t numInFeatureDim, uint32_t maxNumPlrs,
+                                        uint32_t maxNumPtsPerPlr, uint32_t numOutFeatureDim,
+                                        uint64_t *phPreProc )
+{
+    AEEResult ret = AEE_SUCCESS;
+    if ( ( nullptr == pPlrSize ) || ( nullptr == pMinRange ) || ( nullptr == pMaxRange ) ||
+         ( nullptr == phPreProc ) )
+    {
+        FARF( ERROR, "PointPillarCreate with nullptr" );
+        ret = AEE_EFAILED;
+    }
+    else
+    {
+        FadasPt_3Df32_t plrSize = { pPlrSize->x, pPlrSize->y, pPlrSize->z };
+        FadasPt_3Df32_t minRange = { pMinRange->x, pMinRange->y, pMinRange->z };
+        FadasPt_3Df32_t maxRange = { pMaxRange->x, pMaxRange->y, pMaxRange->z };
+
+        *phPreProc = (uint64_t) FadasVM_PointPillar_Create(
+                plrSize, minRange, maxRange, maxNumPtsIn, numInFeatureDim, maxNumPlrs,
+                maxNumPtsPerPlr, numOutFeatureDim );
+        if ( 0 == ( *phPreProc ) )
+        {
+            FARF( ERROR, "PointPillarCreate failed!" );
+            ret = AEE_EFAILED;
+        }
+    }
+
+    return ret;
+}
+
+AEEResult FadasIface_PointPillarRun( remote_handle64 handle, uint64_t hPreProc, uint32_t numPts,
+                                     int32_t fdInPts, uint32_t inPtsOffset, uint32_t inPtsSize,
+                                     int32_t fdOutPlrs, uint32_t outPlrsOffset,
+                                     uint32_t outPlrsSize, int32_t fdOutFeature,
+                                     uint32_t outFeatureOffset, uint32_t outFeatureSize,
+                                     uint32_t *pNumOutPlrs )
+{
+    dspContext_t *dspContext = (dspContext_t *) handle;
+    AEEResult ret = AEE_SUCCESS;
+    const float32_t *pInPtsData = (const float32_t *) FadasIface_GetBufPtr( fdInPts );
+    FadasVM_PointPillar_t *pOutPlrsData =
+            (FadasVM_PointPillar_t *) FadasIface_GetBufPtr( fdOutPlrs );
+    float32_t *pOutFeatureData = (float32_t *) FadasIface_GetBufPtr( fdOutFeature );
+
+    if ( ( nullptr == pInPtsData ) || ( nullptr == pOutPlrsData ) ||
+         ( nullptr == pOutFeatureData ) || ( 0 == hPreProc ) )
+    {
+        FARF( ERROR, "FadasVM_PointPillar_Run with nullptr" );
+        ret = AEE_EFAILED;
+    }
+    else
+    {
+        pInPtsData = (const float32_t *) ( (uint8_t *) pInPtsData + inPtsOffset );
+        pOutPlrsData = (FadasVM_PointPillar_t *) ( (uint8_t *) pOutPlrsData + outPlrsOffset );
+        pOutFeatureData = (float32_t *) ( (uint8_t *) pOutFeatureData + outFeatureOffset );
+        qurt_mem_cache_clean( (qurt_addr_t) pInPtsData, inPtsSize,
+                              QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+        qurt_mutex_lock( &dspContext->mutex );
+        FadasError_e error = FadasVM_PointPillar_Run( (void *) hPreProc, numPts, pInPtsData,
+                                                      pOutPlrsData, pOutFeatureData, pNumOutPlrs );
+        qurt_mutex_unlock( &dspContext->mutex );
+        if ( FADAS_ERROR_NONE != error )
+        {
+            FARF( ERROR, "Failed to do FadasVM_PointPillar_Run: ret=%d", error );
+            ret = AEE_EOFFSET + error;
+        }
+        else
+        {
+            qurt_mem_cache_clean( (qurt_addr_t) pOutPlrsData, outPlrsSize, QURT_MEM_CACHE_FLUSH_ALL,
+                                  QURT_MEM_DCACHE );
+            qurt_mem_cache_clean( (qurt_addr_t) pOutFeatureData, outFeatureSize,
+                                  QURT_MEM_CACHE_FLUSH_ALL, QURT_MEM_DCACHE );
+        }
+    }
+
+    return ret;
+}
+
+AEEResult FadasIface_PointPillarDestroy( remote_handle64 handle, uint64_t hPreProc )
+{
+    AEEResult ret = AEE_SUCCESS;
+
+    FadasError_e error = FadasVM_PointPillar_Destroy( (void *) hPreProc );
+    if ( FADAS_ERROR_NONE != error )
+    {
+        FARF( ERROR, "Failed to do FadasVM_PointPillar_Destroy: ret=%d", error );
+        ret = AEE_EOFFSET + error;
+    }
+
+    return ret;
+}

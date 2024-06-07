@@ -4,6 +4,7 @@
 add_subdirectory(C2D)
 add_subdirectory(Camera)
 add_subdirectory(common)
+add_subdirectory(PointPillar)
 add_subdirectory(VideoEncoder)
 add_subdirectory(Remap)
 add_subdirectory(QnnRuntime)

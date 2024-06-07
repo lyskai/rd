@@ -154,6 +154,21 @@ struct FadasIface_FadasNormlzParams_t {
    float mul;
    float add;
 };
+typedef struct FadasIface_Pt3D_t FadasIface_Pt3D_t;
+struct FadasIface_Pt3D_t {
+   float x;
+   float y;
+   float z;
+};
+typedef struct FadasIface_Grid2D_t FadasIface_Grid2D_t;
+struct FadasIface_Grid2D_t {
+   float tlX;
+   float tlY;
+   float brX;
+   float brY;
+   float cellSizeX;
+   float cellSizeY;
+};
 __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_FadasInit)(remote_handle64 _h, int32_t* status) __QAIC_HEADER_ATTRIBUTE;
 __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_FadasVersion)(remote_handle64 _h, uint8_t* version, int versionLen) __QAIC_HEADER_ATTRIBUTE;
 __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_FadasDeInit)(remote_handle64 _h) __QAIC_HEADER_ATTRIBUTE;
@@ -167,6 +182,9 @@ __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_mmap)(remote_handle64 _h
 __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_munmap)(remote_handle64 _h, int32_t bufFd, uint32_t bufSize) __QAIC_HEADER_ATTRIBUTE;
 __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_FadasRegBuf)(remote_handle64 _h, FadasIface_FadasBufType_e bufType, int32_t bufFd, uint32_t bufSize, uint32_t bufOffset, uint32_t batchSize) __QAIC_HEADER_ATTRIBUTE;
 __QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_FadasDeregBuf)(remote_handle64 _h, int32_t bufFd, uint32_t bufSize, uint32_t bufOffset, uint32_t batchSize) __QAIC_HEADER_ATTRIBUTE;
+__QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_PointPillarCreate)(remote_handle64 _h, const FadasIface_Pt3D_t* pPlrSize, const FadasIface_Pt3D_t* pMinRange, const FadasIface_Pt3D_t* pMaxRange, uint32_t maxNumPtsIn, uint32_t numInFeatureDim, uint32_t maxNumPlrs, uint32_t maxNumPtsPerPlr, uint32_t numOutFeatureDim, uint64_t* phPreProc) __QAIC_HEADER_ATTRIBUTE;
+__QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_PointPillarRun)(remote_handle64 _h, uint64_t hPreProc, uint32_t numPts, int32_t fdInPts, uint32_t inPtsOffset, uint32_t inPtsSize, int32_t fdOutPlrs, uint32_t outPlrsOffset, uint32_t outPlrsSize, int32_t fdOutFeature, uint32_t outFeatureOffset, uint32_t outFeatureSize, uint32_t* pNumOutPlrs) __QAIC_HEADER_ATTRIBUTE;
+__QAIC_HEADER_EXPORT AEEResult __QAIC_HEADER(FadasIface_PointPillarDestroy)(remote_handle64 _h, uint64_t hPreProc) __QAIC_HEADER_ATTRIBUTE;
 #ifndef FadasIface_URI
 #define FadasIface_URI "file:///libFadasIface_skel.so?FadasIface_skel_handle_invoke&_modver=1.0"
 #endif /*FadasIface_URI*/

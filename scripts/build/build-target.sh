@@ -206,6 +206,10 @@ if [[ -v HEXAGON_SDK_ROOT && -v BSP_ROOT ]] ; then
     cp -fv hexagon_Release_toolv*_v68/FadasIface.h ../
     cp -fv hexagon_Release_toolv*_v68/FadasIface_stub.c ../FadasIface.c
     $HEXAGON_SDK_ROOT/tools/HEXAGON_Tools/*/Tools/bin/hexagon-strip ../prebuilt/dsp/libFadasIface_skel.so
+    if [[ -v SWIV_BUILD_UTILITY ]] ; then
+        python ${SWIV_BUILD_UTILITY}  -i ../prebuilt/dsp/libFadasIface_skel.so -o ../prebuilt/dsp/libFadasIface_skel.so.crc
+        mv ../prebuilt/dsp/libFadasIface_skel.so.crc ../prebuilt/dsp/libFadasIface_skel.so
+    fi
   fi
 fi
 
