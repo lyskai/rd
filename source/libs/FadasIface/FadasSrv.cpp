@@ -300,6 +300,10 @@ int32_t FadasSrv::FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer )
             RIDEHAL_ERROR( "Failed to map ptr %p(%d, %llu): ret = %d\n", ptr, fd, size, ret );
             fd = -1;
         }
+        else
+        {
+            RIDEHAL_INFO( "map ptr %p(%d, %llu) OK\n", ptr, fd, size );
+        }
     }
 
     return fd;
@@ -600,17 +604,20 @@ void FadasSrv::DeregBuf( void *pBuffer )
                 retVal = FadasIface_FadasDeregBuf( handle64, fd, sizeOne, offset, batch );
                 if ( AEE_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "FadasIface_FadasDeregBuf failed!" );
+                    RIDEHAL_ERROR( "Failed to FadasIface_FadasDeregBuf %p(%d, %llu): ret = %d\n",
+                                   ptr, fd, size, retVal );
                 }
                 retVal = FadasIface_munmap( handle64, fd, (uint32_t) size );
                 if ( AEE_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "FadasIface_munmap failed!" );
+                    RIDEHAL_ERROR( "Failed to FadasIface_munmap %p(%d, %llu): ret = %d\n", ptr, fd,
+                                   size, retVal );
                 }
                 retVal = fastrpc_munmap( extDomainId, fd, ptr, size );
                 if ( AEE_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "fastrpc_munmap failed!" );
+                    RIDEHAL_ERROR( "Failed to fastrpc_munmap %p(%d, %llu): ret = %d\n", ptr, fd,
+                                   size, retVal );
                 }
                 remote_register_buf_v2( extDomainId, ptr, size, -1 );
             }
@@ -621,7 +628,7 @@ void FadasSrv::DeregBuf( void *pBuffer )
                     FadasError_e retVal = FadasDeregBuf( (uint8_t *) pBuffer + sizeOne * i );
                     if ( FADAS_ERROR_NONE != retVal )
                     {
-                        RIDEHAL_ERROR( "FadasDeregBuf failed!" );
+                        RIDEHAL_ERROR( "FadasDeregBuf %p(%llu) failed: %d!", ptr, size, retVal );
                     }
                 }
             }
