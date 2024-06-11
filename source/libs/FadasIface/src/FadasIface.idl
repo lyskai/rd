@@ -188,7 +188,7 @@ AEEResult FadasDeregBuf(in     int32_t            bufFd,
 AEEResult PointPillarCreate( in Pt3D_t pPlrSize,
                              in Pt3D_t pMinRange,
                              in Pt3D_t pMaxRange,
-                             in uint32_t maxNumPtsIn,
+                             in uint32_t maxNumInPts,
                              in uint32_t numInFeatureDim,
                              in uint32_t maxNumPlrs,
                              in uint32_t maxNumPtsPerPlr,
@@ -210,6 +210,32 @@ AEEResult PointPillarRun( in uint64_t hPreProc,
 
 AEEResult PointPillarDestroy( in uint64_t hPreProc );
 
+AEEResult ExtractBBoxCreate( in uint32_t maxNumInPts,
+                             in uint32_t numInFeatureDim,
+                             in uint32_t maxNumDetOut,
+                             in uint32_t numClass,
+                             in Grid2D_t pGrid,
+                             in float threshScore,
+                             in float threshIOU,
+                             in float minCentreX,
+                             in float minCentreY,
+                             in float minCentreZ,
+                             in float maxCentreX,
+                             in float maxCentreY,
+                             in float maxCentreZ,
+                             in sequence<uint8_t> labelSelect,
+                             rout uint64_t phPostProc );
+
+AEEResult ExtractBBoxRun( in uint64_t hPostProc,
+                          in uint32_t numPts,
+                          in sequence<int32_t> fds,
+                          in sequence<uint32_t> offsets,
+                          in sequence<uint32_t> sizes,
+                          in uint8_t bMapPtsToBBox, 
+                          in uint8_t bBBoxFilter,
+                          rout uint32_t pNumDetOut );
+
+AEEResult ExtractBBoxDestroy( in uint64_t hPostProc );
 };
 
 #endif //FADAS_INTERFACE_IDL

@@ -44,7 +44,7 @@ RideHalError_e PointPillarPreProc::Init( const char *pName,
             ret = m_plrPre.SetParams( pConfig->pillarXSize, pConfig->pillarYSize,
                                       pConfig->pillarZSize, pConfig->minXRange, pConfig->minYRange,
                                       pConfig->minZRange, pConfig->maxXRange, pConfig->maxYRange,
-                                      pConfig->maxZRange, pConfig->maxNumPtsIn,
+                                      pConfig->maxZRange, pConfig->maxNumInPts,
                                       pConfig->numInFeatureDim, pConfig->maxNumPlrs,
                                       pConfig->maxNumPtsPerPlr, pConfig->numOutFeatureDim );
         }

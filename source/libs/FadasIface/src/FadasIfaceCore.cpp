@@ -13,6 +13,19 @@
 #include <stdio.h>
 #include <string.h>
 
+#define PLRPOST_NUM_INPUTS 10
+
+#define PLRPOST_IN_PTS 0
+#define PLRPOST_IN_HEATMAP 1
+#define PLRPOST_IN_XY 2
+#define PLRPOST_IN_Z 3
+#define PLRPOST_IN_SIZE 4
+#define PLRPOST_IN_THETA 5
+#define PLRPOST_OUT_BBOX 6
+#define PLRPOST_OUT_LABELS 7
+#define PLRPOST_OUT_SCORES 8
+#define PLRPOST_OUT_METADATA 9
+
 typedef struct
 {
     qurt_mutex_t mutex;
@@ -511,7 +524,7 @@ AEEResult FadasIface_FadasDeregBuf( remote_handle64 handle, int32_t bufFd, uint3
 
 AEEResult FadasIface_PointPillarCreate( remote_handle64 handle, const FadasIface_Pt3D_t *pPlrSize,
                                         const FadasIface_Pt3D_t *pMinRange,
-                                        const FadasIface_Pt3D_t *pMaxRange, uint32_t maxNumPtsIn,
+                                        const FadasIface_Pt3D_t *pMaxRange, uint32_t maxNumInPts,
                                         uint32_t numInFeatureDim, uint32_t maxNumPlrs,
                                         uint32_t maxNumPtsPerPlr, uint32_t numOutFeatureDim,
                                         uint64_t *phPreProc )
@@ -530,7 +543,7 @@ AEEResult FadasIface_PointPillarCreate( remote_handle64 handle, const FadasIface
         FadasPt_3Df32_t maxRange = { pMaxRange->x, pMaxRange->y, pMaxRange->z };
 
         *phPreProc = (uint64_t) FadasVM_PointPillar_Create(
-                plrSize, minRange, maxRange, maxNumPtsIn, numInFeatureDim, maxNumPlrs,
+                plrSize, minRange, maxRange, maxNumInPts, numInFeatureDim, maxNumPlrs,
                 maxNumPtsPerPlr, numOutFeatureDim );
         if ( 0 == ( *phPreProc ) )
         {
@@ -556,17 +569,17 @@ AEEResult FadasIface_PointPillarRun( remote_handle64 handle, uint64_t hPreProc, 
             (FadasVM_PointPillar_t *) FadasIface_GetBufPtr( fdOutPlrs );
     float32_t *pOutFeatureData = (float32_t *) FadasIface_GetBufPtr( fdOutFeature );
 
-    if ( ( nullptr == pInPtsData ) || ( nullptr == pOutPlrsData ) ||
+    if ( ( nullptr == dspContext ) || ( nullptr == pInPtsData ) || ( nullptr == pOutPlrsData ) ||
          ( nullptr == pOutFeatureData ) || ( 0 == hPreProc ) )
     {
-        FARF( ERROR, "FadasVM_PointPillar_Run with nullptr" );
+        FARF( ERROR, "FadasIface_PointPillarRun with nullptr" );
         ret = AEE_EFAILED;
     }
     else
     {
-        pInPtsData = (const float32_t *) ( (uint8_t *) pInPtsData + inPtsOffset );
-        pOutPlrsData = (FadasVM_PointPillar_t *) ( (uint8_t *) pOutPlrsData + outPlrsOffset );
-        pOutFeatureData = (float32_t *) ( (uint8_t *) pOutFeatureData + outFeatureOffset );
+        pInPtsData = (const float32_t *) ( ( (uint8_t *) pInPtsData ) + inPtsOffset );
+        pOutPlrsData = (FadasVM_PointPillar_t *) ( ( (uint8_t *) pOutPlrsData ) + outPlrsOffset );
+        pOutFeatureData = (float32_t *) ( ( (uint8_t *) pOutFeatureData ) + outFeatureOffset );
         qurt_mem_cache_clean( (qurt_addr_t) pInPtsData, inPtsSize,
                               QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
         qurt_mutex_lock( &dspContext->mutex );
@@ -598,6 +611,193 @@ AEEResult FadasIface_PointPillarDestroy( remote_handle64 handle, uint64_t hPrePr
     if ( FADAS_ERROR_NONE != error )
     {
         FARF( ERROR, "Failed to do FadasVM_PointPillar_Destroy: ret=%d", error );
+        ret = AEE_EOFFSET + error;
+    }
+
+    return ret;
+}
+
+
+AEEResult FadasIface_ExtractBBoxCreate( remote_handle64 handle, uint32_t maxNumInPts,
+                                        uint32_t numInFeatureDim, uint32_t maxNumDetOut,
+                                        uint32_t numClass, const FadasIface_Grid2D_t *pGrid,
+                                        float threshScore, float threshIOU, float minCentreX,
+                                        float minCentreY, float minCentreZ, float maxCentreX,
+                                        float maxCentreY, float maxCentreZ,
+                                        const uint8_t *labelSelect, int labelSelectLen,
+                                        uint64_t *phPostProc )
+{
+    AEEResult ret = AEE_SUCCESS;
+    if ( ( nullptr == pGrid ) || ( nullptr == phPostProc ) )
+    {
+        FARF( ERROR, "ExtractBBoxCreate with nullptr" );
+        ret = AEE_EFAILED;
+    }
+    else
+    {
+        Fadas2DGrid_t grid = { { pGrid->tlX, pGrid->tlY },
+                               { pGrid->brX, pGrid->brY },
+                               pGrid->cellSizeX,
+                               pGrid->cellSizeY };
+
+        Fadas3DBBoxInitParams_t bboxInitParams = { 0 };
+
+        bboxInitParams.strideInPts = numInFeatureDim * sizeof( float32_t );
+        bboxInitParams.numClass = numClass;
+        bboxInitParams.grid = grid;
+        bboxInitParams.maxNumInPts = maxNumInPts;
+        bboxInitParams.maxNumDetOut = maxNumDetOut;
+        bboxInitParams.threshScore = threshScore;
+        bboxInitParams.threshIOU = threshIOU;
+        if ( nullptr != labelSelect )
+        {
+            bboxInitParams.filterParams.minCentre.x = minCentreX;
+            bboxInitParams.filterParams.minCentre.y = minCentreY;
+            bboxInitParams.filterParams.minCentre.z = minCentreZ;
+            bboxInitParams.filterParams.maxCentre.x = maxCentreX;
+            bboxInitParams.filterParams.maxCentre.y = maxCentreY;
+            bboxInitParams.filterParams.maxCentre.z = maxCentreZ;
+            bboxInitParams.filterParams.maxNumFilter = labelSelectLen;
+            bboxInitParams.filterParams.labelSelect = (bool *) labelSelect;
+        }
+
+        *phPostProc = (uint64_t) FadasVM_ExtractBBox_Create( &bboxInitParams );
+        if ( 0 == ( *phPostProc ) )
+        {
+            FARF( ERROR, "ExtractBBoxCreate failed!" );
+            FARF( ERROR,
+                  "plrSize=[%.2f %.2f], minRange=[%.2f %.2f], maxRange=[%.2f %.2f], "
+                  "pcd=%ux%u, %u class, thresh=[%.2f %.2f], max=%u, numFilter=%d",
+                  pGrid->cellSizeX, pGrid->cellSizeY, pGrid->tlX, pGrid->tlY, pGrid->brX,
+                  pGrid->brY, maxNumInPts, numInFeatureDim, numClass, threshScore, threshIOU,
+                  maxNumDetOut, labelSelectLen );
+            ret = AEE_EFAILED;
+        }
+    }
+
+    return ret;
+}
+
+AEEResult FadasIface_ExtractBBoxRun( remote_handle64 handle, uint64_t hPostProc, uint32_t numPts,
+                                     const int32_t *fds, int fdsLen, const uint32_t *offsets,
+                                     int offsetsLen, const uint32_t *sizes, int sizesLen,
+                                     uint8_t bMapPtsToBBox, uint8_t bBBoxFilter,
+                                     uint32_t *pNumDetOut )
+{
+    dspContext_t *dspContext = (dspContext_t *) handle;
+    AEEResult ret = AEE_SUCCESS;
+    FadasError_e error = FADAS_ERROR_UNKNOWN;
+    if ( ( nullptr == dspContext ) || ( nullptr == fds ) || ( nullptr == offsets ) ||
+         ( nullptr == sizes ) || ( PLRPOST_NUM_INPUTS != fdsLen ) ||
+         ( PLRPOST_NUM_INPUTS != offsetsLen ) || ( PLRPOST_NUM_INPUTS != sizesLen ) ||
+         ( nullptr == pNumDetOut ) )
+    {
+        FARF( ERROR, "FadasIface_ExtractBBoxRun with bad arguments" );
+        ret = AEE_EFAILED;
+    }
+    else
+    {
+        float32_t *pInPts = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_IN_PTS] );
+        float32_t *pHeatmap = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_IN_HEATMAP] );
+        float32_t *pXY = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_IN_XY] );
+        float32_t *pZ = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_IN_Z] );
+        float32_t *pSize = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_IN_SIZE] );
+        float32_t *pTheta = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_IN_THETA] );
+        FadasCuboidf32_t *pBBoxList =
+                (FadasCuboidf32_t *) FadasIface_GetBufPtr( fds[PLRPOST_OUT_BBOX] );
+        uint32_t *pLabelsOut = (uint32_t *) FadasIface_GetBufPtr( fds[PLRPOST_OUT_LABELS] );
+        float32_t *pScoresOut = (float32_t *) FadasIface_GetBufPtr( fds[PLRPOST_OUT_SCORES] );
+        Fadas3DBBoxMetadata_t *pMetadataOut =
+                (Fadas3DBBoxMetadata_t *) FadasIface_GetBufPtr( fds[PLRPOST_OUT_METADATA] );
+        if ( ( nullptr == pInPts ) || ( nullptr == pHeatmap ) || ( nullptr == pXY ) ||
+             ( nullptr == pZ ) || ( nullptr == pSize ) || ( nullptr == pTheta ) ||
+             ( nullptr == pBBoxList ) || ( nullptr == pLabelsOut ) || ( nullptr == pScoresOut ) ||
+             ( nullptr == pMetadataOut ) )
+        {
+            FARF( ERROR, "FadasIface_ExtractBBoxRun with nullptr" );
+            ret = AEE_EFAILED;
+        }
+        else
+        {
+            pInPts = (float32_t *) ( ( (uint8_t *) pInPts ) + offsets[PLRPOST_IN_PTS] );
+            pHeatmap = (float32_t *) ( ( (uint8_t *) pHeatmap ) + offsets[PLRPOST_IN_HEATMAP] );
+            pXY = (float32_t *) ( ( (uint8_t *) pXY ) + offsets[PLRPOST_IN_XY] );
+            pZ = (float32_t *) ( ( (uint8_t *) pZ ) + offsets[PLRPOST_IN_Z] );
+            pSize = (float32_t *) ( ( (uint8_t *) pSize ) + offsets[PLRPOST_IN_SIZE] );
+            pTheta = (float32_t *) ( ( (uint8_t *) pTheta ) + offsets[PLRPOST_IN_THETA] );
+            pBBoxList =
+                    (FadasCuboidf32_t *) ( ( (uint8_t *) pBBoxList ) + offsets[PLRPOST_OUT_BBOX] );
+            pLabelsOut = (uint32_t *) ( ( (uint8_t *) pLabelsOut ) + offsets[PLRPOST_OUT_LABELS] );
+            pScoresOut = (float32_t *) ( ( (uint8_t *) pScoresOut ) + offsets[PLRPOST_OUT_SCORES] );
+            pMetadataOut = (Fadas3DBBoxMetadata_t *) ( ( (uint8_t *) pMetadataOut ) +
+                                                       offsets[PLRPOST_OUT_METADATA] );
+
+            Fadas3DRPNBufs_t rpnBuf;
+            Fadas3DBBoxBufs_t outBuf;
+
+            rpnBuf.pHeatmap = pHeatmap;
+            rpnBuf.pXY = pXY;
+            rpnBuf.pZ = pZ;
+            rpnBuf.pSize = pSize;
+            rpnBuf.pTheta = pTheta;
+
+            outBuf.pBBoxList = pBBoxList;
+            outBuf.pLabels = pLabelsOut;
+            outBuf.pScores = pScoresOut;
+            outBuf.pMetadata = pMetadataOut;
+
+            qurt_mem_cache_clean( (qurt_addr_t) pInPts, sizes[PLRPOST_IN_PTS],
+                                  QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+            qurt_mem_cache_clean( (qurt_addr_t) pHeatmap, sizes[PLRPOST_IN_HEATMAP],
+                                  QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+            qurt_mem_cache_clean( (qurt_addr_t) pXY, sizes[PLRPOST_IN_XY],
+                                  QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+            qurt_mem_cache_clean( (qurt_addr_t) pZ, sizes[PLRPOST_IN_Z],
+                                  QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+            qurt_mem_cache_clean( (qurt_addr_t) pSize, sizes[PLRPOST_IN_SIZE],
+                                  QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+            qurt_mem_cache_clean( (qurt_addr_t) pTheta, sizes[PLRPOST_IN_THETA],
+                                  QURT_MEM_CACHE_FLUSH_INVALIDATE_ALL, QURT_MEM_DCACHE );
+            *pNumDetOut = 0;
+            qurt_mutex_lock( &dspContext->mutex );
+            error = FadasVM_ExtractBBox_Run( (void *) hPostProc, numPts, pInPts, rpnBuf, outBuf,
+                                             pNumDetOut, (bool) bMapPtsToBBox, (bool) bBBoxFilter );
+            qurt_mutex_unlock( &dspContext->mutex );
+            if ( FADAS_ERROR_NONE != error )
+            {
+
+                FARF( ERROR, "Failed to do FadasVM_PointPillar_Run: ret=%d", error );
+                for ( int i = 0; i < PLRPOST_NUM_INPUTS; i++ )
+                {
+                    FARF( ERROR, "[%d]: fd=%d size=%u offset=%u", i, fds[i], sizes[i], offsets[i] );
+                }
+                ret = AEE_EOFFSET + error;
+            }
+            else
+            {
+                qurt_mem_cache_clean( (qurt_addr_t) pBBoxList, sizes[PLRPOST_OUT_BBOX],
+                                      QURT_MEM_CACHE_FLUSH_ALL, QURT_MEM_DCACHE );
+                qurt_mem_cache_clean( (qurt_addr_t) pLabelsOut, sizes[PLRPOST_OUT_LABELS],
+                                      QURT_MEM_CACHE_FLUSH_ALL, QURT_MEM_DCACHE );
+                qurt_mem_cache_clean( (qurt_addr_t) pScoresOut, sizes[PLRPOST_OUT_SCORES],
+                                      QURT_MEM_CACHE_FLUSH_ALL, QURT_MEM_DCACHE );
+                qurt_mem_cache_clean( (qurt_addr_t) pMetadataOut, sizes[PLRPOST_OUT_METADATA],
+                                      QURT_MEM_CACHE_FLUSH_ALL, QURT_MEM_DCACHE );
+            }
+        }
+    }
+
+    return ret;
+}
+
+AEEResult FadasIface_ExtractBBoxDestroy( remote_handle64 handle, uint64_t hPostProc )
+{
+    AEEResult ret = AEE_SUCCESS;
+
+    FadasError_e error = FadasVM_ExtractBBox_Destroy( (void *) hPostProc );
+    if ( FADAS_ERROR_NONE != error )
+    {
+        FARF( ERROR, "Failed to do FadasVM_ExtractBBox_Destroy: ret=%d", error );
         ret = AEE_EOFFSET + error;
     }
 

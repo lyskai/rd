@@ -422,17 +422,17 @@ struct Interface {
 #endif
 
 static const Type types[10];
-static const Type* const typeArrays[13] = {&(types[4]),&(types[4]),&(types[6]),&(types[7]),&(types[4]),&(types[7]),&(types[4]),&(types[4]),&(types[4]),&(types[4]),&(types[1]),&(types[1]),&(types[1])};
-static const StructType structTypes[3] = {{0x6,&(typeArrays[0]),0x30,0x0,0x30,0x4,0x1,0x4},{0x3,&(typeArrays[10]),0xc,0x0,0xc,0x4,0x1,0x4},{0x4,&(typeArrays[6]),0x10,0x0,0x10,0x4,0x1,0x4}};
-static const Type types[10] = {{0x1,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x1},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4},{0x30,{{(const uintptr_t)&(structTypes[0]),0}}, 6,0x4},{0x4,{{0,0}}, 3,0x4},{0x10,{{(const uintptr_t)&(types[4]),(const uintptr_t)0x4}}, 8,0x4},{0x10,{{(const uintptr_t)&(structTypes[2]),0}}, 6,0x4},{0xc,{{(const uintptr_t)&(structTypes[1]),0}}, 6,0x4}};
-static const Parameter parameters[24] = {{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)0x0,0}}, 4,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x4,0x8),{{(const uintptr_t)0xdeadc0de,(const uintptr_t)0}}, 0,SLIM_IFPTR32(0x4,0x8),3,0},{SLIM_IFPTR32(0x4,0x8),{{(const uintptr_t)0xdeadc0de,(const uintptr_t)0}}, 0,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,3,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[0]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),3,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,4,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[1]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{0,0}}, 3,0x4,0,0},{0x1,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x1,0,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[2]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[3]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[4]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[5]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,0,0},{0x30,{{(const uintptr_t)&(structTypes[0]),0}}, 6,0x4,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[8]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[9]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{0,0}}, 3,0x4,0,0},{0xc,{{(const uintptr_t)&(structTypes[1]),0}}, 6,0x4,0,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,3,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,3,0}};
-static const Parameter* const parameterArrays[62] = {(&(parameters[22])),(&(parameters[6])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[23])),(&(parameters[11])),(&(parameters[11])),(&(parameters[12])),(&(parameters[13])),(&(parameters[14])),(&(parameters[15])),(&(parameters[6])),(&(parameters[16])),(&(parameters[17])),(&(parameters[18])),(&(parameters[5])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[7])),(&(parameters[7])),(&(parameters[6])),(&(parameters[8])),(&(parameters[9])),(&(parameters[20])),(&(parameters[20])),(&(parameters[20])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[21])),(&(parameters[5])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[8])),(&(parameters[9])),(&(parameters[19])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[5])),(&(parameters[6])),(&(parameters[8])),(&(parameters[0])),(&(parameters[1])),(&(parameters[10])),(&(parameters[4])),(&(parameters[3])),(&(parameters[2]))};
-static const Method methods[16] = {{REMOTE_SCALARS_MAKEX(0,0,0x2,0x0,0x0,0x1),0x4,0x0,2,2,(&(parameterArrays[56])),0x4,0x1},{REMOTE_SCALARS_MAKEX(0,0,0x0,0x0,0x1,0x0),0x0,0x0,1,1,(&(parameterArrays[61])),0x1,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x0,0x1,0x0,0x0),0x0,0x4,1,1,(&(parameterArrays[60])),0x1,0x4},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x4,0x0,3,1,(&(parameterArrays[59])),0x4,0x1},{REMOTE_SCALARS_MAKEX(0,0,0x0,0x0,0x0,0x0),0x0,0x0,0,0,0,0x0,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x3,0x1,0x0,0x0),0x29,0x8,12,10,(&(parameterArrays[22])),0x8,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x1d,0x8,7,7,(&(parameterArrays[41])),0x8,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x8,0x0,3,1,(&(parameterArrays[58])),0x8,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x10,0x8,3,3,(&(parameterArrays[53])),0x8,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x8,0x0,0x0,0x0),0x54,0x0,17,10,(&(parameterArrays[12])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x8,0x0,2,2,(&(parameterArrays[2])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x14,0x0,5,5,(&(parameterArrays[48])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x10,0x0,4,4,(&(parameterArrays[49])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x38,0x8,9,9,(&(parameterArrays[32])),0x4,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x30,0x4,14,12,(&(parameterArrays[0])),0x8,0x4},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x8,0x0,3,1,(&(parameterArrays[0])),0x8,0x0}};
-static const Method* const methodArrays[18] = {&(methods[0]),&(methods[1]),&(methods[2]),&(methods[3]),&(methods[4]),&(methods[5]),&(methods[6]),&(methods[7]),&(methods[8]),&(methods[7]),&(methods[9]),&(methods[10]),&(methods[10]),&(methods[11]),&(methods[12]),&(methods[13]),&(methods[14]),&(methods[15])};
-static const char strings[843] = "FadasRemap_CreateMapNoUndistortion\0FadasRemap_CreateMapFromMap\0FadasRemap_DestroyWorkers\0FadasRemap_CreateWorkers\0FadasRemap_DestroyMap\0PointPillarDestroy\0PointPillarCreate\0outFeatureOffset\0numOutFeatureDim\0FadasRemap_RunMT\0maxNumPtsPerPlr\0numInFeatureDim\0outFeatureSize\0PointPillarRun\0outPlrsOffset\0FadasDeregBuf\0fdOutFeature\0actualHeight\0FadasVersion\0pNumOutPlrs\0outPlrsSize\0inPtsOffset\0maxNumPtsIn\0FadasRegBuf\0borderConst\0FadasDeInit\0maxNumPlrs\0workerPtrs\0worker_ptr\0fdOutPlrs\0inPtsSize\0phPreProc\0pMaxRange\0pMinRange\0batchSize\0bufOffset\0numPlanes\0imgFormat\0mapStride\0mapHeight\0camHeight\0FadasInit\0pPlrSize\0dstProps\0srcProps\0nThreads\0mapWidth\0camWidth\0fdInPts\0bufType\0bufSize\0dstROIs\0offsets\0mapPtrs\0version\0numPts\0munmap\0normlz\0dstLen\0stride\0format\0height\0srcFds\0mapPtr\0status\0bufFd\0dstFd\0width\0close\0mmap\0mapY\0mapX\0open\0add\0mul\0sub\0uri\0x\0";
-static const uint16_t methodStrings[118] = {207,448,694,759,686,618,792,752,745,738,540,327,786,731,609,792,752,745,738,540,327,678,840,153,792,752,724,832,828,824,155,600,840,153,729,510,840,153,729,500,840,153,729,389,240,437,224,190,490,271,491,710,654,377,480,470,286,365,314,173,256,353,35,766,645,580,636,570,814,809,560,550,413,0,766,645,580,636,570,550,413,401,662,780,670,530,520,300,780,670,530,520,89,459,627,550,717,780,670,804,780,670,819,836,643,136,491,63,459,114,766,340,702,590,773,798,643,425};
-static const uint16_t methodStringsArrays[18] = {102,115,113,111,117,62,73,109,92,107,0,99,96,81,87,30,49,105};
-__QAIC_SLIM_EXPORT const Interface __QAIC_SLIM(FadasIface_slim) = {18,&(methodArrays[0]),0,0,&(methodStringsArrays [0]),methodStrings,strings};
+static const Type* const typeArrays[16] = {&(types[1]),&(types[1]),&(types[1]),&(types[1]),&(types[1]),&(types[1]),&(types[4]),&(types[4]),&(types[6]),&(types[7]),&(types[4]),&(types[7]),&(types[4]),&(types[4]),&(types[4]),&(types[4])};
+static const StructType structTypes[4] = {{0x6,&(typeArrays[6]),0x30,0x0,0x30,0x4,0x1,0x4},{0x3,&(typeArrays[0]),0xc,0x0,0xc,0x4,0x1,0x4},{0x6,&(typeArrays[0]),0x18,0x0,0x18,0x4,0x1,0x4},{0x4,&(typeArrays[12]),0x10,0x0,0x10,0x4,0x1,0x4}};
+static const Type types[10] = {{0x1,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x1},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4},{0x30,{{(const uintptr_t)&(structTypes[0]),0}}, 6,0x4},{0x4,{{0,0}}, 3,0x4},{0x10,{{(const uintptr_t)&(types[4]),(const uintptr_t)0x4}}, 8,0x4},{0x10,{{(const uintptr_t)&(structTypes[3]),0}}, 6,0x4},{0xc,{{(const uintptr_t)&(structTypes[1]),0}}, 6,0x4}};
+static const Parameter parameters[27] = {{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)0x0,0}}, 4,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x4,0x8),{{(const uintptr_t)0xdeadc0de,(const uintptr_t)0}}, 0,SLIM_IFPTR32(0x4,0x8),3,0},{SLIM_IFPTR32(0x4,0x8),{{(const uintptr_t)0xdeadc0de,(const uintptr_t)0}}, 0,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,3,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[0]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),3,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,4,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[1]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{0,0}}, 3,0x4,0,0},{0x1,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x1,0,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[2]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[3]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[4]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[5]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,0,0},{0x30,{{(const uintptr_t)&(structTypes[0]),0}}, 6,0x4,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[8]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[9]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0},{0x4,{{0,0}}, 3,0x4,0,0},{0xc,{{(const uintptr_t)&(structTypes[1]),0}}, 6,0x4,0,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,3,0},{0x8,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x8,0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,3,0},{0x18,{{(const uintptr_t)&(structTypes[2]),0}}, 6,0x4,0,0},{0x4,{{(const uintptr_t)0,(const uintptr_t)1}}, 2,0x4,0,0},{SLIM_IFPTR32(0x8,0x10),{{(const uintptr_t)&(types[0]),(const uintptr_t)0x0}}, 9,SLIM_IFPTR32(0x4,0x8),0,0}};
+static const Parameter* const parameterArrays[85] = {(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[24])),(&(parameters[25])),(&(parameters[25])),(&(parameters[25])),(&(parameters[25])),(&(parameters[25])),(&(parameters[25])),(&(parameters[25])),(&(parameters[25])),(&(parameters[26])),(&(parameters[21])),(&(parameters[22])),(&(parameters[6])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[23])),(&(parameters[11])),(&(parameters[11])),(&(parameters[12])),(&(parameters[13])),(&(parameters[14])),(&(parameters[15])),(&(parameters[6])),(&(parameters[16])),(&(parameters[17])),(&(parameters[18])),(&(parameters[5])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[7])),(&(parameters[7])),(&(parameters[6])),(&(parameters[8])),(&(parameters[9])),(&(parameters[20])),(&(parameters[20])),(&(parameters[20])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[21])),(&(parameters[22])),(&(parameters[6])),(&(parameters[12])),(&(parameters[13])),(&(parameters[13])),(&(parameters[9])),(&(parameters[9])),(&(parameters[23])),(&(parameters[5])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[8])),(&(parameters[9])),(&(parameters[19])),(&(parameters[15])),(&(parameters[6])),(&(parameters[6])),(&(parameters[6])),(&(parameters[5])),(&(parameters[6])),(&(parameters[8])),(&(parameters[0])),(&(parameters[1])),(&(parameters[10])),(&(parameters[4])),(&(parameters[3])),(&(parameters[2]))};
+static const Method methods[18] = {{REMOTE_SCALARS_MAKEX(0,0,0x2,0x0,0x0,0x1),0x4,0x0,2,2,(&(parameterArrays[79])),0x4,0x1},{REMOTE_SCALARS_MAKEX(0,0,0x0,0x0,0x1,0x0),0x0,0x0,1,1,(&(parameterArrays[84])),0x1,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x0,0x1,0x0,0x0),0x0,0x4,1,1,(&(parameterArrays[83])),0x1,0x4},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x4,0x0,3,1,(&(parameterArrays[82])),0x4,0x1},{REMOTE_SCALARS_MAKEX(0,0,0x0,0x0,0x0,0x0),0x0,0x0,0,0,0,0x0,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x3,0x1,0x0,0x0),0x29,0x8,12,10,(&(parameterArrays[37])),0x8,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x1d,0x8,7,7,(&(parameterArrays[64])),0x8,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x8,0x0,3,1,(&(parameterArrays[81])),0x8,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x10,0x8,3,3,(&(parameterArrays[76])),0x8,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x8,0x0,0x0,0x0),0x54,0x0,17,10,(&(parameterArrays[27])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x8,0x0,2,2,(&(parameterArrays[17])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x14,0x0,5,5,(&(parameterArrays[71])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x10,0x0,4,4,(&(parameterArrays[72])),0x4,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x38,0x8,9,9,(&(parameterArrays[47])),0x4,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x1,0x0,0x0),0x30,0x4,14,12,(&(parameterArrays[15])),0x8,0x4},{REMOTE_SCALARS_MAKEX(0,0,0x1,0x0,0x0,0x0),0x8,0x0,3,1,(&(parameterArrays[15])),0x8,0x0},{REMOTE_SCALARS_MAKEX(0,0,0x2,0x1,0x0,0x0),0x4c,0x8,16,15,(&(parameterArrays[0])),0x4,0x8},{REMOTE_SCALARS_MAKEX(0,0,0x4,0x1,0x0,0x0),0x1a,0x4,13,8,(&(parameterArrays[56])),0x8,0x4}};
+static const Method* const methodArrays[21] = {&(methods[0]),&(methods[1]),&(methods[2]),&(methods[3]),&(methods[4]),&(methods[5]),&(methods[6]),&(methods[7]),&(methods[8]),&(methods[7]),&(methods[9]),&(methods[10]),&(methods[10]),&(methods[11]),&(methods[12]),&(methods[13]),&(methods[14]),&(methods[15]),&(methods[16]),&(methods[17]),&(methods[15])};
+static const char strings[1115] = "FadasRemap_CreateMapNoUndistortion\0FadasRemap_CreateMapFromMap\0FadasRemap_DestroyWorkers\0FadasRemap_CreateWorkers\0FadasRemap_DestroyMap\0ExtractBBoxDestroy\0PointPillarDestroy\0ExtractBBoxCreate\0PointPillarCreate\0outFeatureOffset\0numOutFeatureDim\0FadasRemap_RunMT\0maxNumPtsPerPlr\0numInFeatureDim\0ExtractBBoxRun\0outFeatureSize\0PointPillarRun\0bMapPtsToBBox\0outPlrsOffset\0FadasDeregBuf\0maxNumDetOut\0fdOutFeature\0actualHeight\0FadasVersion\0bBBoxFilter\0labelSelect\0threshScore\0pNumOutPlrs\0outPlrsSize\0inPtsOffset\0maxNumInPts\0FadasRegBuf\0borderConst\0FadasDeInit\0pNumDetOut\0phPostProc\0maxCentreZ\0maxCentreY\0maxCentreX\0minCentreZ\0minCentreY\0minCentreX\0maxNumPlrs\0workerPtrs\0worker_ptr\0threshIOU\0cellSizeY\0cellSizeX\0fdOutPlrs\0inPtsSize\0phPreProc\0pMaxRange\0pMinRange\0batchSize\0bufOffset\0numPlanes\0imgFormat\0mapStride\0mapHeight\0camHeight\0FadasInit\0numClass\0pPlrSize\0dstProps\0srcProps\0nThreads\0mapWidth\0camWidth\0fdInPts\0bufType\0bufSize\0dstROIs\0offsets\0mapPtrs\0version\0numPts\0munmap\0normlz\0dstLen\0stride\0format\0height\0srcFds\0mapPtr\0status\0sizes\0pGrid\0bufFd\0dstFd\0width\0close\0mmap\0mapY\0mapX\0open\0fds\0brY\0brX\0tlY\0tlX\0add\0mul\0sub\0uri\0";
+static const uint16_t methodStrings[151] = {244,651,936,1001,928,860,1046,994,987,980,773,406,1040,973,851,1046,994,987,980,773,406,920,350,153,1046,994,966,1106,1102,1098,174,504,277,380,833,1028,1094,1090,1086,1082,693,683,456,673,629,618,607,596,585,574,444,563,192,842,350,153,971,743,350,153,971,733,350,153,971,504,277,640,261,227,723,323,724,952,896,492,713,703,352,480,393,210,308,468,35,1008,887,813,878,803,1068,1063,793,783,528,293,564,952,1078,928,1022,338,432,552,0,1008,887,813,878,803,783,528,516,904,1034,912,763,753,366,1034,912,763,753,89,662,869,783,959,1034,912,1058,1034,912,1073,1110,885,136,564,155,724,63,662,114,1008,419,944,823,1015,1052,885,540};
+static const uint16_t methodStringsArrays[21] = {133,148,146,144,150,84,104,142,123,140,0,130,127,112,118,52,71,138,30,95,136};
+__QAIC_SLIM_EXPORT const Interface __QAIC_SLIM(FadasIface_slim) = {21,&(methodArrays[0]),0,0,&(methodStringsArrays [0]),methodStrings,strings};
 #endif //_FADASIFACE_SLIM_H
 
 
@@ -723,9 +723,9 @@ static __inline int _stub_method_11(remote_handle64 _handle, uint32_t _mid, uint
    _CATCH(_nErr) {}
    return _nErr;
 }
-__QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_PointPillarCreate)(remote_handle64 _handle, const FadasIface_Pt3D_t* pPlrSize, const FadasIface_Pt3D_t* pMinRange, const FadasIface_Pt3D_t* pMaxRange, uint32_t maxNumPtsIn, uint32_t numInFeatureDim, uint32_t maxNumPlrs, uint32_t maxNumPtsPerPlr, uint32_t numOutFeatureDim, uint64_t* phPreProc) __QAIC_STUB_ATTRIBUTE {
+__QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_PointPillarCreate)(remote_handle64 _handle, const FadasIface_Pt3D_t* pPlrSize, const FadasIface_Pt3D_t* pMinRange, const FadasIface_Pt3D_t* pMaxRange, uint32_t maxNumInPts, uint32_t numInFeatureDim, uint32_t maxNumPlrs, uint32_t maxNumPtsPerPlr, uint32_t numOutFeatureDim, uint64_t* phPreProc) __QAIC_STUB_ATTRIBUTE {
    uint32_t _mid = 15;
-   return _stub_method_11(_handle, _mid, (uint32_t*)pPlrSize, (uint32_t*)pMinRange, (uint32_t*)pMaxRange, (uint32_t*)&maxNumPtsIn, (uint32_t*)&numInFeatureDim, (uint32_t*)&maxNumPlrs, (uint32_t*)&maxNumPtsPerPlr, (uint32_t*)&numOutFeatureDim, (uint64_t*)phPreProc);
+   return _stub_method_11(_handle, _mid, (uint32_t*)pPlrSize, (uint32_t*)pMinRange, (uint32_t*)pMaxRange, (uint32_t*)&maxNumInPts, (uint32_t*)&numInFeatureDim, (uint32_t*)&maxNumPlrs, (uint32_t*)&maxNumPtsPerPlr, (uint32_t*)&numOutFeatureDim, (uint64_t*)phPreProc);
 }
 static __inline int _stub_method_12(remote_handle64 _handle, uint32_t _mid, uint64_t _in0[1], uint32_t _in1[1], uint32_t _in2[1], uint32_t _in3[1], uint32_t _in4[1], uint32_t _in5[1], uint32_t _in6[1], uint32_t _in7[1], uint32_t _in8[1], uint32_t _in9[1], uint32_t _in10[1], uint32_t _rout11[1]) {
    int _numIn[1];
@@ -761,6 +761,83 @@ __QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_PointPillarRun)(remote_handl
 __QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_PointPillarDestroy)(remote_handle64 _handle, uint64_t hPreProc) __QAIC_STUB_ATTRIBUTE {
    uint32_t _mid = 17;
    return _stub_method_5(_handle, _mid, (uint64_t*)&hPreProc);
+}
+static __inline int _stub_method_13(remote_handle64 _handle, uint32_t _mid, uint32_t _in0[1], uint32_t _in1[1], uint32_t _in2[1], uint32_t _in3[1], uint32_t _in4[6], float _in5[1], float _in6[1], float _in7[1], float _in8[1], float _in9[1], float _in10[1], float _in11[1], float _in12[1], char* _in13[1], uint32_t _in13Len[1], uint64_t _rout14[1]) {
+   int _numIn[1];
+   remote_arg _pra[3];
+   uint32_t _primIn[19];
+   uint64_t _primROut[1];
+   remote_arg* _praIn;
+   int _nErr = 0;
+   _numIn[0] = 1;
+   _pra[0].buf.pv = (void*)_primIn;
+   _pra[0].buf.nLen = sizeof(_primIn);
+   _pra[(_numIn[0] + 1)].buf.pv = (void*)_primROut;
+   _pra[(_numIn[0] + 1)].buf.nLen = sizeof(_primROut);
+   _COPY(_primIn, 0, _in0, 0, 4);
+   _COPY(_primIn, 4, _in1, 0, 4);
+   _COPY(_primIn, 8, _in2, 0, 4);
+   _COPY(_primIn, 12, _in3, 0, 4);
+   _COPY(_primIn, 16, _in4, 0, 24);
+   _COPY(_primIn, 40, _in5, 0, 4);
+   _COPY(_primIn, 44, _in6, 0, 4);
+   _COPY(_primIn, 48, _in7, 0, 4);
+   _COPY(_primIn, 52, _in8, 0, 4);
+   _COPY(_primIn, 56, _in9, 0, 4);
+   _COPY(_primIn, 60, _in10, 0, 4);
+   _COPY(_primIn, 64, _in11, 0, 4);
+   _COPY(_primIn, 68, _in12, 0, 4);
+   _COPY(_primIn, 72, _in13Len, 0, 4);
+   _praIn = (_pra + 1);
+   _praIn[0].buf.pv = (void*) _in13[0];
+   _praIn[0].buf.nLen = (1 * _in13Len[0]);
+   _TRY(_nErr, __QAIC_REMOTE(remote_handle64_invoke)(_handle, REMOTE_SCALARS_MAKEX(0, _mid, 2, 1, 0, 0), _pra));
+   _COPY(_rout14, 0, _primROut, 0, 8);
+   _CATCH(_nErr) {}
+   return _nErr;
+}
+__QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_ExtractBBoxCreate)(remote_handle64 _handle, uint32_t maxNumInPts, uint32_t numInFeatureDim, uint32_t maxNumDetOut, uint32_t numClass, const FadasIface_Grid2D_t* pGrid, float threshScore, float threshIOU, float minCentreX, float minCentreY, float minCentreZ, float maxCentreX, float maxCentreY, float maxCentreZ, const uint8_t* labelSelect, int labelSelectLen, uint64_t* phPostProc) __QAIC_STUB_ATTRIBUTE {
+   uint32_t _mid = 18;
+   return _stub_method_13(_handle, _mid, (uint32_t*)&maxNumInPts, (uint32_t*)&numInFeatureDim, (uint32_t*)&maxNumDetOut, (uint32_t*)&numClass, (uint32_t*)pGrid, (float*)&threshScore, (float*)&threshIOU, (float*)&minCentreX, (float*)&minCentreY, (float*)&minCentreZ, (float*)&maxCentreX, (float*)&maxCentreY, (float*)&maxCentreZ, (char**)&labelSelect, (uint32_t*)&labelSelectLen, (uint64_t*)phPostProc);
+}
+static __inline int _stub_method_14(remote_handle64 _handle, uint32_t _mid, uint64_t _in0[1], uint32_t _in1[1], char* _in2[1], uint32_t _in2Len[1], char* _in3[1], uint32_t _in3Len[1], char* _in4[1], uint32_t _in4Len[1], uint8_t _in5[1], uint8_t _in6[1], uint32_t _rout7[1]) {
+   int _numIn[1];
+   remote_arg _pra[5];
+   uint64_t _primIn[4];
+   uint32_t _primROut[1];
+   remote_arg* _praIn;
+   int _nErr = 0;
+   _numIn[0] = 3;
+   _pra[0].buf.pv = (void*)_primIn;
+   _pra[0].buf.nLen = sizeof(_primIn);
+   _pra[(_numIn[0] + 1)].buf.pv = (void*)_primROut;
+   _pra[(_numIn[0] + 1)].buf.nLen = sizeof(_primROut);
+   _COPY(_primIn, 0, _in0, 0, 8);
+   _COPY(_primIn, 8, _in1, 0, 4);
+   _COPY(_primIn, 12, _in2Len, 0, 4);
+   _praIn = (_pra + 1);
+   _praIn[0].buf.pv = (void*) _in2[0];
+   _praIn[0].buf.nLen = (4 * _in2Len[0]);
+   _COPY(_primIn, 16, _in3Len, 0, 4);
+   _praIn[1].buf.pv = (void*) _in3[0];
+   _praIn[1].buf.nLen = (4 * _in3Len[0]);
+   _COPY(_primIn, 20, _in4Len, 0, 4);
+   _praIn[2].buf.pv = (void*) _in4[0];
+   _praIn[2].buf.nLen = (4 * _in4Len[0]);
+   _COPY(_primIn, 24, _in5, 0, 1);
+   _COPY(_primIn, 25, _in6, 0, 1);
+   _TRY(_nErr, __QAIC_REMOTE(remote_handle64_invoke)(_handle, REMOTE_SCALARS_MAKEX(0, _mid, 4, 1, 0, 0), _pra));
+   _COPY(_rout7, 0, _primROut, 0, 4);
+   _CATCH(_nErr) {}
+   return _nErr;
+}
+__QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_ExtractBBoxRun)(remote_handle64 _handle, uint64_t hPostProc, uint32_t numPts, const int32_t* fds, int fdsLen, const uint32_t* offsets, int offsetsLen, const uint32_t* sizes, int sizesLen, uint8_t bMapPtsToBBox, uint8_t bBBoxFilter, uint32_t* pNumDetOut) __QAIC_STUB_ATTRIBUTE {
+   uint32_t _mid = 19;
+   return _stub_method_14(_handle, _mid, (uint64_t*)&hPostProc, (uint32_t*)&numPts, (char**)&fds, (uint32_t*)&fdsLen, (char**)&offsets, (uint32_t*)&offsetsLen, (char**)&sizes, (uint32_t*)&sizesLen, (uint8_t*)&bMapPtsToBBox, (uint8_t*)&bBBoxFilter, (uint32_t*)pNumDetOut);
+}
+__QAIC_STUB_EXPORT AEEResult __QAIC_STUB(FadasIface_ExtractBBoxDestroy)(remote_handle64 _handle, uint64_t hPostProc) __QAIC_STUB_ATTRIBUTE {
+   uint32_t _mid = 20;
+   return _stub_method_5(_handle, _mid, (uint64_t*)&hPostProc);
 }
 #ifdef __cplusplus
 }

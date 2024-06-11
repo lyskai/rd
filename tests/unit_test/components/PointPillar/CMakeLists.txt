@@ -4,7 +4,7 @@
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 add_executable( gtest_PointPillar gtest_PointPillar.cpp )
 target_include_directories( gtest_PointPillar PUBLIC ${HEADERS_DIR} )
-target_link_libraries( gtest_PointPillar gtest RideHalPointPillarPreProc )
+target_link_libraries( gtest_PointPillar gtest RideHalPointPillarPreProc RideHalPointPillarPostProc )
 install(TARGETS gtest_PointPillar DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}

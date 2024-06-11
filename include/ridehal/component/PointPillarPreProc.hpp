@@ -33,7 +33,7 @@ typedef struct
     float maxXRange;                   /**< Maximum range value in x direction.  */
     float maxYRange;                   /**< Maximum range value in y direction. */
     float maxZRange;                   /**< Maximum range value in z direction. */
-    uint32_t maxNumPtsIn;              /**< Maximum number of points in input point cloud. */
+    uint32_t maxNumInPts;              /**< Maximum number of points in input point cloud. */
     uint32_t numInFeatureDim;  /**< Number of features for each point in the input point cloud data.
                                 * For e.g., if point cloud data contains (x, y, z, r) features for
                                 * each point, then numInFeatureDim is 4. */
@@ -103,7 +103,7 @@ public:
     /**
      * @brief execute the point pillar pipeline
      * @param[in] pInPts The input point cloud where size in bytes
-     *                 is maxNumPtsIn x 4 x sizeof(float32_t).
+     *                 is maxNumInPts x 4 x sizeof(float32_t).
      * @param[out] pOutPlrs The output point pillars, where memory (in bytes)
      *                 for each pillar is maxNumPlrs x sizeof(float32_t)
      * @param[out] pOutFeature The output point pillar feature points where

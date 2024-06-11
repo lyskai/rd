@@ -30,9 +30,9 @@ RideHalError_e FadasSrv::InitCPU()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( FADAS_ERROR_NONE != FadasRemap_Init( nullptr ) )
+    if ( FADAS_ERROR_NONE != FadasInit( nullptr ) )
     {
-        RIDEHAL_ERROR( "FadasRemap_Init failed!" );
+        RIDEHAL_ERROR( "FadasInit failed!" );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
@@ -282,7 +282,7 @@ int32_t FadasSrv::FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer )
         ret = fastrpc_mmap( extDomainId, fd, ptr, 0, size, FASTRPC_MAP_FD_DELAYED );
         if ( ( AEE_EALREADY != ret ) && ( AEE_SUCCESS != ret ) )
         {
-            RIDEHAL_ERROR( "Failed to fastrpc_mmap ptr %p(%d, %llu): ret = %d\n", ptr, fd, size,
+            RIDEHAL_ERROR( "Failed to fastrpc_mmap ptr %p(%d, %llu): ret = %x\n", ptr, fd, size,
                            ret );
             fd = -1;
         }
@@ -297,7 +297,7 @@ int32_t FadasSrv::FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer )
         ret = FadasIface_mmap( handle64, fd, (uint32_t) size );
         if ( AEE_SUCCESS != ret )
         {
-            RIDEHAL_ERROR( "Failed to map ptr %p(%d, %llu): ret = %d\n", ptr, fd, size, ret );
+            RIDEHAL_ERROR( "Failed to map ptr %p(%d, %llu): ret = %x\n", ptr, fd, size, ret );
             fd = -1;
         }
         else
@@ -604,19 +604,19 @@ void FadasSrv::DeregBuf( void *pBuffer )
                 retVal = FadasIface_FadasDeregBuf( handle64, fd, sizeOne, offset, batch );
                 if ( AEE_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "Failed to FadasIface_FadasDeregBuf %p(%d, %llu): ret = %d\n",
+                    RIDEHAL_ERROR( "Failed to FadasIface_FadasDeregBuf %p(%d, %llu): ret = %x\n",
                                    ptr, fd, size, retVal );
                 }
                 retVal = FadasIface_munmap( handle64, fd, (uint32_t) size );
                 if ( AEE_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "Failed to FadasIface_munmap %p(%d, %llu): ret = %d\n", ptr, fd,
+                    RIDEHAL_ERROR( "Failed to FadasIface_munmap %p(%d, %llu): ret = %x\n", ptr, fd,
                                    size, retVal );
                 }
                 retVal = fastrpc_munmap( extDomainId, fd, ptr, size );
                 if ( AEE_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "Failed to fastrpc_munmap %p(%d, %llu): ret = %d\n", ptr, fd,
+                    RIDEHAL_ERROR( "Failed to fastrpc_munmap %p(%d, %llu): ret = %x\n", ptr, fd,
                                    size, retVal );
                 }
                 remote_register_buf_v2( extDomainId, ptr, size, -1 );
