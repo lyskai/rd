@@ -647,7 +647,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
 void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inputFormatTest,
                 RideHal_ImageFormat_e outputFormatTest, uint32_t inputWidthTest,
                 uint32_t inputHeightTest, uint32_t outputWidthTest, uint32_t outputHeightTest,
-                std::string pathTest, std::string goldenPath )
+                std::string pathTest, std::string goldenPath, bool saveOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -684,7 +684,14 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
     RemapConfig.normlzB.sub = 103.53;
     RemapConfig.normlzB.mul = 1.f / 57.375;
     RemapConfig.normlzB.add = 0.f;
-
+    float quantScale = 0.0186584480106831f;
+    int32_t quantOffset = 114;
+    RemapConfig.normlzR.add = RemapConfig.normlzR.add / quantScale + quantOffset;
+    RemapConfig.normlzR.mul = RemapConfig.normlzR.mul / quantScale;
+    RemapConfig.normlzG.add = RemapConfig.normlzG.add / quantScale + quantOffset;
+    RemapConfig.normlzG.mul = RemapConfig.normlzG.mul / quantScale;
+    RemapConfig.normlzB.add = RemapConfig.normlzB.add / quantScale + quantOffset;
+    RemapConfig.normlzB.mul = RemapConfig.normlzB.mul / quantScale;
 
     RideHal_SharedBuffer_t inputs[RemapConfig.numOfInputs];
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
@@ -767,6 +774,17 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
 
     ret = RemapObj.Execute( inputs, RemapConfig.numOfInputs, &output );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    if ( true == saveOutput )
+    {
+        uint8_t *ptr = (uint8_t *) output.data();
+        FILE *fp = fopen( goldenPath.c_str(), "wb" );
+        if ( nullptr != fp )
+        {
+            fwrite( ptr, output.size, 1, fp );
+            fclose( fp );
+        }
+    }
 
     RideHal_SharedBuffer_t golden;
     ret = golden.Allocate( &imgProp );
@@ -856,14 +874,16 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
 TEST( Remap, ImageAccuracyTest )   // image pipeline md5 accuracy tests
 {
     // md5 of 0.uyvy is 5b1ae2203a9d97aeafe65e997f3beebc
-    // md5 of golden_cpu.rgb is fc6d358d384083b177f3e30d781060dc
-    // md5 of golden_dsp.rgb is dbdd4bb16db3aab9e4cd3401671f07c4
+    // md5 of golden_cpu.rgb is 59760700b59beb67227d305b317dcec6
+    // md5 of golden_dsp.rgb is f139fb73234986a15e340afe1058522e
     printf( "DSP image accuracy test\n" );
     ImageTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
-               1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_dsp.rgb" );
+               1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_dsp.rgb",
+               false );
     printf( "CPU image accuracy test\n" );
     ImageTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
-               1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_cpu.rgb" );
+               1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_cpu.rgb",
+               false );
 }
 
 TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backend, RGB to RGB
