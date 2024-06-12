@@ -220,6 +220,45 @@ std::vector<std::string> SampleIF::Get( SampleConfig_t &config, std::string key,
     return ret;
 }
 
+std::vector<uint32_t> SampleIF::Get( SampleConfig_t &config, std::string key,
+                                     std::vector<uint32_t> defaultV )
+{
+    std::vector<uint32_t> ret = defaultV;
+    std::string strV = "";
+    std::string::size_type prev_pos = 0, pos = 0;
+
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        ret.resize( 0 );
+        strV = it->second;
+
+        while ( ( pos = strV.find( ',', pos ) ) != std::string::npos )
+        {
+            std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
+
+            if ( "" != substring )
+            {
+                uint32_t value = strtoul( substring.c_str(), nullptr, 10 );
+                ret.push_back( value );
+            }
+
+            prev_pos = ++pos;
+        }
+
+        std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
+        if ( "" != substring )
+        {
+            uint32_t value = strtoul( substring.c_str(), nullptr, 10 );
+            ret.push_back( value );
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %s\n", key.c_str(), strV.c_str() );
+
+    return ret;
+}
+
 int32_t SampleIF::Get( SampleConfig_t &config, std::string key, int32_t defaultV )
 {
     int32_t ret = defaultV;
@@ -293,6 +332,92 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         else
         {
             ret = RIDEHAL_IMAGE_FORMAT_MAX;
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %d\n", key.c_str(), ret );
+    return ret;
+}
+
+RideHal_TensorType_e SampleIF::Get( SampleConfig_t &config, std::string key,
+                                    RideHal_TensorType_e defaultV )
+{
+    RideHal_TensorType_e ret = defaultV;
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        std::string format = it->second;
+        if ( "int8" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_INT_8;
+        }
+        else if ( "int16" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_INT_16;
+        }
+        else if ( "int32" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_INT_32;
+        }
+        else if ( "int64" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_INT_64;
+        }
+        else if ( "uint8" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UINT_8;
+        }
+        else if ( "uint16" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UINT_16;
+        }
+        else if ( "uint32" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UINT_32;
+        }
+        else if ( "uint64" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UINT_64;
+        }
+        else if ( "float16" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_FLOAT_16;
+        }
+        else if ( "float32" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_FLOAT_32;
+        }
+        else if ( "float64" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_FLOAT_64;
+        }
+        else if ( "sfixed_point8" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8;
+        }
+        else if ( "sfixed_point16" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16;
+        }
+        else if ( "sfixed_point32" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32;
+        }
+        else if ( "ufixed_point8" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8;
+        }
+        else if ( "ufixed_point16" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16;
+        }
+        else if ( "ufixed_point32" == format )
+        {
+            ret = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32;
+        }
+        else
+        {
+            ret = RIDEHAL_TENSOR_TYPE_MAX;
         }
     }
 

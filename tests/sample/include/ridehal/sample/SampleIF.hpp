@@ -92,11 +92,15 @@ protected:
     std::string Get( SampleConfig_t &config, std::string key, std::string defaultV );
     std::vector<std::string> Get( SampleConfig_t &config, std::string key,
                                   std::vector<std::string> defaultV );
+    std::vector<uint32_t> Get( SampleConfig_t &config, std::string key,
+                               std::vector<uint32_t> defaultV );
     int32_t Get( SampleConfig_t &config, std::string key, int32_t defaultV );
     uint32_t Get( SampleConfig_t &config, std::string key, uint32_t defaultV );
     float Get( SampleConfig_t &config, std::string key, float defaultV );
     RideHal_ImageFormat_e Get( SampleConfig_t &config, std::string key,
                                RideHal_ImageFormat_e defaultV );
+    RideHal_TensorType_e Get( SampleConfig_t &config, std::string key,
+                              RideHal_TensorType_e defaultV );
     RideHal_ProcessorType_e Get( SampleConfig_t &config, std::string key,
                                  RideHal_ProcessorType_e defaultV );
     bool Get( SampleConfig_t &config, std::string key, bool defaultV );

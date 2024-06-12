@@ -19,6 +19,31 @@ static std::string s_rideHalFormatToStr[RIDEHAL_IMAGE_FORMAT_MAX] = {
         ".p010"  /* RIDEHAL_IMAGE_FORMAT_P010 */
 };
 
+#define SIZE_OF_FLOAT16 2
+static uint32_t s_rideHalTensorTypeToDataSize[RIDEHAL_TENSOR_TYPE_MAX] = {
+        sizeof( int8_t ),  /* RIDEHAL_TENSOR_TYPE_INT_8 */
+        sizeof( int16_t ), /* RIDEHAL_TENSOR_TYPE_INT_16 */
+        sizeof( int32_t ), /* RIDEHAL_TENSOR_TYPE_INT_32 */
+        sizeof( int64_t ), /* RIDEHAL_TENSOR_TYPE_INT_64 */
+
+        sizeof( uint8_t ),  /* RIDEHAL_TENSOR_TYPE_UINT_8 */
+        sizeof( uint16_t ), /* RIDEHAL_TENSOR_TYPE_UINT_16 */
+        sizeof( uint32_t ), /* RIDEHAL_TENSOR_TYPE_UINT_32 */
+        sizeof( uint64_t ), /* RIDEHAL_TENSOR_TYPE_UINT_64 */
+
+        SIZE_OF_FLOAT16,  /* RIDEHAL_TENSOR_TYPE_FLOAT_16 */
+        sizeof( float ),  /* RIDEHAL_TENSOR_TYPE_FLOAT_32 */
+        sizeof( double ), /* RIDEHAL_TENSOR_TYPE_FLOAT_64 */
+
+        sizeof( int8_t ),  /* RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8 */
+        sizeof( int16_t ), /* RIDEHAL_TENSOR_TYPE_SFIXED_POINT_16 */
+        sizeof( int32_t ), /* RIDEHAL_TENSOR_TYPE_SFIXED_POINT_32 */
+
+        sizeof( uint8_t ),  /* RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8 */
+        sizeof( uint16_t ), /* RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16 */
+        sizeof( uint32_t )  /* RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32 */
+};
+
 SampleDataReader::SampleDataReader() {}
 SampleDataReader::~SampleDataReader() {}
 
@@ -41,24 +66,60 @@ RideHalError_e SampleDataReader::ParseConfig( SampleConfig_t &config )
     {
         DataReaderConfig_t cfg;
 
-        cfg.format = Get( config, "format" + std::to_string( i ), RIDEHAL_IMAGE_FORMAT_NV12 );
-        if ( RIDEHAL_IMAGE_FORMAT_MAX == cfg.format )
-        {
-            RIDEHAL_ERROR( "invalid format%u\n", i );
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        }
+        auto typeStr = Get( config, "type" + std::to_string( i ), "image" );
 
-        cfg.width = Get( config, "width" + std::to_string( i ), 1920 );
-        if ( 0 == cfg.width )
+        if ( "image" == typeStr )
         {
-            RIDEHAL_ERROR( "invalid width%u\n", i );
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        }
+            cfg.type = DATA_READER_TYPE_IMAGE;
+            cfg.format = Get( config, "format" + std::to_string( i ), RIDEHAL_IMAGE_FORMAT_NV12 );
+            if ( RIDEHAL_IMAGE_FORMAT_MAX == cfg.format )
+            {
+                RIDEHAL_ERROR( "invalid format%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
 
-        cfg.height = Get( config, "height" + std::to_string( i ), 1024 );
-        if ( 0 == cfg.height )
+            cfg.width = Get( config, "width" + std::to_string( i ), 1920 );
+            if ( 0 == cfg.width )
+            {
+                RIDEHAL_ERROR( "invalid width%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+
+            cfg.height = Get( config, "height" + std::to_string( i ), 1024 );
+            if ( 0 == cfg.height )
+            {
+                RIDEHAL_ERROR( "invalid height%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+        }
+        else if ( "tensor" == typeStr )
         {
-            RIDEHAL_ERROR( "invalid height%u\n", i );
+            cfg.type = DATA_READER_TYPE_TENSOR;
+
+            cfg.tensorProps.type = Get( config, "tensor_type" + std::to_string( i ),
+                                        RIDEHAL_TENSOR_TYPE_FLOAT_32 );
+
+            if ( RIDEHAL_TENSOR_TYPE_MAX == cfg.tensorProps.type )
+            {
+                RIDEHAL_ERROR( "invalid tensor_type%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            std::vector<uint32_t> dims;
+            dims = Get( config, "dims" + std::to_string( i ), dims );
+            if ( 0 == dims.size() )
+            {
+                RIDEHAL_ERROR( "invalid dims%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            cfg.tensorProps.numDims = dims.size();
+            for ( size_t i = 0; i < dims.size(); i++ )
+            {
+                cfg.tensorProps.dims[i] = dims[i];
+            }
+        }
+        else
+        {
+            RIDEHAL_ERROR( "invalid data reader type %s\n", typeStr.c_str() );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
@@ -117,13 +178,22 @@ RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config 
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        m_imagePools.resize( m_numOfDataReaders );
+        m_bufferPools.resize( m_numOfDataReaders );
         for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
-            ret = m_imagePools[i].Init( name + std::to_string( i ), LOGGER_LEVEL_INFO, m_poolSize,
-                                        m_configs[i].width, m_configs[i].height,
-                                        m_configs[i].format, RIDEHAL_BUFFER_USAGE_CAMERA,
-                                        m_bufferFlags );
+            if ( DATA_READER_TYPE_IMAGE == m_configs[i].type )
+            {
+                ret = m_bufferPools[i].Init( name + std::to_string( i ), LOGGER_LEVEL_INFO,
+                                             m_poolSize, m_configs[i].width, m_configs[i].height,
+                                             m_configs[i].format, RIDEHAL_BUFFER_USAGE_CAMERA,
+                                             m_bufferFlags );
+            }
+            else
+            {
+                ret = m_bufferPools[i].Init( name + std::to_string( i ), LOGGER_LEVEL_INFO,
+                                             m_poolSize, m_configs[i].tensorProps,
+                                             RIDEHAL_BUFFER_USAGE_DEFAULT, m_bufferFlags );
+            }
         }
     }
 
@@ -190,6 +260,65 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     return ret;
 }
 
+RideHalError_e SampleDataReader::LoadTensor( std::shared_ptr<SharedBuffer_t> tensor,
+                                             std::string path )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    FILE *file = nullptr;
+    size_t length = 0;
+    uint32_t batchSize = 0;
+    uint32_t oneSize = s_rideHalTensorTypeToDataSize[tensor->sharedBuffer.tensorProps.type];
+
+    for ( uint32_t i = 1; i < tensor->sharedBuffer.tensorProps.numDims; i++ )
+    {
+        oneSize *= tensor->sharedBuffer.tensorProps.dims[i];
+    }
+
+    file = fopen( path.c_str(), "rb" );
+    if ( nullptr == file )
+    {
+        RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
+        ret = RIDEHAL_ERROR_ALREADY;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_END );
+        length = (size_t) ftell( file );
+        batchSize = length / oneSize;
+        if ( tensor->sharedBuffer.size < length )
+        {
+            RIDEHAL_ERROR( "Invalid Tensor file %s", path.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_SET );
+        auto r = fread( tensor->sharedBuffer.data(), 1, length, file );
+        if ( length != r )
+        {
+            RIDEHAL_ERROR( "failed to read PointCloud file %s", path.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        else
+        {
+            tensor->sharedBuffer.tensorProps.dims[0] = batchSize;
+        }
+    }
+
+    if ( nullptr != file )
+    {
+        fclose( file );
+    }
+
+    RIDEHAL_DEBUG( "Loading %u batch tensor %s %s", batchSize, path.c_str(),
+                   ( RIDEHAL_ERROR_NONE == ret ) ? "OK" : "FAIL" );
+
+    return ret;
+}
+
 void SampleDataReader::ThreadMain()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -203,14 +332,23 @@ void SampleDataReader::ThreadMain()
         PROFILER_BEGIN();
         for ( uint32_t i = 0; ( i < m_numOfDataReaders ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )
         {
-            std::shared_ptr<SharedBuffer_t> buffer = m_imagePools[i].Get();
+            std::shared_ptr<SharedBuffer_t> buffer = m_bufferPools[i].Get();
             if ( nullptr != buffer )
             {
                 if ( m_configs[i].dataPath != "" )
                 {
-                    std::string path = m_configs[i].dataPath + "/" + std::to_string( index ) +
-                                       s_rideHalFormatToStr[m_configs[i].format];
-                    ret = LoadImage( buffer, path );
+                    if ( DATA_READER_TYPE_IMAGE == m_configs[i].type )
+                    {
+                        std::string path = m_configs[i].dataPath + "/" + std::to_string( index ) +
+                                           s_rideHalFormatToStr[m_configs[i].format];
+                        ret = LoadImage( buffer, path );
+                    }
+                    else
+                    {
+                        std::string path =
+                                m_configs[i].dataPath + "/" + std::to_string( index ) + ".raw";
+                        ret = LoadTensor( buffer, path );
+                    }
                 }
                 else
                 {

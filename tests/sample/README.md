@@ -33,11 +33,14 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 
 | attribute | required | type      | default | comments |
 |-----------|----------|-----------|---------|----------|
-| number    | false    | int       | 1       | The number of simulated cameras |
+| number    | false    | int       | 1       | The number of simulated sensors |
+| typeX     | false    | string    | "image"  | The buffer type for the simulated sensor X, options from [image, tensor] |
 | formatX   | false    | string    | "nv12"  | The image format for the simulated camera X, options from [nv12, uyvy, rgb, bgr, p010] |
 | widthX    | false    | int       | 1920    | The image width for the simulated camera X |
 | heightX   | false    | int       | 1024    | The image height for the simulated camera X |
-| data_pathX | true     | string    | -       | The data path for the simulated camera X that contain the image files |
+| data_pathX | true    | string    | -       | The data path for the simulated sensor X that contain the image files |
+| tensor_typeX | false | string    | float32 | The tensor type, options from [int8, int16, int32, int64, uint8, uint16, uint32, uint64, float16, float32, float64, sfixed_point8, sfixed_point16, sfixed_point32, ufixed_point8, ufixed_point16, ufixed_point32 ] |
+| dimsX     | true     | string    | -       | The tensor dimensions, in foramt "N,H,W,C", "N,S,C", "N,C", or "N" depends on the number of dimensions. |
 | fps       | false    | int       | 30      | The frame rate per second |
 | pool_size | false    | int       | 4       | the image memory pool size |
 | cache     | false    | bool      | true    | use cached memory or not for the image memory |
@@ -45,18 +48,31 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 
 Note: "X" is value from 0 to number-1, thus the attribute with suffix "X" is repeated for different simulated camera.
 
-The command line template example:
+The command line template example for image type data reader that simulate a camera:
 
 ```sh
-  -n CAM1 -t DataReader -k number -v 1 \
+  -n CAM0 -t DataReader -k number -v 1 \
     -k format0 -v uyvy -k width0 -v 1920 -k height0 -v 1024 \
     -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
     -k pool_size -v 4 \
-    -k cache -v false \
-    -k topic -v /sensor/camera/CAM1/raw \
+    -k topic -v /sensor/camera/CAM0/raw \
 ```
 
 Refer [DataReader Utils](../../scripts/utils/data_reader/README.md) for how to generate a data reader inputs from video(*.mp4).
+
+The command line template example for tensor type data reader that simulate a lidar:
+
+```sh
+  -n LIDAR0 -t DataReader -k number -v 2 \
+    -k type0 -v tensor -k tensor_type0 -v float32 -k dims0 -v "300000,4"  \
+    -k data_path0 -v /data/LIDAR0 \
+    -k type1 -v image -k format1 -v nv12 -k width1 -v 1920 -k height1 -v 1024 \
+    -k data_path1 -v /data/LIDAR0 \
+    -k pool_size -v 4 -k fps -v 10 \
+    -k topic -v /sensor/lidar/LIDAR0/raw \
+```
+
+Please note that for lidar pipeline, TinyViz was used to visualize the pointcould, and to save computing resource to dynamic generate images from pointcloud, pre-generated images was used, that's why another "data_path1".
 
 ### 2.2 RideHal Camera Sample
 

@@ -43,13 +43,22 @@ private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
     void ThreadMain();
     RideHalError_e LoadImage( std::shared_ptr<SharedBuffer_t> image, std::string path );
+    RideHalError_e LoadTensor( std::shared_ptr<SharedBuffer_t> tensor, std::string path );
 
 private:
+    typedef enum
+    {
+        DATA_READER_TYPE_IMAGE,
+        DATA_READER_TYPE_TENSOR,
+    } DataReaderType_e;
+
     typedef struct
     {
+        DataReaderType_e type;
         RideHal_ImageFormat_e format;
         uint32_t width;
         uint32_t height;
+        RideHal_TensorProps_t tensorProps;
         std::string dataPath;
     } DataReaderConfig_t;
 
@@ -61,7 +70,7 @@ private:
     std::string m_topicName;
 
     std::thread m_thread;
-    std::vector<SharedBufferPool> m_imagePools;
+    std::vector<SharedBufferPool> m_bufferPools;
     bool m_stop;
 
     DataPublisher<DataFrames_t> m_pub;
