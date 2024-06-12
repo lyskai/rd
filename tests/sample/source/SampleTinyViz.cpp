@@ -52,6 +52,9 @@ RideHalError_e SampleTinyViz::ParseConfig( SampleConfig_t &config )
                                     "/sensor/camera/" + camName + "/objs" );
         m_objTopicNames.push_back( objTopic );
 
+        uint32_t batchIndex = Get( config, "batch_index" + std::to_string( idx ), (uint32_t) 0 );
+        m_batchIndexs.push_back( batchIndex );
+
         idx++;
     }
 
@@ -154,6 +157,7 @@ void SampleTinyViz::CamThreadMain( uint32_t idx )
     int ret;
     std::string camName = m_camNames[idx];
     auto &camSub = m_camSubs[idx];
+    uint32_t batchIndex = m_batchIndexs[idx];
 
     while ( false == m_stop )
     {
@@ -162,7 +166,11 @@ void SampleTinyViz::CamThreadMain( uint32_t idx )
         ret = camSub.Receive( frames );
         if ( 0 == ret )
         {
-            frame = frames.frames[0];
+            if ( batchIndex >= frames.frames.size() )
+            {
+                batchIndex = 0;
+            }
+            frame = frames.frames[batchIndex];
             RIDEHAL_DEBUG( "%s receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n ",
                            camName.c_str(), frame.frameId, frame.timestamp );
             m_tinyViz.addData( camName, frame );

@@ -221,12 +221,23 @@ The command line template example:
 | cameras       | true     | string list | -       | The cameras' name list |
 | cam_topicX    | false    | string      | /sensor/camera/${cameras[X]}/raw   | the input camera frame topic name for camera X |
 | obj_topicX    | false    | string      | /sensor/camera/${cameras[X]}/objs  | the input road object topic name for camera X |
+| batch_indexX  | false    | int         | 0       | The camera frame index in the data frames |
 
 The command line template example:
 
 ```sh
   -n VIZ -t TinyViz -k cameras -v CAM0,CAM1,CAM2,CAM3
 ```
+
+The command line template example for Lidar pipeline:
+
+```sh
+  -n VIZ -t TinyViz -k cameras -v LIDAR0 \
+    -k batch_index0 -v 1 \
+    -k cam_topic0 -v /sensor/lidar/LIDAR0/raw \
+    -k obj_topic0 -v /sensor/lidar/LIDAR0/objs
+```
+
 
 ### 2.8 RideHal VideoEncoder Sample
 

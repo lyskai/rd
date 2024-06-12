@@ -50,6 +50,7 @@ private:
     std::vector<std::string> m_camNames;
     std::vector<std::string> m_camTopicNames;
     std::vector<std::string> m_objTopicNames;
+    std::vector<uint32_t> m_batchIndexs;
 
     std::vector<std::thread *> m_threads;
 
