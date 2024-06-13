@@ -879,6 +879,7 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
             Qnn_MemDescriptor_t desc;
             desc.memShape.numDim = pSharedBuffer->tensorProps.numDims;
             desc.memShape.dimSize = (uint32_t *) pSharedBuffer->tensorProps.dims;
+            desc.memShape.shapeConfig = nullptr;
             desc.dataType = SwitchToQnnDataType( pSharedBuffer->tensorProps.type );
 
             int client = 0;   // NOTE: default is 0
@@ -900,11 +901,9 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
             htpDesc.sharedBufferConfig.fd = fd;
             htpDesc.sharedBufferConfig.offset = pSharedBuffer->offset;
 
-            desc.memShape.shapeConfig = nullptr;
             desc.memType = QNN_MEM_TYPE_CUSTOM;
             desc.customInfo = &htpDesc;
 #else
-            desc.memShape.shapeConfig = nullptr;
             desc.memType = QNN_MEM_TYPE_ION;
             desc.ionInfo.fd = fd;
 #endif
@@ -1048,7 +1047,7 @@ RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEv
                 break;
             default:
             {
-                RIDEHAL_INFO( "Unsupported qnn event profile type: %d!", (int) eventData.type );
+                // Unsupported qnn event profile type
                 break;
             }
         }

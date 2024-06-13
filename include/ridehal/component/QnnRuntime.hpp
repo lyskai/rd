@@ -355,7 +355,7 @@ private:
     static std::mutex s_DmaMemInfoMapLock[DMA_MEMINFO_MAP_SIZE];
     static std::map<uint8_t *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
     QnnRuntime_Perf_t m_perf;
-    bool m_bEnabelPerf = true;
+    bool m_bEnabelPerf = false;
     QnnRuntime_TensorInfo_t *m_pInputTensor = nullptr;
     size_t m_pInputTensorNum = 0;
     QnnRuntime_TensorInfo_t *m_pOutputTensor = nullptr;
