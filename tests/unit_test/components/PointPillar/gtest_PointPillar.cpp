@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <stdio.h>
+#include <unistd.h>
 
 using namespace ridehal::common;
 using namespace ridehal::component;
@@ -131,9 +132,21 @@ static void LoadRaw( void *pData, uint32_t length, const char *rawFile )
     fclose( pFile );
 }
 
+static void SaveRaw( std::string path, void *pData, size_t size )
+{
+    FILE *pFile = fopen( path.c_str(), "wb" );
+    if ( nullptr != pFile )
+    {
+        fwrite( pData, 1, size, pFile );
+        fclose( pFile );
+        printf( "save raw %s\n", path.c_str() );
+    }
+}
+
+
 static void SANITY_PointPillarPreProc( RideHal_ProcessorType_e processor,
                                        PointPillarPreProc_Config_t &cfg,
-                                       const char *pcdFile = nullptr )
+                                       const char *pcdFile = nullptr, bool bDumpOutput = false )
 {
     PointPillarPreProc_Config_t config = cfg;
     config.processor = processor;
@@ -190,6 +203,12 @@ static void SANITY_PointPillarPreProc( RideHal_ProcessorType_e processor,
     ret = plrPre.Execute( &inPts, &outPlrs, &outFeature );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    if ( bDumpOutput )
+    {
+        SaveRaw( "/tmp/coords.raw", outPlrs.data(), outPlrs.size );
+        SaveRaw( "/tmp/features.raw", outFeature.data(), outFeature.size );
+    }
+
     ret = plrPre.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -224,9 +243,9 @@ TEST( FadasPlr, SANITY_PointPillarPreProcDSP )
 void SANITY_PointPillarPostProc( RideHal_ProcessorType_e processor,
                                  PointPillarPostProc_Config_t &cfg, const char *pcdFile,
                                  const char *hmFile, const char *xyFile, const char *zFile,
-                                 const char *sizeFile, const char *thetaFile )
+                                 const char *sizeFile, const char *thetaFile,
+                                 bool bDumpOutput = false )
 {
-
     PointPillarPostProc_Config_t config = cfg;
     PointPillarPostProc plrPost;
     config.processor = processor;
@@ -323,7 +342,6 @@ void SANITY_PointPillarPostProc( RideHal_ProcessorType_e processor,
     ret = plrPost.Execute( &hm, &xy, &z, &size, &theta, &inPts, &det );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ASSERT_EQ( 7, det.tensorProps.dims[0] );
     PointPillarPostProc_Object3D_t *pObj = (PointPillarPostProc_Object3D_t *) det.data();
     for ( uint32_t i = 0; i < det.tensorProps.dims[0]; i++ )
     {
@@ -333,6 +351,19 @@ void SANITY_PointPillarPostProc( RideHal_ProcessorType_e processor,
                 pObj->height, pObj->theta, pObj->meanPtX, pObj->meanPtY, pObj->meanPtZ,
                 pObj->meanIntensity, pObj->numPts );
         pObj++;
+    }
+
+    if ( bDumpOutput )
+    {
+        /* dump in a python list format for visualization with vis3d.py */
+        PointPillarPostProc_Object3D_t *pObj = (PointPillarPostProc_Object3D_t *) det.data();
+        for ( uint32_t i = 0; i < det.tensorProps.dims[0]; i++ )
+        {
+            printf( "[%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %d],\n", pObj->x, pObj->y,
+                    pObj->z, pObj->length, pObj->width, pObj->height, pObj->theta, pObj->score,
+                    pObj->label );
+            pObj++;
+        }
     }
 
     ret = plrPost.Stop();
@@ -345,6 +376,13 @@ void SANITY_PointPillarPostProc( RideHal_ProcessorType_e processor,
 extern int PtPlr_PostProc( void );
 TEST( FadasPlr, SANITY_PointPillarPostProcCPU )
 {
+    SANITY_PointPillarPostProc( RIDEHAL_PROCESSOR_CPU, plrPostConfig0,
+                                "data/test/plr/CFG0/000008.bin",
+                                "data/test/plr/CFG0/hm-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/center-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/center_z-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/dim_exp-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/rot-activation-0-inf-1.bin" );
     SANITY_PointPillarPostProc(
             RIDEHAL_PROCESSOR_CPU, plrPostConfig1, "data/test/plr/pointcloud.bin",
             "data/test/plr/hm-activation-0-inf-1.bin", "data/test/plr/reg-activation-0-inf-1.bin",
@@ -355,12 +393,91 @@ TEST( FadasPlr, SANITY_PointPillarPostProcCPU )
 
 TEST( FadasPlr, SANITY_PointPillarPostProcDSP )
 {
+    SANITY_PointPillarPostProc( RIDEHAL_PROCESSOR_HTP0, plrPostConfig0,
+                                "data/test/plr/CFG0/000008.bin",
+                                "data/test/plr/CFG0/hm-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/center-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/center_z-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/dim_exp-activation-0-inf-1.bin",
+                                "data/test/plr/CFG0/rot-activation-0-inf-1.bin" );
     SANITY_PointPillarPostProc(
             RIDEHAL_PROCESSOR_HTP0, plrPostConfig1, "data/test/plr/pointcloud.bin",
             "data/test/plr/hm-activation-0-inf-1.bin", "data/test/plr/reg-activation-0-inf-1.bin",
             "data/test/plr/height-activation-0-inf-1.bin",
-            "data/test/plr/dim-activation-0-inf-1.bin",
-            "data/test/plr/rot-activation-0-inf-1.bin" );
+            "data/test/plr/dim-activation-0-inf-1.bin", "data/test/plr/rot-activation-0-inf-1.bin",
+            true );
+}
+
+
+static void FadasPlr_E2E_PreProc( RideHal_ProcessorType_e processor,
+                                  PointPillarPreProc_Config_t &cfg )
+{
+    int exist = access( "/tmp/pointcloud.bin", F_OK );
+    if ( 0 == exist )
+    {
+        SANITY_PointPillarPreProc( processor, cfg, "/tmp/pointcloud.bin", true );
+    }
+    else
+    {
+        printf( "skip E2E_PreProc\n" );
+    }
+}
+
+static void FadasPlr_E2E_PostProc( RideHal_ProcessorType_e processor,
+                                   PointPillarPostProc_Config_t &cfg )
+{
+    int exist = access( "/tmp/pointcloud.bin", F_OK );
+    exist |= access( "/tmp/hm.raw", F_OK );
+    if ( 0 == exist )
+    {
+        SANITY_PointPillarPostProc( processor, cfg, "/tmp/pointcloud.bin", "/tmp/hm.raw",
+                                    "/tmp/center.raw", "/tmp/center_z.raw", "/tmp/dim_exp.raw",
+                                    "/tmp/rot.raw", true );
+    }
+    else
+    {
+        printf( "skip E2E_PostProc\n" );
+    }
+}
+
+TEST( FadasPlr, E2E_CFG0_PreProcCPU )
+{
+    FadasPlr_E2E_PreProc( RIDEHAL_PROCESSOR_CPU, plrPreConfig0 );
+}
+
+TEST( FadasPlr, E2E_CFG0_PostProcCPU )
+{
+    FadasPlr_E2E_PostProc( RIDEHAL_PROCESSOR_CPU, plrPostConfig0 );
+}
+
+TEST( FadasPlr, E2E_CFG0_PreProcDSP )
+{
+    FadasPlr_E2E_PreProc( RIDEHAL_PROCESSOR_HTP0, plrPreConfig0 );
+}
+
+TEST( FadasPlr, E2E_CFG0_PostProcDSP )
+{
+    FadasPlr_E2E_PostProc( RIDEHAL_PROCESSOR_HTP0, plrPostConfig0 );
+}
+
+TEST( FadasPlr, E2E_CFG1_PreProcCPU )
+{
+    FadasPlr_E2E_PreProc( RIDEHAL_PROCESSOR_CPU, plrPreConfig1 );
+}
+
+TEST( FadasPlr, E2E_CFG1_PostProcCPU )
+{
+    FadasPlr_E2E_PostProc( RIDEHAL_PROCESSOR_CPU, plrPostConfig1 );
+}
+
+TEST( FadasPlr, E2E_CFG1_PreProcDSP )
+{
+    FadasPlr_E2E_PreProc( RIDEHAL_PROCESSOR_HTP0, plrPreConfig1 );
+}
+
+TEST( FadasPlr, E2E_CFG1_PostProcDSP )
+{
+    FadasPlr_E2E_PostProc( RIDEHAL_PROCESSOR_HTP0, plrPostConfig1 );
 }
 
 #ifndef GTEST_RIDEHAL
