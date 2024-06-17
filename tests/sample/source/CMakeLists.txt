@@ -9,6 +9,8 @@ set( HEADERS_DIR
 set( RIDEHAL_SAMPLE_SOURCES
     SampleIF.cpp
     SampleC2D.cpp
+    SamplePlrPost.cpp
+    SamplePlrPre.cpp
     SamplePostProcCenternet.cpp
     SampleCamera.cpp
     SampleDataReader.cpp
