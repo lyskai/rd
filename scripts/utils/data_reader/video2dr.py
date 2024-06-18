@@ -33,7 +33,7 @@ args = parser.parse_args()
 
 
 if not os.path.exists('/tmp/rgb2yuv'):
-    if 0 != os.system('gcc %s/rgbtoyuv.c -o /tmp/rgb2yuv' %(CWD)):
+    if 0 != os.system('gcc %s/rgb2yuv.c -o /tmp/rgb2yuv' %(CWD)):
         print("failed to compile the simple host color convert tool /tmp/rgb2yuv")
         exit()
 
