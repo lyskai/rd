@@ -524,6 +524,8 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
 
     if ( queue.empty() || queue.begin()->first > targetPTS ) return;
 
+    float thickness = 3.0;
+    SDL_RenderSetScale( ren, thickness, thickness );
     auto &mapItem = *queue.begin();
     for ( auto &l : mapItem.second )
     {
@@ -534,35 +536,22 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
 
             SDL_Point point;
 
-            point.x = obj.topX * scaleX + DestR.x;
-            point.y = obj.topY * scaleY + DestR.y;
+            for ( int i = 0; i < ROAD_2D_OBJECT_NUM_POINTS; i++ )
+            {
+                point.x = ( obj.points[i].x * scaleX + DestR.x ) / thickness;
+                point.y = ( obj.points[i].y * scaleY + DestR.y ) / thickness;
+                points.push_back( point );
+            }
+
+            point.x = ( obj.points[0].x * scaleX + DestR.x ) / thickness;
+            point.y = ( obj.points[0].y * scaleY + DestR.y ) / thickness;
             points.push_back( point );
 
-            point.x = obj.topX * scaleX + DestR.x;
-            point.y = obj.bottomY * scaleY + DestR.y;
-            points.push_back( point );
-
-            point.x = obj.bottomX * scaleX + DestR.x;
-            point.y = obj.bottomY * scaleY + DestR.y;
-            points.push_back( point );
-
-            point.x = obj.bottomX * scaleX + DestR.x;
-            point.y = obj.topY * scaleY + DestR.y;
-            points.push_back( point );
-
-            point.x = obj.topX * scaleX + DestR.x;
-            point.y = obj.topY * scaleY + DestR.y;
-            points.push_back( point );
-
-            RIDEHAL_DEBUG( "class=%d score=%.3f points=[%.3f %.3f %.3f %.3f]", obj.classId,
-                           obj.prob, obj.topX, obj.topY, obj.bottomX, obj.bottomY );
-
-            // glLineWidth( 4 / m_WindowCol );
             SDL_SetRenderDrawColor( ren, color.r, color.g, color.b, color.a );
             SDL_RenderDrawLines( ren, &points[0], points.size() );
-            // glLineWidth( 1 );
         }
     }
+    SDL_RenderSetScale( ren, 1.0, 1.0 );
 }
 
 }   // namespace sample

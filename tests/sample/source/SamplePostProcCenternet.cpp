@@ -202,19 +202,23 @@ void SamplePostProcCenternet::ProcessUint8( DataFrames_t &tensors )
                         float topY = ( c_y - U2F( wh, reg_index + 1 ) / 2 ) / H;
                         float bottomX = ( c_x + U2F( wh, reg_index ) / 2 ) / W;
                         float bottomY = ( c_y + U2F( wh, reg_index + 1 ) / 2 ) / H;
-                        det.topX = ( ( topX > 0 ) ? topX * m_camWidth : 0 ) + m_roiX;
-                        det.topY = ( ( topY > 0 ) ? topY * m_camHeight : 0 ) + m_roiY;
-                        det.bottomX = ( ( bottomX < 1 ) ? bottomX : 0.99 ) * m_camWidth + m_roiX;
-                        det.bottomY = ( ( bottomY < 1 ) ? bottomY : 0.99 ) * m_camHeight + m_roiY;
+                        topX = ( ( topX > 0 ) ? topX * m_camWidth : 0 ) + m_roiX;
+                        topY = ( ( topY > 0 ) ? topY * m_camHeight : 0 ) + m_roiY;
+                        bottomX = ( ( bottomX < 1 ) ? bottomX : 0.99 ) * m_camWidth + m_roiX;
+                        bottomY = ( ( bottomY < 1 ) ? bottomY : 0.99 ) * m_camHeight + m_roiY;
                         det.classId = cls;
                         det.prob = objProb;
-                        if ( ( det.topX < det.bottomX ) && ( det.topY < det.bottomY ) )
+                        if ( ( topX < bottomX ) && ( topY < bottomY ) )
                         {
+                            det.points[0] = Point2D_t{ topX, topY };
+                            det.points[1] = Point2D_t{ bottomX, topY };
+                            det.points[2] = Point2D_t{ bottomX, bottomY };
+                            det.points[3] = Point2D_t{ topX, bottomY };
                             objs.objs.push_back( det );
                             RIDEHAL_DEBUG( "[frame %" PRIu64 "- %" PRIu64
                                            "] class=%d score=%.3f points=[%.3f %.3f %.3f %.3f]",
                                            tensors.FrameId( 0 ), objs.objs.size() - 1, det.classId,
-                                           det.prob, det.topX, det.topY, det.bottomX, det.bottomY );
+                                           det.prob, topX, topY, bottomX, bottomY );
                         }
                     }
                 }
@@ -235,10 +239,10 @@ void SamplePostProcCenternet::ProcessUint8( DataFrames_t &tensors )
 
 float SamplePostProcCenternet::ComputeIou( const Road2DObject_t &box1, const Road2DObject_t &box2 )
 {
-    float box1_xmin = box1.topX, box2_xmin = box2.topX;
-    float box1_ymin = box1.topY, box2_ymin = box2.topY;
-    float box1_xmax = box1.bottomX, box2_xmax = box2.bottomX;
-    float box1_ymax = box1.bottomY, box2_ymax = box2.bottomY;
+    float box1_xmin = box1.points[0].x, box2_xmin = box2.points[0].x;
+    float box1_ymin = box1.points[0].y, box2_ymin = box2.points[0].y;
+    float box1_xmax = box1.points[2].x, box2_xmax = box2.points[2].x;
+    float box1_ymax = box1.points[2].y, box2_ymax = box2.points[2].y;
     float ixmin = std::max( box1_xmin, box2_xmin );
     float iymin = std::max( box1_ymin, box2_ymin );
     float ixmax = std::min( box1_xmax, box2_xmax );

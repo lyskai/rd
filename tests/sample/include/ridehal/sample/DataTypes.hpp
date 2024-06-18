@@ -15,6 +15,8 @@ namespace ridehal
 namespace sample
 {
 
+#define ROAD_2D_OBJECT_NUM_POINTS 4
+
 typedef struct
 {
     std::shared_ptr<SharedBuffer_t> buffer;
@@ -54,12 +56,25 @@ public:
 
 typedef struct
 {
+    float x;
+    float y;
+} Point2D_t;
+
+/** @brief 2D road object represent with 4 cornor points
+ *  A bbox with yaw = 0, looks like:
+ *   pt0                pt1
+ *   +-------------------+
+ *   |                   |
+ *   |                   |
+ *   |                   |
+ *   +-------------------+
+ *  pt3                pt2
+ */
+typedef struct
+{
     int classId;
     float prob;
-    float topX;
-    float topY;
-    float bottomX;
-    float bottomY;
+    Point2D_t points[ROAD_2D_OBJECT_NUM_POINTS];
 } Road2DObject_t;
 
 typedef struct

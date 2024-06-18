@@ -45,6 +45,7 @@ public:
 private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
     void ThreadMain();
+    Point2D_t ProjectToImage( Point2D_t &pt, Point2D_t &center, float yaw );
 
 private:
     PointPillarPostProc_Config_t m_config = { RIDEHAL_PROCESSOR_HTP0, 0 };

@@ -3,7 +3,7 @@
 
 
 #include "ridehal/sample/SamplePlrPost.hpp"
-
+#include <math.h>
 
 namespace ridehal
 {
@@ -146,6 +146,48 @@ RideHalError_e SamplePlrPost::Start()
     return ret;
 }
 
+/*
+ *  pt0                pt1
+ *  +-------------------+
+ *  |                   |
+ *  |        *(center)  |
+ *  |                   |
+ *  +-------------------+
+ *  pt3                pt2
+ *
+ *                                    Y
+ *                                    ^
+ * ------+----------------------------|---------------------------------+----> x
+ *    ^  |          +-----------------|-----------------+ maxY          |
+ *    |  |          |                 |                 |               |
+ *    |  |          |                 |                 |               |
+ *    |  |          |                 |                 |               |
+ *    |  |          |                 |                 |               |
+ *    |  |          |                 +-----------------------------------------> X
+ *    H  |     minX |                                   |maxX           |
+ *    |  |          |                                   |               |
+ *    |  |          |                                   |               |
+ *    |  |          |                                   |               |
+ *    V  |          +-----------------------------------+ minY          |
+ * ------+----------------------------|---------------------------------+
+ *       |<-------------------------- W ------------------------------->|
+ *       V
+ *       y
+ */
+Point2D_t SamplePlrPost::ProjectToImage( Point2D_t &pt, Point2D_t &center, float yaw )
+{
+    Point2D_t imgPt;
+    float yaw_ = yaw - M_PI / 2;
+
+    imgPt.x = cos( yaw_ ) * pt.x + sin( yaw_ ) * pt.y + center.x;
+    imgPt.y = -sin( yaw_ ) * pt.x + cos( yaw_ ) * pt.y + center.y;
+
+    imgPt.x = m_offsetX + m_ratioW * ( imgPt.x - m_config.minXRange );
+    imgPt.y = m_offsetY + m_ratioH * ( m_config.maxYRange - imgPt.y );
+
+    return imgPt;
+}
+
 void SamplePlrPost::ThreadMain()
 {
     RideHalError_e ret;
@@ -184,6 +226,7 @@ void SamplePlrPost::ThreadMain()
                         if ( RIDEHAL_ERROR_NONE == ret )
                         {
                             PROFILER_END();
+                            Road2DObjects_t objs;
                             PointPillarPostProc_Object3D_t *pObj =
                                     (PointPillarPostProc_Object3D_t *) detOut->sharedBuffer.data();
                             if ( m_bDebug )
@@ -196,7 +239,20 @@ void SamplePlrPost::ThreadMain()
                             for ( uint32_t i = 0; i < detOut->sharedBuffer.tensorProps.dims[0];
                                   i++ )
                             {
-                                // TODO: generate 2D bbox and publist to TinyViz
+                                Road2DObject_t obj;
+                                obj.classId = pObj->label;
+                                obj.prob = pObj->score;
+                                Point2D_t center{ pObj->x, pObj->y };
+                                Point2D_t pt0{ -pObj->length / 2, pObj->width / 2 };
+                                Point2D_t pt1{ pObj->length / 2, pObj->width / 2 };
+                                Point2D_t pt2{ pObj->length / 2, -pObj->width / 2 };
+                                Point2D_t pt3{ -pObj->length / 2, -pObj->width / 2 };
+
+                                obj.points[0] = ProjectToImage( pt0, center, pObj->theta );
+                                obj.points[1] = ProjectToImage( pt1, center, pObj->theta );
+                                obj.points[2] = ProjectToImage( pt2, center, pObj->theta );
+                                obj.points[3] = ProjectToImage( pt3, center, pObj->theta );
+                                objs.objs.push_back( obj );
                                 if ( m_bDebug )
                                 {
                                     printf( "  [%.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, %.3f, "
@@ -206,6 +262,9 @@ void SamplePlrPost::ThreadMain()
                                 }
                                 pObj++;
                             }
+                            objs.frameId = infFrames.FrameId( 0 );
+                            objs.timestamp = infFrames.Timestamp( 0 );
+                            m_pub.Publish( objs );
                         }
                         else
                         {
