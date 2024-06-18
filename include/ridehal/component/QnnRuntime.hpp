@@ -290,6 +290,12 @@ private:
      */
     RideHalError_e GeneratePerf();
 
+    RideHalError_e CheckInputTensors( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs );
+
+    RideHalError_e CheckOutputTensors( const RideHal_SharedBuffer_t *pOutputs,
+                                       uint32_t numOutputs );
+
+
 #ifdef QNNRUNTIME_UNIT_TEST
 public:
 #endif
@@ -357,9 +363,9 @@ private:
     QnnRuntime_Perf_t m_perf;
     bool m_bEnabelPerf = false;
     QnnRuntime_TensorInfo_t *m_pInputTensor = nullptr;
-    size_t m_pInputTensorNum = 0;
+    size_t m_inputTensorNum = 0;
     QnnRuntime_TensorInfo_t *m_pOutputTensor = nullptr;
-    size_t m_pOutputTensorNum = 0;
+    size_t m_outputTensorNum = 0;
 };   // QnnRuntime
 
 }   // namespace component

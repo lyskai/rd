@@ -668,31 +668,29 @@ RideHalError_e QnnRuntime::GetInputInfo()
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        m_pInputTensorNum = m_GraphsInfo[0]->numInputTensors;
+        m_inputTensorNum = m_GraphsInfo[0]->numInputTensors;
     }
 
-    if ( m_pInputTensorNum != 0 )
+    if ( m_inputTensorNum != 0 )
     {
-        m_pInputTensor = new QnnRuntime_TensorInfo_t[m_pInputTensorNum];
+        m_pInputTensor = new QnnRuntime_TensorInfo_t[m_inputTensorNum];
     }
 
-    RIDEHAL_INFO( "m_pInputTensor size: %d", m_pInputTensorNum );
+    RIDEHAL_INFO( "m_pInputTensor size: %d", m_inputTensorNum );
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        for ( uint32_t i = 0; i < m_pInputTensorNum; ++i )
+        for ( uint32_t i = 0; i < m_inputTensorNum; ++i )
         {
             RideHal_TensorProps_t tensorProp;
             auto tensor = &m_GraphsInfo[0]->inputTensors[i];
 
             m_pInputTensor[i].pName = QNN_TENSOR_GET_NAME( tensor );
 
-            size_t sz = 1;
             auto rank = QNN_TENSOR_GET_RANK( tensor );
             auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
             for ( uint32_t j = 0; j < rank; j++ )
             {
-                sz *= dimensions[j];
                 tensorProp.dims[j] = dimensions[j];
             }
             tensorProp.numDims = rank;
@@ -738,7 +736,7 @@ RideHalError_e QnnRuntime::GetInputInfo( QnnRuntime_TensorInfoList_t *pList )
         else
         {
             pList->pInfo = m_pInputTensor;
-            pList->num = m_pInputTensorNum;
+            pList->num = m_inputTensorNum;
         }
     }
 
@@ -757,29 +755,27 @@ RideHalError_e QnnRuntime::GetOutputInfo()
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        m_pOutputTensorNum = m_GraphsInfo[0]->numOutputTensors;
+        m_outputTensorNum = m_GraphsInfo[0]->numOutputTensors;
     }
 
-    if ( m_pOutputTensorNum != 0 )
+    if ( m_outputTensorNum != 0 )
     {
-        m_pOutputTensor = new QnnRuntime_TensorInfo_t[m_pOutputTensorNum];
+        m_pOutputTensor = new QnnRuntime_TensorInfo_t[m_outputTensorNum];
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        for ( uint32_t i = 0; i < m_pOutputTensorNum; ++i )
+        for ( uint32_t i = 0; i < m_outputTensorNum; ++i )
         {
             RideHal_TensorProps_t tensorProp;
             auto tensor = &m_GraphsInfo[0]->outputTensors[i];
 
             m_pOutputTensor[i].pName = QNN_TENSOR_GET_NAME( tensor );
 
-            size_t sz = 1;
             auto rank = QNN_TENSOR_GET_RANK( tensor );
             auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
             for ( uint32_t j = 0; j < rank; j++ )
             {
-                sz *= dimensions[j];
                 tensorProp.dims[j] = dimensions[j];
             }
             tensorProp.numDims = rank;
@@ -825,7 +821,7 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfoList_t *pList )
         else
         {
             pList->pInfo = m_pOutputTensor;
-            pList->num = m_pOutputTensorNum;
+            pList->num = m_outputTensorNum;
         }
     }
 
@@ -1105,6 +1101,19 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
+    // Check input tensors
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = CheckInputTensors( pInputs, numInputs );
+    }
+
+    // Check output tensors
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = CheckOutputTensors( pOutputs, numOutputs );
+    }
+
+
     std::vector<Qnn_Tensor_t> inputs;
     std::vector<Qnn_Tensor_t> outputs;
 
@@ -1120,12 +1129,11 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
             ret = GetMemHandle( (RideHal_SharedBuffer_t *) ( pInputs + i ), &memHandle );
             if ( RIDEHAL_ERROR_NONE == ret )
             {
+                QNN_TENSOR_SET_DIMENSIONS( &inputs[i], (uint32_t *) pInputs[i].tensorProps.dims );
                 if ( nullptr != memHandle )
                 {
                     QNN_TENSOR_SET_MEM_TYPE( &inputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
                     QNN_TENSOR_SET_MEM_HANDLE( &inputs[i], memHandle );
-                    QNN_TENSOR_SET_DIMENSIONS( &inputs[i],
-                                               (uint32_t *) pInputs[i].tensorProps.dims );
                 }
                 else
                 {
@@ -1133,8 +1141,6 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                     Qnn_ClientBuffer_t clientBuffer = { (uint8_t *) pInputs[i].data(),
                                                         (uint32_t) pInputs[i].size };
                     QNN_TENSOR_SET_CLIENT_BUF( &inputs[i], clientBuffer );
-                    QNN_TENSOR_SET_DIMENSIONS( &inputs[i],
-                                               (uint32_t *) pInputs[i].tensorProps.dims );
                 }
             }
         }
@@ -1149,12 +1155,11 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
             ret = GetMemHandle( (RideHal_SharedBuffer_t *) ( pOutputs + i ), &memHandle );
             if ( RIDEHAL_ERROR_NONE == ret )
             {
+                QNN_TENSOR_SET_DIMENSIONS( &outputs[i], (uint32_t *) pOutputs[i].tensorProps.dims );
                 if ( nullptr != memHandle )
                 {
                     QNN_TENSOR_SET_MEM_TYPE( &outputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
                     QNN_TENSOR_SET_MEM_HANDLE( &outputs[i], memHandle );
-                    QNN_TENSOR_SET_DIMENSIONS( &outputs[i],
-                                               (uint32_t *) pOutputs[i].tensorProps.dims );
                 }
                 else
                 {
@@ -1162,8 +1167,6 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                     Qnn_ClientBuffer_t clientBuffer = { (uint8_t *) pOutputs[i].data(),
                                                         (uint32_t) pOutputs[i].size };
                     QNN_TENSOR_SET_CLIENT_BUF( &outputs[i], clientBuffer );
-                    QNN_TENSOR_SET_DIMENSIONS( &outputs[i],
-                                               (uint32_t *) pOutputs[i].tensorProps.dims );
                 }
             }
         }
@@ -1736,6 +1739,131 @@ Qnn_DataType_t QnnRuntime::SwitchToQnnDataType( RideHal_TensorType_e tensorType 
             break;
     }
     return dataType;
+}
+
+RideHalError_e QnnRuntime::CheckInputTensors( const RideHal_SharedBuffer_t *pInputs,
+                                              uint32_t numInputs )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( m_inputTensorNum != numInputs )
+    {
+        RIDEHAL_ERROR( "Input tensors number is not equal to model input tensors number. Input "
+                       "tensors number: %u, model input tensors number: %u",
+                       numInputs, m_inputTensorNum );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        for ( uint32_t i = 0; i < numInputs; ++i )
+        {
+            if ( pInputs[i].buffer.pData == nullptr )
+            {
+                RIDEHAL_ERROR( "buffer %u data pointer is nullptr", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+            const auto tensor = &m_GraphsInfo[0]->inputTensors[i];
+            const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
+            if ( pInputs[i].tensorProps.type != SwitchFromQnnDataType( dataType ) )
+            {
+                RIDEHAL_ERROR(
+                        "Unmatched data type. shared buffer data type: %u, QNN data type: %u",
+                        pInputs[i].tensorProps.type, dataType );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+
+            const uint32_t rank = QNN_TENSOR_GET_RANK( tensor );
+            if ( rank != pInputs[i].tensorProps.numDims )
+            {
+                RIDEHAL_ERROR( "Input tensors dim is not equal to model input tensors dim. "
+                               "Input dim: %u, model input dim: %u",
+                               pInputs[i].tensorProps.numDims, rank );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+            const auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+            for ( size_t j = 1; j < rank; ++j )
+            {
+                if ( dimensions[j] != pInputs[i].tensorProps.dims[j] )
+                {
+                    RIDEHAL_ERROR( "Input tensor index %u 's shape  is not equal to model's. "
+                                   "Shape layer: %u, input shape: %u, model shape: %u.",
+                                   i, j, pInputs[i].tensorProps.dims[j], dimensions[j] );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e QnnRuntime::CheckOutputTensors( const RideHal_SharedBuffer_t *pOutputs,
+                                               uint32_t numOutputs )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( m_outputTensorNum != numOutputs )
+    {
+        RIDEHAL_ERROR( "Output tensors number is not equal to model output tensors number. Output "
+                       "tensors number: %u, model output tensors number: %u",
+                       numOutputs, m_outputTensorNum );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        for ( uint32_t i = 0; i < numOutputs; ++i )
+        {
+            if ( pOutputs[i].buffer.pData == nullptr )
+            {
+                RIDEHAL_ERROR( "buffer %u data pointer is nullptr", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+            const auto tensor = &m_GraphsInfo[0]->outputTensors[i];
+            const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
+            if ( pOutputs[i].tensorProps.type != SwitchFromQnnDataType( dataType ) )
+            {
+                RIDEHAL_ERROR(
+                        "Unmatched data type. shared buffer data type: %u, QNN data type: %u",
+                        pOutputs[i].tensorProps.type, dataType );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+
+            const uint32_t rank = QNN_TENSOR_GET_RANK( tensor );
+            if ( rank != pOutputs[i].tensorProps.numDims )
+            {
+                RIDEHAL_ERROR( "Output tensors dim is not equal to model output tensors dim. "
+                               "Output dim: %u, model output dim: %u",
+                               pOutputs[i].tensorProps.numDims, rank );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+
+            const auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+            for ( size_t j = 1; j < rank; ++j )
+            {
+                if ( dimensions[j] != pOutputs[i].tensorProps.dims[j] )
+                {
+                    RIDEHAL_ERROR( "Output tensor index %u 's shape  is not equal to model's. "
+                                   "Shape layer: %u, output shape: %u, model shape: %u.",
+                                   i, j, pOutputs[i].tensorProps.dims[j], dimensions[j] );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
 }
 
 }   // namespace component
