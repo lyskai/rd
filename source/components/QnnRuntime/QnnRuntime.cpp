@@ -628,7 +628,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         ret = GetOutputInfo();
     }
 
-    RIDEHAL_INFO( "init %s with backend %s\n", modelPath, s_Backends[m_BackendType] );
+    RIDEHAL_INFO( "init %s with backend %s\n", modelPath.c_str(), s_Backends[m_BackendType] );
 
     if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
          RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
@@ -897,7 +897,7 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
             QnnMemHtp_Descriptor_t htpDesc;
             htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
-            htpDesc.size = pSharedBuffer->size;
+            htpDesc.size = pSharedBuffer->buffer.size;
             htpDesc.sharedBufferConfig.fd = fd;
             htpDesc.sharedBufferConfig.offset = pSharedBuffer->offset;
 
@@ -918,13 +918,13 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
                 info.fd = fd;
                 s_DmaMemInfoMap[m_BackendCoreId][(uint8_t *) pSharedBuffer->data()] = info;
                 RIDEHAL_INFO( "succeed to register map buffer %p(%d, %u, %u) as %p for core %d",
-                              pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
+                              pSharedBuffer->buffer.pData, fd, pSharedBuffer->buffer.size,
                               pSharedBuffer->offset, *pMemHandle, m_BackendCoreId );
             }
             else
             {
                 RIDEHAL_ERROR( "failed to map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                               pSharedBuffer->buffer.pData, fd, pSharedBuffer->size,
+                               pSharedBuffer->buffer.pData, fd, pSharedBuffer->buffer.size,
                                pSharedBuffer->offset, m_BackendCoreId, retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }

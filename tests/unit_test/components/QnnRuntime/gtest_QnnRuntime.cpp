@@ -2,12 +2,14 @@
 // Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 #define QNNRUNTIME_UNIT_TEST
+#include "md5_utils.hpp"
 #include "ridehal/component/QnnRuntime.hpp"
 #include "gtest/gtest.h"
 #include <stdio.h>
 
 using namespace ridehal::common;
 using namespace ridehal::component;
+using namespace ridehal::test::utils;
 
 TEST( QnnRuntime, SANITY_General )
 {
@@ -726,6 +728,88 @@ TEST( QnnRuntime, BufferFree )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
+TEST( QnnRuntime, OneBufferMutipleTensors )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "QnnRuntime";
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetInputInfo( &tensorInputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+
+    size_t outputTotalSize = 0;
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        outputTotalSize += outputs[i].size;
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    /**************  one buffer  **************/
+    RideHal_SharedBuffer_t outputs1[outputNum];
+    RideHal_SharedBuffer_t sharedBuffer;
+    size_t offset = 0u;
+    sharedBuffer.Allocate( outputTotalSize, RIDEHAL_BUFFER_USAGE_HTP,
+                           RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        outputs1[i] = outputs[i];
+        outputs1[i].buffer.size = outputTotalSize;
+        outputs1[i].buffer.pData = (void *) ( (uint8_t *) sharedBuffer.buffer.pData + offset );
+        outputs1[i].offset = offset;
+        offset += outputs1[i].size;
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs1, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        std::string md5OneBuffer = MD5Sum( outputs1[i].buffer.pData, outputs1[i].size );
+        std::string md5Output = MD5Sum( outputs[i].buffer.pData, outputs[i].size );
+        EXPECT_EQ( md5OneBuffer, md5Output );
+    }
 }
 
 #ifndef GTEST_RIDEHAL
