@@ -20,6 +20,8 @@ namespace ridehal
 namespace sample
 {
 
+#define VIZ_SLOPED_LINE_DIVIDER 30
+
 using namespace std::chrono_literals;
 constexpr std::chrono::nanoseconds NSEC = 1s;
 constexpr uint64_t NSEC_PER_SEC = NSEC.count();
@@ -412,7 +414,7 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
         float scaleX = static_cast<float>( m_WindowW ) / camInfo.width() / m_WindowRow;
         float scaleY = static_cast<float>( m_WindowH ) / camInfo.height() / m_WindowCol;
 
-        auto widow = 2.5 * camInfo.lastCamFPS /
+        auto widow = 5 * camInfo.lastCamFPS /
                      ( ( camInfo.lastRodFPS > 0 ) ? camInfo.lastRodFPS : camInfo.lastCamFPS );
         auto historyWindow = NSEC_PER_SEC / m_LastRenderFPS * widow;
         renderBB( pts, historyWindow, camInfo.roadObjectQueue, ren, DestR, scaleX, scaleY,
@@ -510,6 +512,38 @@ void TinyViz::updateFPS( CamInfo &camInfo )
     }
 }
 
+void TinyViz::drawLines( SDL_Renderer *ren, std::vector<SDL_Point> &points )
+{
+    for ( size_t i = 0; i < ( points.size() - 1 ); i++ )
+    {
+        SDL_Point &pt1 = points[i];
+        SDL_Point &pt2 = points[i + 1];
+        if ( ( pt1.x == pt2.x ) || ( pt1.y == pt2.y ) )
+        {
+            SDL_RenderDrawLine( ren, pt1.x, pt1.y, pt2.x, pt2.y );
+        }
+        else
+        { /* draw sloped line */
+            float w = pt2.x - pt1.x;
+            float h = pt2.y - pt1.y;
+            float dx = w / VIZ_SLOPED_LINE_DIVIDER;
+            float dy = h / VIZ_SLOPED_LINE_DIVIDER;
+            float x1 = pt1.x;
+            float y1 = pt1.y;
+            float x2, y2;
+            for ( int i = 0; i < VIZ_SLOPED_LINE_DIVIDER; i++ )
+            {
+                x2 = x1 + dx;
+                y2 = y1 + dy;
+                SDL_RenderDrawLine( ren, std::round( x1 ), std::round( y1 ), std::round( x2 ),
+                                    std::round( y2 ) );
+                x1 = x2;
+                y1 = y2;
+            }
+        }
+    }
+}
+
 void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
                         std::map<uint64_t, std::list<Road2DObjects_t>> &queue, SDL_Renderer *ren,
                         const SDL_Rect &DestR, const float scaleX, const float scaleY,
@@ -548,7 +582,7 @@ void TinyViz::renderBB( const uint64_t targetPTS, const uint64_t historyWindow,
             points.push_back( point );
 
             SDL_SetRenderDrawColor( ren, color.r, color.g, color.b, color.a );
-            SDL_RenderDrawLines( ren, &points[0], points.size() );
+            drawLines( ren, points );
         }
     }
     SDL_RenderSetScale( ren, 1.0, 1.0 );

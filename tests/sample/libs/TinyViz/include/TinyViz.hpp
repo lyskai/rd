@@ -51,6 +51,7 @@ private:
                    std::map<uint64_t, std::list<Road2DObjects_t>> &queue, SDL_Renderer *ren,
                    const SDL_Rect &DestR, const float scaleX, const float scaleY,
                    const SDL_Color &color );
+    void drawLines( SDL_Renderer *ren, std::vector<SDL_Point> &points );
 
     std::map<std::string, CamInfo> m_CamInfoMap;
     std::vector<std::string> m_CamNameList;
