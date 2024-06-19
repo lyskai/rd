@@ -3,6 +3,7 @@
 
 
 #include "ridehal/sample/SamplePlrPost.hpp"
+#include <cmath>
 #include <math.h>
 
 namespace ridehal
@@ -185,6 +186,9 @@ Point2D_t SamplePlrPost::ProjectToImage( Point2D_t &pt, Point2D_t &center, float
     imgPt.x = m_offsetX + m_ratioW * ( imgPt.x - m_config.minXRange );
     imgPt.y = m_offsetY + m_ratioH * ( m_config.maxYRange - imgPt.y );
 
+    imgPt.x = std::round( imgPt.x );
+    imgPt.y = std::round( imgPt.y );
+
     return imgPt;
 }
 
@@ -227,8 +231,8 @@ void SamplePlrPost::ThreadMain()
                         {
                             PROFILER_END();
                             Road2DObjects_t objs;
-                            PointPillarPostProc_Object3D_t *pObj =
-                                    (PointPillarPostProc_Object3D_t *) detOut->sharedBuffer.data();
+                            PostCenterPoint_Object3D_t *pObj =
+                                    (PostCenterPoint_Object3D_t *) detOut->sharedBuffer.data();
                             if ( m_bDebug )
                             {
                                 printf( "lidar frameId %" PRIu64 ", number of detections %" PRIu32

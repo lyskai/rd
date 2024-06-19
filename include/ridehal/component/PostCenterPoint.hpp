@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef RIDEHAL_POINTPILLAR_POSTPROC_HPP
-#define RIDEHAL_POINTPILLAR_POSTPROC_HPP
+#ifndef RIDEHAL_POST_CENTERPOINT_HPP
+#define RIDEHAL_POST_CENTERPOINT_HPP
 
 #include <cinttypes>
 #include <inttypes.h>
@@ -31,9 +31,9 @@ typedef struct
     float maxCentreY;      /**< Max values of y used for range check for centre of detection. */
     float maxCentreZ;      /**< Max values of z used for range check for centre of detection. */
     bool *labelSelect;
-} PointPillarPostProc_3DBBoxFilterParams_t;
+} PostCenterPoint_3DBBoxFilterParams_t;
 
-/** @brief PointPillarPostProc component configuration */
+/** @brief PostCenterPoint component configuration */
 typedef struct
 {
     RideHal_ProcessorType_e processor; /**< processor type */
@@ -55,7 +55,7 @@ typedef struct
     float32_t threshScore; /**< Confidence score threshold. */
     float32_t threshIOU;   /**< Overlap threshold. */
 
-    PointPillarPostProc_3DBBoxFilterParams_t filterParams; /* Filtering parameters */
+    PostCenterPoint_3DBBoxFilterParams_t filterParams; /* Filtering parameters */
 
     /**< Flag to enable/disable mapping of point cloud points to 3D bounding box. */
     bool bMapPtsToBBox;
@@ -65,7 +65,7 @@ typedef struct
      * class labels before mapping point cloud points to 3D bounding box.
      * NOTE: This flag will be used only if bMapPtsToBBox is set to true. */
     bool bBBoxFilter;
-} PointPillarPostProc_Config_t;
+} PostCenterPoint_Config_t;
 
 typedef struct
 {
@@ -83,20 +83,20 @@ typedef struct
     float meanPtZ;   /**< The mean values of z coordinates of all points inside this bounding box */
     uint32_t numPts; /**< Number of 3D points located inside this bounding box */
     float meanIntensity; /**< Mean of intensities of all points inside the bounding box */
-} PointPillarPostProc_Object3D_t;
+} PostCenterPoint_Object3D_t;
 
-#define POINTPILLAR_OBJECT_3D_DIM ( sizeof( PointPillarPostProc_Object3D_t ) / sizeof( float ) )
+#define POINTPILLAR_OBJECT_3D_DIM ( sizeof( PostCenterPoint_Object3D_t ) / sizeof( float ) )
 
 /**
- * @brief PointPillarPostProc
- * Component PointPillarPostProc that creates point pillars from point cloud data.
+ * @brief PostCenterPoint
+ * Component PostCenterPoint that creates point pillars from point cloud data.
  */
-class PointPillarPostProc : public ComponentIF
+class PostCenterPoint : public ComponentIF
 {
 
 public:
-    PointPillarPostProc();
-    ~PointPillarPostProc();
+    PostCenterPoint();
+    ~PostCenterPoint();
 
     /**
      * @brief Initialize the point pillar pipeline
@@ -105,7 +105,7 @@ public:
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e Init( const char *pName, const PointPillarPostProc_Config_t *pConfig,
+    RideHalError_e Init( const char *pName, const PostCenterPoint_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
@@ -127,7 +127,7 @@ public:
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
-     * @cond PointPillarPostProc::Start @endcond
+     * @cond PostCenterPoint::Start @endcond
      * @brief Start the point pillar pipeline, empty for now
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -155,7 +155,7 @@ public:
      * @param[in] pInPts The input point cloud where size in bytes
      *             NOTE: pInPts is nullptr if bMapPtsToBBox is true.
      * @param[out] pDetections Pointer to buffer that represent 3D bounding box
-     *        [N, PointPillarPostProc_Object3D_t]
+     *        [N, PostCenterPoint_Object3D_t]
      *                   [N, ( label,   score,   x,      y,       z,      length,
      *                         width,   height,  theta,  meanPtX, meanPtY, meanPtZ,
      *                         numPts,  meanIntensity )]
@@ -169,7 +169,7 @@ public:
                             RideHal_SharedBuffer_t *pDetections );
 
 private:
-    PointPillarPostProc_Config_t m_config;
+    PostCenterPoint_Config_t m_config;
 
     FadasPlrPostProc m_plrPost;
 
@@ -181,9 +181,9 @@ private:
     RideHal_SharedBuffer_t m_scores;
     RideHal_SharedBuffer_t m_metadata;
 
-};   // class PointPillarPostProc
+};   // class PostCenterPoint
 
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // RIDEHAL_POINTPILLAR_POSTPROC_HPP
+#endif   // RIDEHAL_POST_CENTERPOINT_HPP

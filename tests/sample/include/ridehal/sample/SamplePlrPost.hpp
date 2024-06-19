@@ -4,7 +4,7 @@
 #ifndef _RIDEHAL_SAMPLE_PLRPRE_HPP_
 #define _RIDEHAL_SAMPLE_PLRPRE_HPP_
 
-#include "ridehal/component/PointPillarPostProc.hpp"
+#include "ridehal/component/PostCenterPoint.hpp"
 #include "ridehal/sample/SampleIF.hpp"
 
 using namespace ridehal::common;
@@ -17,28 +17,28 @@ namespace sample
 
 /// @brief ridehal::sample::SamplePlrPost
 ///
-/// SamplePlrPost that to demonstate how to use the RideHal component PointPillarPostProc
+/// SamplePlrPost that to demonstate how to use the RideHal component PostCenterPoint
 class SamplePlrPost : public SampleIF
 {
 public:
     SamplePlrPost();
     ~SamplePlrPost();
 
-    /// @brief Initialize the PointPillarPostProc
+    /// @brief Initialize the PostCenterPoint
     /// @param name the sample unique instance name
     /// @param config the sample config key value map
     /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Init( std::string name, SampleConfig_t &config );
 
-    /// @brief Start the PointPillarPostProc
+    /// @brief Start the PostCenterPoint
     /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Start();
 
-    /// @brief Stop the PointPillarPostProc
+    /// @brief Stop the PostCenterPoint
     /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Stop();
 
-    /// @brief deinitialize the PointPillarPostProc
+    /// @brief deinitialize the PostCenterPoint
     /// @return RIDEHAL_ERROR_NONE on success, others on failure
     RideHalError_e Deinit();
 
@@ -48,7 +48,7 @@ private:
     Point2D_t ProjectToImage( Point2D_t &pt, Point2D_t &center, float yaw );
 
 private:
-    PointPillarPostProc_Config_t m_config = { RIDEHAL_PROCESSOR_HTP0, 0 };
+    PostCenterPoint_Config_t m_config = { RIDEHAL_PROCESSOR_HTP0, 0 };
     uint32_t m_poolSize = 4;
 
     std::string m_inputLidarTopicName;
@@ -73,7 +73,7 @@ private:
 
     std::vector<uint32_t> m_Indexs = { 3, 0, 1, 4, 2 };
 
-    PointPillarPostProc m_plrPost;
+    PostCenterPoint m_plrPost;
 };   // class SamplePlrPost
 
 }   // namespace sample

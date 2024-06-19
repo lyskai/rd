@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef RIDEHAL_POINTPILLAR_PREPROC_HPP
-#define RIDEHAL_POINTPILLAR_PREPROC_HPP
+#ifndef RIDEHAL_VOXELIZATION_HPP
+#define RIDEHAL_VOXELIZATION_HPP
 
 #include <cinttypes>
 #include <inttypes.h>
@@ -20,7 +20,7 @@ namespace ridehal
 namespace component
 {
 
-/** @brief PointPillarPreProc component configuration */
+/** @brief Voxelization component configuration */
 typedef struct
 {
     RideHal_ProcessorType_e processor; /**< processor type */
@@ -40,18 +40,18 @@ typedef struct
     uint32_t maxNumPlrs;       /**< Maximum number of point pillars that can be created. */
     uint32_t maxNumPtsPerPlr;  /**< Maximum number of points to map to each pillar. */
     uint32_t numOutFeatureDim; /**< Number of features for each point in point pillars. */
-} PointPillarPreProc_Config_t;
+} Voxelization_Config_t;
 
 /**
- * @brief PointPillarPreProc
- * Component PointPillarPreProc that creates point pillars from point cloud data.
+ * @brief Voxelization
+ * Component Voxelization that creates point pillars from point cloud data.
  */
-class PointPillarPreProc : public ComponentIF
+class Voxelization : public ComponentIF
 {
 
 public:
-    PointPillarPreProc();
-    ~PointPillarPreProc();
+    Voxelization();
+    ~Voxelization();
 
     /**
      * @brief Initialize the point pillar pipeline
@@ -60,7 +60,7 @@ public:
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e Init( const char *pName, const PointPillarPreProc_Config_t *pConfig,
+    RideHalError_e Init( const char *pName, const Voxelization_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
@@ -82,7 +82,7 @@ public:
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
-     * @cond PointPillarPreProc::Start @endcond
+     * @cond Voxelization::Start @endcond
      * @brief Start the point pillar pipeline, empty for now
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -116,13 +116,13 @@ public:
                             const RideHal_SharedBuffer_t *pOutFeature );
 
 private:
-    PointPillarPreProc_Config_t m_config;
+    Voxelization_Config_t m_config;
 
     FadasPlrPreProc m_plrPre;
 
-};   // class PointPillarPreProc
+};   // class Voxelization
 
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // RIDEHAL_POINTPILLAR_PREPROC_HPP
+#endif   // RIDEHAL_VOXELIZATION_HPP

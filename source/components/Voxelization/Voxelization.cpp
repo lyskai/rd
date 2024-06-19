@@ -1,20 +1,19 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#include "ridehal/component/PointPillarPreProc.hpp"
+#include "ridehal/component/Voxelization.hpp"
 
 namespace ridehal
 {
 namespace component
 {
 
-PointPillarPreProc::PointPillarPreProc() {}
+Voxelization::Voxelization() {}
 
-PointPillarPreProc::~PointPillarPreProc() {}
+Voxelization::~Voxelization() {}
 
-RideHalError_e PointPillarPreProc::Init( const char *pName,
-                                         const PointPillarPreProc_Config_t *pConfig,
-                                         Logger_Level_e level )
+RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_t *pConfig,
+                                   Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     bool bIFInitOK = false;
@@ -79,7 +78,7 @@ RideHalError_e PointPillarPreProc::Init( const char *pName,
     return ret;
 }
 
-RideHalError_e PointPillarPreProc::Start()
+RideHalError_e Voxelization::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -96,7 +95,7 @@ RideHalError_e PointPillarPreProc::Start()
     return ret;
 }
 
-RideHalError_e PointPillarPreProc::Stop()
+RideHalError_e Voxelization::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -113,7 +112,7 @@ RideHalError_e PointPillarPreProc::Stop()
     return ret;
 }
 
-RideHalError_e PointPillarPreProc::Deinit()
+RideHalError_e Voxelization::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -150,8 +149,8 @@ RideHalError_e PointPillarPreProc::Deinit()
     return ret;
 }
 
-RideHalError_e PointPillarPreProc::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
-                                                    uint32_t numBuffers, FadasBufType_e bufferType )
+RideHalError_e Voxelization::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                              uint32_t numBuffers, FadasBufType_e bufferType )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -196,8 +195,8 @@ RideHalError_e PointPillarPreProc::RegisterBuffers( const RideHal_SharedBuffer_t
     return ret;
 }
 
-RideHalError_e PointPillarPreProc::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
-                                                      uint32_t numBuffers )
+RideHalError_e Voxelization::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                                uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -237,9 +236,9 @@ RideHalError_e PointPillarPreProc::DeRegisterBuffers( const RideHal_SharedBuffer
     return ret;
 }
 
-RideHalError_e PointPillarPreProc::Execute( const RideHal_SharedBuffer_t *pInPts,
-                                            const RideHal_SharedBuffer_t *pOutPlrs,
-                                            const RideHal_SharedBuffer_t *pOutFeature )
+RideHalError_e Voxelization::Execute( const RideHal_SharedBuffer_t *pInPts,
+                                      const RideHal_SharedBuffer_t *pOutPlrs,
+                                      const RideHal_SharedBuffer_t *pOutFeature )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 

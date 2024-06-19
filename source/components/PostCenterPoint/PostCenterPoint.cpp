@@ -1,19 +1,19 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#include "ridehal/component/PointPillarPostProc.hpp"
+#include "ridehal/component/PostCenterPoint.hpp"
 
 namespace ridehal
 {
 namespace component
 {
 
-PointPillarPostProc::PointPillarPostProc() {}
+PostCenterPoint::PostCenterPoint() {}
 
-PointPillarPostProc::~PointPillarPostProc() {}
+PostCenterPoint::~PostCenterPoint() {}
 
-RideHalError_e PointPillarPostProc::Init( const char *pName,
-                                          const PointPillarPostProc_Config_t *pConfig,
+RideHalError_e PostCenterPoint::Init( const char *pName,
+                                          const PostCenterPoint_Config_t *pConfig,
                                           Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -178,7 +178,7 @@ RideHalError_e PointPillarPostProc::Init( const char *pName,
     return ret;
 }
 
-RideHalError_e PointPillarPostProc::Start()
+RideHalError_e PostCenterPoint::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -195,7 +195,7 @@ RideHalError_e PointPillarPostProc::Start()
     return ret;
 }
 
-RideHalError_e PointPillarPostProc::Stop()
+RideHalError_e PostCenterPoint::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -212,7 +212,7 @@ RideHalError_e PointPillarPostProc::Stop()
     return ret;
 }
 
-RideHalError_e PointPillarPostProc::Deinit()
+RideHalError_e PostCenterPoint::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -286,7 +286,7 @@ RideHalError_e PointPillarPostProc::Deinit()
     return ret;
 }
 
-RideHalError_e PointPillarPostProc::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+RideHalError_e PostCenterPoint::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
                                                      uint32_t numBuffers,
                                                      FadasBufType_e bufferType )
 {
@@ -333,7 +333,7 @@ RideHalError_e PointPillarPostProc::RegisterBuffers( const RideHal_SharedBuffer_
     return ret;
 }
 
-RideHalError_e PointPillarPostProc::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+RideHalError_e PostCenterPoint::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
                                                        uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -374,7 +374,7 @@ RideHalError_e PointPillarPostProc::DeRegisterBuffers( const RideHal_SharedBuffe
     return ret;
 }
 
-RideHalError_e PointPillarPostProc::Execute( const RideHal_SharedBuffer_t *pHeatmap,
+RideHalError_e PostCenterPoint::Execute( const RideHal_SharedBuffer_t *pHeatmap,
                                              const RideHal_SharedBuffer_t *pXY,
                                              const RideHal_SharedBuffer_t *pZ,
                                              const RideHal_SharedBuffer_t *pSize,
@@ -384,7 +384,7 @@ RideHalError_e PointPillarPostProc::Execute( const RideHal_SharedBuffer_t *pHeat
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     uint32_t numDetOut = 0;
-    PointPillarPostProc_Object3D_t *pObj;
+    PostCenterPoint_Object3D_t *pObj;
     FadasCuboidf32_t *pBBoxList;
     uint32_t *pLabels;
     float32_t *pScores;
@@ -502,7 +502,7 @@ RideHalError_e PointPillarPostProc::Execute( const RideHal_SharedBuffer_t *pHeat
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            pObj = (PointPillarPostProc_Object3D_t *) pDetections->data();
+            pObj = (PostCenterPoint_Object3D_t *) pDetections->data();
             pBBoxList = (FadasCuboidf32_t *) m_BBoxList.data();
             pLabels = (uint32_t *) m_labels.data();
             pScores = (float32_t *) m_scores.data();
