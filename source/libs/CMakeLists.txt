@@ -2,3 +2,4 @@
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 add_subdirectory(FadasIface)
+add_subdirectory(OpenclIface)
