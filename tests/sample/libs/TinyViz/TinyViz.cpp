@@ -13,6 +13,7 @@
 #include "TinyViz.hpp"
 #include <array>
 #include <chrono>
+#include <stdlib.h>
 #include <unistd.h>
 
 namespace ridehal
@@ -223,6 +224,28 @@ void TinyViz::rendererThread()
 
     m_NumTextures.init( 400, *ren, *font );
 
+    SDL_Surface *screenSurface = nullptr;
+    const char *envStr = getenv( "RIDEHAL_TINYVIZ_CAPTURE" );
+    int numScreenShot = 0;
+    if ( nullptr != envStr )
+    {
+        numScreenShot = atoi( envStr );
+    }
+
+    if ( numScreenShot > 0 )
+    {
+        screenSurface = SDL_CreateRGBSurface( 0, m_WindowW, m_WindowH, 32, 0x00ff0000, 0x0000ff00,
+                                              0x000000ff, 0xff000000 );
+        if ( nullptr == screenSurface )
+        {
+            RIDEHAL_WARN( "Can't create RGB surface to capture screenshot %s", SDL_GetError() );
+            numScreenShot = 0;
+        }
+    }
+
+    int captureId = 0;
+    auto captureTime = std::chrono::high_resolution_clock::now();
+
     while ( !m_Stop )
     {
         SDL_SetRenderDrawColor( ren, 0x0, 0x0, 0x0, 0xFF );
@@ -235,7 +258,7 @@ void TinyViz::rendererThread()
             SDL_Delay( 10000 );
             continue;
         }
-        auto start = std::chrono::steady_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
         // TODO: mutex lock
         if ( m_WindowCol == 1 )
         {
@@ -266,7 +289,7 @@ void TinyViz::rendererThread()
         {
             SDL_RenderPresent( ren );
         }
-        auto end = std::chrono::steady_clock::now();
+        auto end = std::chrono::high_resolution_clock::now();
         float cost = (float) std::chrono::duration_cast<std::chrono::microseconds>( end - start )
                              .count() /
                      1000.0;
@@ -276,6 +299,25 @@ void TinyViz::rendererThread()
 
         // TODO: switch to usleep
         SDL_Delay( 33 );
+
+        if ( captureId < numScreenShot )
+        {
+            auto now = std::chrono::high_resolution_clock::now();
+            if ( ( now - captureTime ) > std::chrono::microseconds( 1000 ) )
+            {
+                SDL_RenderReadPixels( ren, NULL, SDL_PIXELFORMAT_ARGB8888, screenSurface->pixels,
+                                      screenSurface->pitch );
+                std::string path = "/tmp/screenshot" + std::to_string( captureId ) + ".bmp";
+                SDL_SaveBMP( screenSurface, path.c_str() );
+                captureId++;
+                captureTime = std::chrono::high_resolution_clock::now();
+            }
+        }
+    }
+
+    if ( nullptr != screenSurface )
+    {
+        SDL_FreeSurface( screenSurface );
     }
 
     m_NumTextures.release();
