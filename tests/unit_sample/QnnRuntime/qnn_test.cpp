@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "QnnSampleAppUtils.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
 #include "ridehal/component/QnnRuntime.hpp"
 
@@ -81,6 +82,7 @@ typedef struct
     int nLoops = 100;
     RideHal_ProcessorType_e processor = RIDEHAL_PROCESSOR_HTP0;
     std::vector<QnnTest_Buffer_t> inputs;
+    std::vector<QnnRuntime_UdoPackage_t> opPackagePaths;
     int tid; /* deploy this on which thread */
     int delayMs = 0;
     int periodMs = 0;
@@ -134,6 +136,12 @@ public:
         if ( ( RIDEHAL_PROCESSOR_CPU == processor ) || ( RIDEHAL_PROCESSOR_GPU == processor ) )
         {
             m_config.loadType = QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
+        }
+
+        if ( m_params.opPackagePaths.size() > 0 )
+        {
+            m_config.numOfUdoPackages = m_params.opPackagePaths.size();
+            m_config.pUdoPackages = &m_params.opPackagePaths[0];
         }
 
         ret = m_qnn.Init( name.c_str(), &m_config, LOGGER_LEVEL_INFO );
@@ -420,6 +428,8 @@ int Usage( char *prog, int error )
             "    -p processor: The processor, 0: HTP0, 1: HTP1, 2: CPU, 3:GPU\n"
             "    -b batch_multiplier:  Specifies the value with which the batch value in input and "
             "output tensors dimensions will be multiplied.\n"
+            "    -u udo: Specifies udo lib path and interface provider name."
+            " e.g. libQnnAutoAiswOpPackage.so:AutoAiswOpPackageInterfaceProvider\n"
             "    -l nLoops: optional, specify the iterations that to call QNN Execute\n"
             "    -i input.raw: optional, specify the input raw file to the QNN model, repeat this\n"
             "      option if the QNN model has multiple inputs\n"
@@ -438,7 +448,7 @@ int main( int argc, char *argv[] )
     std::vector<QnnTest_Parameters_t> paramsList;
 
     int flags, opt;
-    while ( ( opt = getopt( argc, argv, "n:m:p:b:t:l:i:P:S:dh" ) ) != -1 )
+    while ( ( opt = getopt( argc, argv, "n:m:p:b:u:t:l:i:P:S:dh" ) ) != -1 )
     {
         switch ( opt )
         {
@@ -472,6 +482,29 @@ int main( int argc, char *argv[] )
             {
                 QnnTest_Parameters_t &params = paramsList.back();
                 params.batchMultiplier = atoi( optarg );
+                break;
+            }
+            case 'u':
+            {
+                QnnTest_Parameters_t &params = paramsList.back();
+                std::vector<std::string> opPackagePaths;
+                split( opPackagePaths, optarg, ',' );
+                params.opPackagePaths.resize( opPackagePaths.size() );
+                for ( int i = 0; i < opPackagePaths.size(); ++i )
+                {
+                    static std::vector<std::string> opPackage;
+                    split( opPackage, opPackagePaths[i], ':' );
+                    if ( opPackage.size() != 2 )
+                    {
+                        printf( "invalid opPackage params: %s\n", opPackagePaths[i].c_str() );
+                        return -1;
+                    }
+                    params.opPackagePaths[i].udoLibPath = opPackage[0].c_str();
+                    params.opPackagePaths[i].interfaceProvider = opPackage[1].c_str();
+                    printf( "opPackage params %d, udoLibPath: %s, interfaceProvider: %s\n", i,
+                            params.opPackagePaths[i].udoLibPath,
+                            params.opPackagePaths[i].interfaceProvider );
+                }
                 break;
             }
             case 't':
