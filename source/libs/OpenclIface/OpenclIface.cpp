@@ -199,6 +199,7 @@ RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, cl_mem *pBuffe
     if ( nullptr == pBufferHost )
     {
         RIDEHAL_ERROR( "null host buffer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -234,6 +235,7 @@ RideHalError_e OpenclSrv::DeregBuf( void *pBufferHost )
     if ( nullptr == pBufferHost )
     {
         RIDEHAL_ERROR( "null host buffer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {

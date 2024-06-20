@@ -24,6 +24,8 @@ add_subdirectory(C2D)
 add_subdirectory(Camera)
 add_subdirectory(PostCenterPoint)
 add_subdirectory(QnnRuntime)
+add_subdirectory(ColorConvertorCL)
 add_subdirectory(Remap)
 add_subdirectory(VideoEncoder)
 add_subdirectory(Voxelization)
+

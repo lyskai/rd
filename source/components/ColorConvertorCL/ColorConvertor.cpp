@@ -1,0 +1,317 @@
+// Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
+// Confidential & Proprietary.
+
+#include "ridehal/component/ColorConvertor.hpp"
+
+namespace ridehal
+{
+namespace component
+{
+
+ColorConvertor::ColorConvertor() {}
+
+ColorConvertor::~ColorConvertor() {}
+
+RideHalError_e ColorConvertor::Start()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( RIDEHAL_COMPONENT_STATE_READY == m_state )
+    {
+        m_state = RIDEHAL_COMPONENT_STATE_RUNNING;
+    }
+    else
+    {
+        RIDEHAL_ERROR( "ColorConvertor component start failed due to wrong state!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+
+    return ret;
+}
+
+RideHalError_e ColorConvertor::Stop()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING == m_state )
+    {
+        m_state = RIDEHAL_COMPONENT_STATE_READY;
+    }
+    else
+    {
+        RIDEHAL_ERROR( "ColorConvertor component stop failed due to wrong state!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+
+    return ret;
+}
+
+RideHalError_e ColorConvertor::Init( const char *pName, const ColorConvertor_Config_t *pConfig,
+                                     Logger_Level_e level )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    ret = ComponentIF::Init( pName, level );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to init component!" );
+    }
+    else
+    {
+        m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
+
+        if ( nullptr == pConfig )
+        {
+            RIDEHAL_ERROR( "Empty config pointer!" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else if ( RIDEHAL_IMAGE_FORMAT_RGB888 != pConfig->outputFormat )
+        {
+            RIDEHAL_ERROR( "Invalid output format!" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else if ( RIDEHAL_IMAGE_FORMAT_NV12 != pConfig->inputFormat )
+        {
+            RIDEHAL_ERROR( "Invalid input format!" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else if ( 2 > pConfig->inputWidth )
+        {
+            RIDEHAL_ERROR( "Invalid input width!" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else if ( 2 > pConfig->inputHeight )
+        {
+            RIDEHAL_ERROR( "Invalid input height!" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        else
+        {
+            m_config = *pConfig;
+            ret = m_OpenclSrvObj.Init( pName, level );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Init OpenCL failed!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
+                     ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
+                {
+                    ret = m_OpenclSrvObj.LoadFromSource( ColorConvertorCL, "NV12_to_RGB" );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        RIDEHAL_ERROR( "Load kernel from source for NV12 to RGB failed!" );
+                        ret = RIDEHAL_ERROR_FAIL;
+                    }
+                }
+            }
+        }
+
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            m_state = RIDEHAL_COMPONENT_STATE_READY;
+        }
+        else
+        {
+            m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
+            RideHalError_e retVal;
+            retVal = ComponentIF::Deinit();
+            if ( RIDEHAL_ERROR_NONE != retVal )
+            {
+                RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e ColorConvertor::Deinit()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
+    {
+        RIDEHAL_ERROR( "ColorConvertor component not in ready status!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else
+    {
+        RideHalError_e retVal;
+
+        retVal = m_OpenclSrvObj.Deinit();
+        if ( RIDEHAL_ERROR_NONE != retVal )
+        {
+            RIDEHAL_ERROR( "Release CL resources failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+
+        retVal = ComponentIF::Deinit();
+        if ( RIDEHAL_ERROR_NONE != retVal )
+        {
+            RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    return ret;
+}
+
+
+RideHalError_e ColorConvertor::RegisterBuffer( const RideHal_SharedBuffer_t *pBuffer,
+                                               cl_mem *pBufferCL )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    {
+        RIDEHAL_ERROR( "ColorConvertor component not in ready or running status!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pBuffer )
+    {
+        RIDEHAL_ERROR( "Empty buffers pointer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        ret = m_OpenclSrvObj.RegBuf( pBuffer->data(), pBuffer->size, pBufferCL );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to register buffer!" );
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e ColorConvertor::DeRegisterBuffer( const RideHal_SharedBuffer_t *pBuffer )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    {
+        RIDEHAL_ERROR( "ColorConvertor component not in ready or running status!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pBuffer )
+    {
+        RIDEHAL_ERROR( "Empty buffers pointer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        ret = m_OpenclSrvObj.DeregBuf( pBuffer->data() );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to deregister buffer!" );
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e ColorConvertor::Execute( const RideHal_SharedBuffer_t *pInput,
+                                        const RideHal_SharedBuffer_t *pOutput )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    {
+        RIDEHAL_ERROR( "ColorConvertor component not initialized!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr != pInput )
+    {
+        RIDEHAL_ERROR( "Input buffer is null!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( nullptr != pOutput )
+    {
+        RIDEHAL_ERROR( "Output buffer is null!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pInput->type )
+    {
+        RIDEHAL_ERROR( "Input buffer is not image type!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pOutput->type )
+    {
+        RIDEHAL_ERROR( "Output buffer is not image type!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( m_config.inputFormat != pInput->imgProps.format )
+    {
+        RIDEHAL_ERROR( "Input image format not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( m_config.outputFormat != pOutput->imgProps.format )
+    {
+        RIDEHAL_ERROR( "Output image format not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        cl_mem bufferSrc;
+        ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, &bufferSrc );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to register input buffer!" );
+        }
+
+        cl_mem bufferDst;
+        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, &bufferDst );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to register output buffer!" );
+        }
+
+        if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
+             ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
+        {
+            size_t numOfArgs = 8;
+            OpenclIfcae_Arg_t OpenclArgs[8];
+            OpenclArgs[0].pArg = (void *) &bufferSrc;
+            OpenclArgs[0].argSize = sizeof( cl_mem );
+            OpenclArgs[1].pArg = (void *) &bufferDst;
+            OpenclArgs[1].argSize = sizeof( cl_mem );
+            OpenclArgs[2].pArg = (void *) &m_config.inputHeight;
+            OpenclArgs[2].argSize = sizeof( cl_uint );
+            OpenclArgs[3].pArg = (void *) &m_config.inputWidth;
+            OpenclArgs[3].argSize = sizeof( cl_uint );
+            OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
+            OpenclArgs[4].argSize = sizeof( cl_uint );
+            OpenclArgs[5].pArg = (void *) &( pInput->imgProps.actualHeight[0] );
+            OpenclArgs[5].argSize = sizeof( cl_uint );
+            OpenclArgs[6].pArg = (void *) &( pInput->imgProps.stride[1] );
+            OpenclArgs[6].argSize = sizeof( cl_uint );
+            OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[0] );
+            OpenclArgs[7].argSize = sizeof( cl_uint );
+
+            OpenclIface_WorkParams_t OpenclWorkParams;
+            OpenclWorkParams.workDim = 2;
+            OpenclWorkParams.pGlobalWorkSize[0] = m_config.inputWidth / 2;
+            OpenclWorkParams.pGlobalWorkSize[1] = m_config.inputHeight / 2;
+            OpenclWorkParams.pGlobalWorkOffset[0] = 0;
+            OpenclWorkParams.pGlobalWorkOffset[1] = 0;
+
+            ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to run NV12 to RGB color convertor!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+        }
+    }
+
+    return ret;
+}
+
+}   // namespace component
+}   // namespace ridehal

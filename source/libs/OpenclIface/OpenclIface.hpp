@@ -1,16 +1,16 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-#ifndef QRIDE_OPENCL_SRV_HPP
-#define QRIDE_OPENCL_SRV_HPP
+#ifndef RIDEHAL_OPENCL_SRV_HPP
+#define RIDEHAL_OPENCL_SRV_HPP
 
-#include "ridehal/common/Logger.hpp"
-#include "ridehal/common/SharedBuffer.hpp"
-#include "ridehal/common/Types.hpp"
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 #include <CL/cl_ext_qcom.h>
 #include <map>
 
+#include "ridehal/common/Logger.hpp"
+#include "ridehal/common/SharedBuffer.hpp"
+#include "ridehal/common/Types.hpp"
 using namespace ridehal::common;
 
 namespace ridehal
@@ -67,4 +67,4 @@ protected:
 }   // namespace libs
 }   // namespace ridehal
 
-#endif   // QRIDE_OPENCL_SRV_HPP
+#endif   // RIDEHAL_OPENCL_SRV_HPP
