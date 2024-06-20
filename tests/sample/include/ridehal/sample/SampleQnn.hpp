@@ -53,6 +53,7 @@ private:
     std::string m_outputTopicName;
 
     std::string m_modelPath;
+    std::vector<QnnRuntime_UdoPackage_t> m_opPackagePaths;
     std::thread m_thread;
     bool m_stop;
 

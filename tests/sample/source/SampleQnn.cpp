@@ -3,6 +3,7 @@
 
 
 #include "ridehal/sample/SampleQnn.hpp"
+#include "QnnSampleAppUtils.hpp"
 
 
 namespace ridehal
@@ -51,6 +52,30 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
     {
         RIDEHAL_ERROR( "no output topic\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+    std::string opPackagePathsStr = Get( config, "udo", "" );
+    if ( "" != opPackagePathsStr )
+    {
+        std::vector<std::string> opPackagePaths;
+        split( opPackagePaths, opPackagePathsStr, ',' );
+        for ( int i = 0; i < opPackagePaths.size(); ++i )
+        {
+            static std::vector<std::string> opPackage;
+            split( opPackage, opPackagePaths[i], ':' );
+            if ( opPackage.size() != 2 )
+            {
+                RIDEHAL_ERROR( "invalid opPackage params: %s\n", opPackagePaths[i].c_str() );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+            m_opPackagePaths[i].udoLibPath = opPackage[0].c_str();
+            m_opPackagePaths[i].interfaceProvider = opPackage[1].c_str();
+            RIDEHAL_INFO( "opPackage params %d, udoLibPath: %s, interfaceProvider: %s\n", i,
+                          m_opPackagePaths[i].udoLibPath, m_opPackagePaths[i].interfaceProvider );
+        }
+        m_config.numOfUdoPackages = m_opPackagePaths.size();
+        m_config.pUdoPackages = &m_opPackagePaths[0];
     }
 
     return ret;

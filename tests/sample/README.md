@@ -179,6 +179,7 @@ The command line template example:
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
+| udo           | false    | string    | -       | udo lib path and interface provider name. e.g. libQnnAutoAiswOpPackage.so:AutoAiswOpPackageInterfaceProvider |
 
 The command line template example:
 
