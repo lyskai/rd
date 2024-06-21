@@ -34,3 +34,48 @@ optional arguments:
 python scripts/utils/data_reader/video2dr.py -i 4K_Street.mp4 -s 1000 -m 50 -r "3840 2176" -f nv12 -o 4K_street_1000_50_3840_2176_nv12
 python scripts/utils/data_reader/video2dr.py -i 4K_Street.mp4 -s 1000 -m 50 -r "1920 1024" -f uyvy -o 4K_street_1000_50_1920_1024_uyvy
 ```
+
+# Tools that convert point clound files to the inputs of the Sample DataReader.
+
+## Usage
+
+```sh
+usage: lidar2dr.py [-h] -i INPUT [-o OUTPUT] [-s OFFSET] [-m MAXIMUM] [-r RANGE]
+
+convert lidar pointcloud to inputs of the Sample DataReader
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        The input directory that contains the pointclound
+                        files
+  -o OUTPUT, --output OUTPUT
+                        The output path to store the generated inputs
+  -s OFFSET, --offset OFFSET
+                        the offset of the lidar frame in the input directory
+  -m MAXIMUM, --maximum MAXIMUM
+                        The maximum number of the generated inputs
+  -r RANGE, --range RANGE
+                        the range of points: [minX, maxX, minY, maxY, minZ, maxZ]
+```
+
+
+## example commands:
+
+Note this tool is only verified with the data set from (semantic kitti velodyne)[http://www.semantic-kitti.org/dataset.html]
+
+```sh
+python scripts/utils/data_reader/lidar2dr.py -i /path/to/dataset/sequences/00/velodyne -o LIDAR0 -m 500
+```
+
+Note: the "LIDAR0/info.txt" contains the "max points"/"offsetX"/"offsetY"/"ratioW"/"rationH" which will be used by the RideHalSampleApp as parameters.
+
+```sh
+# contents of LIDAR0/info.txt
+max points: 126327
+offsetX: 514.0645161290322
+offsetY: 0
+ratioW: 12.903225806451614
+ratioH: 12.903225806451614
+...
+```

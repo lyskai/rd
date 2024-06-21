@@ -490,7 +490,7 @@ RideHalError_e PostCenterPoint::Execute( const RideHal_SharedBuffer_t *pHeatmap,
               ( 2 != pDetections->tensorProps.numDims ) ||
               ( RIDEHAL_TENSOR_TYPE_FLOAT_32 != pDetections->tensorProps.type ) ||
               ( m_config.maxNumDetOut != pDetections->tensorProps.dims[0] ) ||
-              ( POINTPILLAR_OBJECT_3D_DIM != pDetections->tensorProps.dims[1] ) )
+              ( POSTCENTERPOINT_OBJECT_3D_DIM != pDetections->tensorProps.dims[1] ) )
     {
         RIDEHAL_ERROR( "pDetections is invalid!" );
         ret = RIDEHAL_ERROR_INVALID_BUF;

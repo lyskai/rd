@@ -13,7 +13,7 @@ using namespace ridehal::common;
 using namespace ridehal::component;
 
 static Voxelization_Config_t plrPreConfig0 = {
-        RIDEHAL_PROCESSOR_CPU,
+        RIDEHAL_PROCESSOR_HTP0,
         0.16,
         0.16,
         4.0, /* pillar size: x, y, z */
@@ -31,7 +31,7 @@ static Voxelization_Config_t plrPreConfig0 = {
 };
 
 static Voxelization_Config_t plrPreConfig1 = {
-        RIDEHAL_PROCESSOR_CPU,
+        RIDEHAL_PROCESSOR_HTP0,
         0.2,
         0.2,
         5.0, /* pillar size: x, y, z */
@@ -49,7 +49,7 @@ static Voxelization_Config_t plrPreConfig1 = {
 };
 
 static PostCenterPoint_Config_t plrPostConfig0 = {
-        RIDEHAL_PROCESSOR_CPU,
+        RIDEHAL_PROCESSOR_HTP0,
         0.16,
         0.16, /* pillar size: x, y */
         0.0,
@@ -69,7 +69,7 @@ static PostCenterPoint_Config_t plrPostConfig0 = {
 };
 
 static PostCenterPoint_Config_t plrPostConfig1 = {
-        RIDEHAL_PROCESSOR_CPU,
+        RIDEHAL_PROCESSOR_HTP0,
         0.2,
         0.2, /* pillar size: x, y */
         -2.0,
@@ -144,9 +144,8 @@ static void SaveRaw( std::string path, void *pData, size_t size )
 }
 
 
-static void SANITY_Voxelization( RideHal_ProcessorType_e processor,
-                                       Voxelization_Config_t &cfg,
-                                       const char *pcdFile = nullptr, bool bDumpOutput = false )
+static void SANITY_Voxelization( RideHal_ProcessorType_e processor, Voxelization_Config_t &cfg,
+                                 const char *pcdFile = nullptr, bool bDumpOutput = false )
 {
     Voxelization_Config_t config = cfg;
     config.processor = processor;
@@ -160,7 +159,7 @@ static void SANITY_Voxelization( RideHal_ProcessorType_e processor,
     };
     RideHal_TensorProps_t outPlrsTsProp = {
             RIDEHAL_TENSOR_TYPE_FLOAT_32,
-            { config.maxNumPlrs, config.numInFeatureDim, 0 },
+            { config.maxNumPlrs, VOXELIZATION_PILLAR_COORDS_DIM, 0 },
             2,
     };
     RideHal_TensorProps_t outFeatureTsProp = {
@@ -221,10 +220,8 @@ TEST( FadasPlr, SANITY_VoxelizationCPU )
     SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig0 );
     SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig1 );
 
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig0,
-                               "data/test/plr/pointcloud.bin" );
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig1,
-                               "data/test/plr/pointcloud.bin" );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig0, "data/test/plr/pointcloud.bin" );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig1, "data/test/plr/pointcloud.bin" );
 }
 
 TEST( FadasPlr, SANITY_VoxelizationDSP )
@@ -233,18 +230,15 @@ TEST( FadasPlr, SANITY_VoxelizationDSP )
     SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig1 );
 
 
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig0,
-                               "data/test/plr/pointcloud.bin" );
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_CPU, plrPreConfig1,
-                               "data/test/plr/pointcloud.bin" );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig0, "data/test/plr/pointcloud.bin" );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig1, "data/test/plr/pointcloud.bin" );
 }
 
 
-void SANITY_PostCenterPoint( RideHal_ProcessorType_e processor,
-                                 PostCenterPoint_Config_t &cfg, const char *pcdFile,
-                                 const char *hmFile, const char *xyFile, const char *zFile,
-                                 const char *sizeFile, const char *thetaFile,
-                                 bool bDumpOutput = false )
+void SANITY_PostCenterPoint( RideHal_ProcessorType_e processor, PostCenterPoint_Config_t &cfg,
+                             const char *pcdFile, const char *hmFile, const char *xyFile,
+                             const char *zFile, const char *sizeFile, const char *thetaFile,
+                             bool bDumpOutput = false )
 {
     PostCenterPoint_Config_t config = cfg;
     PostCenterPoint plrPost;
@@ -290,7 +284,7 @@ void SANITY_PostCenterPoint( RideHal_ProcessorType_e processor,
     };
     RideHal_TensorProps_t detTsProp = {
             RIDEHAL_TENSOR_TYPE_FLOAT_32,
-            { config.maxNumDetOut, POINTPILLAR_OBJECT_3D_DIM },
+            { config.maxNumDetOut, POSTCENTERPOINT_OBJECT_3D_DIM },
             2,
     };
 
@@ -376,41 +370,38 @@ void SANITY_PostCenterPoint( RideHal_ProcessorType_e processor,
 extern int PtPlr_PostProc( void );
 TEST( FadasPlr, SANITY_PostCenterPointCPU )
 {
-    SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_CPU, plrPostConfig0,
-                                "data/test/plr/CFG0/000008.bin",
-                                "data/test/plr/CFG0/hm-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/center-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/center_z-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/dim_exp-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/rot-activation-0-inf-1.bin" );
-    SANITY_PostCenterPoint(
-            RIDEHAL_PROCESSOR_CPU, plrPostConfig1, "data/test/plr/pointcloud.bin",
-            "data/test/plr/hm-activation-0-inf-1.bin", "data/test/plr/reg-activation-0-inf-1.bin",
-            "data/test/plr/height-activation-0-inf-1.bin",
-            "data/test/plr/dim-activation-0-inf-1.bin",
-            "data/test/plr/rot-activation-0-inf-1.bin" );
+    SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_CPU, plrPostConfig0, "data/test/plr/CFG0/000008.bin",
+                            "data/test/plr/CFG0/hm-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/center-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/center_z-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/dim_exp-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/rot-activation-0-inf-1.bin" );
+    SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_CPU, plrPostConfig1, "data/test/plr/pointcloud.bin",
+                            "data/test/plr/hm-activation-0-inf-1.bin",
+                            "data/test/plr/reg-activation-0-inf-1.bin",
+                            "data/test/plr/height-activation-0-inf-1.bin",
+                            "data/test/plr/dim-activation-0-inf-1.bin",
+                            "data/test/plr/rot-activation-0-inf-1.bin" );
 }
 
 TEST( FadasPlr, SANITY_PostCenterPointDSP )
 {
-    SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_HTP0, plrPostConfig0,
-                                "data/test/plr/CFG0/000008.bin",
-                                "data/test/plr/CFG0/hm-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/center-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/center_z-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/dim_exp-activation-0-inf-1.bin",
-                                "data/test/plr/CFG0/rot-activation-0-inf-1.bin" );
-    SANITY_PostCenterPoint(
-            RIDEHAL_PROCESSOR_HTP0, plrPostConfig1, "data/test/plr/pointcloud.bin",
-            "data/test/plr/hm-activation-0-inf-1.bin", "data/test/plr/reg-activation-0-inf-1.bin",
-            "data/test/plr/height-activation-0-inf-1.bin",
-            "data/test/plr/dim-activation-0-inf-1.bin", "data/test/plr/rot-activation-0-inf-1.bin",
-            true );
+    SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_HTP0, plrPostConfig0, "data/test/plr/CFG0/000008.bin",
+                            "data/test/plr/CFG0/hm-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/center-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/center_z-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/dim_exp-activation-0-inf-1.bin",
+                            "data/test/plr/CFG0/rot-activation-0-inf-1.bin" );
+    SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_HTP0, plrPostConfig1, "data/test/plr/pointcloud.bin",
+                            "data/test/plr/hm-activation-0-inf-1.bin",
+                            "data/test/plr/reg-activation-0-inf-1.bin",
+                            "data/test/plr/height-activation-0-inf-1.bin",
+                            "data/test/plr/dim-activation-0-inf-1.bin",
+                            "data/test/plr/rot-activation-0-inf-1.bin", true );
 }
 
 
-static void FadasPlr_E2E_PreProc( RideHal_ProcessorType_e processor,
-                                  Voxelization_Config_t &cfg )
+static void FadasPlr_E2E_PreProc( RideHal_ProcessorType_e processor, Voxelization_Config_t &cfg )
 {
     int exist = access( "/tmp/pointcloud.bin", F_OK );
     if ( 0 == exist )
@@ -431,8 +422,8 @@ static void FadasPlr_E2E_PostProc( RideHal_ProcessorType_e processor,
     if ( 0 == exist )
     {
         SANITY_PostCenterPoint( processor, cfg, "/tmp/pointcloud.bin", "/tmp/hm.raw",
-                                    "/tmp/center.raw", "/tmp/center_z.raw", "/tmp/dim_exp.raw",
-                                    "/tmp/rot.raw", true );
+                                "/tmp/center.raw", "/tmp/center_z.raw", "/tmp/dim_exp.raw",
+                                "/tmp/rot.raw", true );
     }
     else
     {

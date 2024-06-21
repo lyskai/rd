@@ -20,6 +20,8 @@ namespace ridehal
 namespace component
 {
 
+#define VOXELIZATION_PILLAR_COORDS_DIM ( sizeof( FadasVM_PointPillar_t ) / sizeof( float ) )
+
 /** @brief Voxelization component configuration */
 typedef struct
 {
@@ -54,9 +56,9 @@ public:
     ~Voxelization();
 
     /**
-     * @brief Initialize the point pillar pipeline
-     * @param[in] pName the point pillar unique instance name
-     * @param[in] pConfig the point pillar configuration paramaters
+     * @brief Initialize the voxelization pipeline
+     * @param[in] pName the voxelization unique instance name
+     * @param[in] pConfig the voxelization configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -64,17 +66,21 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @brief Register buffers for point pillar
+     * @brief Register buffers for voxelization
      * @param[in] pBuffers a list of buffers to be registeer
      * @param[in] numBuffers number of buffers
      * @param[in] bufferType buffer type, could be IN, OUT, INOUT
+     * @note It is recommended to call this API to register all the input/output buffers to
+     * the voxelization during the initialization phase. But for some reasons, the input buffers
+     * maybe not known during the initialization, so it's also OK to not do this, the Execute API
+     * will help to do the register only once in case the buffer is not registered before.
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                                     FadasBufType_e bufferType );
 
     /**
-     * @brief Deregister buffers for point pillar
+     * @brief Deregister buffers for voxelization
      * @param[in] pBuffers a list of buffers to be deregister
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -82,30 +88,29 @@ public:
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
-     * @cond Voxelization::Start @endcond
-     * @brief Start the point pillar pipeline, empty for now
+     * @brief Start the voxelization pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Start();
 
     /**
-     * @brief Stop the point pillar pipeline, empty for now
+     * @brief Stop the voxelization pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Stop();
 
     /**
-     * @brief deinitialize the point pillar pipeline
+     * @brief Deinitialize the voxelization pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Deinit();
 
     /**
-     * @brief execute the point pillar pipeline
+     * @brief Execute the voxelization pipeline
      * @param[in] pInPts The input point cloud where size in bytes
      *                 is maxNumInPts x 4 x sizeof(float32_t).
      * @param[out] pOutPlrs The output point pillars, where memory (in bytes)
-     *                 for each pillar is maxNumPlrs x sizeof(float32_t)
+     *                 for each pillar is maxNumPlrs x 4 x sizeof(float32_t)
      * @param[out] pOutFeature The output point pillar feature points where
      *                 memory size in bytes for all pillars is
      *                 maxNumPlrs * maxNumPtsPerPlr x numOutFeatureDim x sizeof(float32_t)

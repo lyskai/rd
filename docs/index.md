@@ -7,3 +7,5 @@
 - [The RideHal QnnRuntime](./qnnruntime.md)
 - [The RideHal Remap](./remap.md)
 - [The RideHal VideoEncoder](./videoencoder.md)
+- [The RideHal Voxelization](./Voxelization.md)
+- [The RideHal PostCenterPoint](./PostCenterPoint.md)

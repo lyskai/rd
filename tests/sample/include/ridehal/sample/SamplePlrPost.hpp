@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_SAMPLE_PLRPRE_HPP_
-#define _RIDEHAL_SAMPLE_PLRPRE_HPP_
+#ifndef _RIDEHAL_SAMPLE_PLRPOST_HPP_
+#define _RIDEHAL_SAMPLE_PLRPOST_HPP_
 
 #include "ridehal/component/PostCenterPoint.hpp"
 #include "ridehal/sample/SampleIF.hpp"
@@ -79,4 +79,4 @@ private:
 }   // namespace sample
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_SAMPLE_PLRPRE_HPP_
+#endif   // _RIDEHAL_SAMPLE_PLRPOST_HPP_

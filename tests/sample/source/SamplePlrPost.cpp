@@ -97,7 +97,7 @@ RideHalError_e SamplePlrPost::Init( std::string name, SampleConfig_t &config )
     {
         RideHal_TensorProps_t detTsProp = {
                 RIDEHAL_TENSOR_TYPE_FLOAT_32,
-                { m_config.maxNumDetOut, POINTPILLAR_OBJECT_3D_DIM },
+                { m_config.maxNumDetOut, POSTCENTERPOINT_OBJECT_3D_DIM },
                 2,
         };
 

@@ -23,7 +23,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | parameter | required | type      | comments |
 |-----------|----------|-----------|----------|
 | -n        | true     | string    | The unique component name |
-| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder] |
+| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder, PlrPre, PlrPost] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the previous attribute name |
 
@@ -58,7 +58,7 @@ The command line template example for image type data reader that simulate a cam
     -k topic -v /sensor/camera/CAM0/raw \
 ```
 
-Refer [DataReader Utils](../../scripts/utils/data_reader/README.md) for how to generate a data reader inputs from video(*.mp4).
+Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L2) for how to generate a data reader inputs from video(*.mp4).
 
 The command line template example for tensor type data reader that simulate a lidar:
 
@@ -73,6 +73,8 @@ The command line template example for tensor type data reader that simulate a li
 ```
 
 Please note that for lidar pipeline, TinyViz was used to visualize the pointcould, and to save computing resource to dynamic generate images from pointcloud, pre-generated images was used, that's why another "data_path1".
+
+Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how to generate a data reader inputs point cloud files.
 
 ### 2.2 RideHal Camera Sample
 
@@ -286,6 +288,71 @@ The command line template example:
   -n REC0 -t Recorder -k max -v 100 -k topic -v /sensor/camera/CAM0/hevc \
 ```
 
+### 2.10 RideHal PlrPre Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu] |
+| pillar_size_x | false    | float     | 0.16    | Pillar size in x direction in meters |
+| pillar_size_y | false    | float     | 0.16    | Pillar size in y direction in meters |
+| pillar_size_z | false    | float     | 4.0     | Pillar size in z direction in meters |
+| min_x         | false    | float     | 0.0     | Minimum range value in x direction |
+| min_y         | false    | float     | -39.68  | Minimum range value in y direction |
+| min_z         | false    | float     | -3.0    | Minimum range value in z direction |
+| max_x         | false    | float     | 69.12   | Maximum range value in x direction |
+| max_y         | false    | float     | 39.68   | Maximum range value in x direction |
+| max_z         | false    | float     | 1       | Maximum range value in x direction |
+| max_points    | false    | int       | 300000  | Maximum number of points in input point cloud |
+| in_feature_dim | false   | int       | 4       | Number of features for each point in the input point cloud data |
+| max_pillars    | false   | int       | 12000   | Maximum number of point pillars that can be created |
+| max_points_per_pillar | false | int  | 32       | Maximum number of pMaximum number of points to map to each pillar |
+| out_feature_dim | false  | int       | 10      | Number of features for each point in point pillars |
+| pool_size     | false    | int       | 4       | the image memory pool size |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n PLRPRE0 -t PlrPre -k processor -v htp0 \
+    -k input_topic -v /sensor/lidar/LIDAR0/raw \
+    -k output_topic -v /sensor/lidar/LIDAR0/plrpre \
+```
+
+### 2.11 RideHal PlrPost Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu] |
+| pillar_size_x | false    | float     | 0.16    | Pillar size in x direction in meters |
+| pillar_size_y | false    | float     | 0.16    | Pillar size in y direction in meters |
+| min_x         | false    | float     | 0.0     | Minimum range value in x direction |
+| min_y         | false    | float     | -39.68  | Minimum range value in y direction |
+| max_x         | false    | float     | 69.12   | Maximum range value in x direction |
+| max_y         | false    | float     | 39.68   | Maximum range value in x direction |
+| max_points    | false    | int       | 300000  | Maximum number of points in input point cloud |
+| in_feature_dim | false   | int       | 4       | Number of features for each point in the input point cloud data |
+| max_det_out    | false   | int       | 500     | Maximum number of 3D bounding boxes expected in the output |
+| stride        | false    | int       | 2       | The downsample ratio |
+| thresh_score  | false    | float     | 0.4     | Confidence score threshold |
+| thresh_iou    | false    | float     | 0.4     | NMS Overlap threshold |
+| offset_x      | false    | float     | 514     | The min_x corresponding pixel position x of the pre-generated lidar image |
+| offset_y      | false    | float     | 514     | The min_y corresponding pixel position y of the pre-generated lidar image |
+| ratio_w      | false    | float | 12.903225806451614 | The ration to transfrom the point cloud position x to image pixel position x |
+| ratio_h      | false    | float | 12.903225806451614 | The ration to transfrom the point cloud position y to image pixel position y |
+| debug      | false    | bool | false | print out the detected 3d bounding box |
+| output_indexs | false | string | 3,0,1,4,2 | The index of the pointpillar model outputs "heapmap", "center", "center_z", "dim" and "rot" |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n PLRPOST0 -t PlrPost -k processor -v htp0 -k debug -v false \
+    -k input_lidar_topic -v /sensor/lidar/LIDAR0/raw \
+    -k input_topic -v /sensor/lidar/LIDAR0/qnn \
+    -k output_topic -v /sensor/lidar/LIDAR0/objs
+```
 
 ## 3. Typical RideHal Sample Application pipelines
 
@@ -403,4 +470,32 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM1/qnn \
     -k output_topic -v /sensor/camera/CAM1/objs \
   -n VIZ -t TinyViz -k cameras -v CAM0,CAM1
+```
+
+### 3.3 1 DataReader based Pointpillar QNN perception pipelines
+
+```sh
+./bin/rhrun ./bin/RideHalSampleApp \
+  -n LIDAR0 -t DataReader -k number -v 2 \
+    -k type0 -v tensor -k tensor_type0 -v float32 -k dims0 -v "300000,4"  \
+    -k data_path0 -v /data/LIDAR0 \
+    -k type1 -v image -k format1 -v nv12 -k width1 -v 1920 -k height1 -v 1024 \
+    -k data_path1 -v /data/LIDAR0 \
+    -k pool_size -v 4 -k fps -v 10 \
+    -k topic -v /sensor/lidar/LIDAR0/raw \
+  -n PLRPRE0 -t PlrPre -k processor -v htp0 \
+    -k input_topic -v /sensor/lidar/LIDAR0/raw \
+    -k output_topic -v /sensor/lidar/LIDAR0/plrpre \
+  -n PLR0 -t Qnn -k processor -v htp0 \
+    -k model_path -v data/pointpillar/program.bin \
+    -k input_topic -v /sensor/lidar/LIDAR0/plrpre \
+    -k output_topic -v /sensor/lidar/LIDAR0/qnn \
+  -n PLRPOST0 -t PlrPost -k processor -v htp0 -k debug -v false \
+    -k input_lidar_topic -v /sensor/lidar/LIDAR0/raw \
+    -k input_topic -v /sensor/lidar/LIDAR0/qnn \
+    -k output_topic -v /sensor/lidar/LIDAR0/objs \
+  -n VIZ -t TinyViz -k cameras -v LIDAR0 \
+    -k batch_index0 -v 1 \
+    -k cam_topic0 -v /sensor/lidar/LIDAR0/raw \
+    -k obj_topic0 -v /sensor/lidar/LIDAR0/objs -d
 ```

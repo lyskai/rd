@@ -30,7 +30,7 @@ typedef struct
     float maxCentreX;      /**< Max values of x used for range check for centre of detection. */
     float maxCentreY;      /**< Max values of y used for range check for centre of detection. */
     float maxCentreZ;      /**< Max values of z used for range check for centre of detection. */
-    bool *labelSelect;
+    bool *labelSelect;     /**< Pointer to buffer providing selection/exclusion status of labels. */
 } PostCenterPoint_3DBBoxFilterParams_t;
 
 /** @brief PostCenterPoint component configuration */
@@ -85,11 +85,11 @@ typedef struct
     float meanIntensity; /**< Mean of intensities of all points inside the bounding box */
 } PostCenterPoint_Object3D_t;
 
-#define POINTPILLAR_OBJECT_3D_DIM ( sizeof( PostCenterPoint_Object3D_t ) / sizeof( float ) )
+#define POSTCENTERPOINT_OBJECT_3D_DIM ( sizeof( PostCenterPoint_Object3D_t ) / sizeof( float ) )
 
 /**
  * @brief PostCenterPoint
- * Component PostCenterPoint that creates point pillars from point cloud data.
+ * Extracts and filters bounding boxes from the center point network output.
  */
 class PostCenterPoint : public ComponentIF
 {
@@ -99,9 +99,9 @@ public:
     ~PostCenterPoint();
 
     /**
-     * @brief Initialize the point pillar pipeline
-     * @param[in] pName the point pillar unique instance name
-     * @param[in] pConfig the point pillar configuration paramaters
+     * @brief Initialize the center point post processing pipeline
+     * @param[in] pName the PostCenterPoint unique instance name
+     * @param[in] pConfig the PostCenterPoint configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -109,17 +109,21 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @brief Register buffers for point pillar
+     * @brief Register buffers for PostCenterPoint
      * @param[in] pBuffers a list of buffers to be registeer
      * @param[in] numBuffers number of buffers
      * @param[in] bufferType buffer type, could be IN, OUT, INOUT
+     * @note It is recommended to call this API to register all the input/output buffers to
+     * the PostCenterPoint during the initialization phase. But for some reasons, the input buffers
+     * maybe not known during the initialization, so it's also OK to not do this, the Execute API
+     * will help to do the register only once in case the buffer is not registered before.
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                                     FadasBufType_e bufferType );
 
     /**
-     * @brief Deregister buffers for point pillar
+     * @brief Deregister buffers for PostCenterPoint
      * @param[in] pBuffers a list of buffers to be deregister
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -127,26 +131,25 @@ public:
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
-     * @cond PostCenterPoint::Start @endcond
-     * @brief Start the point pillar pipeline, empty for now
+     * @brief Start the PostCenterPoint pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Start();
 
     /**
-     * @brief Stop the point pillar pipeline, empty for now
+     * @brief Stop the PostCenterPoint pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Stop();
 
     /**
-     * @brief deinitialize the point pillar pipeline
+     * @brief Deinitialize the PostCenterPoint pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Deinit();
 
     /**
-     * @brief execute the point pillar pipeline
+     * @brief Execute the PostCenterPoint pipeline
      * @param[in] pHeatmap Pointer to heatmap buffer
      * @param[in] pXY Pointer to buffer containing x,y co-ordinates of center point
      * @param[in] pZ Pointer to buffer containing z co-ordinate of center point

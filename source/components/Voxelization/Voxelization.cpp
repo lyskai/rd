@@ -269,7 +269,7 @@ RideHalError_e Voxelization::Execute( const RideHal_SharedBuffer_t *pInPts,
               ( nullptr == pOutPlrs->buffer.pData ) || ( 2 != pOutPlrs->tensorProps.numDims ) ||
               ( RIDEHAL_TENSOR_TYPE_FLOAT_32 != pOutPlrs->tensorProps.type ) ||
               ( m_config.maxNumPlrs != pOutPlrs->tensorProps.dims[0] ) ||
-              ( m_config.numInFeatureDim != pOutPlrs->tensorProps.dims[1] ) )
+              ( VOXELIZATION_PILLAR_COORDS_DIM != pOutPlrs->tensorProps.dims[1] ) )
     {
         RIDEHAL_ERROR( "pOutPlrs is invalid!" );
         ret = RIDEHAL_ERROR_INVALID_BUF;

@@ -77,7 +77,7 @@ RideHalError_e SamplePlrPre::Init( std::string name, SampleConfig_t &config )
     {
         RideHal_TensorProps_t outPlrsTsProp = {
                 RIDEHAL_TENSOR_TYPE_FLOAT_32,
-                { m_config.maxNumPlrs, m_config.numInFeatureDim, 0 },
+                { m_config.maxNumPlrs, VOXELIZATION_PILLAR_COORDS_DIM, 0 },
                 2,
         };
 
