@@ -9,6 +9,7 @@
 #include "Logger.hpp"
 #include "QnnProfile.h"
 #include "QnnSampleAppUtils.hpp"
+#include "QnnSdkBuildId.h"
 #include "QnnTypeMacros.hpp"
 #include <unistd.h>
 
@@ -477,10 +478,11 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             RIDEHAL_ERROR( "Could not get backend version due to error = %d", returnStatus );
             ret = RIDEHAL_ERROR_FAIL;
         }
-        RIDEHAL_INFO( "QNN version: %u.%u.%u %u.%u.%u", version.coreApiVersion.major,
-                      version.coreApiVersion.minor, version.coreApiVersion.patch,
-                      version.backendApiVersion.major, version.backendApiVersion.minor,
-                      version.backendApiVersion.patch );
+        RIDEHAL_INFO( "QNN build version: %s", QNN_SDK_BUILD_ID );
+        RIDEHAL_INFO( "QNN running core api version: %u.%u.%u, backend api version: %u.%u.%u",
+                      version.coreApiVersion.major, version.coreApiVersion.minor,
+                      version.coreApiVersion.patch, version.backendApiVersion.major,
+                      version.backendApiVersion.minor, version.backendApiVersion.patch );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
