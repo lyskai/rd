@@ -87,6 +87,28 @@ RideHalError_e OpenclSrv::LoadFromSource( const char *pSourceFile, const char *p
         {
             RIDEHAL_ERROR( "Unable to build program, retCL = %d", retCL );
             ret = RIDEHAL_ERROR_FAIL;
+            size_t len = 0;
+            (void) clGetProgramBuildInfo( m_program, m_deviceID, CL_PROGRAM_BUILD_LOG, 0, NULL,
+                                          &len );
+            if ( len > 0 )
+            {
+                char *pBuffer = (char *) calloc( len, sizeof( char ) );
+                if ( nullptr != pBuffer )
+                {
+                    (void) clGetProgramBuildInfo( m_program, m_deviceID, CL_PROGRAM_BUILD_LOG, len,
+                                                  pBuffer, NULL );
+                    (void) fprintf( stderr, "build log:\n %s\n", pBuffer );
+                    free( pBuffer );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "Failed to allocate buffer for build log!" );
+                }
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Empty build log!" );
+            }
         }
     }
 
@@ -206,8 +228,13 @@ RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, cl_mem *pBuffe
         auto it = m_memMap.find( pBufferHost );
         if ( it == m_memMap.end() )
         {
+            cl_mem_pmem_host_ptr clBufHostPtr = { 0 };
+            clBufHostPtr.pmem_handle = 0;
+            clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_PMEM_HOST_PTR_QCOM;
+            clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
+            clBufHostPtr.pmem_hostptr = pBufferHost;
             *pBufferCL = clCreateBuffer( m_context, CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
-                                         size, pBufferHost, &retCL );
+                                         size, &clBufHostPtr, &retCL );
             if ( CL_SUCCESS != retCL )
             {
                 RIDEHAL_ERROR( "Unable to create CL buffer, retCL = %d", retCL );

@@ -160,8 +160,8 @@ RideHalError_e ColorConvertor::Deinit()
 }
 
 
-RideHalError_e ColorConvertor::RegisterBuffer( const RideHal_SharedBuffer_t *pBuffer,
-                                               cl_mem *pBufferCL )
+RideHalError_e ColorConvertor::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                                uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -171,24 +171,30 @@ RideHalError_e ColorConvertor::RegisterBuffer( const RideHal_SharedBuffer_t *pBu
         RIDEHAL_ERROR( "ColorConvertor component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
-    else if ( nullptr == pBuffer )
+    else if ( nullptr == pBuffers )
     {
         RIDEHAL_ERROR( "Empty buffers pointer!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        ret = m_OpenclSrvObj.RegBuf( pBuffer->data(), pBuffer->size, pBufferCL );
-        if ( RIDEHAL_ERROR_NONE != ret )
+        for ( uint32_t i = 0; i < numBuffers; i++ )
         {
-            RIDEHAL_ERROR( "Failed to register buffer!" );
+            cl_mem bufferCL;
+            ret = m_OpenclSrvObj.RegBuf( pBuffers[i].data(), pBuffers[i].size, &bufferCL );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to register buffer for number %d!", i );
+                break;
+            }
         }
     }
 
     return ret;
 }
 
-RideHalError_e ColorConvertor::DeRegisterBuffer( const RideHal_SharedBuffer_t *pBuffer )
+RideHalError_e ColorConvertor::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                                  uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -198,17 +204,83 @@ RideHalError_e ColorConvertor::DeRegisterBuffer( const RideHal_SharedBuffer_t *p
         RIDEHAL_ERROR( "ColorConvertor component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
-    else if ( nullptr == pBuffer )
+    else if ( nullptr == pBuffers )
     {
         RIDEHAL_ERROR( "Empty buffers pointer!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        ret = m_OpenclSrvObj.DeregBuf( pBuffer->data() );
+        for ( uint32_t i = 0; i < numBuffers; i++ )
+        {
+            ret = m_OpenclSrvObj.DeregBuf( pBuffers[i].data() );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to deregister buffer for number %d!", i );
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e ColorConvertor::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+                                              const RideHal_SharedBuffer_t *pOutput )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    cl_mem bufferSrc;
+    cl_mem bufferDst;
+    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, &bufferSrc );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register input buffer!" );
+    }
+    else
+    {
+        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, &bufferDst );
         if ( RIDEHAL_ERROR_NONE != ret )
         {
-            RIDEHAL_ERROR( "Failed to deregister buffer!" );
+            RIDEHAL_ERROR( "Failed to register output buffer!" );
+        }
+        else
+        {
+            size_t numOfArgs = 8;
+            OpenclIfcae_Arg_t OpenclArgs[8];
+            OpenclArgs[0].pArg = (void *) &bufferSrc;
+            OpenclArgs[0].argSize = sizeof( cl_mem );
+            OpenclArgs[1].pArg = (void *) &bufferDst;
+            OpenclArgs[1].argSize = sizeof( cl_mem );
+            OpenclArgs[2].pArg = (void *) &m_config.inputHeight;
+            OpenclArgs[2].argSize = sizeof( cl_int );
+            OpenclArgs[3].pArg = (void *) &m_config.inputWidth;
+            OpenclArgs[3].argSize = sizeof( cl_int );
+            OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
+            OpenclArgs[4].argSize = sizeof( cl_int );
+            OpenclArgs[5].pArg = (void *) &( pInput->imgProps.actualHeight[0] );
+            OpenclArgs[5].argSize = sizeof( cl_int );
+            OpenclArgs[6].pArg = (void *) &( pInput->imgProps.stride[1] );
+            OpenclArgs[6].argSize = sizeof( cl_int );
+            OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[0] );
+            OpenclArgs[7].argSize = sizeof( cl_int );
+
+            OpenclIface_WorkParams_t OpenclWorkParams;
+            OpenclWorkParams.workDim = 2;
+            size_t globalWorkSize[2] = { m_config.inputWidth / 2, m_config.inputHeight / 2 };
+            OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
+            size_t globalWorkOffset[2] = { 0, 0 };
+            OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
+            /*initial local work size, not really used, we would use NULL to select
+                          device local size automatically*/
+            size_t localWorkSize[2] = { 1, 1 };
+            OpenclWorkParams.pLocalWorkSize = localWorkSize;
+
+            ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to execute opencl color convertor!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
         }
     }
 
@@ -226,12 +298,12 @@ RideHalError_e ColorConvertor::Execute( const RideHal_SharedBuffer_t *pInput,
         RIDEHAL_ERROR( "ColorConvertor component not initialized!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
-    else if ( nullptr != pInput )
+    else if ( nullptr == pInput )
     {
         RIDEHAL_ERROR( "Input buffer is null!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( nullptr != pOutput )
+    else if ( nullptr == pOutput )
     {
         RIDEHAL_ERROR( "Output buffer is null!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -258,53 +330,14 @@ RideHalError_e ColorConvertor::Execute( const RideHal_SharedBuffer_t *pInput,
     }
     else
     {
-        cl_mem bufferSrc;
-        ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, &bufferSrc );
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to register input buffer!" );
-        }
-
-        cl_mem bufferDst;
-        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, &bufferDst );
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to register output buffer!" );
-        }
-
+        /*currently only support CL color convertor kernel from NV12 to RGB */
         if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
         {
-            size_t numOfArgs = 8;
-            OpenclIfcae_Arg_t OpenclArgs[8];
-            OpenclArgs[0].pArg = (void *) &bufferSrc;
-            OpenclArgs[0].argSize = sizeof( cl_mem );
-            OpenclArgs[1].pArg = (void *) &bufferDst;
-            OpenclArgs[1].argSize = sizeof( cl_mem );
-            OpenclArgs[2].pArg = (void *) &m_config.inputHeight;
-            OpenclArgs[2].argSize = sizeof( cl_uint );
-            OpenclArgs[3].pArg = (void *) &m_config.inputWidth;
-            OpenclArgs[3].argSize = sizeof( cl_uint );
-            OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
-            OpenclArgs[4].argSize = sizeof( cl_uint );
-            OpenclArgs[5].pArg = (void *) &( pInput->imgProps.actualHeight[0] );
-            OpenclArgs[5].argSize = sizeof( cl_uint );
-            OpenclArgs[6].pArg = (void *) &( pInput->imgProps.stride[1] );
-            OpenclArgs[6].argSize = sizeof( cl_uint );
-            OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[0] );
-            OpenclArgs[7].argSize = sizeof( cl_uint );
-
-            OpenclIface_WorkParams_t OpenclWorkParams;
-            OpenclWorkParams.workDim = 2;
-            OpenclWorkParams.pGlobalWorkSize[0] = m_config.inputWidth / 2;
-            OpenclWorkParams.pGlobalWorkSize[1] = m_config.inputHeight / 2;
-            OpenclWorkParams.pGlobalWorkOffset[0] = 0;
-            OpenclWorkParams.pGlobalWorkOffset[1] = 0;
-
-            ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
+            ret = FromNV12ToRGB( pInput, pOutput );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to run NV12 to RGB color convertor!" );
+                RIDEHAL_ERROR( "Failed to run color convertor from NV12 to RGB!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }

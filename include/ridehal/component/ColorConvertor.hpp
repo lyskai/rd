@@ -28,7 +28,6 @@ namespace component
 /** @brief ColorConvertor component configuration */
 typedef struct
 {
-    RideHal_ProcessorType_e processor;  /**<pipelie processor type*/
     uint32_t inputWidth;                /**<input image width*/
     uint32_t inputHeight;               /**<input image height*/
     RideHal_ImageFormat_e inputFormat;  /**<input image format*/
@@ -79,21 +78,22 @@ public:
     RideHalError_e Deinit();
 
     /**
-     * @cond ColorConvertor::RegisterBuffer @endcond
-     * @brief Register buffer for ColorConvertor
-     * @param[in] pBuffer buffer to be registeer
-     * @param[out] pBufferCL pointer of cl_mem to be mapped
+     * @cond ColorConvertor::RegisterBuffers @endcond
+     * @brief Register buffers for ColorConvertor
+     * @param[in] pBuffers buffers to be registeer
+     * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e RegisterBuffer( const RideHal_SharedBuffer_t *pBuffer, cl_mem *pBufferCL );
+    RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
-     * @cond ColorConvertor::DeRegisterBuffer @endcond
-     * @brief Deregister buffer for ColorConvertor
-     * @param[in] pBuffer buffer to be deregister
+     * @cond ColorConvertor::DeRegisterBuffers @endcond
+     * @brief Deregister buffers for ColorConvertor
+     * @param[in] pBuffers buffers to be
+     * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e DeRegisterBuffer( const RideHal_SharedBuffer_t *pBuffer );
+    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
      * @cond ColorConvertor::Execute @endcond
@@ -108,6 +108,10 @@ public:
 private:
     ColorConvertor_Config_t m_config;
     OpenclSrv m_OpenclSrvObj;
+
+private:
+    RideHalError_e FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+                                  const RideHal_SharedBuffer_t *pOutput );
 
 };   // class ColorConvertor
 

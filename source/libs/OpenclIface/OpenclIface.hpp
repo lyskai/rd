@@ -1,7 +1,7 @@
 //  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
 //  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-#ifndef RIDEHAL_OPENCL_SRV_HPP
-#define RIDEHAL_OPENCL_SRV_HPP
+#ifndef RIDEHAL_OPENCL_IFACE_HPP
+#define RIDEHAL_OPENCL_IFACE_HPP
 
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
@@ -67,4 +67,4 @@ protected:
 }   // namespace libs
 }   // namespace ridehal
 
-#endif   // RIDEHAL_OPENCL_SRV_HPP
+#endif   // RIDEHAL_OPENCL_IFACE_HPP

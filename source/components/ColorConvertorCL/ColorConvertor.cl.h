@@ -5,8 +5,7 @@ static const char *ColorConvertorCL =
         "                                                    -0.812999725f, 1.5959997177f };\n"
 
         "__kernel void NV12_to_RGB( __global const uchar *srcptr, __global uchar *dstptr,\n"
-        " uint rows, uint cols, uint inputStride0, uint inputHeight0, uint inputStride1,\n"
-        "                           uint outputStride )\n"
+        "int rows,int cols,int inputStride0,int inputHeight0,int inputStride1,int outputStride )\n"
         "{\n"
         "    int x = get_global_id( 0 );\n"
         "    int y = get_global_id( 1 );\n"
