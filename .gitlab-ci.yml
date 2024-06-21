@@ -9,12 +9,6 @@ start:
   stage: start
   script:
     - echo "Start ridehal CI jobs ..."
-  except:
-    changes:
-      - docs/**/*
-      - README.md
-      - scripts/build/README.md
-      - scripts/build/docker/**/*
   tags:
     - ridehal-dev
   only:
@@ -30,12 +24,6 @@ build ridehal:
     - sh /data/scripts/gitlab-ci/build_package.sh
     - mkdir packages
     - cp /data/packages/ridehal/ridehal-aarch64-*.tar.gz ./packages
-  except:
-    changes:
-      - docs/**/*
-      - README.md
-      - scripts/build/README.md
-      - scripts/build/docker/**/*
   artifacts:
     name: "ridehal-build-packages"
     when: on_success
