@@ -7,6 +7,7 @@
 #include <CL/cl_ext.h>
 #include <CL/cl_ext_qcom.h>
 #include <map>
+#include <vector>
 
 #include "ridehal/common/Logger.hpp"
 #include "ridehal/common/SharedBuffer.hpp"

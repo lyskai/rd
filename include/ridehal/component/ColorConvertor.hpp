@@ -72,7 +72,7 @@ public:
 
     /**
      * @cond ColorConvertor::Deinit @endcond
-     * @brief deinitialize the ColorConvertor pipeline
+     * @brief Deinitialize the ColorConvertor pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Deinit();
@@ -80,7 +80,7 @@ public:
     /**
      * @cond ColorConvertor::RegisterBuffers @endcond
      * @brief Register buffers for ColorConvertor
-     * @param[in] pBuffers buffers to be registeer
+     * @param[in] pBuffers buffers to be registered
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -89,7 +89,7 @@ public:
     /**
      * @cond ColorConvertor::DeRegisterBuffers @endcond
      * @brief Deregister buffers for ColorConvertor
-     * @param[in] pBuffers buffers to be
+     * @param[in] pBuffers buffers to be deregistered
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -97,7 +97,7 @@ public:
 
     /**
      * @cond ColorConvertor::Execute @endcond
-     * @brief execute the ColorConvertor pipeline
+     * @brief Execute the ColorConvertor pipeline
      * @param[in] pInput the input shared buffer
      * @param[out] pOutput the output shared buffer
      * @return RIDEHAL_ERROR_NONE on success, others on failure

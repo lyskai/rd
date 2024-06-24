@@ -192,12 +192,17 @@ RideHalError_e OpenclSrv::Deinit()
         ret = RIDEHAL_ERROR_FAIL;
     }
 
+    std::vector<void *> ptrs;
     for ( auto &it : m_memMap )
     {
-        ret = DeregBuf( it.first );
+        ptrs.push_back( it.first );
+    }
+    for ( auto ptr : ptrs )
+    {
+        ret = DeregBuf( ptr );
         if ( RIDEHAL_ERROR_NONE != ret )
         {
-            RIDEHAL_ERROR( "Unable to deregister buffer %d", it.first );
+            RIDEHAL_ERROR( "Unable to deregister buffer %d", ptr );
         }
     }
     m_memMap.clear();

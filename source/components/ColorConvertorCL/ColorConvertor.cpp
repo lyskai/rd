@@ -270,10 +270,8 @@ RideHalError_e ColorConvertor::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInp
             OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
             size_t globalWorkOffset[2] = { 0, 0 };
             OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-            /*initial local work size, not really used, we would use NULL to select
-                          device local size automatically*/
-            size_t localWorkSize[2] = { 1, 1 };
-            OpenclWorkParams.pLocalWorkSize = localWorkSize;
+            /*set local work size to NULL, device would choose optimal size automatically*/
+            OpenclWorkParams.pLocalWorkSize = NULL;
 
             ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
             if ( RIDEHAL_ERROR_NONE != ret )
