@@ -975,21 +975,12 @@ RideHalError_e QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t *pSharedBu
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     *pMemHandle = nullptr;
-    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
-    {
-        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
+    if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
+         RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
     {
-        if ( RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0 == m_BackendType ||
-             RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 == m_BackendType )
-        {
-            ret = RegisterBuffer( pSharedBuffer, pMemHandle );
-        }
+        ret = RegisterBuffer( pSharedBuffer, pMemHandle );
     }
-
 
     return ret;
 }
