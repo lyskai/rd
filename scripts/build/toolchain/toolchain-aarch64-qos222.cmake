@@ -33,7 +33,7 @@ include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/video/source/common/drivers/
 
 # qcarcam
 include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/qcamera/camera_qcx/cdk_qcx/api/qcarcam/ )
-add_link_options( "-L$ENV{BSP_ROOT}//install/aarch64le/lib/camera_qcx/" )
+add_link_options( "-L$ENV{BSP_ROOT}/install/aarch64le/lib/camera_qcx/" )
 
 # fadas
 #include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/fadas/fadas/inc/ )
@@ -41,3 +41,7 @@ include_directories( $ENV{BSP_ROOT}/AMSS/platform/qal/clients/fastrpc_lib/inc )
 
 # rsm_v2
 include_directories( $ENV{BSP_ROOT}/install/usr/include/amss )
+
+# OpenCL
+include_directories( $ENV{BSP_ROOT}/AMSS/inc/graphics/include/public )
+
