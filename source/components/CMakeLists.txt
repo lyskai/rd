@@ -29,3 +29,6 @@ add_subdirectory(Remap)
 add_subdirectory(VideoEncoder)
 add_subdirectory(Voxelization)
 
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
+    add_subdirectory(GLConverter)
+endif()
