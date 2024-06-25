@@ -204,7 +204,7 @@ public:
                         for ( size_t j = 0; j < inputSize; j++ )
                         {
                             pData[j] = (uint8_t) std::min(
-                                    std::max( std::round( fData[j] / scale + offset ), 0.0f ),
+                                    std::max( std::round( fData[j] / scale - offset ), 0.0f ),
                                     255.0f );
                         }
                         if ( false == s_bDisableDumpingOutputs )
@@ -303,9 +303,9 @@ public:
                     // enhanced way to dump the output for accuracy analyze
                     uint8_t *pData = (uint8_t *) m_outputBuffers[i].data();
                     float *fData = new float[m_outputBuffers[i].size];
-                    for ( size_t i = 0; i < m_outputBuffers[i].size; i++ )
+                    for ( size_t j = 0; j < m_outputBuffers[i].size; j++ )
                     {
-                        fData[i] = info.quantScale * ( pData[i] - info.quantOffset );
+                        fData[j] = info.quantScale * ( pData[j] + info.quantOffset );
                     }
                     path = name + "_" + std::string( info.pName ) + ".raw";
                     SaveRaw( path, fData, m_outputBuffers[i].size * sizeof( float ) );
