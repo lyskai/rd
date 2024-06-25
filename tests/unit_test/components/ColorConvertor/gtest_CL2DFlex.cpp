@@ -8,7 +8,7 @@
 #include <string>
 
 #include "md5_utils.hpp"
-#include "ridehal/component/ColorConvertor.hpp"
+#include "ridehal/component/CL2DFlex.hpp"
 
 using namespace ridehal::common;
 using namespace ridehal::component;
@@ -18,24 +18,24 @@ void AccuracyTest( std::string pathTest, std::string goldenPath )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    ColorConvertor ColorConvertorObj;
-    ColorConvertor_Config_t ColorConvertorConfig;
-    char pName[20] = "ColorConvertor";
+    CL2DFlex CL2DFlexObj;
+    CL2DFlex_Config_t CL2DFlexConfig;
+    char pName[20] = "CL2DFlex";
 
-    ColorConvertorConfig.inputWidth = 1920;
-    ColorConvertorConfig.inputHeight = 1024;
-    ColorConvertorConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
-    ColorConvertorConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    CL2DFlexConfig.inputWidth = 1920;
+    CL2DFlexConfig.inputHeight = 1024;
+    CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 
     RideHal_ImageProps_t imgProp1;
     imgProp1.batchSize = 1;
-    imgProp1.width = ColorConvertorConfig.inputWidth;
-    imgProp1.height = ColorConvertorConfig.inputHeight;
-    imgProp1.format = ColorConvertorConfig.inputFormat;
-    imgProp1.stride[0] = ColorConvertorConfig.inputWidth;
-    imgProp1.stride[1] = ColorConvertorConfig.inputWidth;
-    imgProp1.actualHeight[0] = ColorConvertorConfig.inputHeight;
-    imgProp1.actualHeight[1] = ColorConvertorConfig.inputHeight / 2;
+    imgProp1.width = CL2DFlexConfig.inputWidth;
+    imgProp1.height = CL2DFlexConfig.inputHeight;
+    imgProp1.format = CL2DFlexConfig.inputFormat;
+    imgProp1.stride[0] = CL2DFlexConfig.inputWidth;
+    imgProp1.stride[1] = CL2DFlexConfig.inputWidth;
+    imgProp1.actualHeight[0] = CL2DFlexConfig.inputHeight;
+    imgProp1.actualHeight[1] = CL2DFlexConfig.inputHeight / 2;
     imgProp1.extraPadding = 0;
     imgProp1.numPlanes = 2;
 
@@ -75,11 +75,11 @@ void AccuracyTest( std::string pathTest, std::string goldenPath )
 
     RideHal_ImageProps_t imgProp2;
     imgProp2.batchSize = 1;
-    imgProp2.width = ColorConvertorConfig.inputWidth;
-    imgProp2.height = ColorConvertorConfig.inputHeight;
-    imgProp2.format = ColorConvertorConfig.outputFormat;
-    imgProp2.stride[0] = ColorConvertorConfig.inputWidth * 3;
-    imgProp2.actualHeight[0] = ColorConvertorConfig.inputHeight;
+    imgProp2.width = CL2DFlexConfig.inputWidth;
+    imgProp2.height = CL2DFlexConfig.inputHeight;
+    imgProp2.format = CL2DFlexConfig.outputFormat;
+    imgProp2.stride[0] = CL2DFlexConfig.inputWidth * 3;
+    imgProp2.actualHeight[0] = CL2DFlexConfig.inputHeight;
     imgProp2.extraPadding = 0;
     imgProp2.numPlanes = 1;
 
@@ -88,10 +88,10 @@ void AccuracyTest( std::string pathTest, std::string goldenPath )
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     memset( output.data(), 0, output.size );
 
-    ret = ColorConvertorObj.Init( pName, &ColorConvertorConfig );
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.Execute( &input, &output );
+    ret = CL2DFlexObj.Execute( &input, &output );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     RideHal_SharedBuffer_t golden;
@@ -162,7 +162,7 @@ void AccuracyTest( std::string pathTest, std::string goldenPath )
     }
     ASSERT_EQ( md5Output, md5Golden );
 
-    ret = ColorConvertorObj.Deinit();
+    ret = CL2DFlexObj.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = input.Free();
@@ -178,51 +178,51 @@ void SanityTest()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    ColorConvertor ColorConvertorObj;
-    ColorConvertor_Config_t ColorConvertorConfig;
-    char pName[20] = "ColorConvertor";
+    CL2DFlex CL2DFlexObj;
+    CL2DFlex_Config_t CL2DFlexConfig;
+    char pName[20] = "CL2DFlex";
 
-    ColorConvertorConfig.inputWidth = 256;
-    ColorConvertorConfig.inputHeight = 256;
-    ColorConvertorConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
-    ColorConvertorConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    CL2DFlexConfig.inputWidth = 256;
+    CL2DFlexConfig.inputHeight = 256;
+    CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 
     RideHal_SharedBuffer_t input;
 
-    ret = input.Allocate( ColorConvertorConfig.inputWidth, ColorConvertorConfig.inputHeight,
-                          ColorConvertorConfig.inputFormat );
+    ret = input.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+                          CL2DFlexConfig.inputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     RideHal_SharedBuffer_t output;
-    ret = output.Allocate( ColorConvertorConfig.inputWidth, ColorConvertorConfig.inputHeight,
-                           ColorConvertorConfig.outputFormat );
+    ret = output.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+                           CL2DFlexConfig.outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.Init( pName, &ColorConvertorConfig );
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.Start();
+    ret = CL2DFlexObj.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.RegisterBuffers( &input, 1 );
+    ret = CL2DFlexObj.RegisterBuffers( &input, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.RegisterBuffers( &output, 1 );
+    ret = CL2DFlexObj.RegisterBuffers( &output, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.Execute( &input, &output );
+    ret = CL2DFlexObj.Execute( &input, &output );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.DeRegisterBuffers( &input, 1 );
+    ret = CL2DFlexObj.DeRegisterBuffers( &input, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.DeRegisterBuffers( &output, 1 );
+    ret = CL2DFlexObj.DeRegisterBuffers( &output, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.Stop();
+    ret = CL2DFlexObj.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = ColorConvertorObj.Deinit();
+    ret = CL2DFlexObj.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = input.Free();
@@ -234,16 +234,16 @@ void SanityTest()
     return;
 }
 
-TEST( ColorConvertor, SanityTest )
+TEST( CL2DFlex, SanityTest )
 {
     SanityTest();
 }
 
-TEST( ColorConvertor, AccuracyTest )
+TEST( CL2DFlex, AccuracyTest )
 {
     // md5 of 0.nv12 is a1591f4b8c196a47628f0ef6bc3a721c
     // md5 of golden.rgb is 318450304ff3a55fc65b5a4bb1a641d5
-    AccuracyTest( "./data/test/colorconvertor/0.nv12", "./data/test/colorconvertor/golden.rgb" );
+    AccuracyTest( "./data/test/CL2DFlex/0.nv12", "./data/test/CL2DFlex/golden.rgb" );
 }
 
 #ifndef GTEST_RIDEHAL

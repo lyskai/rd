@@ -9,3 +9,4 @@
 - [The RideHal VideoEncoder](./videoencoder.md)
 - [The RideHal Voxelization](./Voxelization.md)
 - [The RideHal PostCenterPoint](./PostCenterPoint.md)
+- [The RideHal CL2DFlex](./CL2DFlex.md)

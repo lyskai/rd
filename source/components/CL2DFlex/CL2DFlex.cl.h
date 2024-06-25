@@ -1,6 +1,6 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
-static const char *ColorConvertorCL =
+static const char *CL2DFlexSource =
         "__constant float c_YUV2RGBCoeffs_420[5] = { 1.163999557f, 2.017999649f, -0.390999794f,\n"
         "                                                    -0.812999725f, 1.5959997177f };\n"
 

@@ -1,18 +1,18 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#include "ridehal/component/ColorConvertor.hpp"
+#include "ridehal/component/CL2DFlex.hpp"
 
 namespace ridehal
 {
 namespace component
 {
 
-ColorConvertor::ColorConvertor() {}
+CL2DFlex::CL2DFlex() {}
 
-ColorConvertor::~ColorConvertor() {}
+CL2DFlex::~CL2DFlex() {}
 
-RideHalError_e ColorConvertor::Start()
+RideHalError_e CL2DFlex::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -22,14 +22,14 @@ RideHalError_e ColorConvertor::Start()
     }
     else
     {
-        RIDEHAL_ERROR( "ColorConvertor component start failed due to wrong state!" );
+        RIDEHAL_ERROR( "CL2DFlex component start failed due to wrong state!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
     return ret;
 }
 
-RideHalError_e ColorConvertor::Stop()
+RideHalError_e CL2DFlex::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -39,15 +39,15 @@ RideHalError_e ColorConvertor::Stop()
     }
     else
     {
-        RIDEHAL_ERROR( "ColorConvertor component stop failed due to wrong state!" );
+        RIDEHAL_ERROR( "CL2DFlex component stop failed due to wrong state!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
     return ret;
 }
 
-RideHalError_e ColorConvertor::Init( const char *pName, const ColorConvertor_Config_t *pConfig,
-                                     Logger_Level_e level )
+RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConfig,
+                               Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -99,7 +99,7 @@ RideHalError_e ColorConvertor::Init( const char *pName, const ColorConvertor_Con
                 if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
                      ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
                 {
-                    ret = m_OpenclSrvObj.LoadFromSource( ColorConvertorCL, "NV12_to_RGB" );
+                    ret = m_OpenclSrvObj.LoadFromSource( CL2DFlexSource, "NV12_to_RGB" );
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Load kernel from source for NV12 to RGB failed!" );
@@ -128,13 +128,13 @@ RideHalError_e ColorConvertor::Init( const char *pName, const ColorConvertor_Con
     return ret;
 }
 
-RideHalError_e ColorConvertor::Deinit()
+RideHalError_e CL2DFlex::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
     {
-        RIDEHAL_ERROR( "ColorConvertor component not in ready status!" );
+        RIDEHAL_ERROR( "CL2DFlex component not in ready status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else
@@ -160,15 +160,15 @@ RideHalError_e ColorConvertor::Deinit()
 }
 
 
-RideHalError_e ColorConvertor::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
-                                                uint32_t numBuffers )
+RideHalError_e CL2DFlex::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                          uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
          ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
     {
-        RIDEHAL_ERROR( "ColorConvertor component not in ready or running status!" );
+        RIDEHAL_ERROR( "CL2DFlex component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else if ( nullptr == pBuffers )
@@ -193,15 +193,15 @@ RideHalError_e ColorConvertor::RegisterBuffers( const RideHal_SharedBuffer_t *pB
     return ret;
 }
 
-RideHalError_e ColorConvertor::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
-                                                  uint32_t numBuffers )
+RideHalError_e CL2DFlex::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
+                                            uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
          ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
     {
-        RIDEHAL_ERROR( "ColorConvertor component not in ready or running status!" );
+        RIDEHAL_ERROR( "CL2DFlex component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else if ( nullptr == pBuffers )
@@ -224,8 +224,8 @@ RideHalError_e ColorConvertor::DeRegisterBuffers( const RideHal_SharedBuffer_t *
     return ret;
 }
 
-RideHalError_e ColorConvertor::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
-                                              const RideHal_SharedBuffer_t *pOutput )
+RideHalError_e CL2DFlex::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+                                        const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -285,15 +285,15 @@ RideHalError_e ColorConvertor::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInp
     return ret;
 }
 
-RideHalError_e ColorConvertor::Execute( const RideHal_SharedBuffer_t *pInput,
-                                        const RideHal_SharedBuffer_t *pOutput )
+RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInput,
+                                  const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
          ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
     {
-        RIDEHAL_ERROR( "ColorConvertor component not initialized!" );
+        RIDEHAL_ERROR( "CL2DFlex component not initialized!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
     else if ( nullptr == pInput )
