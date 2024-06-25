@@ -2,6 +2,7 @@
 // Confidential & Proprietary.
 
 #include "ridehal/component/PostCenterPoint.hpp"
+#include <cmath>
 
 namespace ridehal
 {
@@ -12,9 +13,8 @@ PostCenterPoint::PostCenterPoint() {}
 
 PostCenterPoint::~PostCenterPoint() {}
 
-RideHalError_e PostCenterPoint::Init( const char *pName,
-                                          const PostCenterPoint_Config_t *pConfig,
-                                          Logger_Level_e level )
+RideHalError_e PostCenterPoint::Init( const char *pName, const PostCenterPoint_Config_t *pConfig,
+                                      Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     bool bIFInitOK = false;
@@ -115,10 +115,9 @@ RideHalError_e PostCenterPoint::Init( const char *pName,
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
-    { /* set state to ready to unlock buffer register API */
-        m_state = RIDEHAL_COMPONENT_STATE_READY;
+    {
         RideHal_SharedBuffer_t buffers[4] = { m_BBoxList, m_labels, m_scores, m_metadata };
-        ret = RegisterBuffers( buffers, 4, FADAS_BUF_TYPE_OUT );
+        ret = RegisterBuffersToFadas( buffers, 4, FADAS_BUF_TYPE_OUT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -128,49 +127,48 @@ RideHalError_e PostCenterPoint::Init( const char *pName,
         {
             /* do deregister */
             RideHal_SharedBuffer_t buffers[4] = { m_BBoxList, m_labels, m_scores, m_metadata };
-            (void) DeRegisterBuffers( buffers, 4 );
+            (void) DeRegisterBuffersToFadas( buffers, 4 );
         }
     }
 
     if ( RIDEHAL_ERROR_NONE != ret )
-    { /* do error clean up */
-        RIDEHAL_ERROR( "PlrPost Init failed: %d!", ret );
-        /* do clean up */
-        if ( nullptr != m_BBoxList.buffer.pData )
-        {
-            (void) m_BBoxList.Free();
-        }
-        if ( nullptr != m_labels.buffer.pData )
-        {
-            (void) m_labels.Free();
-        }
-        if ( nullptr != m_scores.buffer.pData )
-        {
-            (void) m_scores.Free();
-        }
-        if ( nullptr != m_BBoxList.buffer.pData )
-        {
-            (void) m_metadata.Free();
-        }
-
-        if ( bFadasInitOK )
-        {
-            m_plrPost.Deinit();
-        }
-
+    {
         if ( bIFInitOK )
-        {
+        { /* do error clean up */
+            RIDEHAL_ERROR( "PlrPost Init failed: %d!", ret );
+            /* do clean up */
+            if ( nullptr != m_BBoxList.buffer.pData )
+            {
+                (void) m_BBoxList.Free();
+            }
+            if ( nullptr != m_labels.buffer.pData )
+            {
+                (void) m_labels.Free();
+            }
+            if ( nullptr != m_scores.buffer.pData )
+            {
+                (void) m_scores.Free();
+            }
+            if ( nullptr != m_metadata.buffer.pData )
+            {
+                (void) m_metadata.Free();
+            }
+
+            if ( bFadasInitOK )
+            {
+                (void) m_plrPost.Deinit();
+            }
+
             (void) ComponentIF::Deinit();
         }
-        m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
     }
     else
     {
         m_state = RIDEHAL_COMPONENT_STATE_READY;
-        m_height = ( uint32_t )( ( m_config.maxYRange - m_config.minYRange ) /
-                                 m_config.pillarYSize / m_config.stride );
-        m_width = ( uint32_t )( ( m_config.maxXRange - m_config.minXRange ) / m_config.pillarXSize /
-                                m_config.stride );
+        m_height = (uint32_t) std::round( ( m_config.maxYRange - m_config.minYRange ) /
+                                          m_config.pillarYSize / m_config.stride );
+        m_width = (uint32_t) std::round( ( m_config.maxXRange - m_config.minXRange ) /
+                                         m_config.pillarXSize / m_config.stride );
         RIDEHAL_INFO( "PlrPost with feature dim [%u, %u]", m_height, m_width );
     }
 
@@ -286,9 +284,41 @@ RideHalError_e PostCenterPoint::Deinit()
     return ret;
 }
 
+RideHalError_e PostCenterPoint::RegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers,
+                                                        uint32_t numBuffers,
+                                                        FadasBufType_e bufferType )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    for ( uint32_t i = 0; i < numBuffers; i++ )
+    {
+        const RideHal_SharedBuffer_t *pBuf = &pBuffers[i];
+        if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuf->type )
+        {
+            int32_t fd = m_plrPost.RegBuf( pBuf, bufferType );
+            if ( 0 > fd )
+            {
+                RIDEHAL_ERROR( "Failed to register buffer[%d]!", i );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+        }
+        else
+        {
+            RIDEHAL_ERROR( "buffer[%d] is not tensor!", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            break;
+        }
+    }
+
+    return ret;
+}
+
 RideHalError_e PostCenterPoint::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
-                                                     uint32_t numBuffers,
-                                                     FadasBufType_e bufferType )
+                                                 uint32_t numBuffers, FadasBufType_e bufferType )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -305,28 +335,33 @@ RideHalError_e PostCenterPoint::RegisterBuffers( const RideHal_SharedBuffer_t *p
     }
     else
     {
-        for ( uint32_t i = 0; i < numBuffers; i++ )
-        {
-            const RideHal_SharedBuffer_t *pBuf = &pBuffers[i];
-            if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuf->type )
-            {
-                int32_t fd = m_plrPost.RegBuf( pBuf, bufferType );
-                if ( 0 > fd )
-                {
-                    RIDEHAL_ERROR( "Failed to register buffer[%d]!", i );
-                    ret = RIDEHAL_ERROR_FAIL;
-                }
-            }
-            else
-            {
-                RIDEHAL_ERROR( "buffer[%d] is not tensor!", i );
-                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-            }
+        ret = RegisterBuffersToFadas( pBuffers, numBuffers, bufferType );
+    }
 
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                break;
-            }
+    return ret;
+}
+
+RideHalError_e PostCenterPoint::DeRegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers,
+                                                          uint32_t numBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    for ( uint32_t i = 0; i < numBuffers; i++ )
+    {
+        const RideHal_SharedBuffer_t *pBuf = &pBuffers[i];
+        if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuf->type )
+        {
+            m_plrPost.DeregBuf( pBuf->data() );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "buffer[%d] is not tensor!", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            break;
         }
     }
 
@@ -334,7 +369,7 @@ RideHalError_e PostCenterPoint::RegisterBuffers( const RideHal_SharedBuffer_t *p
 }
 
 RideHalError_e PostCenterPoint::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers,
-                                                       uint32_t numBuffers )
+                                                   uint32_t numBuffers )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -351,36 +386,19 @@ RideHalError_e PostCenterPoint::DeRegisterBuffers( const RideHal_SharedBuffer_t 
     }
     else
     {
-        for ( uint32_t i = 0; i < numBuffers; i++ )
-        {
-            const RideHal_SharedBuffer_t *pBuf = &pBuffers[i];
-            if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuf->type )
-            {
-                m_plrPost.DeregBuf( pBuf->data() );
-            }
-            else
-            {
-                RIDEHAL_ERROR( "buffer[%d] is not tensor!", i );
-                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-            }
-
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                break;
-            }
-        }
+        ret = DeRegisterBuffersToFadas( pBuffers, numBuffers );
     }
 
     return ret;
 }
 
 RideHalError_e PostCenterPoint::Execute( const RideHal_SharedBuffer_t *pHeatmap,
-                                             const RideHal_SharedBuffer_t *pXY,
-                                             const RideHal_SharedBuffer_t *pZ,
-                                             const RideHal_SharedBuffer_t *pSize,
-                                             const RideHal_SharedBuffer_t *pTheta,
-                                             const RideHal_SharedBuffer_t *pInPts,
-                                             RideHal_SharedBuffer_t *pDetections )
+                                         const RideHal_SharedBuffer_t *pXY,
+                                         const RideHal_SharedBuffer_t *pZ,
+                                         const RideHal_SharedBuffer_t *pSize,
+                                         const RideHal_SharedBuffer_t *pTheta,
+                                         const RideHal_SharedBuffer_t *pInPts,
+                                         RideHal_SharedBuffer_t *pDetections )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     uint32_t numDetOut = 0;

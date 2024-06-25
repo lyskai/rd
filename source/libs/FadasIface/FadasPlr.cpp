@@ -171,11 +171,6 @@ RideHalError_e FadasPlrPreProc::PointPillarRunCPU( const RideHal_SharedBuffer_t 
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     FadasError_e error;
-    uint32_t numOutPlrs = 0;
-    uint32_t numPts = pInPts->tensorProps.dims[0];
-    const float32_t *pInPtsData = (const float32_t *) pInPts->data();
-    FadasVM_PointPillar_t *pOutPlrsData = (FadasVM_PointPillar_t *) pOutPlrs->data();
-    float32_t *pOutFeatureData = (float32_t *) pOutFeature->data();
     int fdPts = -1;
     int fdOutPlrs = -1;
     int fdOutFeature = -1;
@@ -209,6 +204,11 @@ RideHalError_e FadasPlrPreProc::PointPillarRunCPU( const RideHal_SharedBuffer_t 
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        uint32_t numOutPlrs = 0;
+        uint32_t numPts = pInPts->tensorProps.dims[0];
+        const float32_t *pInPtsData = (const float32_t *) pInPts->data();
+        FadasVM_PointPillar_t *pOutPlrsData = (FadasVM_PointPillar_t *) pOutPlrs->data();
+        float32_t *pOutFeatureData = (float32_t *) pOutFeature->data();
         error = FadasVM_PointPillar_Run( m_plrHandler.hHandle, numPts, pInPtsData, pOutPlrsData,
                                          pOutFeatureData, &numOutPlrs );
         if ( FADAS_ERROR_NONE != error )
@@ -226,8 +226,6 @@ RideHalError_e FadasPlrPreProc::PointPillarRunDSP( const RideHal_SharedBuffer_t 
                                                    const RideHal_SharedBuffer_t *pOutFeature )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-    uint32_t numOutPlrs = 0;
-    uint32_t numPts = pInPts->tensorProps.dims[0];
     int fdPts = -1;
     int fdOutPlrs = -1;
     int fdOutFeature = -1;
@@ -261,6 +259,8 @@ RideHalError_e FadasPlrPreProc::PointPillarRunDSP( const RideHal_SharedBuffer_t 
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        uint32_t numOutPlrs = 0;
+        uint32_t numPts = pInPts->tensorProps.dims[0];
         AEEResult result = FadasIface_PointPillarRun(
                 m_handle64, m_plrHandler.handle64, numPts, fdPts, pInPts->offset,
                 numPts * m_numInFeatureDim * sizeof( float ), fdOutPlrs, pOutPlrs->offset,
@@ -311,7 +311,10 @@ RideHalError_e FadasPlrPreProc::DestroyPreProc()
     return ret;
 }
 
-FadasPlrPostProc::FadasPlrPostProc() {}
+FadasPlrPostProc::FadasPlrPostProc()
+{
+    m_plrHandler.hHandle = nullptr;
+}
 
 FadasPlrPostProc::~FadasPlrPostProc() {}
 
@@ -336,6 +339,11 @@ RideHalError_e FadasPlrPostProc::SetParams( float pillarXSize, float pillarYSize
     m_threshScore = threshScore;
     m_threshIOU = threshIOU;
     m_bMapPtsToBBox = bMapPtsToBBox;
+
+    /* Init filter: default disabled */
+    m_bBBoxFilter = false;
+    m_labelSelect.clear();
+
     m_bParamSet = true;
 
     RIDEHAL_INFO( "plrSize=[%.2f %.2f], minRange=[%.2f %.2f], maxRange=[%.2f %.2f], "
@@ -370,9 +378,10 @@ RideHalError_e FadasPlrPostProc::SetFilterParams( float minCentreX, float minCen
         m_maxCentreX = maxCentreX;
         m_maxCentreY = maxCentreY;
         m_maxCentreZ = maxCentreZ;
-        m_labelSelect.resize( maxNumFilter );
-        memcpy( m_labelSelect.data(), labelSelect, maxNumFilter );
+        m_labelSelect.resize( m_numClass );
+        (void) memcpy( m_labelSelect.data(), labelSelect, m_numClass );
         m_bBBoxFilter = true;
+        m_maxNumFilter = maxNumFilter;
 
         RIDEHAL_INFO( "filter=[%.2f %.2f %.2f %.2f %.2f], numFilter=%u", minCentreX, minCentreY,
                       minCentreZ, maxCentreX, maxCentreY, maxCentreZ, maxNumFilter );
@@ -407,7 +416,7 @@ RideHalError_e FadasPlrPostProc::CreatePostProcCPU()
         bboxInitParams.filterParams.maxCentre.x = m_maxCentreX;
         bboxInitParams.filterParams.maxCentre.y = m_maxCentreY;
         bboxInitParams.filterParams.maxCentre.z = m_maxCentreZ;
-        bboxInitParams.filterParams.maxNumFilter = m_labelSelect.size();
+        bboxInitParams.filterParams.maxNumFilter = m_maxNumFilter;
         bboxInitParams.filterParams.labelSelect = (bool *) m_labelSelect.data();
     }
 
@@ -432,7 +441,7 @@ RideHalError_e FadasPlrPostProc::CreatePostProcDSP()
             m_handle64, m_maxNumInPts, m_numInFeatureDim, m_maxNumDetOut, m_numClass, &grid,
             m_threshScore, m_threshIOU, m_minCentreX, m_minCentreY, m_minCentreZ, m_maxCentreX,
             m_maxCentreY, m_maxCentreZ, m_labelSelect.data(), (int) m_labelSelect.size(),
-            &m_plrHandler.handle64 );
+            m_maxNumFilter, &m_plrHandler.handle64 );
     if ( AEE_SUCCESS != error )
     {
         RIDEHAL_ERROR( "DSP Create ExtractBBox Fail: 0x%x!", error );
@@ -547,23 +556,6 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunCPU(
     int fdScores = -1;
     int fdMetadata = -1;
 
-    uint32_t numPtsIn = pInPts->tensorProps.dims[0];
-    const float32_t *pInPtsBuf = (const float32_t *) pInPts->data();
-    Fadas3DRPNBufs_t rpnBuf;
-    Fadas3DBBoxBufs_t outBuf;
-    uint32_t numDetOut = 0;
-
-    rpnBuf.pHeatmap = (float32_t *) pHeatmap->data();
-    rpnBuf.pXY = (float32_t *) pXY->data();
-    rpnBuf.pZ = (float32_t *) pZ->data();
-    rpnBuf.pSize = (float32_t *) pSize->data();
-    rpnBuf.pTheta = (float32_t *) pTheta->data();
-
-    outBuf.pBBoxList = (FadasCuboidf32_t *) pBBoxList->data();
-    outBuf.pLabels = (uint32_t *) pLabels->data();
-    outBuf.pScores = (float32_t *) pScores->data();
-    outBuf.pMetadata = (Fadas3DBBoxMetadata_t *) pMetadata->data();
-
     fdHeatmap = RegBuf( pHeatmap, FADAS_BUF_TYPE_IN );
     if ( fdHeatmap < 0 )
     {
@@ -664,6 +656,23 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunCPU(
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        uint32_t numPtsIn = pInPts->tensorProps.dims[0];
+        const float32_t *pInPtsBuf = (const float32_t *) pInPts->data();
+        Fadas3DRPNBufs_t rpnBuf;
+        Fadas3DBBoxBufs_t outBuf;
+        uint32_t numDetOut = 0;
+
+        rpnBuf.pHeatmap = (float32_t *) pHeatmap->data();
+        rpnBuf.pXY = (float32_t *) pXY->data();
+        rpnBuf.pZ = (float32_t *) pZ->data();
+        rpnBuf.pSize = (float32_t *) pSize->data();
+        rpnBuf.pTheta = (float32_t *) pTheta->data();
+
+        outBuf.pBBoxList = (FadasCuboidf32_t *) pBBoxList->data();
+        outBuf.pLabels = (uint32_t *) pLabels->data();
+        outBuf.pScores = (float32_t *) pScores->data();
+        outBuf.pMetadata = (Fadas3DBBoxMetadata_t *) pMetadata->data();
+
         error = FadasVM_ExtractBBox_Run( m_plrHandler.hHandle, numPtsIn, pInPtsBuf, rpnBuf, outBuf,
                                          pNumDetOut, m_bMapPtsToBBox, m_bBBoxFilter );
         if ( FADAS_ERROR_NONE != error )
@@ -696,8 +705,6 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunDSP(
     int fdScores = -1;
     int fdMetadata = -1;
 
-    uint32_t numPtsIn = pInPts->tensorProps.dims[0];
-
     fdHeatmap = RegBuf( pHeatmap, FADAS_BUF_TYPE_IN );
     if ( fdHeatmap < 0 )
     {
@@ -798,6 +805,8 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunDSP(
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        uint32_t numPtsIn = pInPts->tensorProps.dims[0];
+
         int32_t fds[PLRPOST_NUM_INPUTS] = { fdInPts, fdHeatmap,  fdXY,     fdZ,      fdSize,
                                             fdTheta, fdBBoxList, fdLabels, fdScores, fdMetadata };
         uint32_t offsets[PLRPOST_NUM_INPUTS] = {

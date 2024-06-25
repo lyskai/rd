@@ -172,6 +172,12 @@ public:
                             RideHal_SharedBuffer_t *pDetections );
 
 private:
+    RideHalError_e RegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers,
+                                           uint32_t numBuffers, FadasBufType_e bufferType );
+
+    RideHalError_e DeRegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+
+private:
     PostCenterPoint_Config_t m_config;
 
     FadasPlrPostProc m_plrPost;

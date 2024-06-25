@@ -625,7 +625,7 @@ AEEResult FadasIface_ExtractBBoxCreate( remote_handle64 handle, uint32_t maxNumI
                                         float minCentreY, float minCentreZ, float maxCentreX,
                                         float maxCentreY, float maxCentreZ,
                                         const uint8_t *labelSelect, int labelSelectLen,
-                                        uint64_t *phPostProc )
+                                        uint32_t maxNumFilter, uint64_t *phPostProc )
 {
     AEEResult ret = AEE_SUCCESS;
     if ( ( nullptr == pGrid ) || ( nullptr == phPostProc ) )
@@ -657,7 +657,7 @@ AEEResult FadasIface_ExtractBBoxCreate( remote_handle64 handle, uint32_t maxNumI
             bboxInitParams.filterParams.maxCentre.x = maxCentreX;
             bboxInitParams.filterParams.maxCentre.y = maxCentreY;
             bboxInitParams.filterParams.maxCentre.z = maxCentreZ;
-            bboxInitParams.filterParams.maxNumFilter = labelSelectLen;
+            bboxInitParams.filterParams.maxNumFilter = maxNumFilter;
             bboxInitParams.filterParams.labelSelect = (bool *) labelSelect;
         }
 

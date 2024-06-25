@@ -157,6 +157,7 @@ private:
     float m_maxCentreX;
     float m_maxCentreY;
     float m_maxCentreZ;
+    uint32_t m_maxNumFilter;
     std::vector<uint8_t> m_labelSelect;
 
     bool m_bBBoxFilter = false;

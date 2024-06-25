@@ -61,7 +61,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
 
         if ( bFadasInitOK )
         {
-            m_plrPre.Deinit();
+            (void) m_plrPre.Deinit();
         }
 
         if ( bIFInitOK )

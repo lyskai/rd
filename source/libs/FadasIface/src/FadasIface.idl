@@ -224,6 +224,7 @@ AEEResult ExtractBBoxCreate( in uint32_t maxNumInPts,
                              in float maxCentreY,
                              in float maxCentreZ,
                              in sequence<uint8_t> labelSelect,
+                             in uint32_t maxNumFilter,
                              rout uint64_t phPostProc );
 
 AEEResult ExtractBBoxRun( in uint64_t hPostProc,
