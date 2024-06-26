@@ -19,6 +19,7 @@ set( TARGET_LIBRARIES
     RideHalVideoEncoder
     RideHalVoxelization
     RideHalPostCenterPoint
+    RideHalCL2DFlex
 )
 
 if( NOT TARGET RideHalQnnRuntime )

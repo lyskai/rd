@@ -8,4 +8,5 @@ target_link_libraries( gtest_CL2DFlex gtest RideHalComponentCommon RideHalCL2DFl
 install(TARGETS gtest_CL2DFlex DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}
-     ${CMAKE_CURRENT_SOURCE_DIR}/gtest_CL2DFlex.cpp)
+     ${CMAKE_CURRENT_SOURCE_DIR}/gtest_CL2DFlex.cpp
+     PARENT_SCOPE )

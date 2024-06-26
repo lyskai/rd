@@ -174,6 +174,67 @@ void AccuracyTest( std::string pathTest, std::string goldenPath )
     return;
 }
 
+void PerformanceTest( uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t times )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    CL2DFlex CL2DFlexObj;
+    CL2DFlex_Config_t CL2DFlexConfig;
+    char pName[20] = "CL2DFlex";
+
+    CL2DFlexConfig.inputWidth = inputWidthTest;
+    CL2DFlexConfig.inputHeight = inputHeightTest;
+    CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+
+    RideHal_SharedBuffer_t input;
+
+    ret = input.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+                          CL2DFlexConfig.inputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    RideHal_SharedBuffer_t output;
+    ret = output.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+                           CL2DFlexConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.RegisterBuffers( &input, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.RegisterBuffers( &output, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    auto start = std::chrono::high_resolution_clock::now();
+    for ( int i = 0; i < times; i++ )
+    {
+        ret = CL2DFlexObj.Execute( &input, &output );
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    double duration_ms = std::chrono::duration<double, std::milli>( end - start ).count();
+    printf( "execute time = %f ms\n", (float) duration_ms / (float) times );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.DeRegisterBuffers( &input, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.DeRegisterBuffers( &output, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = input.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    return;
+}
+
 void SanityTest()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -244,6 +305,11 @@ TEST( CL2DFlex, AccuracyTest )
     // md5 of 0.nv12 is a1591f4b8c196a47628f0ef6bc3a721c
     // md5 of golden.rgb is 318450304ff3a55fc65b5a4bb1a641d5
     AccuracyTest( "./data/test/CL2DFlex/0.nv12", "./data/test/CL2DFlex/golden.rgb" );
+}
+
+TEST( CL2DFlex, PerformanceTest )
+{
+    PerformanceTest( 128, 128, 100 );
 }
 
 #ifndef GTEST_RIDEHAL

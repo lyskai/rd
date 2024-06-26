@@ -8,7 +8,7 @@ add_subdirectory(PointPillar)
 add_subdirectory(VideoEncoder)
 add_subdirectory(Remap)
 add_subdirectory(QnnRuntime)
-add_subdirectory(ColorConvertor)
+add_subdirectory(RideHalCL2DFlex)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES} PARENT_SCOPE )
 set( GTEST_RIDEHAL_INCLUDES ${GTEST_RIDEHAL_INCLUDES} PARENT_SCOPE )
