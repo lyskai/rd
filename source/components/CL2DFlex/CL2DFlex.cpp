@@ -321,9 +321,29 @@ RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInput,
         RIDEHAL_ERROR( "Input image format not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
+    else if ( m_config.inputWidth != pInput->imgProps.width )
+    {
+        RIDEHAL_ERROR( "Input image width not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( m_config.inputHeight != pInput->imgProps.height )
+    {
+        RIDEHAL_ERROR( "Input image height not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
     else if ( m_config.outputFormat != pOutput->imgProps.format )
     {
         RIDEHAL_ERROR( "Output image format not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( m_config.inputWidth != pOutput->imgProps.width )
+    {
+        RIDEHAL_ERROR( "Output image width not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( m_config.inputHeight != pOutput->imgProps.height )
+    {
+        RIDEHAL_ERROR( "Output image height not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else

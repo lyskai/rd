@@ -295,9 +295,190 @@ void SanityTest()
     return;
 }
 
+void CoverageTest()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    CL2DFlex CL2DFlexObj;
+    CL2DFlex_Config_t CL2DFlexConfig;
+    char pName[20] = "CL2DFlex";
+    CL2DFlexConfig.inputWidth = 128;
+    CL2DFlexConfig.inputHeight = 128;
+    CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    RideHal_SharedBuffer_t input;
+    RideHal_SharedBuffer_t output;
+
+    ret = CL2DFlexObj.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // start before init
+
+    ret = CL2DFlexObj.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // stop before init
+
+    ret = CL2DFlexObj.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );   // deinit before init
+
+    ret = CL2DFlexObj.RegisterBuffers( &output, 1 );   // register buffer before init
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = CL2DFlexObj.DeRegisterBuffers( &output, 1 );   // deregister buffer before init
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute before init
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // success init
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // init twice, wrong status
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = CL2DFlexObj.Deinit();   // success deinit
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.Init( pName, nullptr );   // null pointer for CL2DFlex configuration
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    CL2DFlexConfig.inputWidth = 1;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong input width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.inputWidth = 256;
+
+    CL2DFlexConfig.inputHeight = 1;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong input height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.inputHeight = 256;
+
+    CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong input format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+
+    CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong output format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig,
+                            LOGGER_LEVEL_MAX );   // success init with invalid logger level
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.RegisterBuffers( nullptr, 1 );   // null pointer for buffer to be register
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = CL2DFlexObj.DeRegisterBuffers( nullptr, 1 );   // null pointer for buffer to be deregister
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = CL2DFlexObj.Execute( nullptr, &output );   // null pointer for input buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = CL2DFlexObj.Execute( &input, nullptr );   // null pointer for output buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = CL2DFlexObj.Deinit();   // success deinit
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // success init
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = input.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+                          CL2DFlexConfig.inputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = output.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+                           CL2DFlexConfig.outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.RegisterBuffers( &input, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = CL2DFlexObj.RegisterBuffers( &input, 1 );   // register twice
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = CL2DFlexObj.DeRegisterBuffers( &input, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = CL2DFlexObj.DeRegisterBuffers( &input, 1 );   // deregister twice
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    input.type = RIDEHAL_BUFFER_TYPE_TENSOR;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong input buffer type
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    input.type = RIDEHAL_BUFFER_TYPE_IMAGE;
+
+    output.type = RIDEHAL_BUFFER_TYPE_TENSOR;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong output buffer type
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    output.type = RIDEHAL_BUFFER_TYPE_IMAGE;
+
+    input.imgProps.format = RIDEHAL_IMAGE_FORMAT_RGB888;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong input image format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    input.imgProps.format = RIDEHAL_IMAGE_FORMAT_NV12;
+
+    input.imgProps.width = input.imgProps.width + 1;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong input image width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    input.imgProps.width = input.imgProps.width - 1;
+
+    input.imgProps.height = input.imgProps.height + 1;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong input image height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    input.imgProps.height = input.imgProps.height - 1;
+
+    output.imgProps.format = RIDEHAL_IMAGE_FORMAT_NV12;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong output image format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    output.imgProps.format = RIDEHAL_IMAGE_FORMAT_RGB888;
+
+    output.imgProps.width = output.imgProps.width + 1;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong output image width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    output.imgProps.width = output.imgProps.width - 1;
+
+    output.imgProps.height = output.imgProps.height + 1;
+    ret = CL2DFlexObj.Execute( &input, &output );   // execute with wrong output image height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    output.imgProps.height = output.imgProps.height - 1;
+
+    ret = CL2DFlexObj.RegisterBuffers( &input, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = CL2DFlexObj.Deinit();   // success deinit with registered buffer
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = input.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = output.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    OpenclSrv OpenclSrvObj;
+
+    ret = OpenclSrvObj.Init( pName, LOGGER_LEVEL_ERROR );   // success init OpenclSrv
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = OpenclSrvObj.LoadFromSource( "", "" );   // create kernel with null source
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    ret = OpenclSrvObj.LoadFromBinary( "", "" );   // create kernel with null binary
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = OpenclSrvObj.RegBuf( nullptr, 0, nullptr );   // register with null pointer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = OpenclSrvObj.DeregBuf( nullptr );   // deregister with null pointer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = OpenclSrvObj.Deinit();   // success deinit
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    return;
+}
+
 TEST( CL2DFlex, SanityTest )
 {
     SanityTest();
+}
+
+TEST( CL2DFlex, CoverageTest )
+{
+    CoverageTest();
 }
 
 TEST( CL2DFlex, AccuracyTest )
