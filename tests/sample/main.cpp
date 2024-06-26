@@ -205,7 +205,6 @@ int main( int argc, char *argv[] )
         if ( ret != RIDEHAL_ERROR_NONE )
         {
             printf( "Stop %s failed: ret = %d\n", sample->GetName(), ret );
-            return -1;
         }
         else
         {
@@ -219,7 +218,6 @@ int main( int argc, char *argv[] )
         if ( ret != RIDEHAL_ERROR_NONE )
         {
             printf( "Deinit %s failed: ret = %d\n", sample->GetName(), ret );
-            return -1;
         }
         else
         {

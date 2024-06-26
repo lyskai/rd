@@ -1355,10 +1355,7 @@ RideHalError_e QnnRuntime::Deinit()
                 }
             }
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( nullptr != m_ProfileBackendHandle )
         {
             const Qnn_ErrorHandle_t retVal =
@@ -1369,10 +1366,7 @@ RideHalError_e QnnRuntime::Deinit()
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( nullptr != m_Context )
         {
             const Qnn_ErrorHandle_t retVal =
@@ -1384,10 +1378,7 @@ RideHalError_e QnnRuntime::Deinit()
             }
             m_Context = nullptr;
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( nullptr != m_SystemContext )
         {
             const auto retVal =
@@ -1398,10 +1389,7 @@ RideHalError_e QnnRuntime::Deinit()
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( nullptr != m_DeviceHandle )
         {
             const Qnn_ErrorHandle_t retVal =
@@ -1413,10 +1401,7 @@ RideHalError_e QnnRuntime::Deinit()
             }
             m_DeviceHandle = nullptr;
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( nullptr != m_PlatformInfo )
         {
             const auto retVal = m_QnnFunctionPointers.qnnInterface.deviceFreePlatformInfo(
@@ -1428,10 +1413,7 @@ RideHalError_e QnnRuntime::Deinit()
             }
             m_PlatformInfo = nullptr;
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         const Qnn_ErrorHandle_t retVal =
                 m_QnnFunctionPointers.qnnInterface.backendFree( m_BackendHandle );
         if ( QNN_BACKEND_NO_ERROR != retVal )
@@ -1439,10 +1421,7 @@ RideHalError_e QnnRuntime::Deinit()
             RIDEHAL_ERROR( "Could not terminate backend. Error is %d", (int) retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( m_LogHandle != nullptr )
         {
             const Qnn_ErrorHandle_t retVal =
@@ -1453,10 +1432,7 @@ RideHalError_e QnnRuntime::Deinit()
                               (int) retVal );
             }
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( m_LoadFromCachedBinary && ( nullptr != m_GraphsInfo ) )
         {
             RIDEHAL_DEBUG( "Cleaning up graph Info structures." );
@@ -1468,27 +1444,23 @@ RideHalError_e QnnRuntime::Deinit()
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( m_pInputTensor != nullptr )
         {
             delete[] m_pInputTensor;
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
         if ( m_pOutputTensor != nullptr )
         {
             delete[] m_pOutputTensor;
         }
-    }
 
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        ret = ComponentIF::Deinit();
+        RideHalError_e ret2 = ComponentIF::Deinit();
+        if ( RIDEHAL_ERROR_NONE != ret2 )
+        {
+            RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
+            ret = ret2;
+        }
     }
 
     return ret;
