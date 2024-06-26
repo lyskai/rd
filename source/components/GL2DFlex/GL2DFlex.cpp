@@ -5,59 +5,56 @@
 #include <cstring>
 #include <memory>
 
-#include "ridehal/component/GLConverter.hpp"
+#include "ridehal/component/GL2DFlex.hpp"
 
 namespace ridehal
 {
 namespace component
 {
 
-GLConverter::GLConverter() {}
+static const char *s_pVertShaderText = "#version 320 es\n"
+                                       "layout(location = 0) in vec2 pos;\n"
+                                       "layout(location = 1) in vec2 texcoord;\n"
+                                       "out vec2 v_texcoord;\n"
+                                       "void main() {\n"
+                                       "    gl_Position = vec4(pos, 1.0, 1.0);\n"
+                                       "    v_texcoord = texcoord;\n"
+                                       "}\n";
 
-GLConverter::~GLConverter() {}
+static const char *s_pFragShaderText = "#version 320 es\n"
+                                       "#extension GL_OES_EGL_image_external : require\n"
+                                       "#extension GL_OES_EGL_image_external_essl3 : require\n"
+                                       "precision mediump float;\n"
+                                       "in vec2 v_texcoord;\n"
+                                       "out vec4 color;\n"
+                                       "uniform samplerExternalOES tex;\n"
+                                       "void main() {\n"
+                                       "  color = texture(tex, v_texcoord);\n"
+                                       "}\n";
 
-inline RideHalError_e GLErrorCheck()
-{
-    GLenum glError = glGetError();
-    return glError == GL_NO_ERROR ? RIDEHAL_ERROR_NONE : RIDEHAL_ERROR_FAIL;
-}
+static const char *s_pFragShaderYUVText = "#version 320 es\n"
+                                          "#extension GL_OES_EGL_image_external : require\n"
+                                          "#extension GL_OES_EGL_image_external_essl3 : require\n"
+                                          "#extension GL_EXT_YUV_target : require\n"
+                                          "precision mediump float;\n"
+                                          "in vec2 v_texcoord;\n"
+                                          "layout(yuv) out vec4 color;\n"
+                                          "uniform samplerExternalOES tex;\n"
+                                          "void main() {\n"
+                                          "  color = texture(tex, v_texcoord);\n"
+                                          "}\n";
 
-static const char *pVertShaderText = "#version 320 es\n"
-                                     "layout(location = 0) in vec2 pos;\n"
-                                     "layout(location = 1) in vec2 texcoord;\n"
-                                     "out vec2 v_texcoord;\n"
-                                     "void main() {\n"
-                                     "    gl_Position = vec4(pos, 1.0, 1.0);\n"
-                                     "    v_texcoord = texcoord;\n"
-                                     "}\n";
+std::mutex GL2DFlex::s_lock;
+int GL2DFlex::s_drmDevFd = 0;
+struct gbm_device *GL2DFlex::s_gbmDev = nullptr;
+uint32_t GL2DFlex::s_devRefCnt = 0;
 
-static const char *pFragShaderText = "#version 320 es\n"
-                                     "#extension GL_OES_EGL_image_external : require\n"
-                                     "#extension GL_OES_EGL_image_external_essl3 : require\n"
-                                     "precision mediump float;\n"
-                                     "in vec2 v_texcoord;\n"
-                                     "out vec4 color;\n"
-                                     "uniform samplerExternalOES tex;\n"
-                                     "void main() {\n"
-                                     "  color = texture(tex, v_texcoord);\n"
-                                     "}\n";
+GL2DFlex::GL2DFlex() {}
 
-static const char *pFragShaderYUVText = "#version 320 es\n"
-                                        "#extension GL_OES_EGL_image_external : require\n"
-                                        "#extension GL_OES_EGL_image_external_essl3 : require\n"
-                                        "#extension GL_EXT_YUV_target : require\n"
-                                        "precision mediump float;\n"
-                                        "in vec2 v_texcoord;\n"
-                                        "layout(yuv) out vec4 color;\n"
-                                        "uniform samplerExternalOES tex;\n"
-                                        "void main() {\n"
-                                        "  color = texture(tex, v_texcoord);\n"
-                                        "}\n";
+GL2DFlex::~GL2DFlex() {}
 
-uint32_t GLConverter::s_DevRefCnt = 0;
-
-RideHalError_e GLConverter::Init( const char *pName, const GLConverter_Config_t *pConfig,
-                                  Logger_Level_e level )
+RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConfig,
+                               Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -152,25 +149,25 @@ RideHalError_e GLConverter::Init( const char *pName, const GLConverter_Config_t 
                 memcpy( m_textcoords[i].texcoord, texcoord, sizeof( texcoord ) );
             }
 
-            std::lock_guard<std::mutex> l( s_Lock );
+            std::lock_guard<std::mutex> l( s_lock );
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                if ( nullptr == s_GbmDev )
+                if ( nullptr == s_gbmDev )
                 {
-                    s_DrmDevFd = drmOpen( "msm_drm", NULL );
-                    if ( s_DrmDevFd < 0 )
+                    s_drmDevFd = drmOpen( "msm_drm", NULL );
+                    if ( s_drmDevFd < 0 )
                     {
                         ret = RIDEHAL_ERROR_FAIL;
-                        RIDEHAL_ERROR( "drm open failed: %d", s_DrmDevFd );
+                        RIDEHAL_ERROR( "drm open failed: %d", s_drmDevFd );
                     }
                 }
             }
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                s_GbmDev = gbm_create_device( s_DrmDevFd );
-                if ( nullptr == s_GbmDev )
+                s_gbmDev = gbm_create_device( s_drmDevFd );
+                if ( nullptr == s_gbmDev )
                 {
                     ret = RIDEHAL_ERROR_FAIL;
                     RIDEHAL_ERROR( "gbm create failed" );
@@ -179,14 +176,14 @@ RideHalError_e GLConverter::Init( const char *pName, const GLConverter_Config_t 
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                s_DevRefCnt++;
+                s_devRefCnt++;
             }
 
             /* Complete initialization */
             if ( RIDEHAL_ERROR_NONE == ret )
             {
                 m_state = RIDEHAL_COMPONENT_STATE_READY;
-                RIDEHAL_INFO( "Component GLConverter is initialized" );
+                RIDEHAL_INFO( "Component GL2DFlex is initialized" );
             }
         }
     }
@@ -194,7 +191,7 @@ RideHalError_e GLConverter::Init( const char *pName, const GLConverter_Config_t 
     return ret;
 }
 
-RideHalError_e GLConverter::Start()
+RideHalError_e GL2DFlex::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     if ( RIDEHAL_COMPONENT_STATE_READY != m_state )
@@ -206,13 +203,13 @@ RideHalError_e GLConverter::Start()
     {
         // DO start
         m_state = RIDEHAL_COMPONENT_STATE_RUNNING;
-        RIDEHAL_INFO( "Component GLConverter start to run" );
+        RIDEHAL_INFO( "Component GL2DFlex start to run" );
     }
 
     return ret;
 }
 
-RideHalError_e GLConverter::Stop()
+RideHalError_e GL2DFlex::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -225,13 +222,13 @@ RideHalError_e GLConverter::Stop()
     {
         // DO stop
         m_state = RIDEHAL_COMPONENT_STATE_READY;
-        RIDEHAL_INFO( "Component GLConverter is stopped" );
+        RIDEHAL_INFO( "Component GL2DFlex is stopped" );
     }
 
     return ret;
 }
 
-RideHalError_e GLConverter::Deinit()
+RideHalError_e GL2DFlex::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     EGLBoolean rc = EGL_FALSE;
@@ -241,13 +238,13 @@ RideHalError_e GLConverter::Deinit()
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
-    std::lock_guard<std::mutex> l( s_Lock );
+    std::lock_guard<std::mutex> l( s_lock );
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( s_DevRefCnt > 0 )
+        if ( s_devRefCnt > 0 )
         {
-            s_DevRefCnt--;
+            s_devRefCnt--;
         }
 
         for ( auto it = m_inputImageMap.begin(); it != m_inputImageMap.end(); it++ )
@@ -256,7 +253,7 @@ RideHalError_e GLConverter::Deinit()
             {
                 if ( it->second->image != nullptr )
                 {
-                    rc = eglDestroyImageKHR( m_Display, it->second->image );
+                    rc = eglDestroyImageKHR( m_display, it->second->image );
                     if ( EGL_TRUE != rc )
                     {
                         ret = RIDEHAL_ERROR_FAIL;
@@ -278,7 +275,7 @@ RideHalError_e GLConverter::Deinit()
             {
                 if ( it->second->image != nullptr )
                 {
-                    rc = eglDestroyImageKHR( m_Display, it->second->image );
+                    rc = eglDestroyImageKHR( m_display, it->second->image );
                     if ( EGL_TRUE != rc )
                     {
                         ret = RIDEHAL_ERROR_FAIL;
@@ -294,23 +291,23 @@ RideHalError_e GLConverter::Deinit()
         }
         m_outputImageMap.clear();
 
-        glDeleteProgram( m_Program );
+        glDeleteProgram( m_program );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
         {
             RIDEHAL_ERROR( "Failed to delete GL program" );
         }
 
-        if ( ( s_DevRefCnt == 0 ) && ( s_GbmDev != nullptr ) )
+        if ( ( s_devRefCnt == 0 ) && ( s_gbmDev != nullptr ) )
         {
-            s_DrmDevFd = drmClose( s_DrmDevFd );
-            if ( s_DrmDevFd < 0 )
+            s_drmDevFd = drmClose( s_drmDevFd );
+            if ( s_drmDevFd < 0 )
             {
                 ret = RIDEHAL_ERROR_FAIL;
-                RIDEHAL_ERROR( "drm close failed: %d", s_DrmDevFd );
+                RIDEHAL_ERROR( "drm close failed: %d", s_drmDevFd );
             }
 
-            gbm_device_destroy( s_GbmDev );
+            gbm_device_destroy( s_gbmDev );
         }
     }
 
@@ -319,7 +316,7 @@ RideHalError_e GLConverter::Deinit()
     {
         /* Complete deinitialization */
         m_state = RIDEHAL_COMPONENT_STATE_INITIAL;
-        RIDEHAL_INFO( "Component GLConverter is deinitialized" );
+        RIDEHAL_INFO( "Component GL2DFlex is deinitialized" );
     }
     else
     {
@@ -329,8 +326,8 @@ RideHalError_e GLConverter::Deinit()
     return ret;
 }
 
-RideHalError_e GLConverter::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
-                                     const RideHal_SharedBuffer_t *pOutput )
+RideHalError_e GL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
+                                  const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -343,7 +340,7 @@ RideHalError_e GLConverter::Execute( const RideHal_SharedBuffer_t *pInputs, uint
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
         ret = RIDEHAL_ERROR_BAD_STATE;
-        RIDEHAL_ERROR( "Component GLConverter is not in running state" );
+        RIDEHAL_ERROR( "Component GL2DFlex is not in running state" );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -419,7 +416,7 @@ RideHalError_e GLConverter::Execute( const RideHal_SharedBuffer_t *pInputs, uint
     return ret;
 }
 
-RideHalError_e GLConverter::EGLInit()
+RideHalError_e GL2DFlex::EGLInit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -435,12 +432,12 @@ RideHalError_e GLConverter::EGLInit()
             EGL_NONE,
     };
 
-    std::lock_guard<std::mutex> l( s_Lock );
+    std::lock_guard<std::mutex> l( s_lock );
 
-    if ( !m_EGLReady )
+    if ( !m_bEGLReady )
     {
-        m_Display = eglGetPlatformDisplay( EGL_PLATFORM_GBM_KHR, NULL, NULL );
-        if ( nullptr == m_Display )
+        m_display = eglGetPlatformDisplay( EGL_PLATFORM_GBM_KHR, NULL, NULL );
+        if ( nullptr == m_display )
         {
             ret = RIDEHAL_ERROR_FAIL;
             RIDEHAL_ERROR( "Failed to get EGL display" );
@@ -448,7 +445,7 @@ RideHalError_e GLConverter::EGLInit()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            rc = eglInitialize( m_Display, &major, &minor );
+            rc = eglInitialize( m_display, &major, &minor );
             if ( EGL_TRUE != rc )
             {
                 ret = RIDEHAL_ERROR_FAIL;
@@ -458,7 +455,7 @@ RideHalError_e GLConverter::EGLInit()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            rc = eglGetConfigs( m_Display, NULL, 0, &num_config );
+            rc = eglGetConfigs( m_display, NULL, 0, &num_config );
             if ( ( EGL_TRUE != rc ) || ( num_config <= 0 ) )
             {
                 ret = RIDEHAL_ERROR_FAIL;
@@ -469,7 +466,7 @@ RideHalError_e GLConverter::EGLInit()
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             configs.resize( num_config );
-            rc = eglGetConfigs( m_Display, configs.data(), num_config, &num_config );
+            rc = eglGetConfigs( m_display, configs.data(), num_config, &num_config );
             if ( EGL_TRUE != rc )
             {
                 ret = RIDEHAL_ERROR_FAIL;
@@ -479,8 +476,8 @@ RideHalError_e GLConverter::EGLInit()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_Context = eglCreateContext( m_Display, configs[0], EGL_NO_CONTEXT, context_attribs );
-            if ( nullptr == m_Context )
+            m_context = eglCreateContext( m_display, configs[0], EGL_NO_CONTEXT, context_attribs );
+            if ( nullptr == m_context )
             {
                 ret = RIDEHAL_ERROR_FAIL;
                 RIDEHAL_ERROR( "Failed to create EGL context" );
@@ -489,8 +486,8 @@ RideHalError_e GLConverter::EGLInit()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_Surface = eglCreatePbufferSurface( m_Display, configs[0], surface_attribs );
-            if ( nullptr == m_Surface )
+            m_surface = eglCreatePbufferSurface( m_display, configs[0], surface_attribs );
+            if ( nullptr == m_surface )
             {
                 ret = RIDEHAL_ERROR_FAIL;
                 RIDEHAL_ERROR( "Failed to create EGL surface" );
@@ -499,7 +496,7 @@ RideHalError_e GLConverter::EGLInit()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            rc = eglMakeCurrent( m_Display, m_Surface, m_Surface, m_Context );
+            rc = eglMakeCurrent( m_display, m_surface, m_surface, m_context );
             if ( EGL_TRUE != rc )
             {
                 ret = RIDEHAL_ERROR_FAIL;
@@ -507,24 +504,24 @@ RideHalError_e GLConverter::EGLInit()
             }
         }
 
-        m_EGLReady = true;
+        m_bEGLReady = true;
     }
 
     return ret;
 }
 
-RideHalError_e GLConverter::CreateGLPipeline()
+RideHalError_e GL2DFlex::CreateGLPipeline()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    std::lock_guard<std::mutex> l( s_Lock );
+    std::lock_guard<std::mutex> l( s_lock );
 
-    if ( !m_GLPipelineReady )
+    if ( !m_bGLPipelineReady )
     {
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_VertShader = glCreateShader( GL_VERTEX_SHADER );
-            if ( 0 == m_VertShader )
+            m_vertShader = glCreateShader( GL_VERTEX_SHADER );
+            if ( 0 == m_vertShader )
             {
                 ret = RIDEHAL_ERROR_FAIL;
                 RIDEHAL_ERROR( "Failed to create GL Vertex Shader" );
@@ -533,7 +530,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glShaderSource( m_VertShader, 1, (char **) &pVertShaderText, NULL );
+            glShaderSource( m_vertShader, 1, (char **) &s_pVertShaderText, NULL );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -543,7 +540,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glCompileShader( m_VertShader );
+            glCompileShader( m_vertShader );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -553,8 +550,8 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_FragShader = glCreateShader( GL_FRAGMENT_SHADER );
-            if ( 0 == m_FragShader )
+            m_fragShader = glCreateShader( GL_FRAGMENT_SHADER );
+            if ( 0 == m_fragShader )
             {
                 ret = RIDEHAL_ERROR_FAIL;
                 RIDEHAL_ERROR( "Failed to create GL Fragment Shader" );
@@ -566,7 +563,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
             if ( ( m_outputFormat == RIDEHAL_IMAGE_FORMAT_NV12 ) ||
                  ( m_outputFormat == RIDEHAL_IMAGE_FORMAT_UYVY ) )
             {
-                glShaderSource( m_FragShader, 1, (char **) &pFragShaderYUVText, NULL );
+                glShaderSource( m_fragShader, 1, (char **) &s_pFragShaderYUVText, NULL );
                 ret = GLErrorCheck();
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
@@ -575,7 +572,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
             }
             else if ( m_outputFormat == RIDEHAL_IMAGE_FORMAT_RGB888 )
             {
-                glShaderSource( m_FragShader, 1, (char **) &pFragShaderText, NULL );
+                glShaderSource( m_fragShader, 1, (char **) &s_pFragShaderText, NULL );
                 ret = GLErrorCheck();
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
@@ -591,7 +588,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glCompileShader( m_FragShader );
+            glCompileShader( m_fragShader );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -601,7 +598,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            m_Program = glCreateProgram();
+            m_program = glCreateProgram();
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -611,7 +608,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glAttachShader( m_Program, m_VertShader );
+            glAttachShader( m_program, m_vertShader );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -621,7 +618,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glAttachShader( m_Program, m_FragShader );
+            glAttachShader( m_program, m_fragShader );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -631,7 +628,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glLinkProgram( m_Program );
+            glLinkProgram( m_program );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -641,7 +638,7 @@ RideHalError_e GLConverter::CreateGLPipeline()
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            glUseProgram( m_Program );
+            glUseProgram( m_program );
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -649,17 +646,40 @@ RideHalError_e GLConverter::CreateGLPipeline()
             }
         }
 
-        glDeleteShader( m_VertShader );
-        glDeleteShader( m_FragShader );
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            if ( 0 == m_vertShader )
+            {
+                glDeleteShader( m_vertShader );
+                ret = GLErrorCheck();
+                if ( RIDEHAL_ERROR_NONE != ret )
+                {
+                    RIDEHAL_ERROR( "Failed to delete GL Vertex Shader" );
+                }
+            }
+        }
 
-        m_GLPipelineReady = true;
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            if ( 0 == m_vertShader )
+            {
+                glDeleteShader( m_fragShader );
+                ret = GLErrorCheck();
+                if ( RIDEHAL_ERROR_NONE != ret )
+                {
+                    RIDEHAL_ERROR( "Failed to delete GL Fragment Shader" );
+                }
+            }
+        }
+
+        m_bGLPipelineReady = true;
     }
 
     return ret;
 }
 
-RideHalError_e GLConverter::GetInputImageInfo( const RideHal_SharedBuffer_t *pInputBuffer,
-                                               std::shared_ptr<GL_ImageInfo_t> &inputInfo )
+RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInputBuffer,
+                                            std::shared_ptr<GL_ImageInfo_t> &inputInfo )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -692,7 +712,7 @@ RideHalError_e GLConverter::GetInputImageInfo( const RideHal_SharedBuffer_t *pIn
         struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
                                              GetGBMFormatType( format ) };
         inputInfo->bo =
-                gbm_bo_import( s_GbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
+                gbm_bo_import( s_gbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
         if ( nullptr == inputInfo->bo )
         {
             ret = RIDEHAL_ERROR_FAIL;
@@ -701,7 +721,7 @@ RideHalError_e GLConverter::GetInputImageInfo( const RideHal_SharedBuffer_t *pIn
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            inputInfo->image = eglCreateImageKHR( m_Display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
+            inputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                                   NULL, eglImageAttribs );
             if ( nullptr == inputInfo->image )
             {
@@ -755,9 +775,9 @@ RideHalError_e GLConverter::GetInputImageInfo( const RideHal_SharedBuffer_t *pIn
     return ret;
 }
 
-RideHalError_e GLConverter::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutputBuffer,
-                                                std::shared_ptr<GL_ImageInfo_t> &outputInfo,
-                                                uint32_t batchIdx )
+RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutputBuffer,
+                                             std::shared_ptr<GL_ImageInfo_t> &outputInfo,
+                                             uint32_t batchIdx )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -790,7 +810,7 @@ RideHalError_e GLConverter::GetOutputImageInfo( const RideHal_SharedBuffer_t *pO
         struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
                                              GetGBMFormatType( format ) };
         outputInfo->bo =
-                gbm_bo_import( s_GbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
+                gbm_bo_import( s_gbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
         if ( nullptr == outputInfo->bo )
         {
             ret = RIDEHAL_ERROR_FAIL;
@@ -799,7 +819,7 @@ RideHalError_e GLConverter::GetOutputImageInfo( const RideHal_SharedBuffer_t *pO
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
-            outputInfo->image = eglCreateImageKHR( m_Display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
+            outputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                                    NULL, eglImageAttribs );
             if ( nullptr == outputInfo->image )
             {
@@ -884,8 +904,8 @@ RideHalError_e GLConverter::GetOutputImageInfo( const RideHal_SharedBuffer_t *pO
     return ret;
 }
 
-RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
-                                  std::shared_ptr<GL_ImageInfo_t> &outputInfo, uint32_t batchIdx )
+RideHalError_e GL2DFlex::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
+                               std::shared_ptr<GL_ImageInfo_t> &outputInfo, uint32_t batchIdx )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -918,7 +938,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        glUniform1i( glGetUniformLocation( m_Program, "tex" ), 0 );
+        glUniform1i( glGetUniformLocation( m_program, "tex" ), 0 );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
         {
@@ -955,7 +975,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
     GLfloat pos[4][2] = { { -1.0, -1.0 }, { 1.0, -1.0 }, { 1.0, 1.0 }, { -1.0, 1.0 } };
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        glVertexAttribPointer( glGetAttribLocation( m_Program, "pos" ), 2, GL_FLOAT, GL_FALSE, 0,
+        glVertexAttribPointer( glGetAttribLocation( m_program, "pos" ), 2, GL_FLOAT, GL_FALSE, 0,
                                pos );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
@@ -966,7 +986,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        glVertexAttribPointer( glGetAttribLocation( m_Program, "texcoord" ), 2, GL_FLOAT, GL_FALSE,
+        glVertexAttribPointer( glGetAttribLocation( m_program, "texcoord" ), 2, GL_FLOAT, GL_FALSE,
                                0, m_textcoords[batchIdx].texcoord );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
@@ -977,7 +997,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        glEnableVertexAttribArray( glGetAttribLocation( m_Program, "pos" ) );
+        glEnableVertexAttribArray( glGetAttribLocation( m_program, "pos" ) );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
         {
@@ -987,7 +1007,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        glEnableVertexAttribArray( glGetAttribLocation( m_Program, "texcoord" ) );
+        glEnableVertexAttribArray( glGetAttribLocation( m_program, "texcoord" ) );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
         {
@@ -1018,7 +1038,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        eglSwapBuffers( m_Display, m_Surface );
+        eglSwapBuffers( m_display, m_surface );
         ret = GLErrorCheck();
         if ( RIDEHAL_ERROR_NONE != ret )
         {
@@ -1030,7 +1050,7 @@ RideHalError_e GLConverter::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
 }
 
 
-uint32_t GLConverter::GetEGLFormatType( RideHal_ImageFormat_e format )
+uint32_t GL2DFlex::GetEGLFormatType( RideHal_ImageFormat_e format )
 {
     uint32_t eglFormat = (uint32_t) RIDEHAL_IMAGE_FORMAT_MAX;
     switch ( format )
@@ -1055,7 +1075,7 @@ uint32_t GLConverter::GetEGLFormatType( RideHal_ImageFormat_e format )
     return eglFormat;
 }
 
-uint32_t GLConverter::GetGBMFormatType( RideHal_ImageFormat_e format )
+uint32_t GL2DFlex::GetGBMFormatType( RideHal_ImageFormat_e format )
 {
     uint32_t gbmFormat = (uint32_t) RIDEHAL_IMAGE_FORMAT_MAX;
     switch ( format )
@@ -1078,6 +1098,20 @@ uint32_t GLConverter::GetGBMFormatType( RideHal_ImageFormat_e format )
     }
 
     return gbmFormat;
+}
+
+inline RideHalError_e GL2DFlex::GLErrorCheck()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    GLenum glError = glGetError();
+
+    if ( glError != GL_NO_ERROR )
+    {
+        ret = RIDEHAL_ERROR_FAIL;
+        RIDEHAL_ERROR( "GLErrorCheck failed, Err value: %d", (int) glError );
+    }
+
+    return ret;
 }
 
 }   // namespace component

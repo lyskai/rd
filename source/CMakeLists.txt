@@ -28,6 +28,10 @@ else()
   list( APPEND TARGET_LIBRARIES RideHalQnnRuntime )
 endif()
 
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
+    list( APPEND TARGET_LIBRARIES RideHalGL2DFlex )
+endif()
+
 add_library( RideHal SHARED ${RIDEHAL_SOURCES} )
 
 set_property( TARGET RideHal PROPERTY LINKER_LANGUAGE CXX )

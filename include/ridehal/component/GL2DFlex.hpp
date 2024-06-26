@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef RIDEHAL_GLConverter_HPP
-#define RIDEHAL_GLConverter_HPP
+#ifndef RIDEHAL_GL2DFLEX_HPP
+#define RIDEHAL_GL2DFLEX_HPP
 
 #include <cinttypes>
 #include <memory>
@@ -34,44 +34,43 @@ namespace component
 ** Typedefs
 =================================================================================================*/
 
-/** @brief GLConverter Image resolution */
+/** @brief GL2DFlex Image resolution */
 typedef struct
 {
     uint32_t width;  /**< Image width */
     uint32_t height; /**< Image height */
-} GLConverter_ImageResolution_t;
+} GL2DFlex_ImageResolution_t;
 
-/** @brief GLConverter ROI Config*/
+/** @brief GL2DFlex ROI Config*/
 typedef struct
 {
     uint32_t topX;   /**< X coordinate of upper left point */
     uint32_t topY;   /**< Y coordinate of upper left point */
     uint32_t width;  /**< ROI width */
     uint32_t height; /**< ROI height */
-} GLConverter_ROIConfig_t;
+} GL2DFlex_ROIConfig_t;
 
-/** @brief GLConverter Input Configs*/
+/** @brief GL2DFlex Input Configs*/
 typedef struct
 {
-    RideHal_ImageFormat_e inputFormat;             /**< Image format of Input frame */
-    GLConverter_ImageResolution_t inputResolution; /**< Image Resolution of Input frame */
-    GLConverter_ROIConfig_t ROI;                   /**< Reigion of Interest in Input frame */
-} GLConverter_InputConfig_t;
+    RideHal_ImageFormat_e inputFormat;          /**< Image format of Input frame */
+    GL2DFlex_ImageResolution_t inputResolution; /**< Image Resolution of Input frame */
+    GL2DFlex_ROIConfig_t ROI;                   /**< Reigion of Interest in Input frame */
+} GL2DFlex_InputConfig_t;
 
-/** @brief GLConverter Component Initialization Configs*/
+/** @brief GL2DFlex Component Initialization Configs*/
 typedef struct
 {
     uint32_t numOfInputs; /**< Number of Input Images in each processing */
-    GLConverter_InputConfig_t
-            inputConfigs[RIDEHAL_MAX_INPUTS]; /**< Array of Input Configurations */
-} GLConverter_Config_t;
+    GL2DFlex_InputConfig_t inputConfigs[RIDEHAL_MAX_INPUTS]; /**< Array of Input Configurations */
+} GL2DFlex_Config_t;
 
 
 /**
- * @brief Component GLConverter
- * @brief GLConverter convert 1 camera frame into another format normalize
+ * @brief Component GL2DFlex
+ * @brief GL2DFlex convert 1 camera frame into another format normalize
  */
-class GLConverter final : public ComponentIF
+class GL2DFlex final : public ComponentIF
 {
 
     /*=================================================================================================
@@ -79,44 +78,44 @@ class GLConverter final : public ComponentIF
     =================================================================================================*/
 
 public:
-    GLConverter();
-    ~GLConverter();
+    GL2DFlex();
+    ~GL2DFlex();
 
     /**
-     * @cond GLConverter::Init @endcond
-     * @brief Initialize the GLConverter component
+     * @cond GL2DFlex::Init @endcond
+     * @brief Initialize the GL2DFlex component
      * @param[in] name the component unique instance name
      * @param[in] pConfig the remap configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e Init( const char *pName, const GLConverter_Config_t *pConfig,
+    RideHalError_e Init( const char *pName, const GL2DFlex_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @cond GLConverter::Start @endcond
-     * @brief Start the GLConverter pipeline
+     * @cond GL2DFlex::Start @endcond
+     * @brief Start the GL2DFlex pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Start();
 
     /**
-     * @cond GLConverter::Stop @endcond
-     * @brief stop the GLConverter pipeline
+     * @cond GL2DFlex::Stop @endcond
+     * @brief stop the GL2DFlex pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Stop();
 
     /**
-     * @cond GLConverter::Deinit @endcond
-     * @brief deinitialize the GLConverter component
+     * @cond GL2DFlex::Deinit @endcond
+     * @brief deinitialize the GL2DFlex component
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Deinit();
 
     /**
-     * @cond GLConverter::Execute @endcond
-     * @brief Execute the GLConverter pipeline
+     * @cond GL2DFlex::Execute @endcond
+     * @brief Execute the GL2DFlex pipeline
      * @param[in] pInputs the input shared buffers
      * @param[in] numInputs the number of the input shared buffers
      * @param[out] pOutput the output shared buffer
@@ -160,39 +159,41 @@ private:
 
     uint32_t GetGBMFormatType( RideHal_ImageFormat_e format );
 
+    inline RideHalError_e GLErrorCheck();
+
 
 private:
     uint32_t m_numOfInputs = 1;
 
-    bool m_EGLReady = false;
-    bool m_GLPipelineReady = false;
+    bool m_bEGLReady = false;
+    bool m_bGLPipelineReady = false;
 
-    EGLDisplay m_Display = nullptr;
-    EGLContext m_Context = nullptr;
-    EGLSurface m_Surface = nullptr;
-    GLuint m_VertShader = 0;
-    GLuint m_FragShader = 0;
-    GLuint m_Program = 0;
+    EGLDisplay m_display = nullptr;
+    EGLContext m_context = nullptr;
+    EGLSurface m_surface = nullptr;
+    GLuint m_vertShader = 0;
+    GLuint m_fragShader = 0;
+    GLuint m_program = 0;
 
-    GLConverter_ImageResolution_t m_inputResolutions[RIDEHAL_MAX_INPUTS];
+    GL2DFlex_ImageResolution_t m_inputResolutions[RIDEHAL_MAX_INPUTS];
     RideHal_ImageFormat_e m_inputFormats[RIDEHAL_MAX_INPUTS];
     GL_TexCoord_t m_textcoords[RIDEHAL_MAX_INPUTS];
 
-    GLConverter_ImageResolution_t m_outputResolution;
+    GL2DFlex_ImageResolution_t m_outputResolution;
     RideHal_ImageFormat_e m_outputFormat;
 
-    static std::mutex s_Lock;
-    static int s_DrmDevFd;
-    static struct gbm_device *s_GbmDev;
-    static uint32_t s_DevRefCnt;
+    static std::mutex s_lock;
+    static int s_drmDevFd;
+    static struct gbm_device *s_gbmDev;
+    static uint32_t s_devRefCnt;
 
     std::unordered_map<void *, std::shared_ptr<GL_ImageInfo_t>> m_inputImageMap;
     std::unordered_map<void *, std::shared_ptr<GL_ImageInfo_t>> m_outputImageMap;
 
-};   // class GLConverter
+};   // class GL2DFLEX
 
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // RIDEHAL_GLConverter_HPP
+#endif   // RIDEHAL_GL2DFLEX_HPP
 
