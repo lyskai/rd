@@ -1,8 +1,8 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
 
-#ifndef _RIDEHAL_VIDEO_ENCODER_HPP_
-#define _RIDEHAL_VIDEO_ENCODER_HPP_
+#ifndef RIDEHAL_VIDEO_ENCODER_HPP
+#define RIDEHAL_VIDEO_ENCODER_HPP
 
 #include "ridehal/component/ComponentIF.hpp"
 #include <mutex>
@@ -110,7 +110,7 @@ typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
     uint64_t timestampNs; /**< frame data's timestamp. */
-    void *pAppMarkData;   /**< frame data's mark data, this data will be copied to corresponding
+    uint64_t appMarkData;   /**< frame data's mark data, this data will be copied to corresponding
                           output   compressed frame's VideoEncoder_OutputFrame_t. API won't touch this
                           data,   only copy it. */
     VideoEncoder_OnTheFlyCmd_t *pOnTheFlyCmd =
@@ -124,7 +124,7 @@ typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
     uint64_t timestampNs;
-    void *pAppMarkData;
+    uint64_t appMarkData;
     uint32_t frameFlag; /**< indicate whether some error occurred during encoding this frame. */
     VideoEncoder_FrameType_e frameType; /**< indicate it's I, P, B, or IDR frame. */
 } VideoEncoder_OutputFrame_t;
@@ -303,7 +303,7 @@ private:
     {
         RideHal_SharedBuffer_t sharedBuffer;
         uint64_t timestampNs;
-        void *pAppMarkData;
+        uint64_t appMarkData;
         bool useFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
     } VideoEncoder_InputInfo_t;
 
@@ -322,4 +322,4 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_VIDEO_ENCODER_HPP_
+#endif   // RIDEHAL_VIDEO_ENCODER_HPP

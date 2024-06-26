@@ -152,7 +152,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     for ( int i = 0; i < config.numInputBufferReq; i++ )
     {
         inputFrame[i].timestampNs = g_timestamp;
-        inputFrame[i].pAppMarkData = nullptr;
+        inputFrame[i].appMarkData = i;
         inputFrame[i].numCmd = 2;
         inputFrame[i].pOnTheFlyCmd = onTheFlyCmds;
         ret = veTest.SubmitInputFrame( &inputFrame[i] );
@@ -249,7 +249,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_NonDynamic )
         VideoEncoder_InputFrame_t inputFrame;
         inputFrame.sharedBuffer = inputList[i];
         inputFrame.timestampNs = g_timestamp;
-        inputFrame.pAppMarkData = nullptr;
+        inputFrame.appMarkData = i;
         ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         g_timestamp += 33333;
@@ -345,7 +345,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
         VideoEncoder_InputFrame_t inputFrame;
         inputFrame.sharedBuffer = inBufferList[i];
         inputFrame.timestampNs = g_timestamp;
-        inputFrame.pAppMarkData = nullptr;
+        inputFrame.appMarkData = i;
         ret = veTest.SubmitInputFrame( &inputFrame );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         g_timestamp += 33333;
@@ -358,7 +358,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
     VideoEncoder_InputFrame_t inputFrame;
     inputFrame.sharedBuffer = inBufferList[config.numInputBufferReq - 1];
     inputFrame.timestampNs = g_timestamp;
-    inputFrame.pAppMarkData = nullptr;
+    inputFrame.appMarkData = config.numInputBufferReq - 1;
     inputFrame.numCmd = 2;
     inputFrame.pOnTheFlyCmd = onTheFlyCmds;
     ret = veTest.SubmitInputFrame( &inputFrame );

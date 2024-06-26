@@ -16,7 +16,7 @@ SampleVideoEncoder ::~SampleVideoEncoder() {}
 
 void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame )
 {
-    uint64_t frameId = ( uint64_t )(uintptr_t) pInputFrame->pAppMarkData;
+    uint64_t frameId = pInputFrame->appMarkData;
 
     RIDEHAL_DEBUG( "InFrameCallback for frameId %" PRIu64, frameId );
 
@@ -46,7 +46,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         VideoEncoder_OutputFrame_t outFrame;
         outFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
-        outFrame.pAppMarkData = nullptr;
+        outFrame.appMarkData = 0;
         m_encoder.SubmitOutputFrame( &outFrame );
         delete pSharedBuffer;
     } );
@@ -69,7 +69,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     }
     else
     {
-        frame.frameId = ( uint64_t )(uintptr_t) pOutputFrame->pAppMarkData;
+        frame.frameId = pOutputFrame->appMarkData;
         frame.buffer = buffer;
         frame.timestamp = pOutputFrame->timestampNs;
         frames.frames.push_back( frame );
@@ -238,7 +238,7 @@ void SampleVideoEncoder::ThreadMain()
             VideoEncoder_InputFrame_t inputFrame;
             inputFrame.sharedBuffer = frame.buffer->sharedBuffer;
             inputFrame.timestampNs = frame.timestamp;
-            inputFrame.pAppMarkData = (void *) frame.frameId;
+            inputFrame.appMarkData = frame.frameId;
             inputFrame.pOnTheFlyCmd = nullptr;
 
             {

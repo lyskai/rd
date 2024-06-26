@@ -96,7 +96,7 @@ Refer [SampleVideoEncoder::InFrameCallback](../tests/sample/source/SampleVideoEn
 ```c++
 void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame )
 {
-    uint64_t frameId = ( uint64_t )(uintptr_t) pInputFrame->pAppMarkData;
+    uint64_t frameId = pInputFrame->appMarkData;
 
     RIDEHAL_DEBUG( "InFrameCallback for frameId %" PRIu64, frameId );
 
@@ -128,7 +128,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         VideoEncoder_OutputFrame_t outFrame;
         outFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
-        outFrame.pAppMarkData = nullptr;
+        outFrame.appMarkData = 0;
         m_encoder.SubmitOutputFrame( &outFrame );
         delete pSharedBuffer;
     } );
