@@ -1,6 +1,10 @@
 // Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 // Confidential & Proprietary.
-static const char *CL2DFlexSource =
+
+#ifndef RIDEHAL_CL2DFLEX_CLH
+#define RIDEHAL_CL2DFLEX_CLH
+
+static const char *s_pCL2DFlexSource =
         "__constant float c_YUV2RGBCoeffs_420[5] = { 1.163999557f, 2.017999649f, -0.390999794f,\n"
         "                                                    -0.812999725f, 1.5959997177f };\n"
 
@@ -49,3 +53,4 @@ static const char *CL2DFlexSource =
         "        }\n"
         "    }\n"
         "}\n";
+#endif   // RIDEHAL_CL2DFLEX_CLH

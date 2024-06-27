@@ -28,8 +28,8 @@ namespace component
 /** @brief CL2DFlex component configuration */
 typedef struct
 {
-    uint32_t inputWidth;                /**<input image width*/
-    uint32_t inputHeight;               /**<input image height*/
+    size_t inputWidth;                  /**<input image width*/
+    size_t inputHeight;                 /**<input image height*/
     RideHal_ImageFormat_e inputFormat;  /**<input image format*/
     RideHal_ImageFormat_e outputFormat; /**<output image format*/
 } CL2DFlex_Config_t;

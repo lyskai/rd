@@ -35,12 +35,17 @@ typedef struct
     size_t workDim;
 } OpenclIface_WorkParams_t;
 
+typedef struct
+{
+    cl_mem clMem;
+} OpenclIface_MemInfo_t;
+
 class OpenclSrv
 {
 public:
     RideHalError_e Init( const char *pName, Logger_Level_e level );
     RideHalError_e LoadFromSource( const char *pSourceFile, const char *pKernelName );
-    RideHalError_e LoadFromBinary( const char *pBinaryFile, const char *pKernelName );
+    RideHalError_e LoadFromBinary( const unsigned char *pBinaryFile, const char *pKernelName );
     RideHalError_e Deinit();
     RideHalError_e RegBuf( void *pBufferHost, size_t size, cl_mem *pBufferCL );
     RideHalError_e DeregBuf( void *pBufferHost );
@@ -57,8 +62,7 @@ private:
     cl_program m_program;
     std::string m_kernelName;
     std::string m_sourceFile;
-    std::string m_binaryFile;
-    std::map<void *, cl_mem> m_memMap;
+    std::map<void *, OpenclIface_MemInfo_t> m_memMap;
 
 protected:
     RIDEHAL_DECLARE_LOGGER();

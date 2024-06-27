@@ -99,7 +99,7 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
                 if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
                      ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
                 {
-                    ret = m_OpenclSrvObj.LoadFromSource( CL2DFlexSource, "NV12_to_RGB" );
+                    ret = m_OpenclSrvObj.LoadFromSource( s_pCL2DFlexSource, "NV12_to_RGB" );
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Load kernel from source for NV12 to RGB failed!" );

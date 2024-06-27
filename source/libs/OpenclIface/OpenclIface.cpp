@@ -32,7 +32,7 @@ RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level )
 
     if ( CL_SUCCESS == retCL )
     {
-        clGetDeviceIDs( m_platformID, CL_DEVICE_TYPE_GPU, 1, &m_deviceID, NULL );
+        retCL = clGetDeviceIDs( m_platformID, CL_DEVICE_TYPE_GPU, 1, &m_deviceID, NULL );
         if ( CL_SUCCESS != retCL )
         {
             RIDEHAL_ERROR( "Unable to get OpenCL compatible GPU device, retCL = %d", retCL );
@@ -70,7 +70,7 @@ RideHalError_e OpenclSrv::LoadFromSource( const char *pSourceFile, const char *p
 
     m_program =
             clCreateProgramWithSource( m_context, 1, (const char **) &pSourceFile, NULL, &retCL );
-    if ( ret != CL_SUCCESS )
+    if ( retCL != CL_SUCCESS )
     {
         RIDEHAL_ERROR( "Unable to create program with source, retCL = %d", retCL );
         ret = RIDEHAL_ERROR_FAIL;
@@ -87,28 +87,23 @@ RideHalError_e OpenclSrv::LoadFromSource( const char *pSourceFile, const char *p
         {
             RIDEHAL_ERROR( "Unable to build program, retCL = %d", retCL );
             ret = RIDEHAL_ERROR_FAIL;
-            size_t len = 0;
+            size_t len;
             (void) clGetProgramBuildInfo( m_program, m_deviceID, CL_PROGRAM_BUILD_LOG, 0, NULL,
                                           &len );
-            if ( len > 0 )
+            std::vector<char> logs;
+            logs.resize( len );
+            char *pBuffer = logs.data();
+            if ( nullptr != pBuffer )
             {
-                char *pBuffer = (char *) calloc( len, sizeof( char ) );
-                if ( nullptr != pBuffer )
-                {
-                    (void) clGetProgramBuildInfo( m_program, m_deviceID, CL_PROGRAM_BUILD_LOG, len,
-                                                  pBuffer, NULL );
-                    (void) fprintf( stderr, "build log:\n %s\n", pBuffer );
-                    free( pBuffer );
-                }
-                else
-                {
-                    RIDEHAL_ERROR( "Failed to allocate buffer for build log!" );
-                }
+                (void) clGetProgramBuildInfo( m_program, m_deviceID, CL_PROGRAM_BUILD_LOG, len,
+                                              pBuffer, NULL );
+                RIDEHAL_INFO( "build log:\n %s\n", pBuffer );
             }
             else
             {
-                RIDEHAL_ERROR( "Empty build log!" );
+                RIDEHAL_ERROR( "Unable to get build log!" );
             }
+            logs.clear();
         }
     }
 
@@ -129,34 +124,20 @@ RideHalError_e OpenclSrv::LoadFromSource( const char *pSourceFile, const char *p
     return ret;
 }
 
-RideHalError_e OpenclSrv::LoadFromBinary( const char *pBinaryFile, const char *pKernelName )
+RideHalError_e OpenclSrv::LoadFromBinary( const unsigned char *pBinaryFile,
+                                          const char *pKernelName )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
 
-    m_program = clCreateProgramWithBinary( m_context, 1, &m_deviceID, NULL,
-                                           (const unsigned char **) &pBinaryFile, NULL, &retCL );
-    if ( ret != CL_SUCCESS )
+    m_program = clCreateProgramWithBinary( m_context, 1, &m_deviceID, NULL, &pBinaryFile, NULL,
+                                           &retCL );
+    if ( retCL != CL_SUCCESS )
     {
         RIDEHAL_ERROR( "Unable to create program with binary, retCL = %d", retCL );
         ret = RIDEHAL_ERROR_FAIL;
     }
     else
-    {
-        m_binaryFile = pBinaryFile;
-    }
-
-    if ( CL_SUCCESS == retCL )
-    {
-        retCL = clBuildProgram( m_program, 1, &m_deviceID, NULL, NULL, NULL );
-        if ( CL_SUCCESS != retCL )
-        {
-            RIDEHAL_ERROR( "Unable to build program, retCL = %d", retCL );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
-    }
-
-    if ( CL_SUCCESS == retCL )
     {
         m_kernel = clCreateKernel( m_program, pKernelName, &retCL );
         if ( CL_SUCCESS != retCL )
@@ -238,8 +219,9 @@ RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, cl_mem *pBuffe
             clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_PMEM_HOST_PTR_QCOM;
             clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
             clBufHostPtr.pmem_hostptr = pBufferHost;
-            *pBufferCL = clCreateBuffer( m_context, CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
-                                         size, &clBufHostPtr, &retCL );
+            cl_mem bufferCL =
+                    clCreateBuffer( m_context, CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, size,
+                                    &clBufHostPtr, &retCL );
             if ( CL_SUCCESS != retCL )
             {
                 RIDEHAL_ERROR( "Unable to create CL buffer, retCL = %d", retCL );
@@ -247,12 +229,13 @@ RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, cl_mem *pBuffe
             }
             else
             {
-                m_memMap[pBufferHost] = *pBufferCL;
+                m_memMap[pBufferHost] = { bufferCL };
+                *pBufferCL = bufferCL;
             }
         }
         else
         {
-            *pBufferCL = it->second;
+            *pBufferCL = it->second.clMem;
         }
     }
 
@@ -274,7 +257,7 @@ RideHalError_e OpenclSrv::DeregBuf( void *pBufferHost )
         auto it = m_memMap.find( pBufferHost );
         if ( it != m_memMap.end() )
         {
-            retCL = clReleaseMemObject( it->second );
+            retCL = clReleaseMemObject( it->second.clMem );
             if ( CL_SUCCESS != retCL )
             {
                 RIDEHAL_ERROR( "Unable to release CL buffer, retCL = %d", retCL );

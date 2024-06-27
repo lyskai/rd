@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string>
 
+#include "CL2DFlex.cl.h"
 #include "md5_utils.hpp"
 #include "ridehal/component/CL2DFlex.hpp"
 
@@ -456,17 +457,46 @@ void CoverageTest()
     ret = OpenclSrvObj.LoadFromSource( "", "" );   // create kernel with null source
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = OpenclSrvObj.LoadFromBinary( "", "" );   // create kernel with null binary
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = OpenclSrvObj.LoadFromSource( s_pCL2DFlexSource, "" );   // create kernel with null kernel
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = OpenclSrvObj.RegBuf( nullptr, 0, nullptr );   // register with null pointer
+    ret = OpenclSrvObj.LoadFromBinary( (const unsigned char *) "",
+                                       "" );   // create kernel with null binary
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    ret = OpenclSrvObj.RegBuf( nullptr, 0, nullptr );   // register with null host pointer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    void *buffer;
+    ret = OpenclSrvObj.RegBuf( buffer, 0, nullptr );   // register with null cl buffer
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     ret = OpenclSrvObj.DeregBuf( nullptr );   // deregister with null pointer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
+    OpenclIfcae_Arg_t OpenclArg;
+    OpenclArg.pArg = nullptr;
+    OpenclArg.argSize = 0;
+    OpenclIface_WorkParams_t OpenclWorkParams;
+    ret = OpenclSrvObj.Execute( &OpenclArg, 1, &OpenclWorkParams );   // execute with null args
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    OpenclArg.pArg = buffer;
+    OpenclArg.argSize = sizeof( cl_mem );
+    OpenclWorkParams.workDim = 0;
+    OpenclWorkParams.pGlobalWorkSize = nullptr;
+    OpenclWorkParams.pGlobalWorkOffset = nullptr;
+    OpenclWorkParams.pLocalWorkSize = nullptr;
+    ret = OpenclSrvObj.Execute( &OpenclArg, 1,
+                                &OpenclWorkParams );   // execute with null work params
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
     ret = OpenclSrvObj.Deinit();   // success deinit
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    cl_mem *clMem;
+    ret = OpenclSrvObj.RegBuf( buffer, 1, clMem );   // register without init
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     return;
 }
