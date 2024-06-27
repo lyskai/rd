@@ -10,7 +10,7 @@ add_subdirectory(Remap)
 add_subdirectory(QnnRuntime)
 add_subdirectory(CL2DFlex)
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
-	add_subdirectory(GL2DFlex)
+    add_subdirectory(GL2DFlex)
 endif()
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES} PARENT_SCOPE )

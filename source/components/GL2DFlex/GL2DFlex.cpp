@@ -44,7 +44,6 @@ static const char *s_pFragShaderYUVText = "#version 320 es\n"
                                           "  color = texture(tex, v_texcoord);\n"
                                           "}\n";
 
-std::mutex GL2DFlex::s_lock;
 int GL2DFlex::s_drmDevFd = 0;
 struct gbm_device *GL2DFlex::s_gbmDev = nullptr;
 uint32_t GL2DFlex::s_devRefCnt = 0;
@@ -149,7 +148,7 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
                 memcpy( m_textcoords[i].texcoord, texcoord, sizeof( texcoord ) );
             }
 
-            std::lock_guard<std::mutex> l( s_lock );
+            m_outputFormat = pConfig->outputFormat;
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
@@ -237,8 +236,6 @@ RideHalError_e GL2DFlex::Deinit()
     {
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
-
-    std::lock_guard<std::mutex> l( s_lock );
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -331,12 +328,6 @@ RideHalError_e GL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( numInputs != m_numOfInputs )
-    {
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        RIDEHAL_ERROR( "Number of inputs not correct: %u != %u", m_numOfInputs, numInputs );
-    }
-
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
         ret = RIDEHAL_ERROR_BAD_STATE;
@@ -345,25 +336,28 @@ RideHalError_e GL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        for ( size_t i = 0; i < m_numOfInputs; i++ )
+        if ( nullptr == pInputs )
         {
-            if ( &pInputs[i] == nullptr )
-            {
-                ret = RIDEHAL_ERROR_INVALID_BUF;
-                RIDEHAL_ERROR( "Input buffer %u is null", i );
-            }
+            ret = RIDEHAL_ERROR_INVALID_BUF;
+            RIDEHAL_ERROR( "Input buffer is null" );
         }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        if ( pOutput == nullptr )
+        else if ( numInputs != m_numOfInputs )
+        {
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Number of inputs not correct: %u != %u", m_numOfInputs, numInputs );
+        }
+        else if ( nullptr == pOutput )
         {
             ret = RIDEHAL_ERROR_INVALID_BUF;
             RIDEHAL_ERROR( "Output buffer is null" );
         }
+        else if ( m_outputFormat != pOutput->imgProps.format )
+        {
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Output format is not correct: %d != %d", (int) m_outputFormat,
+                           (int) pOutput->imgProps.format );
+        }
     }
-
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -431,8 +425,6 @@ RideHalError_e GL2DFlex::EGLInit()
             EGL_HEIGHT, (EGLint) m_outputResolution.height,
             EGL_NONE,
     };
-
-    std::lock_guard<std::mutex> l( s_lock );
 
     if ( !m_bEGLReady )
     {
@@ -513,8 +505,6 @@ RideHalError_e GL2DFlex::EGLInit()
 RideHalError_e GL2DFlex::CreateGLPipeline()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    std::lock_guard<std::mutex> l( s_lock );
 
     if ( !m_bGLPipelineReady )
     {
@@ -694,21 +684,6 @@ RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInput
         size_t offset = pInputBuffer->offset;
         uint32_t handle = pInputBuffer->buffer.dmaHandle;
 
-
-        EGLint eglImageAttribs[] = { EGL_WIDTH,
-                                     (EGLint) width,
-                                     EGL_HEIGHT,
-                                     (EGLint) height,
-                                     EGL_LINUX_DRM_FOURCC_EXT,
-                                     (EGLint) GetEGLFormatType( format ),
-                                     EGL_DMA_BUF_PLANE0_FD_EXT,
-                                     (EGLint) handle,
-                                     EGL_DMA_BUF_PLANE0_OFFSET_EXT,
-                                     (EGLint) offset,
-                                     EGL_DMA_BUF_PLANE0_PITCH_EXT,
-                                     (EGLint) stride,
-                                     EGL_NONE };
-
         struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
                                              GetGBMFormatType( format ) };
         inputInfo->bo =
@@ -721,6 +696,20 @@ RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInput
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
+            int fd = gbm_bo_get_fd( inputInfo->bo );
+            EGLint eglImageAttribs[] = { EGL_WIDTH,
+                                         (EGLint) width,
+                                         EGL_HEIGHT,
+                                         (EGLint) height,
+                                         EGL_LINUX_DRM_FOURCC_EXT,
+                                         (EGLint) GetEGLFormatType( format ),
+                                         EGL_DMA_BUF_PLANE0_FD_EXT,
+                                         (EGLint) fd,
+                                         EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                         (EGLint) offset,
+                                         EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                                         (EGLint) stride,
+                                         EGL_NONE };
             inputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                                   NULL, eglImageAttribs );
             if ( nullptr == inputInfo->image )
@@ -793,20 +782,6 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
         size_t offset = pOutputBuffer->offset;
         uint32_t handle = pOutputBuffer->buffer.dmaHandle;
 
-        EGLint eglImageAttribs[] = { EGL_WIDTH,
-                                     (EGLint) width,
-                                     EGL_HEIGHT,
-                                     (EGLint) height,
-                                     EGL_LINUX_DRM_FOURCC_EXT,
-                                     (EGLint) GetEGLFormatType( format ),
-                                     EGL_DMA_BUF_PLANE0_FD_EXT,
-                                     (EGLint) handle,
-                                     EGL_DMA_BUF_PLANE0_OFFSET_EXT,
-                                     (EGLint) offset,
-                                     EGL_DMA_BUF_PLANE0_PITCH_EXT,
-                                     (EGLint) stride,
-                                     EGL_NONE };
-
         struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
                                              GetGBMFormatType( format ) };
         outputInfo->bo =
@@ -819,6 +794,21 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
 
         if ( RIDEHAL_ERROR_NONE == ret )
         {
+            int fd = gbm_bo_get_fd( outputInfo->bo );
+            EGLint eglImageAttribs[] = { EGL_WIDTH,
+                                         (EGLint) width,
+                                         EGL_HEIGHT,
+                                         (EGLint) height,
+                                         EGL_LINUX_DRM_FOURCC_EXT,
+                                         (EGLint) GetEGLFormatType( format ),
+                                         EGL_DMA_BUF_PLANE0_FD_EXT,
+                                         (EGLint) fd,
+                                         EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                         (EGLint) offset,
+                                         EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                                         (EGLint) stride,
+                                         EGL_NONE };
+
             outputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                                    NULL, eglImageAttribs );
             if ( nullptr == outputInfo->image )
@@ -834,7 +824,7 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to generate GL texture for input" );
+                RIDEHAL_ERROR( "Failed to generate GL texture for output" );
             }
         }
 
@@ -844,7 +834,7 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to generate GL frame buffers for input" );
+                RIDEHAL_ERROR( "Failed to generate GL frame buffers for output" );
             }
         }
 
@@ -854,7 +844,7 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
             ret = GLErrorCheck();
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to bind GL texture for input" );
+                RIDEHAL_ERROR( "Failed to bind GL texture for output" );
             }
         }
 
@@ -1108,7 +1098,7 @@ inline RideHalError_e GL2DFlex::GLErrorCheck()
     if ( glError != GL_NO_ERROR )
     {
         ret = RIDEHAL_ERROR_FAIL;
-        RIDEHAL_ERROR( "GLErrorCheck failed, Err value: %d", (int) glError );
+        RIDEHAL_ERROR( "GLErrorCheck failed, Err value: %u", (int) glError );
     }
 
     return ret;

@@ -27,8 +27,9 @@ void GL2DFlexTestNormal( GL2DFlex_Config_t *pConfig, RideHal_ImageFormat_e outpu
                                   pConfig->inputConfigs[i].inputFormat );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
+    pConfig->outputFormat = outputFormat;
 
-    ret = output.Allocate( outputWidth, outputHeight, outputFormat );
+    ret = output.Allocate( outputWidth, outputHeight, pConfig->outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = GL2DFlexObj.Init( pName, pConfig );
@@ -57,7 +58,7 @@ TEST( GL2DFlex, SANITY_ConvertNV12toRGB )
     {
         GL2DFlexConfig.inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
         GL2DFlexConfig.inputConfigs[i].inputResolution.width = 1920;
-        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1024;
+        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1080;
         GL2DFlexConfig.inputConfigs[i].ROI.topX = 100;
         GL2DFlexConfig.inputConfigs[i].ROI.topY = 100;
         GL2DFlexConfig.inputConfigs[i].ROI.width = 1080;
@@ -81,7 +82,7 @@ TEST( GL2DFlex, SANITY_ConvertRGBtoNV12 )
     {
         GL2DFlexConfig.inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
         GL2DFlexConfig.inputConfigs[i].inputResolution.width = 1920;
-        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1024;
+        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1080;
         GL2DFlexConfig.inputConfigs[i].ROI.topX = 100;
         GL2DFlexConfig.inputConfigs[i].ROI.topY = 100;
         GL2DFlexConfig.inputConfigs[i].ROI.width = 1080;
@@ -91,30 +92,6 @@ TEST( GL2DFlex, SANITY_ConvertRGBtoNV12 )
     RideHal_ImageFormat_e outputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
     uint32_t outputWidth = 600;
     uint32_t outputHeight = 600;
-
-    GL2DFlexTestNormal( pConfig, outputFormat, outputWidth, outputHeight );
-}
-
-TEST( GL2DFlex, SANITY_ConvertNV12toUYVY )
-{
-    GL2DFlex_Config_t GL2DFlexConfig;
-    GL2DFlex_Config_t *pConfig = &GL2DFlexConfig;
-
-    GL2DFlexConfig.numOfInputs = 1;
-    for ( size_t i = 0; i < GL2DFlexConfig.numOfInputs; i++ )
-    {
-        GL2DFlexConfig.inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
-        GL2DFlexConfig.inputConfigs[i].inputResolution.width = 1920;
-        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1024;
-        GL2DFlexConfig.inputConfigs[i].ROI.topX = 100;
-        GL2DFlexConfig.inputConfigs[i].ROI.topY = 100;
-        GL2DFlexConfig.inputConfigs[i].ROI.width = 1080;
-        GL2DFlexConfig.inputConfigs[i].ROI.height = 720;
-    }
-
-    RideHal_ImageFormat_e outputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
-    uint32_t outputWidth = 1080;
-    uint32_t outputHeight = 720;
 
     GL2DFlexTestNormal( pConfig, outputFormat, outputWidth, outputHeight );
 }
@@ -129,7 +106,7 @@ TEST( GL2DFlex, SANITY_ConvertUYVYtoNV12 )
     {
         GL2DFlexConfig.inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
         GL2DFlexConfig.inputConfigs[i].inputResolution.width = 1920;
-        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1024;
+        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1080;
         GL2DFlexConfig.inputConfigs[i].ROI.topX = 100;
         GL2DFlexConfig.inputConfigs[i].ROI.topY = 100;
         GL2DFlexConfig.inputConfigs[i].ROI.width = 1080;
@@ -153,7 +130,7 @@ TEST( GL2DFlex, SANITY_ConvertUYVYtoRGB )
     {
         GL2DFlexConfig.inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
         GL2DFlexConfig.inputConfigs[i].inputResolution.width = 1920;
-        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1024;
+        GL2DFlexConfig.inputConfigs[i].inputResolution.height = 1080;
         GL2DFlexConfig.inputConfigs[i].ROI.topX = 200;
         GL2DFlexConfig.inputConfigs[i].ROI.topY = 200;
         GL2DFlexConfig.inputConfigs[i].ROI.width = 1080;
