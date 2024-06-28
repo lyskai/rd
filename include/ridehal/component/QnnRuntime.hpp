@@ -36,6 +36,7 @@ typedef struct
                               * QnnGraph_executeAsync.*/
 } QnnRuntime_Perf_t;
 
+/** @brief UDO package information */
 typedef struct
 {
     const char *interfaceProvider; /**<name of interface provider*/
@@ -76,7 +77,7 @@ typedef struct
 /** @brief The list of QnnRuntime tensor information */
 typedef struct
 {
-    QnnRuntime_TensorInfo_t *pInfo; /**<Pointer to QnnRuntime tensor informatio*/
+    QnnRuntime_TensorInfo_t *pInfo; /**<Pointer to QnnRuntime tensor information*/
     uint32_t num;                   /**<The number of tensors*/
 } QnnRuntime_TensorInfoList_t;
 

@@ -1,13 +1,13 @@
 *Menu*:
 - [1. Introduction](#1-introduction)
-- [2. QnnRuntime Data Structures](#1-qnnruntime-data-structures)
+- [2. QnnRuntime Data Structures](#2-qnnruntime-data-structures)
 - [3. QnnRuntime APIs](#3-qnnruntime-apis)
 - [4. QnnRuntime Examples](#4-qnnruntime-examples)
   - [4.1 Set up QnnRuntime configuration](#41-set-up-qnnruntime-configuration)
   - [4.2 Load qnn model from configuration](#42-load-qnn-model-from-configuration)
-  - [4.3 Get qnn input/output tensor information](#43-get-qnn-input/output-tensor-information)
-  - [4.4 Use QnnRuntime::Execute to run qnn inference](#44-use-qnnruntime::execute-to-run-qnn-inference)
-  - [4.5 Register/DeRegister Buffers](#45-register/deregister-buffers)
+  - [4.3 Get qnn input/output tensor information](#43-get-qnn-inputoutput-tensor-information)
+  - [4.4 Use QnnRuntime::Execute to run qnn inference](#44-use-qnnruntimeexecute-to-run-qnn-inference)
+  - [4.5 Register/DeRegister Buffers](#45-registerderegister-buffers)
 - [5. References](#5-references)
 
 
@@ -20,38 +20,38 @@ QnnRuntime is a genral framework assist user to run qnn model based on HTP/GPU/C
 
 # 2. QnnRuntime Data Structures
 
-- [QnnRuntime_Perf_t](../include/ridehal/component/QnnRuntime.hpp#L23)
-- [QnnRuntime_UdoPackage_t](../include/ridehal/component/QnnRuntime.hpp#L37)
-- [QnnRuntime_LoadType_e](../include/ridehal/component/QnnRuntime.hpp#L44)
-- [QnnRuntime_Config_t](../include/ridehal/component/QnnRuntime.hpp#L52)
-- [QnnRuntime_TensorInfo_t](../include/ridehal/component/QnnRuntime.hpp#L66)
-- [QnnRuntime_TensorInfoList_t](../include/ridehal/component/QnnRuntime.hpp#L75)
+- [QnnRuntime_Perf_t](../include/ridehal/component/QnnRuntime.hpp#L37)
+- [QnnRuntime_UdoPackage_t](../include/ridehal/component/QnnRuntime.hpp#L44)
+- [QnnRuntime_LoadType_e](../include/ridehal/component/QnnRuntime.hpp#L52)
+- [QnnRuntime_Config_t](../include/ridehal/component/QnnRuntime.hpp#L66)
+- [QnnRuntime_TensorInfo_t](../include/ridehal/component/QnnRuntime.hpp#L75)
+- [QnnRuntime_TensorInfoList_t](../include/ridehal/component/QnnRuntime.hpp#L82)
 
 # 3. QnnRuntime APIs
 
-- [QnnRuntime::Init](../include/ridehal/component/QnnRuntime.hpp#L102) Initialize QnnRuntime component
+- [QnnRuntime::Init](../include/ridehal/component/QnnRuntime.hpp#L105) Initialize QnnRuntime component
 
-- [QnnRuntime::GetInputInfo](../include/ridehal/component/QnnRuntime.hpp#L111) Get input tensor information
+- [QnnRuntime::GetInputInfo](../include/ridehal/component/QnnRuntime.hpp#L114) Get input tensor information
 
-- [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L119) Get output tensor information
+- [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L122) Get output tensor information
 
-- [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L130) Execute qnn model with input and output buffer
+- [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L133) Execute qnn model with input and output buffer
 
-- [QnnRuntime::Deinit](../include/ridehal/component/QnnRuntime.hpp#L138) Deinit the QnnRuntime object
+- [QnnRuntime::Deinit](../include/ridehal/component/QnnRuntime.hpp#L141) Deinit the QnnRuntime object
 
-- [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L145) Start the QnnRuntime object
+- [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L148) Start the QnnRuntime object
 
-- [QnnRuntime::Stop](../include/ridehal/component/QnnRuntime.hpp#L152) Stop the QnnRuntime object
+- [QnnRuntime::Stop](../include/ridehal/component/QnnRuntime.hpp#L155) Stop the QnnRuntime object
 
-- [QnnRuntime::EnablePerf](../include/ridehal/component/QnnRuntime.hpp#L159) Enable qnn performance calculation
+- [QnnRuntime::EnablePerf](../include/ridehal/component/QnnRuntime.hpp#L162) Enable qnn performance calculation
 
-- [QnnRuntime:DisablePerf](../include/ridehal/component/QnnRuntime.hpp#L166) Disable qnn performance calculation
+- [QnnRuntime:DisablePerf](../include/ridehal/component/QnnRuntime.hpp#L169) Disable qnn performance calculation
 
-- [QnnRuntime::GetPerf](../include/ridehal/component/QnnRuntime.hpp#L174) Get qnn latest performance data
+- [QnnRuntime::GetPerf](../include/ridehal/component/QnnRuntime.hpp#L177) Get qnn latest performance data
 
-- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L183) Rigister memory with specific shared buffers
+- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L186) Rigister memory with specific shared buffers
 
-- [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L192) DeRigister memory with specific shared buffers
+- [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L196) DeRigister memory with specific shared buffers
 
 # 4. QnnRuntime Examples
 
