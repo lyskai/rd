@@ -369,7 +369,7 @@ void TinyViz::printRendererInfo( SDL_Renderer *ren )
                 std::string( SDL_GetVideoDriver( idx ) ) == SDL_GetCurrentVideoDriver()
                         ? " (selected)"
                         : "";
-        RIDEHAL_INFO( "%d%s: %s", idx, isSelected, SDL_GetVideoDriver( idx ) );
+        RIDEHAL_INFO( "%d%s: %s", idx, isSelected.c_str(), SDL_GetVideoDriver( idx ) );
     }
 
     RIDEHAL_INFO( "Available renderer driver: " );
@@ -379,7 +379,7 @@ void TinyViz::printRendererInfo( SDL_Renderer *ren )
         SDL_GetRenderDriverInfo( idx, &rendererInfoByIdx );
         std::string isSelected =
                 std::string( rendererInfoByIdx.name ) == rendererInfo.name ? " (selected)" : "";
-        RIDEHAL_INFO( "%d%s: %s", idx, isSelected, rendererInfoByIdx.name );
+        RIDEHAL_INFO( "%d%s: %s", idx, isSelected.c_str(), rendererInfoByIdx.name );
     }
 }
 
