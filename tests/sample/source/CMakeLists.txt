@@ -18,6 +18,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleRemap.cpp
     SampleVideoEncoder.cpp
     SharedBufferPool.cpp
+    SampleCL2DFlex.cpp
 )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )

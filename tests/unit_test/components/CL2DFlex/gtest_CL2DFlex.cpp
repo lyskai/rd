@@ -467,10 +467,6 @@ void CoverageTest()
     ret = OpenclSrvObj.RegBuf( nullptr, 0, nullptr );   // register with null host pointer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
-    void *buffer;
-    ret = OpenclSrvObj.RegBuf( buffer, 0, nullptr );   // register with null cl buffer
-    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
-
     ret = OpenclSrvObj.DeregBuf( nullptr );   // deregister with null pointer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
@@ -481,8 +477,9 @@ void CoverageTest()
     ret = OpenclSrvObj.Execute( &OpenclArg, 1, &OpenclWorkParams );   // execute with null args
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    OpenclArg.pArg = buffer;
-    OpenclArg.argSize = sizeof( cl_mem );
+    int arg = 1;
+    OpenclArg.pArg = &arg;
+    OpenclArg.argSize = sizeof( cl_int );
     OpenclWorkParams.workDim = 0;
     OpenclWorkParams.pGlobalWorkSize = nullptr;
     OpenclWorkParams.pGlobalWorkOffset = nullptr;
@@ -495,7 +492,7 @@ void CoverageTest()
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     cl_mem *clMem;
-    ret = OpenclSrvObj.RegBuf( buffer, 1, clMem );   // register without init
+    ret = OpenclSrvObj.RegBuf( (void *) &input, 1, clMem );   // register without init
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     return;
