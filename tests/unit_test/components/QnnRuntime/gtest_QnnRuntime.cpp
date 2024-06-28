@@ -11,6 +11,38 @@ using namespace ridehal::common;
 using namespace ridehal::component;
 using namespace ridehal::test::utils;
 
+namespace
+{
+
+static void *LoadRaw( std::string path, size_t &size )
+{
+    void *pOut = nullptr;
+    FILE *pFile = fopen( path.c_str(), "rb" );
+
+    if ( nullptr != pFile )
+    {
+        fseek( pFile, 0, SEEK_END );
+        size = ftell( pFile );
+        fseek( pFile, 0, SEEK_SET );
+        pOut = malloc( size );
+        if ( nullptr != pOut )
+        {
+            auto readSize = fread( pOut, 1, size, pFile );
+            (void) readSize;
+        }
+        fclose( pFile );
+        printf( "load raw %s %d\n", path.c_str(), (int) size );
+    }
+    else
+    {
+        printf( "no raw file %s\n", path.c_str() );
+    }
+
+    return pOut;
+}
+
+}   // namespace
+
 TEST( QnnRuntime, SANITY_General )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -809,6 +841,101 @@ TEST( QnnRuntime, OneBufferMutipleTensors )
         std::string md5OneBuffer = MD5Sum( outputs1[i].buffer.pData, outputs1[i].size );
         std::string md5Output = MD5Sum( outputs[i].buffer.pData, outputs[i].size );
         EXPECT_EQ( md5OneBuffer, md5Output );
+    }
+
+    ret = qnnRuntime.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
+TEST( QnnRuntime, TestAccuracy )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "QnnRuntime";
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetInputInfo( &tensorInputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    std::vector<std::string> inputDataPaths;
+    inputDataPaths.push_back( "data/test/qnn/centernet/gd_uint8_input.raw" );
+    ASSERT_EQ( inputDataPaths.size(), inputNum );
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        size_t inputSize = 0;
+        void *pInputData = LoadRaw( inputDataPaths[i], inputSize );
+        ASSERT_EQ( inputs[i].size, inputSize );
+        memcpy( inputs[i].data(), pInputData, inputSize );
+        free( pInputData );
+    }
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+
+    size_t outputTotalSize = 0;
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        outputTotalSize += outputs[i].size;
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    std::vector<std::string> outputDataPaths;
+    outputDataPaths.push_back( "data/test/qnn/centernet/gd_uint8_output_0.raw" );
+    outputDataPaths.push_back( "data/test/qnn/centernet/gd_uint8_output_1.raw" );
+    outputDataPaths.push_back( "data/test/qnn/centernet/gd_uint8_output_2.raw" );
+    ASSERT_EQ( outputDataPaths.size(), outputNum );
+
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        size_t outputSize = 0;
+        void *pOutputData = LoadRaw( outputDataPaths[i], outputSize );
+        ASSERT_EQ( outputs[i].size, outputSize );
+        std::string md5OutputGolden = MD5Sum( pOutputData, outputSize );
+        std::string md5Output = MD5Sum( outputs[i].buffer.pData, outputs[i].size );
+        printf( "output: %d\n", i );
+        printf( "md5OutputGolden: %s\n", md5OutputGolden.c_str() );
+        printf( "md5Output: %s\n", md5Output.c_str() );
+        EXPECT_EQ( md5OutputGolden, md5Output );
+        free( pOutputData );
     }
 }
 
