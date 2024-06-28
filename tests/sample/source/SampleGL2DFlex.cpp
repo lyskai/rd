@@ -17,22 +17,22 @@ RideHalError_e SampleGL2DFlex::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    m_outputWidth = Get( config, "output_width", 1928 );
-    if ( 0 == m_outputWidth )
+    m_config.outputResolution.width = Get( config, "output_width", 1928 );
+    if ( 0 == m_config.outputResolution.width )
     {
         RIDEHAL_ERROR( "invalid output_width\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_outputHeight = Get( config, "output_height", 1208 );
-    if ( 0 == m_outputHeight )
+    m_config.outputResolution.height = Get( config, "output_height", 1928 );
+    if ( 0 == m_config.outputResolution.height )
     {
         RIDEHAL_ERROR( "invalid output_height\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
     m_config.outputFormat = Get( config, "output_format", RIDEHAL_IMAGE_FORMAT_UYVY );
-    if ( RIDEHAL_IMAGE_FORMAT_MAX == m_outputFormat )
+    if ( RIDEHAL_IMAGE_FORMAT_MAX == m_config.outputFormat )
     {
         RIDEHAL_ERROR( "invalid output_format\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -87,21 +87,13 @@ RideHalError_e SampleGL2DFlex::ParseConfig( SampleConfig_t &config )
 
         m_config.inputConfigs[i].ROI.width = Get( config, "roi_width" + std::to_string( i ),
                                                   m_config.inputConfigs[i].inputResolution.width );
-        if ( 0 == m_config.inputConfigs[i].ROI.width )
-        {
-            RIDEHAL_ERROR( "invalid roi_width%u\n", i );
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        }
-
         m_config.inputConfigs[i].ROI.height =
                 Get( config, "roi_height" + std::to_string( i ),
                      m_config.inputConfigs[i].inputResolution.height );
-        if ( 0 == m_config.inputConfigs[i].ROI.height )
-        {
-            RIDEHAL_ERROR( "invalid roi_height%u\n", i );
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        }
     }
+
+    m_outputWidth = m_config.outputResolution.width;
+    m_outputHeight = m_config.outputResolution.height;
     m_outputFormat = m_config.outputFormat;
 
     m_poolSize = Get( config, "pool_size", 4 );
@@ -222,7 +214,7 @@ void SampleGL2DFlex::ThreadMain()
                 }
                 else
                 {
-                    RIDEHAL_ERROR( "c2d execute failed for %" PRIu64 " : %d", frames.FrameId( 0 ),
+                    RIDEHAL_ERROR( "GL2D execute failed for %" PRIu64 " : %d", frames.FrameId( 0 ),
                                    ret );
                 }
             }

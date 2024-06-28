@@ -44,6 +44,7 @@ static const char *s_pFragShaderYUVText = "#version 320 es\n"
                                           "  color = texture(tex, v_texcoord);\n"
                                           "}\n";
 
+std::mutex GL2DFlex::s_mutLock;
 int GL2DFlex::s_drmDevFd = 0;
 struct gbm_device *GL2DFlex::s_gbmDev = nullptr;
 uint32_t GL2DFlex::s_devRefCnt = 0;
@@ -95,7 +96,13 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
                 roi_width = pConfig->inputConfigs[i].ROI.width;
                 roi_height = pConfig->inputConfigs[i].ROI.height;
 
-                if ( topX >= 0 && topX <= m_inputResolutions[i].width )
+                if ( ( topX == 0 ) && ( topY == 0 ) && ( roi_width == 0 ) && ( roi_height == 0 ) )
+                {
+                    roi_width = m_inputResolutions[i].width;
+                    roi_height = m_inputResolutions[i].height;
+                }
+
+                if ( ( topX >= 0 ) && ( topX <= m_inputResolutions[i].width ) )
                 {
                     gl_topX = (float) topX;
                 }
@@ -106,7 +113,7 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
                     break;
                 }
 
-                if ( topY >= 0 && topY <= m_inputResolutions[i].height )
+                if ( ( topY >= 0 ) && ( topY <= m_inputResolutions[i].height ) )
                 {
                     gl_topY = (float) topY;
                 }
@@ -117,10 +124,10 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
                     break;
                 }
 
-                if ( roi_width >= 0 && roi_width <= m_inputResolutions[i].width - topX )
+                if ( ( roi_width > 0 ) && ( roi_width <= m_inputResolutions[i].width - topX ) )
                 {
                     gl_topX = gl_topX / m_inputResolutions[i].width;
-                    gl_bottomX = gl_topX + roi_width;
+                    gl_bottomX = (float) ( topX + roi_width ) / m_inputResolutions[i].width;
                 }
                 else
                 {
@@ -129,10 +136,10 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
                     break;
                 }
 
-                if ( roi_height >= 0 && roi_height <= m_inputResolutions[i].height - topY )
+                if ( ( roi_height > 0 ) && ( roi_height <= m_inputResolutions[i].height - topY ) )
                 {
                     gl_topY = gl_topY / m_inputResolutions[i].height;
-                    gl_bottomY = gl_topY + roi_height;
+                    gl_bottomY = (float) ( topY + roi_height ) / m_inputResolutions[i].height;
                 }
                 else
                 {
@@ -149,6 +156,10 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
             }
 
             m_outputFormat = pConfig->outputFormat;
+            m_outputResolution.width = pConfig->outputResolution.width;
+            m_outputResolution.height = pConfig->outputResolution.height;
+
+            std::lock_guard<std::mutex> l( s_mutLock );
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
@@ -239,6 +250,8 @@ RideHalError_e GL2DFlex::Deinit()
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        std::lock_guard<std::mutex> l( s_mutLock );
+
         if ( s_devRefCnt > 0 )
         {
             s_devRefCnt--;
@@ -636,30 +649,14 @@ RideHalError_e GL2DFlex::CreateGLPipeline()
             }
         }
 
-        if ( RIDEHAL_ERROR_NONE == ret )
+        if ( 0 != m_vertShader )
         {
-            if ( 0 == m_vertShader )
-            {
-                glDeleteShader( m_vertShader );
-                ret = GLErrorCheck();
-                if ( RIDEHAL_ERROR_NONE != ret )
-                {
-                    RIDEHAL_ERROR( "Failed to delete GL Vertex Shader" );
-                }
-            }
+            glDeleteShader( m_vertShader );
         }
 
-        if ( RIDEHAL_ERROR_NONE == ret )
+        if ( 0 != m_vertShader )
         {
-            if ( 0 == m_vertShader )
-            {
-                glDeleteShader( m_fragShader );
-                ret = GLErrorCheck();
-                if ( RIDEHAL_ERROR_NONE != ret )
-                {
-                    RIDEHAL_ERROR( "Failed to delete GL Fragment Shader" );
-                }
-            }
+            glDeleteShader( m_fragShader );
         }
 
         m_bGLPipelineReady = true;
@@ -779,7 +776,7 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
         uint32_t height = pOutputBuffer->imgProps.height;
         uint32_t stride = pOutputBuffer->imgProps.stride[0];
         RideHal_ImageFormat_e format = pOutputBuffer->imgProps.format;
-        size_t offset = pOutputBuffer->offset;
+        size_t offset = pOutputBuffer->offset + batchIdx * outputSize;
         uint32_t handle = pOutputBuffer->buffer.dmaHandle;
 
         struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
@@ -952,6 +949,15 @@ RideHalError_e GL2DFlex::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
     {
         // bind output
         glBindFramebuffer( GL_FRAMEBUFFER, outputInfo->framebuffer );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to bind frame buffer" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
         glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_EXTERNAL_OES,
                                 outputInfo->texture, 0 );
         ret = GLErrorCheck();

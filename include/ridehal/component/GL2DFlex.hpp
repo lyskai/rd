@@ -63,7 +63,8 @@ typedef struct
 {
     uint32_t numOfInputs; /**< Number of Input Images in each processing */
     GL2DFlex_InputConfig_t inputConfigs[RIDEHAL_MAX_INPUTS]; /**< Array of Input Configurations */
-    RideHal_ImageFormat_e outputFormat;                      /**< Image format of Output frame */
+    GL2DFlex_ImageResolution_t outputResolution; /**< Image Resolution of Output frame */
+    RideHal_ImageFormat_e outputFormat;          /**< Image format of Output frame */
 } GL2DFlex_Config_t;
 
 
@@ -184,6 +185,7 @@ private:
     GL2DFlex_ImageResolution_t m_outputResolution;
     RideHal_ImageFormat_e m_outputFormat;
 
+    static std::mutex s_mutLock;
     static int s_drmDevFd;
     static struct gbm_device *s_gbmDev;
     static uint32_t s_devRefCnt;
