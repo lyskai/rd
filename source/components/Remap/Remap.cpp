@@ -177,26 +177,31 @@ RideHalError_e Remap::Deinit()
     }
     else
     {
-        ret = m_fadasRemapObj.DestroyMap();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        RideHalError_e retVal = RIDEHAL_ERROR_NONE;
+
+        retVal = m_fadasRemapObj.DestroyMap();
+        if ( RIDEHAL_ERROR_NONE != retVal )
         {
             RIDEHAL_ERROR( "Destroy map failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
         }
-        ret = m_fadasRemapObj.DestroyWorkers();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        retVal = m_fadasRemapObj.DestroyWorkers();
+        if ( RIDEHAL_ERROR_NONE != retVal )
         {
             RIDEHAL_ERROR( "Destroy worker failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
         }
-        ret = m_fadasRemapObj.Deinit();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        retVal = m_fadasRemapObj.Deinit();
+        if ( RIDEHAL_ERROR_NONE != retVal )
         {
             RIDEHAL_ERROR( "Deinit fadas remap failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
         }
-        ret = ComponentIF::Deinit();
-
-        if ( RIDEHAL_ERROR_NONE != ret )
+        retVal = ComponentIF::Deinit();
+        if ( RIDEHAL_ERROR_NONE != retVal )
         {
             RIDEHAL_ERROR( "Deinit ComponentIF failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
