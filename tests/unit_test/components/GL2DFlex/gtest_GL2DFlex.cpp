@@ -28,6 +28,8 @@ void GL2DFlexTestNormal( GL2DFlex_Config_t *pConfig, RideHal_ImageFormat_e outpu
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
     pConfig->outputFormat = outputFormat;
+    pConfig->outputResolution.width = outputWidth;
+    pConfig->outputResolution.height = outputHeight;
 
     ret = output.Allocate( outputWidth, outputHeight, pConfig->outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
