@@ -19,6 +19,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleVideoEncoder.cpp
     SharedBufferPool.cpp
     SampleCL2DFlex.cpp
+    SampleDataOnline.cpp
 )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
@@ -45,6 +46,7 @@ endif()
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
   list( APPEND RIDEHAL_SAMPLE_DEFINITIONS WITH_RSM_V2 )
   list( APPEND TARGET_LIBRARIES rsm_client )
+  list( APPEND TARGET_LIBRARIES socket )
 endif()
 
 add_library( RideHalSample SHARED ${RIDEHAL_SAMPLE_SOURCES} )

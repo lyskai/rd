@@ -33,6 +33,7 @@ public:
     RideHal_BufferType_e BufferType() { return buffer->sharedBuffer.type; }
     RideHal_SharedBuffer_t &SharedBuffer() { return buffer->sharedBuffer; }
     void *data() { return buffer->sharedBuffer.data(); }
+    uint32_t size() { return buffer->sharedBuffer.size; }
 } DataFrame_t;
 
 typedef struct
@@ -43,6 +44,7 @@ public:
     RideHal_BufferType_e BufferType( int index ) { return frames[index].BufferType(); }
     RideHal_SharedBuffer_t &SharedBuffer( int index ) { return frames[index].SharedBuffer(); }
     void *data( int index ) { return frames[index].data(); }
+    uint32_t size( int index ) { return frames[index].size(); }
 
     uint64_t FrameId( int index ) { return frames[index].frameId; };
     uint64_t Timestamp( int index ) { return frames[index].timestamp; };
@@ -83,6 +85,20 @@ typedef struct
     uint64_t frameId;
     uint64_t timestamp;
 } Road2DObjects_t;
+
+typedef struct
+{
+    std::string name;                 /**< The name of tensor */
+    RideHal_TensorProps_t properties; /**< The property of tensor */
+    float quantScale;                 /**< The value of quantization scale */
+    int32_t quantOffset;              /**< The value of quantization offset */
+} TensorInfo_t;
+
+typedef struct
+{
+    std::vector<TensorInfo_t> inputs;
+    std::vector<TensorInfo_t> outputs;
+} ModelInOutInfo_t;
 
 }   // namespace sample
 }   // namespace ridehal

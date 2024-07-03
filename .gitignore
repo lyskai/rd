@@ -5,3 +5,5 @@ run-*
 hexagon_Release_*
 prebuilt
 third_party
+.cpptest
+__pycache__

@@ -51,6 +51,7 @@ private:
 
     std::string m_inputTopicName;
     std::string m_outputTopicName;
+    std::string m_modelInOutInfoTopicName;
 
     std::string m_modelPath;
     std::vector<QnnRuntime_UdoPackage_t> m_opPackagePaths;
@@ -64,6 +65,7 @@ private:
 
     DataSubscriber<DataFrames_t> m_sub;
     DataPublisher<DataFrames_t> m_pub;
+    DataPublisher<ModelInOutInfo_t> m_modelInOutInfoPub;
 
     QnnRuntime m_qnn;
 };   // class SampleQnn

@@ -54,6 +54,8 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    m_modelInOutInfoTopicName = Get( config, "model_io_info_topic", "" );
+
     std::string opPackagePathsStr = Get( config, "udo", "" );
     if ( "" != opPackagePathsStr )
     {
@@ -141,12 +143,54 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         ret = m_pub.Init( name, m_outputTopicName );
     }
 
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        if ( "" != m_modelInOutInfoTopicName )
+        {
+            ret = m_modelInOutInfoPub.Init( name, m_modelInOutInfoTopicName );
+        }
+    }
+
     return ret;
 }
 
 RideHalError_e SampleQnn::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    QnnRuntime_TensorInfoList_t inputInfoList;
+    QnnRuntime_TensorInfoList_t outputInfoList;
+    ModelInOutInfo_t ioInfo;
+    if ( "" != m_modelInOutInfoTopicName )
+    {
+        ret = m_qnn.GetInputInfo( &inputInfoList );
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            for ( uint32_t i = 0; i < inputInfoList.num; i++ )
+            {
+                TensorInfo_t ts;
+                ts.name = inputInfoList.pInfo[i].pName;
+                ts.properties = inputInfoList.pInfo[i].properties;
+                ts.quantScale = inputInfoList.pInfo[i].quantScale;
+                ts.quantOffset = inputInfoList.pInfo[i].quantOffset;
+                ioInfo.inputs.push_back( ts );
+            }
+            ret = m_qnn.GetOutputInfo( &outputInfoList );
+        }
+
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            for ( uint32_t i = 0; i < outputInfoList.num; i++ )
+            {
+                TensorInfo_t ts;
+                ts.name = outputInfoList.pInfo[i].pName;
+                ts.properties = outputInfoList.pInfo[i].properties;
+                ts.quantScale = outputInfoList.pInfo[i].quantScale;
+                ts.quantOffset = outputInfoList.pInfo[i].quantOffset;
+                ioInfo.outputs.push_back( ts );
+            }
+            m_modelInOutInfoPub.Publish( ioInfo );
+        }
+    }
 
     ret = m_qnn.Start();
     if ( RIDEHAL_ERROR_NONE == ret )
