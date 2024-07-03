@@ -688,7 +688,8 @@ RideHalError_e FadasRemap::DestroyWorkers()
         {
             if ( 0 != m_workerPtrsDSP[i] )
             {
-                AEEResult retVal = FadasIface_FadasRemap_DestroyWorkers( 0, m_workerPtrsDSP[i] );
+                AEEResult retVal =
+                        FadasIface_FadasRemap_DestroyWorkers( m_handle64, m_workerPtrsDSP[i] );
                 if ( AEE_SUCCESS != retVal )
                 {
                     RIDEHAL_ERROR( "Destroy worker failed!" );
@@ -724,7 +725,8 @@ RideHalError_e FadasRemap::DestroyMap()
         {
             if ( 0 != m_remapPtrsDSP[i] )
             {
-                AEEResult retVal = FadasIface_FadasRemap_DestroyMap( 0, m_remapPtrsDSP[i] );
+                AEEResult retVal =
+                        FadasIface_FadasRemap_DestroyMap( m_handle64, m_remapPtrsDSP[i] );
                 if ( AEE_SUCCESS != retVal )
                 {
                     RIDEHAL_ERROR( "Destroy map failed!" );
