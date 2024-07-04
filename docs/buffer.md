@@ -182,7 +182,7 @@ The [SANITY_TensorAllocate](../tests/unit_test/buffer/gtest_Buffer.cpp#L237) dem
 
 Here for the component QnnRuntime, the inputs/outputs of this component must be Tensor not Image, so here the API [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L132) can be used to convert the Image to a Tensor.
 
-- Refer [SampleQnn ThreadMain](../tests/sample/source/SampleQnn.cpp#L153).
+- Refer [SampleQnn ThreadMain](../tests/sample/source/SampleQnn.cpp#L224).
 - Refer [gtest SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L30).
 
 

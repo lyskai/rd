@@ -19,4 +19,8 @@ export SDL_VIDEO_EGL_DRIVER=/usr/lib/libEGL_adreno.so
 export SDL_VIDEO_GL_DRIVER=/usr/lib/libGLESv2_adreno.so
 fi
 
+if [ -f /mnt/lib64/libsocket.so.4 ] ; then
+export LD_PRELOAD=/mnt/lib64/libsocket.so.4
+fi
+
 $@

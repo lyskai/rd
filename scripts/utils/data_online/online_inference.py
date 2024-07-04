@@ -66,8 +66,6 @@ class OnlineInference():
                 kwargs['%s.tensor_type'%(name)] = encoding['tensor_type']
                 kwargs['%s.scale'%(name)] = encoding['quant_scale']
                 kwargs['%s.offset'%(name)] = encoding['quant_offset']
-        elif type(inputs) == bytes:
-             pass
         else:
             raise NotImplementedError
         self.dol.Write(inputs_, **kwargs)

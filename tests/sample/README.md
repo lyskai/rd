@@ -1,3 +1,24 @@
+*Menu*:
+- [1. RideHal Sample Application command line arguments](#1-ridehal-sample-application-command-line-arguments)
+- [2. RideHal Samples](#2-ridehal-samples)
+  - [2.1 RideHal DataReader Sample](#21-ridehal-datareader-sample)
+  - [2.2 RideHal Camera Sample](#22-ridehal-camera-sample)
+  - [2.3 RideHal C2D Sample](#23-ridehal-c2d-sample)
+  - [2.4 RideHal Remap Sample](#24-ridehal-remap-sample)
+  - [2.5 RideHal Qnn Sample](#25-ridehal-qnn-sample)
+  - [2.6 RideHal PostProcCenternet Sample](#26-ridehal-postproccenternet-sample)
+  - [2.7 RideHal TinyViz Sample](#27-ridehal-tinyviz-sample)
+  - [2.8 RideHal VideoEncoder Sample](#28-ridehal-videoencoder-sample)
+  - [2.9 RideHal Recorder Sample](#29-ridehal-recorder-sample)
+  - [2.10 RideHal PlrPre Sample](#210-ridehal-plrpre-sample)
+  - [2.11 RideHal PlrPost Sample](#211-ridehal-plrpost-sample)
+  - [2.12 RideHal DataOnline Sample](#212-ridehal-dataonline-sample)
+- [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
+  - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
+  - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
+  - [3.3 1 DataReader based Pointpillar QNN perception pipelines](#33-1-datareader-based-pointpillar-qnn-perception-pipelines)
+  - [3.4 1 QNN model data online inference pipeline](#34-1-qnn-model-data-online-inference-pipeline)
+
 # RideHal Sample Application
 
 This RideHal sample is an application to demonstrate how to use the RideHal components.
@@ -182,6 +203,7 @@ The command line template example:
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
 | udo           | false    | string    | -       | udo lib path and interface provider name. e.g. libQnnAutoAiswOpPackage.so:AutoAiswOpPackageInterfaceProvider |
+| model_io_info_topic | false    | string    | ""       | if configured, this topic will be used to publish the input/output tensor informatin of the model, generally used by the RideHal DataOnline Sample for the QNN online inference.  |
 
 The command line template example:
 
@@ -354,6 +376,26 @@ The command line template example:
     -k output_topic -v /sensor/lidar/LIDAR0/objs
 ```
 
+### 2.12 RideHal DataOnline Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| port          | false    | int       | 6666    | The TCP server socket port number |
+| pool_size     | false    | int       | 4       | the image memory pool size |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+| model_io_info_topic | false    | string    | "/data/online/${name}/model/info"       | This topic will be used to subscribe the input/output tensor informatin of the QNN model which will consume the online datas from host PC tool.  |
+| cache         | false    | bool      | true    | use cached memory or not for the buffer pool |
+
+The command line template example:
+
+```sh
+  -n DO0 -t DataOnline -k port -v 6666 \
+    -k input_topic -v /data/online/DO0/input \
+    -k output_topic -v /data/online/DO0/output \
+    -k model_io_info_topic -v /data/online/DO0/model/info \
+```
+
 ## 3. Typical RideHal Sample Application pipelines
 
 ### 3.1 4 DataReader based QNN perception pipelines
@@ -498,4 +540,19 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k batch_index0 -v 1 \
     -k cam_topic0 -v /sensor/lidar/LIDAR0/raw \
     -k obj_topic0 -v /sensor/lidar/LIDAR0/objs -d
+```
+
+### 3.4 1 QNN model data online inference pipeline
+
+```sh
+./bin/rhrun ./bin/RideHalSampleApp \
+  -n DO0 -t DataOnline -k port -v 6666 \
+    -k input_topic -v /data/online/DO0/input \
+    -k output_topic -v /data/online/DO0/output \
+    -k model_io_info_topic -v /data/online/DO0/model/info \
+  -n CNT0 -t Qnn -k processor -v htp0 \
+    -k model_path -v data/centernet/program.bin  \
+    -k input_topic -v /data/online/DO0/output \
+    -k output_topic -v /data/online/DO0/input \
+    -k model_io_info_topic -v /data/online/DO0/model/info -d
 ```
