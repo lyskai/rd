@@ -4,6 +4,7 @@ stages:
   - start
   - build
   - test
+  - pack
 
 start:
   stage: start
@@ -15,19 +16,64 @@ start:
     - merge_requests
   timeout: 1h
 
-
 build ridehal:
   stage: build
   script:
     - echo "Start building ridehal"
     - python3 /data/scripts/gitlab-ci/get_build_config.py
     - sh /data/scripts/gitlab-ci/build_package.sh
+  tags:
+    - ridehal-dev
+  only:
+    - merge_requests
+  timeout: 1h
+
+run gtest for linux:
+  stage: test
+  script:
+    - echo "Start running gtest for linux"
+    - sh /data/scripts/gitlab-ci/run_gtest_host_linux.sh
+    - python3 /data/scripts/gitlab-ci/parse_gtest_output_linux.py
+  tags:
+    - ridehal-dev
+  only:
+    - merge_requests
+  timeout: 1h
+
+run gtest for ubuntu:
+  stage: test
+  script:
+    - echo "Start running gtest for ubuntu"
+    - sh /data/scripts/gitlab-ci/run_gtest_host_ubuntu.sh
+    - python3 /data/scripts/gitlab-ci/parse_gtest_output_ubuntu.py
+  tags:
+    - ridehal-dev
+  only:
+    - merge_requests
+  timeout: 1h
+
+run gtest for qos222:
+  stage: test
+  script:
+    - echo "Start running gtest for qos222"
+    - sh /data/scripts/gitlab-ci/run_gtest_host_qos222.sh
+    - python3 /data/scripts/gitlab-ci/parse_gtest_output_qos222.py
+  tags:
+    - ridehal-dev
+  only:
+    - merge_requests
+  timeout: 1h
+
+generate packages:
+  stage: pack
+  script:
+    - echo "Generating ridehal packages"
     - mkdir packages
     - cp /data/packages/ridehal/ridehal-aarch64-*.tar.gz ./packages
   artifacts:
     name: "ridehal-build-packages"
     when: on_success
-    expire_in: 3 hours
+    expire_in: 6 hours
     paths:
       - packages
   tags:
@@ -35,4 +81,3 @@ build ridehal:
   only:
     - merge_requests
   timeout: 1h
-
