@@ -1106,17 +1106,15 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         ret = CheckOutputTensors( pOutputs, numOutputs );
     }
 
+    const auto graphInfo = ( *m_GraphsInfo )[0];
 
     std::vector<Qnn_Tensor_t> inputs;
-    std::vector<Qnn_Tensor_t> outputs;
-
-    auto graphInfo = ( *m_GraphsInfo )[0];
-
+    inputs.reserve( numInputs );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( uint32_t i = 0; i < graphInfo.numInputTensors; i++ )
         {
-            inputs.push_back( graphInfo.inputTensors[i] );
+            inputs[i] = graphInfo.inputTensors[i];
             // HTP
             Qnn_MemHandle_t memHandle = nullptr;
             ret = GetMemHandle( (RideHal_SharedBuffer_t *) ( pInputs + i ), &memHandle );
@@ -1139,11 +1137,13 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         }
     }
 
+    std::vector<Qnn_Tensor_t> outputs;
+    outputs.reserve( numOutputs );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( uint32_t i = 0; i < graphInfo.numOutputTensors; i++ )
         {
-            outputs.push_back( graphInfo.outputTensors[i] );
+            outputs[i] = graphInfo.outputTensors[i];
             Qnn_MemHandle_t memHandle = nullptr;
             ret = GetMemHandle( (RideHal_SharedBuffer_t *) ( pOutputs + i ), &memHandle );
             if ( RIDEHAL_ERROR_NONE == ret )
