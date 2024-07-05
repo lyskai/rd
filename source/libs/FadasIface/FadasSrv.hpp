@@ -15,6 +15,7 @@ extern "C"
 #include "FadasIface.h"
 #include "fastrpc_api.h"
 }
+#include <dlfcn.h>
 
 #include "ridehal/common/Logger.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
@@ -40,6 +41,24 @@ namespace FadasIface
 #define CDSP1_DOMAIN "&_dom=cdsp1"
 #endif
 
+typedef FadasError_e ( *FuncFadasInitGPU_t )( const char * );
+typedef FadasError_e ( *FuncFadasDeInitGPU_t )( void );
+typedef FadasError_e ( *FuncFadasRegBufGPU_t )( FadasBufType_e, const void *, size_t );
+typedef FadasError_e ( *FuncFadasDeregBufGPU_t )( const void * );
+typedef void *( *FuncFadasMemRegBufGPU_t )( void *, uint32_t );
+typedef void *( *FuncFadasMemDeregBufGPU_t )( void * );
+typedef FadasRemapMap_t *( *FuncFadasRemap_CreateMapFromMapGPU_t )(
+        uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, const float32_t *__restrict,
+        const float32_t *__restrict, FadasRemapPipeline_e, uint8_t, uint32_t );
+typedef FadasRemapMap_t *( *FuncFadasRemap_CreateMapNoUndistortionGPU_t )( uint32_t, uint32_t,
+                                                                           uint32_t, uint32_t,
+                                                                           FadasRemapPipeline_e,
+                                                                           uint8_t );
+typedef FadasError_e ( *FuncFadasRemap_RunGPU_t )( FadasRemapMap_t *, FadasImage_t *,
+                                                   FadasImage_t *, FadasROI_t *, float32_t,
+                                                   FadasNormlzParams_t * );
+typedef FadasError_e ( *FuncFadasRemap_DestroyMapGPU_t )( FadasRemapMap_t * );
+
 class FadasSrv
 {
 public:
@@ -63,6 +82,7 @@ protected:
 
 private:
     RideHalError_e InitCPU();
+    RideHalError_e InitGPU();
     RideHalError_e InitDSP( RideHal_ProcessorType_e coreId );
     int32_t FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer );
     int32_t FadasMemMapCPU( const RideHal_SharedBuffer_t *pBuffer );
@@ -70,6 +90,8 @@ private:
     RideHalError_e FadasRegisterBufDSP( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
                                         uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
     RideHalError_e FadasRegisterBufCPU( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
+                                        uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
+    RideHalError_e FadasRegisterBufGPU( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
                                         uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
     RideHalError_e FadasRegisterBuf( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
                                      uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
@@ -84,10 +106,25 @@ private:
     static bool s_initialized[RIDEHAL_PROCESSOR_MAX];
     static std::map<void *, MemInfo> s_memMaps[RIDEHAL_PROCESSOR_MAX];
     static long int s_client;
+    static FuncFadasInitGPU_t s_FadasInitGPU;
+    static FuncFadasDeInitGPU_t s_FadasDeInitGPU;
+    static FuncFadasRegBufGPU_t s_FadasRegBufGPU;
+    static FuncFadasDeregBufGPU_t s_FadasDeregBufGPU;
+    static FuncFadasMemRegBufGPU_t s_FadasMemRegBufGPU;
+
+protected:
+    static void *s_libGPUHandle;
+    static FuncFadasMemDeregBufGPU_t s_FadasMemDeregBufGPU;
+    static FuncFadasRemap_CreateMapFromMapGPU_t s_FadasRemap_CreateMapFromMapGPU;
+    static FuncFadasRemap_CreateMapNoUndistortionGPU_t s_FadasRemap_CreateMapNoUndistortionGPU;
+    static FuncFadasRemap_RunGPU_t s_FadasRemap_RunGPU;
+    static FuncFadasRemap_DestroyMapGPU_t s_FadasRemap_DestroyMapGPU;
+
 
 protected:
     RIDEHAL_DECLARE_LOGGER();
 };
+
 
 }   // namespace FadasIface
 }   // namespace libs

@@ -236,13 +236,50 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 }
             }
         }
-        else
+        else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
         {
             FadasRemapPipeline_e pipeline = RemapGetPipelineCPU(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
             if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for CPU!" );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else
+            {
+                FadasRemapMap_t *remapPtr = nullptr;
+                if ( true == m_bEnableUndistortion )
+                {
+                    remapPtr = s_FadasRemap_CreateMapFromMapGPU(
+                            m_inputWidths[inputId], m_inputHeights[inputId], m_mapWidths[inputId],
+                            m_mapHeights[inputId], m_mapWidths[inputId] * sizeof( float ), pMapX,
+                            pMapY, pipeline, 0, 1 );
+                }
+                else
+                {
+                    remapPtr = s_FadasRemap_CreateMapNoUndistortionGPU(
+                            m_inputWidths[inputId], m_inputHeights[inputId], m_mapWidths[inputId],
+                            m_mapHeights[inputId], pipeline, 0 );
+                }
+
+                if ( remapPtr == nullptr )
+                {
+                    RIDEHAL_ERROR( "Failed to create a remap map for CPU!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
+                else
+                {
+                    m_remapPtrsCPU[inputId] = remapPtr;
+                }
+            }
+        }
+        else
+        {
+            FadasRemapPipeline_e pipeline = RemapGetPipelineCPU(
+                    m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
+            if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
+            {
+                RIDEHAL_ERROR( "Invalid remap pipelie for GPU!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
             else
@@ -323,6 +360,10 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
                     m_workerPtrsDSP[inputId] = workerPtr;
                 }
             }
+        }
+        else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
+        {
+            /*fadas GPU not support multiple threads, no need to create workers*/
         }
         else
         {
@@ -437,23 +478,46 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                 FadasROI_t roi = m_ROIs[inputId];
                 FadasRemapMap_t *remapPtr = m_remapPtrsCPU[inputId];
                 void *workerPtr = m_workerPtrsCPU[inputId];
-
                 FadasError_e retFadas;
-                if ( false == m_bEnableNormalize )
+
+                if ( RIDEHAL_PROCESSOR_GPU == m_processor )
                 {
-                    retFadas = FadasRemap_RunMT( workerPtr, remapPtr, &srcImg, &rgbImg, &roi );
+                    if ( false == m_bEnableNormalize )
+                    {
+                        retFadas = s_FadasRemap_RunGPU( remapPtr, &srcImg, &rgbImg, &roi, 1.0,
+                                                        nullptr );
+                    }
+                    else
+                    {
+                        retFadas = s_FadasRemap_RunGPU( remapPtr, &srcImg, &rgbImg, &roi, 1.0,
+                                                        m_normlz );
+                    }
+                    if ( FADAS_ERROR_NONE != retFadas )
+                    {
+                        RIDEHAL_ERROR( "FadasRemap_RunGPU failed for batch %d: ret = 0x%x", inputId,
+                                       ret );
+                        ret = RIDEHAL_ERROR_FAIL;
+                        break;
+                    }
                 }
                 else
                 {
-                    retFadas = FadasRemap_RunMT( workerPtr, remapPtr, &srcImg, &rgbImg, &roi, 1.0,
-                                                 m_normlz );
-                }
-
-                if ( FADAS_ERROR_NONE != retFadas )
-                {
-                    RIDEHAL_ERROR( "Remap888 failed for batch %d: ret = 0x%x", inputId, ret );
-                    ret = RIDEHAL_ERROR_FAIL;
-                    break;
+                    if ( false == m_bEnableNormalize )
+                    {
+                        retFadas = FadasRemap_RunMT( workerPtr, remapPtr, &srcImg, &rgbImg, &roi );
+                    }
+                    else
+                    {
+                        retFadas = FadasRemap_RunMT( workerPtr, remapPtr, &srcImg, &rgbImg, &roi,
+                                                     1.0, m_normlz );
+                    }
+                    if ( FADAS_ERROR_NONE != retFadas )
+                    {
+                        RIDEHAL_ERROR( "FadasRemap_RunMT failed for batch %d: ret = 0x%x", inputId,
+                                       ret );
+                        ret = RIDEHAL_ERROR_FAIL;
+                        break;
+                    }
                 }
             }
         }
@@ -697,6 +761,10 @@ RideHalError_e FadasRemap::DestroyWorkers()
                 }
             }
         }
+        else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
+        {
+            /*do nothing for fadas GPU */
+        }
         else
         {
             if ( nullptr != m_workerPtrsCPU[i] )
@@ -728,6 +796,18 @@ RideHalError_e FadasRemap::DestroyMap()
                 AEEResult retVal =
                         FadasIface_FadasRemap_DestroyMap( m_handle64, m_remapPtrsDSP[i] );
                 if ( AEE_SUCCESS != retVal )
+                {
+                    RIDEHAL_ERROR( "Destroy map failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
+            }
+        }
+        else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
+        {
+            if ( nullptr != m_remapPtrsCPU[i] )
+            {
+                FadasError_e retVal = s_FadasRemap_DestroyMapGPU( m_remapPtrsCPU[i] );
+                if ( FADAS_ERROR_NONE != retVal )
                 {
                     RIDEHAL_ERROR( "Destroy map failed!" );
                     ret = RIDEHAL_ERROR_FAIL;

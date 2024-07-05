@@ -18,6 +18,18 @@ bool FadasSrv::s_initialized[RIDEHAL_PROCESSOR_MAX] = { false, false, false, fal
 uint64_t FadasSrv::s_useRef[RIDEHAL_PROCESSOR_MAX] = { 0, 0, 0, 0 };
 std::map<void *, FadasSrv::MemInfo> FadasSrv::s_memMaps[RIDEHAL_PROCESSOR_MAX];
 long int FadasSrv::s_client = 1;
+void *FadasSrv::s_libGPUHandle = nullptr;
+FuncFadasInitGPU_t FadasSrv::s_FadasInitGPU = nullptr;
+FuncFadasDeInitGPU_t FadasSrv::s_FadasDeInitGPU = nullptr;
+FuncFadasRegBufGPU_t FadasSrv::s_FadasRegBufGPU = nullptr;
+FuncFadasDeregBufGPU_t FadasSrv::s_FadasDeregBufGPU = nullptr;
+FuncFadasMemRegBufGPU_t FadasSrv::s_FadasMemRegBufGPU = nullptr;
+FuncFadasMemDeregBufGPU_t FadasSrv::s_FadasMemDeregBufGPU = nullptr;
+FuncFadasRemap_CreateMapFromMapGPU_t FadasSrv::s_FadasRemap_CreateMapFromMapGPU = nullptr;
+FuncFadasRemap_CreateMapNoUndistortionGPU_t FadasSrv::s_FadasRemap_CreateMapNoUndistortionGPU =
+        nullptr;
+FuncFadasRemap_RunGPU_t FadasSrv::s_FadasRemap_RunGPU = nullptr;
+FuncFadasRemap_DestroyMapGPU_t FadasSrv::s_FadasRemap_DestroyMapGPU = nullptr;
 
 extern "C"
 {
@@ -34,6 +46,103 @@ RideHalError_e FadasSrv::InitCPU()
     {
         RIDEHAL_ERROR( "FadasInit failed!" );
         ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    return ret;
+}
+
+RideHalError_e FadasSrv::InitGPU()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    s_libGPUHandle = dlopen( "libfadasGpu.so", RTLD_LAZY );
+
+    if ( nullptr == s_libGPUHandle )
+    {
+        RIDEHAL_ERROR( "Failed to load libfadasGpu.so library!" );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+    else
+    {
+        s_FadasInitGPU = (FuncFadasInitGPU_t) dlsym( s_libGPUHandle, "FadasInit" );
+        if ( nullptr == s_FadasInitGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasInit functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasDeInitGPU = (FuncFadasDeInitGPU_t) dlsym( s_libGPUHandle, "FadasDeInit" );
+        if ( nullptr == s_FadasDeInitGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasDeInit functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasRegBufGPU = (FuncFadasRegBufGPU_t) dlsym( s_libGPUHandle, "FadasRegBuf" );
+        if ( nullptr == s_FadasRegBufGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasRegBuf functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasDeregBufGPU = (FuncFadasDeregBufGPU_t) dlsym( s_libGPUHandle, "FadasDeregBuf" );
+        if ( nullptr == s_FadasDeregBufGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasDeregBuf functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasMemRegBufGPU = (FuncFadasMemRegBufGPU_t) dlsym( s_libGPUHandle, "FadasMemRegBuf" );
+        if ( nullptr == s_FadasMemRegBufGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasMemRegBuf functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasMemDeregBufGPU =
+                (FuncFadasMemDeregBufGPU_t) dlsym( s_libGPUHandle, "FadasMemDeregBuf" );
+        if ( nullptr == s_FadasMemDeregBufGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasMemDeregBuf functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasRemap_CreateMapFromMapGPU = (FuncFadasRemap_CreateMapFromMapGPU_t) dlsym(
+                s_libGPUHandle, "FadasRemap_CreateMapFromMap" );
+        if ( nullptr == s_FadasRemap_CreateMapFromMapGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasRemap_CreateMapFromMap functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasRemap_CreateMapNoUndistortionGPU =
+                (FuncFadasRemap_CreateMapNoUndistortionGPU_t) dlsym(
+                        s_libGPUHandle, "FadasRemap_CreateMapNoUndistortion" );
+        if ( nullptr == s_FadasRemap_CreateMapNoUndistortionGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasRemap_CreateMapNoUndistortion functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasRemap_RunGPU = (FuncFadasRemap_RunGPU_t) dlsym( s_libGPUHandle, "FadasRemap_Run" );
+        if ( nullptr == s_FadasRemap_RunGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasRemap_Run functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        s_FadasRemap_DestroyMapGPU =
+                (FuncFadasRemap_DestroyMapGPU_t) dlsym( s_libGPUHandle, "FadasRemap_DestroyMap" );
+        if ( nullptr == s_FadasRemap_DestroyMapGPU )
+        {
+            RIDEHAL_ERROR( "Failed to load FadasRemap_DestroyMap functions!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        if ( FADAS_ERROR_NONE != s_FadasInitGPU( nullptr ) )
+        {
+            RIDEHAL_ERROR( "FadasInitGPU failed!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( ( RIDEHAL_ERROR_NONE != ret ) && ( nullptr != s_libGPUHandle ) )
+    {
+        (void) dlclose( s_libGPUHandle );
     }
 
     return ret;
@@ -163,6 +272,10 @@ RideHalError_e FadasSrv::Init( RideHal_ProcessorType_e coreId, const char *pName
         {
             ret = InitDSP( coreId );
         }
+        else if ( RIDEHAL_PROCESSOR_GPU == coreId )
+        {
+            ret = InitGPU();
+        }
         else
         {
             ret = InitCPU();
@@ -215,11 +328,20 @@ RideHalError_e FadasSrv::Deinit()
                     ret = RIDEHAL_ERROR_FAIL;
                 }
             }
+            else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
+            {
+                if ( FADAS_ERROR_NONE != s_FadasDeInitGPU() )
+                {
+                    RIDEHAL_ERROR( "FadasDeInitGPU failed!" );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
+                (void) dlclose( s_libGPUHandle );
+            }
             else
             {
-                if ( FADAS_ERROR_NONE != FadasRemap_DeInit() )
+                if ( FADAS_ERROR_NONE != FadasDeInit() )
                 {
-                    RIDEHAL_ERROR( "FadasRemap_DeInit failed!" );
+                    RIDEHAL_ERROR( "FadasDeInit failed!" );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
             }
@@ -389,6 +511,32 @@ RideHalError_e FadasSrv::FadasRegisterBufCPU( FadasBufType_e bufType, uint8_t *b
     return ret;
 }
 
+RideHalError_e FadasSrv::FadasRegisterBufGPU( FadasBufType_e bufType, uint8_t *bufPtr,
+                                              int32_t bufFd, uint32_t bufSize, uint32_t bufOffset,
+                                              uint32_t batch )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    FadasError_e nErr = FADAS_ERROR_NONE;
+    uint8_t *ptr = bufPtr;
+
+    (void) bufFd; /* not used by GPU */
+    ptr += bufOffset;
+    for ( uint32_t i = 0; i < batch; i++ )
+    {
+        s_FadasMemRegBufGPU( ptr, bufSize );
+        nErr = s_FadasRegBufGPU( bufType, ptr, bufSize );
+        if ( FADAS_ERROR_NONE != nErr )
+        {
+            RIDEHAL_ERROR( "FadasRegBufGPU fail: %d!", nErr );
+            ret = RIDEHAL_ERROR_FAIL;
+            break;
+        }
+        ptr += bufSize;
+    }
+
+    return ret;
+}
+
 RideHalError_e FadasSrv::FadasRegisterBuf( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
                                            uint32_t bufSize, uint32_t bufOffset, uint32_t batch )
 {
@@ -397,6 +545,10 @@ RideHalError_e FadasSrv::FadasRegisterBuf( FadasBufType_e bufType, uint8_t *bufP
     if ( ( RIDEHAL_PROCESSOR_HTP0 == m_processor ) || ( RIDEHAL_PROCESSOR_HTP1 == m_processor ) )
     {
         ret = FadasRegisterBufDSP( bufType, bufPtr, bufFd, bufSize, bufOffset, batch );
+    }
+    else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
+    {
+        ret = FadasRegisterBufGPU( bufType, bufPtr, bufFd, bufSize, bufOffset, batch );
     }
     else
     {
@@ -620,6 +772,18 @@ void FadasSrv::DeregBuf( void *pBuffer )
                                    size, retVal );
                 }
                 remote_register_buf_v2( extDomainId, ptr, size, -1 );
+            }
+            else if ( RIDEHAL_PROCESSOR_GPU == m_processor )
+            {
+                for ( int i = 0; i < batch; i++ )
+                {
+                    FadasError_e retVal = s_FadasDeregBufGPU( (uint8_t *) pBuffer + sizeOne * i );
+                    s_FadasMemDeregBufGPU( (uint8_t *) pBuffer + sizeOne * i );
+                    if ( FADAS_ERROR_NONE != retVal )
+                    {
+                        RIDEHAL_ERROR( "FadasDeregBufGPU %p(%llu) failed: %d!", ptr, size, retVal );
+                    }
+                }
             }
             else
             {
