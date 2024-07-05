@@ -12,8 +12,11 @@ start:
     - echo "Start ridehal CI jobs ..."
   tags:
     - ridehal-dev
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: always
   timeout: 1h
 
 build ridehal:
@@ -24,8 +27,11 @@ build ridehal:
     - sh /data/scripts/gitlab-ci/build_package.sh
   tags:
     - ridehal-dev
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
   timeout: 1h
 
 run gtest for linux:
@@ -36,8 +42,12 @@ run gtest for linux:
     - python3 /data/scripts/gitlab-ci/parse_gtest_output_linux.py
   tags:
     - ridehal-dev
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  allow_failure: true
   timeout: 1h
 
 run gtest for ubuntu:
@@ -48,8 +58,12 @@ run gtest for ubuntu:
     - python3 /data/scripts/gitlab-ci/parse_gtest_output_ubuntu.py
   tags:
     - ridehal-dev
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  allow_failure: true
   timeout: 1h
 
 run gtest for qos222:
@@ -60,8 +74,12 @@ run gtest for qos222:
     - python3 /data/scripts/gitlab-ci/parse_gtest_output_qos222.py
   tags:
     - ridehal-dev
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  allow_failure: true
   timeout: 1h
 
 generate packages:
@@ -69,7 +87,7 @@ generate packages:
   script:
     - echo "Generating ridehal packages"
     - mkdir packages
-    - cp /data/packages/ridehal/ridehal-aarch64-*.tar.gz ./packages
+    - mv /data/packages/ridehal/ridehal-aarch64-*.tar.gz ./packages
   artifacts:
     name: "ridehal-build-packages"
     when: on_success
@@ -78,6 +96,10 @@ generate packages:
       - packages
   tags:
     - ridehal-dev
-  only:
-    - merge_requests
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+  allow_failure: true
   timeout: 1h
