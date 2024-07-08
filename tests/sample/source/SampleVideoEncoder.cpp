@@ -24,6 +24,7 @@ void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInpu
     auto it = m_camFrameMap.find( frameId );
     if ( it != m_camFrameMap.end() )
     { /* release the input camera frame */
+        TRACE_EVENT( SYSTRACE_EVENT_VENC_INPUT_DONE );
         m_camFrameMap.erase( frameId );
     }
     else
@@ -63,6 +64,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.buffer = buffer;
         frame.timestamp = info.timestamp;
         frames.Add( frame );
+        TRACE_END( frame.frameId );
         m_pub.Publish( frames );
         RIDEHAL_DEBUG( "OutFrameCallback for frameId %" PRIu64 " type %d size %" PRIu32,
                        info.frameId, pOutputFrame->frameType, pOutputFrame->sharedBuffer.size );
@@ -73,6 +75,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.buffer = buffer;
         frame.timestamp = pOutputFrame->timestampNs;
         frames.frames.push_back( frame );
+        TRACE_EVENT( SYSTRACE_EVENT_VENC_OUTPUT_WITH_2ND_FRAME );
         m_pub.Publish( frames );
         RIDEHAL_DEBUG( "frame info queue is empty!" );
     }
@@ -177,6 +180,7 @@ RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &confi
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( VPU );
         ret = ParseConfig( config );
     }
 
@@ -194,7 +198,9 @@ RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &confi
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_sub.Init( name, m_inputTopicName );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -209,8 +215,9 @@ RideHalError_e SampleVideoEncoder::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_encoder.Start();
-
+    TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
@@ -245,7 +252,7 @@ void SampleVideoEncoder::ThreadMain()
                 std::lock_guard<std::mutex> l( m_lock );
                 m_camFrameMap[frame.frameId] = frame;
             }
-
+            TRACE_BEGIN( frame.frameId );
             ret = m_encoder.SubmitInputFrame( &inputFrame );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -273,7 +280,9 @@ RideHalError_e SampleVideoEncoder::Stop()
         m_thread.join();
     }
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_encoder.Stop();
+    TRACE_END( SYSTRACE_TASK_STOP );
 
     return ret;
 }
@@ -282,7 +291,9 @@ RideHalError_e SampleVideoEncoder::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_encoder.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

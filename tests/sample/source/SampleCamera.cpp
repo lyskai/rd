@@ -44,6 +44,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
     frame.buffer = buffer;
     frame.timestamp = pFrame->timestamp;
     frames.Add( frame );
+    TRACE_EVENT( frame.frameId );
     m_pub.Publish( frames );
 }
 
@@ -72,6 +73,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( CAMERA );
         m_camConfig.inputId = Get( config, "input_id", -1 );
         if ( -1 == m_camConfig.inputId )
         {
@@ -127,6 +129,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_camera.Init( (char *) name.c_str(), &m_camConfig );
         if ( RIDEHAL_ERROR_NONE == ret )
         {
@@ -141,6 +144,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
                 ret = RIDEHAL_ERROR_NONE;
             }
         }
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -155,8 +159,9 @@ RideHalError_e SampleCamera::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_camera.Start();
-
+    TRACE_END( SYSTRACE_TASK_START );
     if ( m_bIgnoreError )
     {
         RIDEHAL_ERROR( "Start failed: %d, ignore it\n" );
@@ -170,8 +175,9 @@ RideHalError_e SampleCamera::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_camera.Stop();
-
+    TRACE_END( SYSTRACE_TASK_STOP );
     PROFILER_SHOW();
 
     return ret;
@@ -181,7 +187,9 @@ RideHalError_e SampleCamera::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_camera.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

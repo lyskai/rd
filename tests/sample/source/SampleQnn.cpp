@@ -100,7 +100,9 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_qnn.Init( name.c_str(), &m_config );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -192,7 +194,9 @@ RideHalError_e SampleQnn::Start()
         }
     }
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_qnn.Start();
+    TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
@@ -258,11 +262,13 @@ void SampleQnn::ThreadMain()
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_BEGIN();
+                    TRACE_BEGIN( frames.FrameId( 0 ) );
                     ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(),
                                          outputs.size() );
                     if ( RIDEHAL_ERROR_NONE == ret )
                     {
                         PROFILER_END();
+                        TRACE_END( frames.FrameId( 0 ) );
                     }
                     else
                     {
@@ -310,8 +316,9 @@ RideHalError_e SampleQnn::Stop()
         m_thread.join();
     }
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_qnn.Stop();
-
+    TRACE_END( SYSTRACE_TASK_STOP );
     PROFILER_SHOW();
 
     return ret;
@@ -321,7 +328,9 @@ RideHalError_e SampleQnn::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_qnn.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

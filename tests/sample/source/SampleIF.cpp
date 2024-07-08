@@ -50,6 +50,7 @@ RideHalError_e SampleIF::Init( std::string name )
     ret = RIDEHAL_LOGGER_INIT( name.c_str(), LOGGER_LEVEL_INFO );
 
     m_profiler.Init( name );
+    m_systrace.Init( name );
 
     return ret;
 }
@@ -88,6 +89,11 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
     {
         RIDEHAL_ERROR( "invalid processor %d", processor );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        m_systrace.Init( (SysTrace_ProcessorType_e) processor );
     }
 
     return ret;

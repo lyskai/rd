@@ -91,6 +91,7 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( GPU );
         ret = ParseConfig( config );
     }
 
@@ -112,7 +113,9 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_CL2DFlex.Init( name.c_str(), &m_config );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -132,7 +135,9 @@ RideHalError_e SampleCL2DFlex::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_CL2DFlex.Start();
+    TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
@@ -163,10 +168,12 @@ void SampleCL2DFlex::ThreadMain()
                 }
 
                 PROFILER_BEGIN();
+                TRACE_BEGIN( frames.FrameId( 0 ) );
                 ret = m_CL2DFlex.Execute( inputs.data(), &buffer->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_END();
+                    TRACE_END( frames.FrameId( 0 ) );
                     DataFrames_t outFrames;
                     DataFrame_t frame;
                     frame.buffer = buffer;
@@ -195,8 +202,9 @@ RideHalError_e SampleCL2DFlex::Stop()
         m_thread.join();
     }
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_CL2DFlex.Stop();
-
+    TRACE_END( SYSTRACE_TASK_STOP );
     PROFILER_SHOW();
 
     return ret;
@@ -206,7 +214,9 @@ RideHalError_e SampleCL2DFlex::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_CL2DFlex.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

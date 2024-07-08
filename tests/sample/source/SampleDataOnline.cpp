@@ -75,6 +75,7 @@ RideHalError_e SampleDataOnline::Init( std::string name, SampleConfig_t &config 
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( DATA_ONLINE );
         ret = ParseConfig( config );
     }
 
@@ -273,7 +274,8 @@ RideHalError_e SampleDataOnline::ReceiveData( Meta &meta )
         }
         else
         {
-            RIDEHAL_DEBUG( "publish frame %" PRIu64 " timestamp %" PRIu64, meta.Id, meta.timestamp );
+            RIDEHAL_DEBUG( "publish frame %" PRIu64 " timestamp %" PRIu64, meta.Id,
+                           meta.timestamp );
         }
     }
 
@@ -297,6 +299,7 @@ RideHalError_e SampleDataOnline::ReceiveData( Meta &meta )
     }
     else
     {
+        TRACE_EVENT( meta.Id );
         m_pub.Publish( outputs );
     }
 

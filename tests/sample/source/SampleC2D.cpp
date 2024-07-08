@@ -144,6 +144,7 @@ RideHalError_e SampleC2D::Init( std::string name, SampleConfig_t &config )
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( GPU );
         ret = ParseConfig( config );
     }
 
@@ -156,7 +157,9 @@ RideHalError_e SampleC2D::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_c2d.Init( name.c_str(), &m_config );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -176,12 +179,16 @@ RideHalError_e SampleC2D::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_c2d.Start();
+    TRACE_END( SYSTRACE_TASK_START );
+
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
         m_thread = std::thread( &SampleC2D::ThreadMain, this );
     }
+
 
     return ret;
 }
@@ -207,10 +214,12 @@ void SampleC2D::ThreadMain()
                 }
 
                 PROFILER_BEGIN();
+                TRACE_BEGIN( frames.FrameId( 0 ) );
                 ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_END();
+                    TRACE_END( frames.FrameId( 0 ) );
                     DataFrames_t outFrames;
                     DataFrame_t frame;
                     frame.buffer = buffer;
@@ -239,7 +248,9 @@ RideHalError_e SampleC2D::Stop()
         m_thread.join();
     }
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_c2d.Stop();
+    TRACE_END( SYSTRACE_TASK_STOP );
 
     PROFILER_SHOW();
 
@@ -250,7 +261,9 @@ RideHalError_e SampleC2D::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_c2d.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

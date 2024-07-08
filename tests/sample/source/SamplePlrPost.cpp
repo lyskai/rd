@@ -112,7 +112,9 @@ RideHalError_e SamplePlrPost::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_plrPost.Init( name.c_str(), &m_config );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -137,7 +139,9 @@ RideHalError_e SamplePlrPost::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_plrPost.Start();
+    TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
@@ -224,12 +228,14 @@ void SamplePlrPost::ThreadMain()
                     if ( RIDEHAL_ERROR_NONE == ret )
                     {
                         PROFILER_BEGIN();
+                        TRACE_BEGIN( infFrames.FrameId( 0 ) );
                         detOut->sharedBuffer.tensorProps.dims[0] = m_config.maxNumDetOut;
                         ret = m_plrPost.Execute( &heatmap, &xy, &z, &size, &theta, &inPts,
                                                  &detOut->sharedBuffer );
                         if ( RIDEHAL_ERROR_NONE == ret )
                         {
                             PROFILER_END();
+                            TRACE_END( infFrames.FrameId( 0 ) );
                             Road2DObjects_t objs;
                             PostCenterPoint_Object3D_t *pObj =
                                     (PostCenterPoint_Object3D_t *) detOut->sharedBuffer.data();
@@ -295,7 +301,9 @@ RideHalError_e SamplePlrPost::Stop()
 
     PROFILER_SHOW();
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_plrPost.Stop();
+    TRACE_END( SYSTRACE_TASK_STOP );
 
     return ret;
 }
@@ -304,7 +312,9 @@ RideHalError_e SamplePlrPost::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_plrPost.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

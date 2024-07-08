@@ -104,7 +104,9 @@ RideHalError_e SamplePlrPre::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_plrPre.Init( name.c_str(), &m_config );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -124,7 +126,9 @@ RideHalError_e SamplePlrPre::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_plrPre.Start();
+    TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
@@ -155,11 +159,13 @@ void SamplePlrPre::ThreadMain()
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_BEGIN();
+                    TRACE_BEGIN( frames.FrameId( 0 ) );
                     ret = m_plrPre.Execute( &inPts, &coords->sharedBuffer,
                                             &features->sharedBuffer );
                     if ( RIDEHAL_ERROR_NONE == ret )
                     {
                         PROFILER_END();
+                        TRACE_END( frames.FrameId( 0 ) );
                         DataFrames_t outFrames;
                         DataFrame_t frame;
                         frame.buffer = coords;
@@ -194,7 +200,10 @@ RideHalError_e SamplePlrPre::Stop()
 
     PROFILER_SHOW();
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_plrPre.Stop();
+    TRACE_END( SYSTRACE_TASK_STOP );
+
 
     return ret;
 }
@@ -203,7 +212,9 @@ RideHalError_e SamplePlrPre::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_plrPre.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

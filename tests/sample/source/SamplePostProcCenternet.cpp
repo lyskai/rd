@@ -77,6 +77,7 @@ RideHalError_e SamplePostProcCenternet::Init( std::string name, SampleConfig_t &
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( CPU );
         ret = ParseConfig( config );
     }
 
@@ -113,8 +114,10 @@ void SamplePostProcCenternet::ThreadMain()
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             PROFILER_BEGIN();
+            TRACE_BEGIN( tensors.FrameId( 0 ) );
             ProcessUint8( tensors );
             PROFILER_END();
+            TRACE_END( tensors.FrameId( 0 ) );
         }
     }
 }

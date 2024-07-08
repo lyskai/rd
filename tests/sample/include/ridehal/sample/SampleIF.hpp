@@ -9,6 +9,7 @@
 #include "ridehal/sample/DataBroker.hpp"
 #include "ridehal/sample/DataTypes.hpp"
 #include "ridehal/sample/Profiler.hpp"
+#include "ridehal/sample/SysTrace.hpp"
 
 #include <map>
 #include <mutex>
@@ -109,6 +110,7 @@ protected:
 protected:
     std::string m_name;
     Profiler m_profiler;
+    SysTrace m_systrace;
     RIDEHAL_DECLARE_LOGGER();
 
 private:

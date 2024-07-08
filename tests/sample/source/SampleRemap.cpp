@@ -214,7 +214,9 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_remap.Init( name.c_str(), &m_config );
+        TRACE_END( SYSTRACE_TASK_INIT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -234,7 +236,9 @@ RideHalError_e SampleRemap::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_remap.Start();
+    TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
@@ -268,10 +272,12 @@ void SampleRemap::ThreadMain()
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_BEGIN();
+                    TRACE_BEGIN( frames.FrameId( 0 ) );
                     ret = m_remap.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                     if ( RIDEHAL_ERROR_NONE == ret )
                     {
                         PROFILER_END();
+                        TRACE_END( frames.FrameId( 0 ) );
                         DataFrames_t outFrames;
                         DataFrame_t frame;
                         frame.buffer = buffer;
@@ -304,7 +310,9 @@ RideHalError_e SampleRemap::Stop()
 
     PROFILER_SHOW();
 
+    TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_remap.Stop();
+    TRACE_END( SYSTRACE_TASK_STOP );
 
     return ret;
 }
@@ -313,7 +321,9 @@ RideHalError_e SampleRemap::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_remap.Deinit();
+    TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }

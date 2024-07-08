@@ -173,6 +173,7 @@ RideHalError_e SampleDataReader::Init( std::string name, SampleConfig_t &config 
     ret = SampleIF::Init( name );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        TRACE_ON( DATA_READER );
         ret = ParseConfig( config );
     }
 
@@ -378,6 +379,7 @@ void SampleDataReader::ThreadMain()
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             PROFILER_END();
+            TRACE_EVENT( frameId );
             m_pub.Publish( frames );
             index++;
             frameId++;
