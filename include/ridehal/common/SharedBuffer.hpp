@@ -128,8 +128,20 @@ public:
      * @param[out] pSharedBuffer pointer to hold the shared buffer information for
      * the tensor that converted from the image
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note: The image must has 1 plane and has no paddings .
      */
     RideHalError_e ImageToTensor( RideHal_SharedBuffer *pSharedBuffer );
+
+    /**
+     * @brief Convert the shared buffer type from image to tensor luma and chroma
+     * @param[out] pLuma pointer to hold the shared buffer information for
+     * the tensor that represent the luma "luminance" plane Y.
+     * @param[out] pChroma pointer to hold the shared buffer information for
+     * the tensor that represent the chroma plane.
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note: The image must be in format NV12 or P010 and has no paddings.
+     */
+    RideHalError_e ImageToTensor( RideHal_SharedBuffer *pLuma, RideHal_SharedBuffer *pChroma );
 
 private:
     /**

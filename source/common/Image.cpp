@@ -26,7 +26,7 @@ static uint32_t s_rideHalFormatToBytesPerPixel[RIDEHAL_IMAGE_FORMAT_MAX] = {
         3, /* RIDEHAL_IMAGE_FORMAT_BGR888 */
         2, /* RIDEHAL_IMAGE_FORMAT_UYVY */
         1, /* RIDEHAL_IMAGE_FORMAT_NV12 */
-        1  /* RIDEHAL_IMAGE_FORMAT_P010 */
+        2  /* RIDEHAL_IMAGE_FORMAT_P010 */
 };
 
 static uint32_t s_rideHalFormatToNumPlanes[RIDEHAL_IMAGE_FORMAT_MAX] = {
@@ -420,6 +420,115 @@ RideHalError_e RideHal_SharedBuffer::ImageToTensor( RideHal_SharedBuffer *pShare
         pSharedBuffer->size = (size_t) this->imgProps.batchSize * this->imgProps.height *
                               this->imgProps.width *
                               s_rideHalFormatToBytesPerPixel[this->imgProps.format];
+    }
+
+    return ret;
+}
+
+RideHalError_e RideHal_SharedBuffer::ImageToTensor( RideHal_SharedBuffer *pLuma,
+                                                    RideHal_SharedBuffer *pChroma )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( nullptr == pLuma )
+    {
+        RIDEHAL_LOG_ERROR( "pLuma is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( nullptr == pChroma )
+    {
+        RIDEHAL_LOG_ERROR( "pChroma is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( nullptr == this->buffer.pData )
+    {
+        RIDEHAL_LOG_ERROR( "image not allocated" );
+        ret = RIDEHAL_ERROR_INVALID_BUF;
+    }
+    else if ( RIDEHAL_BUFFER_TYPE_IMAGE != this->type )
+    {
+        RIDEHAL_LOG_ERROR( "buffer type %d is not image", this->type );
+        ret = RIDEHAL_ERROR_UNSUPPORTED;
+    }
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == this->imgProps.format ) ||
+              ( RIDEHAL_IMAGE_FORMAT_P010 == this->imgProps.format ) )
+    { /* for image format with 2 plane */
+        if ( this->imgProps.stride[0] !=
+             ( this->imgProps.width * s_rideHalFormatToBytesPerPixel[this->imgProps.format] ) )
+        {
+            RIDEHAL_LOG_ERROR(
+                    "image with format %d with extra padding along width is not supported to be "
+                    "converted to tensor: stride=%u width=%u",
+                    this->imgProps.format, this->imgProps.stride[0], this->imgProps.width );
+            ret = RIDEHAL_ERROR_UNSUPPORTED;
+        }
+        else if ( this->imgProps.batchSize > 1 )
+        {
+            RIDEHAL_LOG_ERROR( "not supported for batched image" );
+            ret = RIDEHAL_ERROR_UNSUPPORTED;
+        }
+        else if ( 0 != ( this->imgProps.height & 0x1 ) )
+        {
+            RIDEHAL_LOG_ERROR( "height is not n times of 2" );
+            ret = RIDEHAL_ERROR_UNSUPPORTED;
+        }
+        else if ( 0 != ( this->imgProps.width & 0x1 ) )
+        {
+            RIDEHAL_LOG_ERROR( "width is not n times of 2" );
+            ret = RIDEHAL_ERROR_UNSUPPORTED;
+        }
+        else
+        {
+            /* OK */
+        }
+    }
+    else
+    {
+        RIDEHAL_LOG_ERROR(
+                "image with format %d is not supported to be converted to luma and chroma tensor",
+                this->imgProps.format );
+        ret = RIDEHAL_ERROR_UNSUPPORTED;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        pLuma->buffer = this->buffer;
+        pLuma->offset = this->offset;
+        pLuma->type = RIDEHAL_BUFFER_TYPE_TENSOR;
+        if ( RIDEHAL_IMAGE_FORMAT_NV12 == this->imgProps.format )
+        {
+            pLuma->tensorProps.type = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8;
+        }
+        else
+        {
+            pLuma->tensorProps.type = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16;
+        }
+        pLuma->tensorProps.numDims = 4;
+        pLuma->tensorProps.dims[0] = 1;
+        pLuma->tensorProps.dims[1] = this->imgProps.height;
+        pLuma->tensorProps.dims[2] = this->imgProps.width;
+        pLuma->tensorProps.dims[3] = 1;
+        pLuma->size = (size_t) this->imgProps.height * this->imgProps.width *
+                      s_rideHalFormatToBytesPerPixel[this->imgProps.format];
+
+        pChroma->buffer = this->buffer;
+        pChroma->offset = this->offset + this->imgProps.actualHeight[0] * this->imgProps.stride[0];
+        pChroma->type = RIDEHAL_BUFFER_TYPE_TENSOR;
+        if ( RIDEHAL_IMAGE_FORMAT_NV12 == this->imgProps.format )
+        {
+            pChroma->tensorProps.type = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8;
+        }
+        else
+        {
+            pChroma->tensorProps.type = RIDEHAL_TENSOR_TYPE_UFIXED_POINT_16;
+        }
+        pChroma->tensorProps.numDims = 4;
+        pChroma->tensorProps.dims[0] = 1;
+        pChroma->tensorProps.dims[1] = this->imgProps.height / 2;
+        pChroma->tensorProps.dims[2] = this->imgProps.width / 2;
+        pChroma->tensorProps.dims[3] = 2;
+        pChroma->size = (size_t) this->imgProps.height * this->imgProps.width *
+                        s_rideHalFormatToBytesPerPixel[this->imgProps.format] / 2;
     }
 
     return ret;

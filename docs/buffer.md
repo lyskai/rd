@@ -8,6 +8,8 @@
   - [3.2 Allocate buffers to hold images](#32-allocate-buffers-to-hold-images)
   - [3.3 Allocate Tensor](#33-allocate-tensor)
   - [3.4 Convert Image to Tensor](#34-convert-image-to-tensor)
+    - [3.4.1 Convert the RGB Image to the Tensor](#341-convert-the-rgb-image-to-the-tensor)
+    - [3.4.2 Convert the NV12/P010 Image to the Luma and Chroma Tensor](#342-convert-the-nv12p010-image-to-the-luma-and-chroma-tensor)
 
 # 1. RideHal Buffer Data Structures
 
@@ -18,9 +20,9 @@
 
 ## 1.1 The details of image properties.
 
-As the hardware reasons, the actual buffer used to hold an image may has alignment paddings along width and height for the zero copy purpose to share with the hardware accelerator, but an image with certain width and height, it can has no paddings at all.
+Due to hardware constraints, the actual buffer used to store an image may have alignment padding along its width and height. This padding is primarily for zero-copy operations, enabling the buffer to be shared with the hardware accelerator. However, for an image with certain width and height, it can has no padding at all.
 
-And the below picture shows a case what's the actual buffer looks like for an image format such as NV12 that has 2 planes, the black area is paddings space thus not valid pixels.
+And the below picture shows a case what's the actual buffer looks like for an image format such as NV12 that has 2 planes, the black area is padding space thus not valid pixels.
 
 ![Image format with 2 plane](./images/image-prop-2-plane.jpg)
 
@@ -34,7 +36,7 @@ Thus now, it's easy to understand those members of the type [RideHal_ImageProps_
 
 For the batchSize, it was generally designed for the BEV kind of AI models, check below section [3.1](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model).
 
-For the compressedSize, it was designed for the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L218) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight/numPlanes/extraPadding will be invalid and should not be used.
+For the compressedSize, it was designed for the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L222) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight/numPlanes/extraPadding will be invalid and should not be used.
 
 # 1.2 The details of RideHal_SharedBuffer_t.
 
@@ -98,7 +100,9 @@ And another thing, the RideHal_SharedBuffer_t can be shared between components, 
 
 - [data](../include/ridehal/common/SharedBuffer.hpp#L124)
 
-- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L132)
+- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L133): 1 plane image to tensor
+
+- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L144): 2 plane yuv image to luma and chroma tensor
 
 # 3. RideHal_SharedBuffer_t Examples
 
@@ -117,7 +121,7 @@ Thus, the SharedBufferAll can be feed into the BEV kind of the AI models, and th
 
 ## 3.2 Allocate buffers to hold images
 
-The [SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L11) demonstrate that how to allocate 1 camera buffer for format UYVY or NV12, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L61)" to allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc.
+The [SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L12) demonstrate that how to allocate 1 camera buffer for format UYVY or NV12, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L61)" to allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc.
 
 But if want to allocate a list of ping-pong buffers, the usage is generally as below.
 
@@ -180,11 +184,19 @@ The [SANITY_TensorAllocate](../tests/unit_test/buffer/gtest_Buffer.cpp#L237) dem
 
 ## 3.4 Convert Image to Tensor
 
-Here for the component QnnRuntime, the inputs/outputs of this component must be Tensor not Image, so here the API [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L132) can be used to convert the Image to a Tensor.
+Here for the component QnnRuntime, the inputs/outputs of this component must be Tensor not Image. So the shared buffer Image must be converted into Tensor.
+
+### 3.4.1 Convert the RGB Image to the Tensor
+
+For QnnRuntime with RGB or normalized RGB as input, here this API [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L133) can be used to convert the RGB Image to a Tensor.
 
 - Refer [SampleQnn ThreadMain](../tests/sample/source/SampleQnn.cpp#L224).
 - Refer [gtest SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L30).
 
+### 3.4.2 Convert the NV12/P010 Image to the Luma and Chroma Tensor
 
+For QnnRuntime with NV12 or P010 as input, here this API [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L144) can be used to convert the NV12/P010 Image to the Luma and Chroma Tensor.
+
+- Refer [gtest L2_Image2Tensor](../tests/unit_test/buffer/gtest_Buffer.cpp#L861).
 
 

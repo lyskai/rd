@@ -15,7 +15,7 @@ Below is a summary information of the current implemented components.
 | [C2D](./docs/C2D.md) | YES| NO | C2D | GPU | Color Conversion, ROI Crop, Resize |
 | [QnnRuntime](./docs/qnnruntime.md) | YES| YES | QNN | CPU, GPU, HTP0, HTP1 | AI model inference |
 | [VideoEncoder](./docs/videoencoder.md) | YES| YES | vidc | VPU | H264, H265 |
-| [Voxelization](./docs/Voxelization.md) | YES| YES | FastADAS | HTP0, HTP1 | create pilliar |
+| [Voxelization](./docs/Voxelization.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | create pilliar |
 | [PostCenterPoint](./docs/PostCenterPoint.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | extract boundbing boxes |
 | [CL2DFlex](./docs/CL2DFlex.md) | YES| NO | OpenCL | GPU | Color Conversion |
 

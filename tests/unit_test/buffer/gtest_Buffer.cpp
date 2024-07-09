@@ -813,6 +813,191 @@ TEST( Buffer, L2_BufferManager )
     }
 }
 
+TEST( Buffer, L2_Image2Tensor )
+{
+    RideHalError_e ret;
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_SharedBuffer_t tensor;
+        RideHal_ImageProps_t imgProp;
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
+        imgProp.batchSize = 3;
+        imgProp.width = 1920;
+        imgProp.height = 1024;
+        imgProp.stride[0] = 1920 * 3;
+        imgProp.actualHeight[0] = 1028;
+        imgProp.numPlanes = 1;
+        imgProp.extraPadding = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &tensor );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        imgProp.actualHeight[0] = 1024;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &tensor );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_SharedBuffer_t luma;
+        RideHal_SharedBuffer_t chroma;
+        RideHal_TensorProps_t tensorProp = { RIDEHAL_TENSOR_TYPE_UFIXED_POINT_8,
+                                             { 1, 1024, 768, 3 },
+                                             4 };
+
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+
+        ret = sharedBuffer.Allocate( 1920, 1024, RIDEHAL_IMAGE_FORMAT_NV12 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( luma.offset, 0 );
+        ASSERT_EQ( chroma.offset, 1920 * 1024 );
+        ASSERT_EQ( luma.size, 1920 * 1024 );
+        ASSERT_EQ( chroma.size, 1920 * 1024 / 2 );
+
+        ret = sharedBuffer.ImageToTensor( nullptr, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.ImageToTensor( &luma, nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 1921, 1024, RIDEHAL_IMAGE_FORMAT_NV12 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+
+        RideHal_ImageProps_t imgProp;
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_NV12;
+        imgProp.batchSize = 1;
+        imgProp.width = 1921;
+        imgProp.height = 1024;
+        imgProp.stride[0] = 1921;
+        imgProp.actualHeight[0] = 1024;
+        imgProp.stride[1] = 1921;
+        imgProp.actualHeight[1] = 1024 / 2;
+        imgProp.numPlanes = 2;
+        imgProp.extraPadding = 0;
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 1920, 1025, RIDEHAL_IMAGE_FORMAT_NV12 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 2, 1920, 1024, RIDEHAL_IMAGE_FORMAT_NV12 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 1920, 1024, RIDEHAL_IMAGE_FORMAT_RGB888 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( &tensorProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        RideHal_SharedBuffer_t luma;
+        RideHal_SharedBuffer_t chroma;
+
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+
+        ret = sharedBuffer.Allocate( 1920, 1024, RIDEHAL_IMAGE_FORMAT_P010 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( luma.offset, 0 );
+        ASSERT_EQ( chroma.offset, 1920 * 1024 * 2 );
+        ASSERT_EQ( luma.size, 1920 * 1024 * 2 );
+        ASSERT_EQ( chroma.size, 1920 * 1024 );
+
+        ret = sharedBuffer.ImageToTensor( nullptr, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.ImageToTensor( &luma, nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 1921, 1024, RIDEHAL_IMAGE_FORMAT_P010 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        RideHal_ImageProps_t imgProp;
+        imgProp.format = RIDEHAL_IMAGE_FORMAT_P010;
+        imgProp.batchSize = 1;
+        imgProp.width = 1921;
+        imgProp.height = 1024;
+        imgProp.stride[0] = 1921 * 2;
+        imgProp.actualHeight[0] = 1024;
+        imgProp.stride[1] = 1921 * 2;
+        imgProp.actualHeight[1] = 1024 / 2;
+        imgProp.numPlanes = 2;
+        imgProp.extraPadding = 0;
+
+        ret = sharedBuffer.Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 1920, 1025, RIDEHAL_IMAGE_FORMAT_P010 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = sharedBuffer.Allocate( 2, 1920, 1024, RIDEHAL_IMAGE_FORMAT_P010 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = sharedBuffer.ImageToTensor( &luma, &chroma );
+        ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+}
+
 #ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )
 {
