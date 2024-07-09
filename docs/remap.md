@@ -19,7 +19,7 @@
 # 1. RideHal Remap Data Structures
 ## 1.1 The details of Remap_Config_t
 The structure [Remap_Config_t](../include/ridehal/component/Remap.hpp#L64) contains all the required configurable parameters for a remap pipeline. It contains:
-- processor, [RideHal_ProcessorType_e](../include/ridehal/common/Types.hpp#L83) type parameter. Now CPU and DSP processors are supported to execute remap calculation, so it could be RIDEHAL_PROCESSOR_CPU, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_PROCESSOR_HTP1.
+- processor, [RideHal_ProcessorType_e](../include/ridehal/common/Types.hpp#L83) type parameter. Now CPU, GPU and DSP processors are supported to execute remap calculation, so it could be RIDEHAL_PROCESSOR_CPU, RIDEHAL_PROCESSOR_GPU, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_PROCESSOR_HTP1.
 - inputConfigs, [Remap_InputConfig_t](../include/ridehal/component/Remap.hpp#L48) type array, Contains input images information, the array length is [RIDEHAL_MAX_INPUTS](../include/ridehal/common/Types.hpp#L23).
 - numOfInputs, number of input images.
 - outputWidth, output image width.
@@ -46,7 +46,7 @@ The structure [Remap_MapTable_t](../include/ridehal/component/Remap.hpp#L36) con
 
 # 2. RideHal remap APIs 
 ## 2.1 The details of Remap::Init
-[Remap::Init](../include/ridehal/component/Remap.hpp#L90) do all the initialization work for a remap pipeline, including initialize the CPU&DSP processor and logger, create remap worker, create remap map. It should be called at the beginning of pipeline.
+[Remap::Init](../include/ridehal/component/Remap.hpp#L90) do all the initialization work for a remap pipeline, including initialize the CPU,GPU,DSP processor and logger, create remap worker, create remap map. It should be called at the beginning of pipeline.
 ## 2.2 The details of Remap::RegisterBuffers
 [Remap::RegisterBuffers](../include/ridehal/component/Remap.hpp#L101) register buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at execute step.
 ## 2.3 The details of Remap::DeRegisterBuffers
@@ -56,7 +56,7 @@ The structure [Remap_MapTable_t](../include/ridehal/component/Remap.hpp#L36) con
 ## 2.5 The details of Remap::Stop
 [Remap::Stop](../include/ridehal/component/Remap.hpp#L125) stop the remap pipeline, empty for now.
 ## 2.6 The details of Remap::Deinit
-[Remap::Deinit](../include/ridehal/component/Remap.hpp#L132) do all the deinitialization work for a remap pipeline, including deinitialize the CPU&DSP processor and logger, destroy remap worker, destroy remap map. It should be called at the ending of pipeline.
+[Remap::Deinit](../include/ridehal/component/Remap.hpp#L132) do all the deinitialization work for a remap pipeline, including deinitialize the CPU,GPU,DSP processor and logger, destroy remap worker, destroy remap map. It should be called at the ending of pipeline.
 ## 2.7 The details of Remap::Execute
 [Remap::Execute](../include/ridehal/component/Remap.hpp#L142) execute the remap pipeline. Currently  the pipeline of multiple images input buffers remap to single output image buffer is supported.
 
@@ -138,17 +138,17 @@ Calling of RegisterBuffers and DeRegisterBuffers API for input/output buffer is 
 ## 3.3 Supported pipelines
 The supported remap pipelines for different input/output image format on each processor are listed below. In which Y means supported, N means unsupported. And norm means pipeline with normalization, corresponding to bEnableNormalize = true in the configuration parameters.
 ```
-                    DSP processor       CPU processor
-RGB  to RGB                Y                   Y
-RGB  to RGB norm           N                   N
-UYVY to RGB                Y                   Y
-UYVY to RGB norm           Y                   Y
-UYVY to BGR                Y                   N
-UYVY to BGR norm           N                   N
-NV12 to RGB                N                   Y
-NV12 to RGB norm           N                   Y
-NV12 to BGR                Y                   Y
-NV12 to BGR norm           N                   N
+                    DSP processor       CPU processor       GPU processor
+RGB  to RGB                Y                   Y                   Y
+RGB  to RGB norm           N                   N                   N
+UYVY to RGB                Y                   Y                   Y
+UYVY to RGB norm           Y                   Y                   Y
+UYVY to BGR                Y                   N                   N
+UYVY to BGR norm           N                   N                   N
+NV12 to RGB                N                   Y                   Y
+NV12 to RGB norm           N                   Y                   Y
+NV12 to BGR                Y                   Y                   Y
+NV12 to BGR norm           N                   N                   N
 ```
 
 

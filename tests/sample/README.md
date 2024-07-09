@@ -13,6 +13,7 @@
   - [2.10 RideHal PlrPre Sample](#210-ridehal-plrpre-sample)
   - [2.11 RideHal PlrPost Sample](#211-ridehal-plrpost-sample)
   - [2.12 RideHal DataOnline Sample](#212-ridehal-dataonline-sample)
+  - [2.13 RideHal CL2DFlex Sample](#213-ridehal-cl2dflex-sample)
 - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
   - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
   - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
@@ -394,6 +395,28 @@ The command line template example:
     -k input_topic -v /data/online/DO0/input \
     -k output_topic -v /data/online/DO0/output \
     -k model_io_info_topic -v /data/online/DO0/model/info \
+```
+### 2.13 RideHal CL2DFlex Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| input_width   | false    | int       | 1920    | The input image width |
+| input_height  | false    | int       | 1024    | The input image height |
+| input_format  | false    | string    | nv12    | The input image format, options from [nv12, uyvy]|
+| output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
+| pool_size     | false    | int       | 4       | the image memory pool size |
+| cache         | false    | bool      | true    | use cached memory or not for the image memory |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n CL2D -t CL2DFlex \
+    -k input_width -v 1920 -k input_height -v 1024 \
+    -k input_format -v nv12 -k output_format -v rgb \
+    -k input_topic -v /sensor/camera/CAM0/raw \
+    -k output_topic -v /sensor/camera/CAM0/cl2d \
 ```
 
 ## 3. Typical RideHal Sample Application pipelines

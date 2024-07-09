@@ -102,9 +102,20 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
         imgProp.batchSize = 1;
         imgProp.width = m_config.inputWidth;
         imgProp.height = m_config.inputHeight;
-        imgProp.stride[0] = m_config.inputWidth * 3;
-        imgProp.actualHeight[0] = m_config.inputHeight;
-        imgProp.numPlanes = 1;
+        if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat )
+        {
+            imgProp.stride[0] = m_config.inputWidth;
+            imgProp.actualHeight[0] = m_config.inputHeight;
+            imgProp.stride[1] = m_config.inputWidth;
+            imgProp.actualHeight[1] = m_config.inputHeight * 0.5;
+            imgProp.numPlanes = 2;
+        }
+        else
+        {
+            imgProp.stride[0] = m_config.inputWidth * 3;
+            imgProp.actualHeight[0] = m_config.inputHeight;
+            imgProp.numPlanes = 1;
+        }
         imgProp.extraPadding = 0;
 
         ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,

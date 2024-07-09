@@ -584,7 +584,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
         }
         auto end = std::chrono::high_resolution_clock::now();
         double duration_ms = std::chrono::duration<double, std::milli>( end - start ).count();
-        printf( "execute time = %f\n", (float) duration_ms / (float) times );
+        printf( "execute time = %f ms\n", (float) duration_ms / (float) times );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
     else
@@ -647,7 +647,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
 void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inputFormatTest,
                 RideHal_ImageFormat_e outputFormatTest, uint32_t inputWidthTest,
                 uint32_t inputHeightTest, uint32_t outputWidthTest, uint32_t outputHeightTest,
-                std::string pathTest, std::string goldenPath, bool saveOutput )
+                std::string pathTest, std::string goldenPath, bool normTest, bool saveOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -673,53 +673,66 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
     RemapConfig.outputWidth = outputWidthTest;
     RemapConfig.outputHeight = outputHeightTest;
     RemapConfig.bEnableUndistortion = false;
-    RemapConfig.bEnableNormalize = true;
-
-    RemapConfig.normlzR.sub = 123.675;
-    RemapConfig.normlzR.mul = 1.f / 58.395;
-    RemapConfig.normlzR.add = 0.f;
-    RemapConfig.normlzG.sub = 116.28;
-    RemapConfig.normlzG.mul = 1.f / 57.12;
-    RemapConfig.normlzG.add = 0.f;
-    RemapConfig.normlzB.sub = 103.53;
-    RemapConfig.normlzB.mul = 1.f / 57.375;
-    RemapConfig.normlzB.add = 0.f;
-    float quantScale = 0.0186584480106831f;
-    int32_t quantOffset = 114;
-    RemapConfig.normlzR.add = RemapConfig.normlzR.add / quantScale + quantOffset;
-    RemapConfig.normlzR.mul = RemapConfig.normlzR.mul / quantScale;
-    RemapConfig.normlzG.add = RemapConfig.normlzG.add / quantScale + quantOffset;
-    RemapConfig.normlzG.mul = RemapConfig.normlzG.mul / quantScale;
-    RemapConfig.normlzB.add = RemapConfig.normlzB.add / quantScale + quantOffset;
-    RemapConfig.normlzB.mul = RemapConfig.normlzB.mul / quantScale;
+    if ( true == normTest )
+    {
+        RemapConfig.bEnableNormalize = true;
+        RemapConfig.normlzR.sub = 123.675;
+        RemapConfig.normlzR.mul = 1.f / 58.395;
+        RemapConfig.normlzR.add = 0.f;
+        RemapConfig.normlzG.sub = 116.28;
+        RemapConfig.normlzG.mul = 1.f / 57.12;
+        RemapConfig.normlzG.add = 0.f;
+        RemapConfig.normlzB.sub = 103.53;
+        RemapConfig.normlzB.mul = 1.f / 57.375;
+        RemapConfig.normlzB.add = 0.f;
+        float quantScale = 0.0186584480106831f;
+        int32_t quantOffset = 114;
+        RemapConfig.normlzR.add = RemapConfig.normlzR.add / quantScale + quantOffset;
+        RemapConfig.normlzR.mul = RemapConfig.normlzR.mul / quantScale;
+        RemapConfig.normlzG.add = RemapConfig.normlzG.add / quantScale + quantOffset;
+        RemapConfig.normlzG.mul = RemapConfig.normlzG.mul / quantScale;
+        RemapConfig.normlzB.add = RemapConfig.normlzB.add / quantScale + quantOffset;
+        RemapConfig.normlzB.mul = RemapConfig.normlzB.mul / quantScale;
+    }
+    else
+    {
+        RemapConfig.bEnableNormalize = false;
+    }
 
     RideHal_SharedBuffer_t inputs[RemapConfig.numOfInputs];
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
     {
-        ret = inputs[inputId].Allocate( RemapConfig.inputConfigs[inputId].inputWidth,
-                                        RemapConfig.inputConfigs[inputId].inputHeight,
-                                        RemapConfig.inputConfigs[inputId].inputFormat );
-        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    }
+        RideHal_ImageProps_t imgProp;
+        imgProp.batchSize = 1;
+        imgProp.width = RemapConfig.inputConfigs[inputId].inputWidth;
+        imgProp.height = RemapConfig.inputConfigs[inputId].inputHeight;
+        imgProp.format = RemapConfig.inputConfigs[inputId].inputFormat;
+        if ( RIDEHAL_IMAGE_FORMAT_UYVY == RemapConfig.inputConfigs[inputId].inputFormat )
+        {
+            imgProp.stride[0] = RemapConfig.inputConfigs[inputId].inputWidth * 2;
+            imgProp.actualHeight[0] = RemapConfig.inputConfigs[inputId].inputHeight;
+            imgProp.extraPadding = 0;
+            imgProp.numPlanes = 1;
+        }
+        else if ( RIDEHAL_IMAGE_FORMAT_NV12 == RemapConfig.inputConfigs[inputId].inputFormat )
+        {
+            imgProp.stride[0] = RemapConfig.inputConfigs[inputId].inputWidth;
+            imgProp.actualHeight[0] = RemapConfig.inputConfigs[inputId].inputHeight;
+            imgProp.stride[1] = RemapConfig.inputConfigs[inputId].inputWidth;
+            imgProp.actualHeight[1] = RemapConfig.inputConfigs[inputId].inputHeight / 2;
+            imgProp.extraPadding = 0;
+            imgProp.numPlanes = 2;
+        }
+        else if ( RIDEHAL_IMAGE_FORMAT_RGB888 == RemapConfig.inputConfigs[inputId].inputFormat )
+        {
+            imgProp.stride[0] = RemapConfig.inputConfigs[inputId].inputWidth * 3;
+            imgProp.actualHeight[0] = RemapConfig.inputConfigs[inputId].inputHeight;
+            imgProp.extraPadding = 0;
+            imgProp.numPlanes = 1;
+        }
 
-    size_t inputSize[RIDEHAL_MAX_INPUTS];
-    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
-    {
-        if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_UYVY )
-        {
-            inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
-                                 RemapConfig.inputConfigs[inputId].inputHeight * 2;
-        }
-        else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_RGB888 )
-        {
-            inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
-                                 RemapConfig.inputConfigs[inputId].inputHeight * 3;
-        }
-        else if ( RemapConfig.inputConfigs[inputId].inputFormat == RIDEHAL_IMAGE_FORMAT_NV12 )
-        {
-            inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
-                                 RemapConfig.inputConfigs[inputId].inputHeight * 1.5;
-        }
+        ret = inputs[inputId].Allocate( &imgProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     FILE *file1 = nullptr;
@@ -880,16 +893,16 @@ TEST( Remap, ImageAccuracyTest )   // image pipeline md5 accuracy tests
     printf( "DSP image accuracy test\n" );
     ImageTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
                1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_dsp.rgb",
-               false );
+               true, false );
     printf( "CPU image accuracy test\n" );
     ImageTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
                1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_cpu.rgb",
-               false );
+               true, false );
 #if defined( __QNXNTO__ )
     printf( "GPU image accuracy test\n" );
     ImageTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
                1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_gpu.rgb",
-               false );
+               true, false );
 #endif
 }
 

@@ -18,8 +18,8 @@
 The structure [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L35) contains all the required configurable parameters for a CL2DFlex pipeline. It contains:
 - inputWidth, input image width.
 - inputHeight, input image height.
-- inputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported input image format is NV12 for now, so it could noly be RIDEHAL_IMAGE_FORMAT_NV12.
-- outputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported output image format is RGB for now, so it could noly be RIDEHAL_IMAGE_FORMAT_RGB888.
+- inputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported input image format is NV12 and UYVY for now, so it could be RIDEHAL_IMAGE_FORMAT_NV12 or RIDEHAL_IMAGE_FORMAT_UYVY.
+- outputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported output image format is RGB and NV12 for now, so it could be RIDEHAL_IMAGE_FORMAT_RGB888 or RIDEHAL_IMAGE_FORMAT_NV12.
 
 # 2. RideHal CL2DFlex APIs 
 ## 2.1 The details of CL2DFlex::Init
@@ -35,11 +35,11 @@ The structure [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L35)
 ## 2.6 The details of CL2DFlex::Deinit
 [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L78) do all the deinitialization work for a CL2DFlex pipeline, including deinitialize ComponentIF and logger, release OpenCL kernel and program, deregister all the OpenCL buffers remained. It should be called at the ending of pipeline.
 ## 2.7 The details of CL2DFlex::Execute
-[CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L105) execute the CL2DFlex pipeline. Currently only the pipeline of single image input buffer to single output image buffer is supported.
+[CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L105) execute the CL2DFlex pipeline. Currently only the pipeline of single image input buffer to single output image buffer is supported. The image format used in color conversion pipeline could be NV12 to RGB, UYVY to RGB, UYVY to NV12. 
 
 # 3. Typical use case
 ## 3.1 Set configurations
-Ridehal CL2DFlex component support to convert NV12 image input to RGB image output. The configuration parameters could be set as followed example:
+Ridehal CL2DFlex component can do image color format conversion. Take a NV12 to RGB pipeline as example, the configuration parameters could be set as:
 ```c++
     CL2DFlex CL2DFlexObj;
     CL2DFlex_Config_t CL2DFlexConfig;
