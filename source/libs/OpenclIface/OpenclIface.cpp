@@ -97,7 +97,7 @@ RideHalError_e OpenclSrv::LoadFromSource( const char *pSourceFile, const char *p
             {
                 (void) clGetProgramBuildInfo( m_program, m_deviceID, CL_PROGRAM_BUILD_LOG, len,
                                               pBuffer, NULL );
-                RIDEHAL_INFO( "build log:\n %s\n", pBuffer );
+                RIDEHAL_ERROR( "error build log:\n %s\n", pBuffer );
             }
             else
             {

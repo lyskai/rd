@@ -112,6 +112,10 @@ private:
 private:
     RideHalError_e FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
                                   const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e FromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
+                                  const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e FromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
+                                   const RideHal_SharedBuffer_t *pOutput );
 
 };   // class CL2DFlex
 

@@ -4,7 +4,7 @@
 #ifndef RIDEHAL_CL2DFLEX_CLH
 #define RIDEHAL_CL2DFLEX_CLH
 
-static const char *s_pCL2DFlexSource =
+static const char *s_pCL2DFlexSourceNV12ToRGB =
         "__constant float c_YUV2RGBCoeffs_420[5] = { 1.163999557f, 2.017999649f, -0.390999794f,\n"
         "                                                    -0.812999725f, 1.5959997177f };\n"
 
@@ -53,4 +53,68 @@ static const char *s_pCL2DFlexSource =
         "        }\n"
         "    }\n"
         "}\n";
+
+static const char *s_pCL2DFlexSourceUYVYToRGB =
+        "__constant float c_YUV2RGBCoeffs_420[5] = { 1.163999557f, 2.017999649f, -0.390999794f,\n"
+        "                                                    -0.812999725f, 1.5959997177f };\n"
+
+        "__kernel void UYVY_to_RGB( __global const uchar *srcptr, __global uchar *dstptr, \n"
+        "int rows, int cols, int inputStride, int outputStride )\n"
+        "{\n"
+        "    int x = get_global_id( 0 );\n"
+        "    int y = get_global_id( 1 );\n"
+        "    if ( x < cols / 2 )\n"
+        "    {\n"
+        "        if ( y < rows )\n"
+        "        {\n"
+        "            __global const uchar *usrc = srcptr + mad24( y, inputStride, x * 4 );\n"
+        "            __global uchar *dst = dstptr + mad24( y, cols * 3, mad24( x << 1, 3, 0 ) );\n"
+        "            float U = ( (float) usrc[0] ) - 128;\n"
+        "            float Y1 = usrc[1];\n"
+        "            float V = ( (float) usrc[2] ) - 128;\n"
+        "            float Y2 = usrc[3];\n"
+        "            __constant float *coeffs = c_YUV2RGBCoeffs_420;\n"
+        "            float ruv = fma( coeffs[4], V, 0.5f );\n"
+        "            float guv = fma( coeffs[3], V, fma( coeffs[2], U, 0.5f ) );\n"
+        "            float buv = fma( coeffs[1], U, 0.5f );\n"
+        "            Y1 = max( 0.f, Y1 - 16.f ) * coeffs[0];\n"
+        "            dst[0] = convert_uchar_sat( Y1 + ruv );\n"
+        "            dst[1] = convert_uchar_sat( Y1 + guv );\n"
+        "            dst[2] = convert_uchar_sat( Y1 + buv );\n"
+        "            Y2 = max( 0.f, Y2 - 16.f ) * coeffs[0];\n"
+        "            dst[3] = convert_uchar_sat( Y2 + ruv );\n"
+        "            dst[4] = convert_uchar_sat( Y2 + guv );\n"
+        "            dst[5] = convert_uchar_sat( Y2 + buv );\n"
+        "        }\n"
+        "    }\n"
+        "}\n";
+
+static const char *s_pCL2DFlexSourceUYVYToNV12 =
+        "__kernel void UYVY_to_NV12( __global const uchar *srcptr, __global uchar *dstptr,\n"
+        "int rows,int cols,int inputStride,int outputStride0,int outputHeight0,int outputStride1)\n"
+        "{\n"
+        "    int x = get_global_id( 0 );\n"
+        "    int y = get_global_id( 1 );\n"
+        "    if ( x < cols / 2 )\n"
+        "    {\n"
+        "        if ( y < rows / 2 )\n"
+        "        {\n"
+        "            __global const uchar *src = srcptr + mad24( y << 1, inputStride, x * 4 );\n"
+        "            __global uchar *dst1 = dstptr + mad24( y << 1, outputStride0, x << 1 );\n"
+        "            __global uchar *dst2 = dstptr \n"
+        "+ outputStride0 * outputHeight0 + mad24( y, outputStride1, x << 1 );\n"
+        "            float U1 = src[0];\n"
+        "            float V1 = src[2];\n"
+        "            float U2 = src[0 + inputStride];\n"
+        "            float V2 = src[2 + inputStride];\n"
+        "            dst1[0] = src[1];\n"
+        "            dst1[1] = src[3];\n"
+        "            dst1[0 + outputStride0] = src[1 + inputStride];\n"
+        "            dst1[1 + outputStride0] = src[3 + inputStride];\n"
+        "            dst2[0] = convert_uchar_sat( ( U1 + U2 ) / 2.0f );\n"
+        "            dst2[1] = convert_uchar_sat( ( V1 + V2 ) / 2.0f );\n"
+        "        }\n"
+        "    }\n"
+        "}\n";
+
 #endif   // RIDEHAL_CL2DFLEX_CLH
