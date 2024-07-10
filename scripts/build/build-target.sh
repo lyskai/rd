@@ -228,8 +228,21 @@ cmake \
     -DENABLE_GCOV=${ENABLE_GCOV} \
     .. || exit 1
 make -j 16 || exit 1
+# Install the RideHal SDK
+make DESTDIR=$destdir install || exit 1
 
-# Install
+# build RideHalSampleApp with the RideHal SDK
+mkdir -p $workdir/sample && cd $workdir/sample || exit 1
+cmake \
+    -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
+    -DCMAKE_INCLUDE_PATH=$TOOLCHAIN_SYSROOT/usr/include \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_INSTALL_PREFIX=/opt/ridehal \
+    -DCMAKE_PREFIX_PATH=$destdir/opt/ridehal \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    ../../tests/sample || exit 1
+make -j 16 VERBOSE=1 || exit 1
+# Install the RideHalSampleApp
 make DESTDIR=$destdir install || exit 1
 
 # Bundle runtime libraries

@@ -4,6 +4,16 @@ list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/bld/include )
 
+set( FADASIFACE_HEADERS
+    FadasIface.h
+    FadasSrv.hpp
+    FadasRemap.hpp
+    FadasPlr.hpp
+    bld/include/fadas.h
+    bld/include/fadasRemap.h
+    bld/include/fadasVM.h
+)
+
 add_library(FadasIfaceStub SHARED)
 target_sources(FadasIfaceStub PRIVATE FadasIface.c FadasIface.h)
 target_include_directories(FadasIfaceStub PUBLIC ${HEADERS_DIR})
@@ -20,4 +30,6 @@ add_library(Ride::Hal::Libs::FadasIface ALIAS FadasIface)
 install(TARGETS FadasIface DESTINATION lib)
 
 install(FILES prebuilt/dsp/libFadasIface_skel.so DESTINATION lib/dsp)
+
+install( FILES ${FADASIFACE_HEADERS} DESTINATION include/ridehal/libs/FadasIface )
 

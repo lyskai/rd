@@ -2,6 +2,7 @@
 // Confidential & Proprietary.
 
 #include "ridehal/component/CL2DFlex.hpp"
+#include "CL2DFlex.cl.h"
 
 namespace ridehal
 {

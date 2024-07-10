@@ -3,6 +3,10 @@
 
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 
+set( COMPONENT_COMMON_HEADERS
+    ${HEADERS_DIR}/ridehal/component/ComponentIF.hpp
+)
+
 set( COMPONENT_COMMON_SOURCES
     ComponentIF.cpp
 )
@@ -18,7 +22,7 @@ target_include_directories( RideHalComponentCommon PUBLIC ${HEADERS_DIR} )
 
 target_link_libraries( RideHalComponentCommon PUBLIC ${TARGET_LIBRARIES} )
 
-install(TARGETS RideHalComponentCommon DESTINATION lib)
+install( FILES ${COMPONENT_COMMON_HEADERS} DESTINATION include/ridehal/component )
 
 add_subdirectory(C2D)
 add_subdirectory(Camera)

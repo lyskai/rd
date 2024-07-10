@@ -29,6 +29,11 @@ endif()
 
 set( RIDEHAL_SAMPLE_DEFINITIONS )
 
+find_package(RideHal)
+if( NOT TARGET RideHal )
+  message(FATAL_ERROR "RideHal SDK not found")
+endif()
+
 set( TARGET_LIBRARIES RideHal )
 
 if( NOT TARGET TinyViz )
@@ -38,7 +43,7 @@ else()
   list( APPEND TARGET_LIBRARIES TinyViz )
 endif()
 
-if( NOT TARGET RideHalQnnRuntime )
+if( NOT DEFINED ENV{QNN_SDK_ROOT} )
   message(STATUS "build sample without QnnRuntime")
 else()
   list( APPEND RIDEHAL_SAMPLE_SOURCES SampleQnn.cpp )

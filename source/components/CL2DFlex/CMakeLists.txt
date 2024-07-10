@@ -3,12 +3,16 @@
 
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 
-set( CL2DFlex_SOURCES CL2DFlex.cpp )
+set( CL2DFlEX_HEADERS
+    ${HEADERS_DIR}/ridehal/component/CL2DFlex.hpp
+)
+
+set( CL2DFLEX_SOURCES CL2DFlex.cpp )
 
 list( APPEND TARGET_LIBRARIES RideHalComponentCommon OpenclIface)
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/OpenclIface )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/components/CL2DFlex )
-add_library( RideHalCL2DFlex STATIC ${CL2DFlex_SOURCES} )
+add_library( RideHalCL2DFlex OBJECT ${CL2DFLEX_SOURCES} )
 
 set_property( TARGET RideHalCL2DFlex PROPERTY LINKER_LANGUAGE CXX )
 set_property( TARGET RideHalCL2DFlex PROPERTY POSITION_INDEPENDENT_CODE ON )
@@ -17,4 +21,4 @@ target_include_directories( RideHalCL2DFlex PUBLIC ${HEADERS_DIR} )
 
 target_link_libraries( RideHalCL2DFlex PUBLIC ${TARGET_LIBRARIES} )
 
-install(TARGETS RideHalCL2DFlex DESTINATION lib)
+install( FILES ${CL2DFlEX_HEADERS} DESTINATION include/ridehal/component )

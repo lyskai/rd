@@ -41,4 +41,10 @@ target_include_directories( RideHal PUBLIC ${HEADERS_DIR} )
 
 target_link_libraries( RideHal PUBLIC ${TARGET_LIBRARIES} )
 
-install(TARGETS RideHal DESTINATION lib)
+install( TARGETS RideHal DESTINATION lib )
+
+set( RIDEHAL_CMAKE_FILES 
+  cmake/ridehal-config-version.cmake
+  cmake/ridehal-config.cmake )
+
+install( FILES ${RIDEHAL_CMAKE_FILES} DESTINATION lib/cmake/ridehal )

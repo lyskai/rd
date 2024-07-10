@@ -28,10 +28,15 @@ target_include_directories(TinyViz PUBLIC
     ${CMAKE_PREFIX_PATH}/include
 )
 
+find_package(RideHal)
+if( NOT TARGET RideHal )
+  message(FATAL_ERROR "RideHal SDK not found")
+endif()
+
 target_link_libraries(TinyViz 
     ${SDL2_LIBRARIES}
     freetype
-    RideHalCommon
+    RideHal
 )
 
 target_link_directories(TinyViz PUBLIC ${CMAKE_PREFIX_PATH}/lib)

@@ -9,7 +9,6 @@
 #include <memory>
 #include <unistd.h>
 
-#include "CL2DFlex.cl.h"
 #include "OpenclIface.hpp"
 #include "ridehal/component/ComponentIF.hpp"
 
