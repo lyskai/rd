@@ -94,7 +94,7 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
         for ( uint32_t idx = 0; ( idx < m_camNames.size() ) && ( RIDEHAL_ERROR_NONE == ret );
               idx++ )
         {
-            ret = m_camSubs[idx].Init( name, m_camTopicNames[idx], 1 );
+            ret = m_camSubs[idx].Init( name + "_" + m_camNames[idx], m_camTopicNames[idx], 1 );
         }
     }
 
@@ -106,7 +106,7 @@ RideHalError_e SampleTinyViz::Init( std::string name, SampleConfig_t &config )
         {
             if ( "" != m_objTopicNames[idx] )
             {
-                ret = m_objSubs[idx].Init( name, m_objTopicNames[idx] );
+                ret = m_objSubs[idx].Init( name + "_" + m_camNames[idx], m_objTopicNames[idx] );
             }
         }
     }
