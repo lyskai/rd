@@ -199,7 +199,8 @@ RideHalError_e OpenclSrv::Deinit()
     return ret;
 }
 
-RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, cl_mem *pBufferCL )
+RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, uint64_t handle,
+                                  cl_mem *pBufferCL )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
@@ -214,14 +215,26 @@ RideHalError_e OpenclSrv::RegBuf( void *pBufferHost, size_t size, cl_mem *pBuffe
         auto it = m_memMap.find( pBufferHost );
         if ( it == m_memMap.end() )
         {
+#if defined( __QNXNTO__ )
             cl_mem_pmem_host_ptr clBufHostPtr = { 0 };
-            clBufHostPtr.pmem_handle = 0;
+            clBufHostPtr.pmem_handle = (uintptr_t) handle;
             clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_PMEM_HOST_PTR_QCOM;
             clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
             clBufHostPtr.pmem_hostptr = pBufferHost;
             cl_mem bufferCL =
                     clCreateBuffer( m_context, CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, size,
                                     &clBufHostPtr, &retCL );
+#else
+            cl_mem_dmabuf_host_ptr clBufHostPtr = { 0 };
+            clBufHostPtr.dmabuf_filedesc = (int) handle;
+            clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_DMABUF_HOST_PTR_QCOM;
+            clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_UNCACHED_QCOM;
+            clBufHostPtr.dmabuf_hostptr = pBufferHost;
+            cl_mem bufferCL =
+                    clCreateBuffer( m_context, CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, size,
+                                    &clBufHostPtr, &retCL );
+#endif
+
             if ( CL_SUCCESS != retCL )
             {
                 RIDEHAL_ERROR( "Unable to create CL buffer, retCL = %d", retCL );

@@ -47,7 +47,7 @@ public:
     RideHalError_e LoadFromSource( const char *pSourceFile, const char *pKernelName );
     RideHalError_e LoadFromBinary( const unsigned char *pBinaryFile, const char *pKernelName );
     RideHalError_e Deinit();
-    RideHalError_e RegBuf( void *pBufferHost, size_t size, cl_mem *pBufferCL );
+    RideHalError_e RegBuf( void *pBufferHost, size_t size, uint64_t handle, cl_mem *pBufferCL );
     RideHalError_e DeregBuf( void *pBufferHost );
     RideHalError_e Execute( const OpenclIfcae_Arg_t *pArgs, size_t numOfArgs,
                             const OpenclIface_WorkParams_t *pWorkParam );

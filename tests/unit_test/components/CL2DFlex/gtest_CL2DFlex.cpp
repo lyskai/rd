@@ -500,7 +500,7 @@ void CoverageTest()
                                        "" );   // create kernel with null binary
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = OpenclSrvObj.RegBuf( nullptr, 0, nullptr );   // register with null host pointer
+    ret = OpenclSrvObj.RegBuf( nullptr, 0, 0, nullptr );   // register with null host pointer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = OpenclSrvObj.DeregBuf( nullptr );   // deregister with null pointer
@@ -528,7 +528,7 @@ void CoverageTest()
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     cl_mem *clMem;
-    ret = OpenclSrvObj.RegBuf( (void *) &input, 1, clMem );   // register without init
+    ret = OpenclSrvObj.RegBuf( (void *) &input, 1, 0, clMem );   // register without init
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     return;

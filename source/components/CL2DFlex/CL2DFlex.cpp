@@ -212,7 +212,8 @@ RideHalError_e CL2DFlex::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers
         for ( uint32_t i = 0; i < numBuffers; i++ )
         {
             cl_mem bufferCL;
-            ret = m_OpenclSrvObj.RegBuf( pBuffers[i].data(), pBuffers[i].size, &bufferCL );
+            ret = m_OpenclSrvObj.RegBuf( pBuffers[i].data(), pBuffers[i].size,
+                                         pBuffers[i].buffer.dmaHandle, &bufferCL );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to register buffer for number %d!", i );
@@ -262,14 +263,16 @@ RideHalError_e CL2DFlex::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
 
     cl_mem bufferSrc;
     cl_mem bufferDst;
-    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, &bufferSrc );
+    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, pInput->buffer.dmaHandle,
+                                 &bufferSrc );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register input buffer!" );
     }
     else
     {
-        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, &bufferDst );
+        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, pOutput->buffer.dmaHandle,
+                                     &bufferDst );
         if ( RIDEHAL_ERROR_NONE != ret )
         {
             RIDEHAL_ERROR( "Failed to register output buffer!" );
@@ -323,14 +326,16 @@ RideHalError_e CL2DFlex::FromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
 
     cl_mem bufferSrc;
     cl_mem bufferDst;
-    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, &bufferSrc );
+    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, pInput->buffer.dmaHandle,
+                                 &bufferSrc );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register input buffer!" );
     }
     else
     {
-        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, &bufferDst );
+        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, pOutput->buffer.dmaHandle,
+                                     &bufferDst );
         if ( RIDEHAL_ERROR_NONE != ret )
         {
             RIDEHAL_ERROR( "Failed to register output buffer!" );
@@ -380,14 +385,16 @@ RideHalError_e CL2DFlex::FromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
 
     cl_mem bufferSrc;
     cl_mem bufferDst;
-    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, &bufferSrc );
+    ret = m_OpenclSrvObj.RegBuf( pInput->data(), pInput->size, pInput->buffer.dmaHandle,
+                                 &bufferSrc );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register input buffer!" );
     }
     else
     {
-        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, &bufferDst );
+        ret = m_OpenclSrvObj.RegBuf( pOutput->data(), pOutput->size, pOutput->buffer.dmaHandle,
+                                     &bufferDst );
         if ( RIDEHAL_ERROR_NONE != ret )
         {
             RIDEHAL_ERROR( "Failed to register output buffer!" );
