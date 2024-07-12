@@ -290,6 +290,13 @@ if [ -d $QNN_SDK_ROOT/model ]; then
     cp -r $QNN_SDK_ROOT/model/* $destdir/opt/ridehal/data
 fi
 
+# Add fadas libs
+if [ -d /opt/fadaslib ]; then
+    cp /opt/fadaslib/libfadas.so $destdir/opt/ridehal/lib
+    cp /opt/fadaslib/libfadasGpu.so $destdir/opt/ridehal/lib
+    cp /opt/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
+fi
+
 # Create run-time package
 echo "Generating $pkgname"
 tar -C $topdir --xform="s/run/pkg/" --exclude="*.a" \

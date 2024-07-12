@@ -660,7 +660,7 @@ TEST( C2D, FAILURE_C2D_GetSourceSurf )
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Execute( inputs + 2, C2DConfig.numOfInputs, &output );
-    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = C2DObj.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -965,4 +965,3 @@ int main( int argc, char **argv )
     return nVal;
 }
 #endif
-

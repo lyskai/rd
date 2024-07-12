@@ -10,6 +10,7 @@ start:
   stage: start
   script:
     - echo "Start ridehal CI jobs ..."
+    - sh /data/scripts/gitlab-ci/update-ci-data.sh
   tags:
     - ridehal-dev
   rules:
