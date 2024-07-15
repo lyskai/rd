@@ -61,6 +61,7 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
     {
         std::vector<std::string> opPackagePaths;
         split( opPackagePaths, opPackagePathsStr, ',' );
+        m_opPackagePaths.resize( opPackagePaths.size() );
         for ( int i = 0; i < opPackagePaths.size(); ++i )
         {
             static std::vector<std::string> opPackage;
