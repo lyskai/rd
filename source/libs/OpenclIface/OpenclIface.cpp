@@ -60,6 +60,61 @@ RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level )
         }
     }
 
+    if ( CL_SUCCESS == retCL )
+    {
+        size_t versionSize = 0;
+        (void) clGetDeviceInfo( m_deviceID, CL_DEVICE_VERSION, 0, NULL, &versionSize );
+        std::vector<char> version( versionSize );
+        retCL = clGetDeviceInfo( m_deviceID, CL_DEVICE_VERSION, versionSize, version.data(), NULL );
+        if ( CL_SUCCESS == retCL )
+        {
+            RIDEHAL_INFO( "CL version is %s", version.data() );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "Unable to get device version info, retCL = %d", retCL );
+        }
+
+        size_t extensionSize = 0;
+        (void) clGetDeviceInfo( m_deviceID, CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize );
+        std::vector<char> extensions( extensionSize );
+        retCL = clGetDeviceInfo( m_deviceID, CL_DEVICE_EXTENSIONS, extensionSize, extensions.data(),
+                                 NULL );
+        if ( CL_SUCCESS == retCL )
+        {
+            RIDEHAL_INFO( "CL extension is %s", extensions.data() );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "Unable to get device extensions info, retCL = %d", retCL );
+        }
+
+        cl_uint unit;
+        retCL = clGetDeviceInfo( m_deviceID, CL_DEVICE_MAX_COMPUTE_UNITS, sizeof( cl_uint ), &unit,
+                                 NULL );
+        if ( CL_SUCCESS == retCL )
+        {
+            RIDEHAL_INFO( "CL max compute unit is %d\n", unit );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "Unable to get device max compute units info, retCL = %d", retCL );
+        }
+
+        size_t workSizes[3];
+        retCL = clGetDeviceInfo( m_deviceID, CL_DEVICE_MAX_WORK_ITEM_SIZES, sizeof( size_t ) * 3,
+                                 workSizes, NULL );
+        if ( CL_SUCCESS == retCL )
+        {
+            RIDEHAL_INFO( "CL max work item sizes is {%d, %d, %d}", workSizes[0], workSizes[1],
+                          workSizes[2] );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "Unable to get device max work item sizes info, retCL = %d", retCL );
+        }
+    }
+
     return ret;
 }
 
