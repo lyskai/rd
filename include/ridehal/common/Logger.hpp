@@ -224,7 +224,6 @@ public:
      * @param[in] destoryFnc the function pointer that do destroy the implementation related handle
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-
     static RideHalError_e Setup( Logger_Log_t logFnc, Logger_Create_t createFnc,
                                  Logger_Destroy_t destoryFnc );
     /**

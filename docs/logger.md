@@ -71,7 +71,7 @@ void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const ch
 }
 ```
 
-So if change the logger member "m_hHandle" as public and the macro RIDEHAL_LOGGER_LOG as below, the performance can be improved (but as log messages are not that frequently, the improvement is not that much).
+So if change the logger member "[m_hHandle](../include/ridehal/common/Logger.hpp#L254)" as public and the macro RIDEHAL_LOGGER_LOG as below, the performance can be improved (but as log messages are not that frequently, the improvement is not that much).
 
 ```c++
 #define RIDEHAL_LOGGER_LOG( logger, level, format, ... )                                           \

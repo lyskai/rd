@@ -109,9 +109,9 @@ public:
      * @brief Execute the voxelization pipeline
      * @param[in] pInPts The input point cloud where size in bytes
      *                 is maxNumInPts x 4 x sizeof(float32_t).
-     * @param[out] pOutPlrs The output point pillars, where memory (in bytes)
+     * @param[out] pOutPlrs The output pillar index tensor where memory (in bytes)
      *                 for each pillar is maxNumPlrs x 4 x sizeof(float32_t)
-     * @param[out] pOutFeature The output point pillar feature points where
+     * @param[out] pOutFeature The output stacked pillar tensor where
      *                 memory size in bytes for all pillars is
      *                 maxNumPlrs * maxNumPtsPerPlr x numOutFeatureDim x sizeof(float32_t)
      * @return RIDEHAL_ERROR_NONE on success, others on failure

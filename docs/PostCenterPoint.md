@@ -4,11 +4,14 @@
 - [3. PostCenterPoint APIs](#3-postcenterpoint-apis)
 - [4. PostCenterPoint Examples](#4-postcenterpoint-examples)
   - [4.1 PostCenterPoint initialization](#41-postcenterpoint-initialization)
+    - [4.1.1 How to configure the `filterParams`](#411-how-to-configure-the-filterparams)
   - [4.2 PostCenterPoint execution](#42-postcenterpoint-execution)
 
 # 1. PostCenterPoint overview
 
 The Component PostCenterPoint is a postprocessing that extracts and filters bounding boxes from the center point network output according to the definition in paper [PointPillars: Fast Encoders for Object Detection from Point Clouds](https://arxiv.org/pdf/1812.05784).
+
+And this Component PostCenterPoint is based on [FastADAS FadasVM library](https://developer.qualcomm.com/sites/default/files/docs/adas-sdk/api/group__vm__bb.html).
 
 # 2. PostCenterPoint Data Structures
 
@@ -62,6 +65,32 @@ ret = plrPost.Init( "PLRPOST0", &config, LOGGER_LEVEL_INFO );
 ret = plrPost.Start();
 ```
 
+### 4.1.1 How to configure the `filterParams`
+
+The [filterParams](../include/ridehal/component/PostCenterPoint.hpp#L58) is only valid and will be used if both [bMapPtsToBBox](../include/ridehal/component/PostCenterPoint.hpp#L61) and [bBBoxFilter](../include/ridehal/component/PostCenterPoint.hpp#L67) were true.
+
+If `bMapPtsToBBox` was true, for each detected 3D bounding box, the PostCenterPoint will check the input pointcloud to calculate the mean values of x/y/z coordinates and intensities of all points inside this bounding box. And this is time consuming, and for real case, the ADAS application may only require to do this mean calcuation for certain class and only do this for the first several bounding boxes with high scores.
+
+Thus a configuration of `filterParams` for example as below to speed up:
+
+```c
+PostCenterPoint_Config_t config = plrPostConfig0;
+PostCenterPoint plrPost;
+RideHalError_e ret;
+bool labelSelect[3] = { true, false, false }; // only do the mean calcuation for the class: Car
+// do the mean calcuation for the first 10 bounding box with high scores.
+PostCenterPoint_3DBBoxFilterParams_t filterParams = { 10,
+                                                      config.minXRange,
+                                                      config.minYRange,
+                                                      plrPreConfig0.minZRange,
+                                                      config.maxXRange,
+                                                      config.maxYRange,
+                                                      plrPreConfig0.maxZRange,
+                                                      labelSelect };
+config.filterParams = filterParams;
+config.bBBoxFilter = true;
+```
+
 ## 4.2 PostCenterPoint execution
 
 The gtest code [SANITY_PostCenterPoint](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L336) is a good example, it does load the related input and output buffers from raw file by calling API [LoadRaw](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L121) or [LoadPoints](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L103). And this code also demonstrates that how to decode the detection output buffer, below is a copy of it.
@@ -80,3 +109,4 @@ The gtest code [SANITY_PostCenterPoint](../tests/unit_test/components/PointPilla
 ```
 
 And the [SamplePlrPost](../tests/sample/source/SamplePlrPost.cpp#L228) is an end to end pipeline demo that how to call Execute API to extract bounding boxes.
+

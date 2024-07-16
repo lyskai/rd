@@ -64,7 +64,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 
 ### 1.1.2 The buffer life cycle management for the Video Encoder
 
-Refer [SampleVideoEncoder::ThreadMain](../tests/sample/source/SampleVideoEncoder.cpp#L247) which will hold the shared camera buffer in the "m_camFrameMap" after successfully submit the camera frame to the Video Encoder.
+Refer [SampleVideoEncoder::ThreadMain](../tests/sample/source/SampleVideoEncoder.cpp#L253) which will hold the shared camera buffer in the "m_camFrameMap" after successfully submit the camera frame to the Video Encoder.
 
 ```c++
 void SampleVideoEncoder::ThreadMain()
@@ -91,7 +91,7 @@ void SampleVideoEncoder::ThreadMain()
 }
 ```
 
-Refer [SampleVideoEncoder::InFrameCallback](../tests/sample/source/SampleVideoEncoder.cpp#L26), when this callback from the Video Encoder called, it means that the shared camera frame if fully consumed by the Video Encoder and thus in this callback, erase the shared camera frame from "m_camFrameMap" to release the camera frame back to the Camera.
+Refer [SampleVideoEncoder::InFrameCallback](../tests/sample/source/SampleVideoEncoder.cpp#L28), when this callback from the Video Encoder called, it means that the shared camera frame if fully consumed by the Video Encoder and thus in this callback, erase the shared camera frame from "m_camFrameMap" to release the camera frame back to the Camera.
 
 ```c++
 void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame )
@@ -113,7 +113,7 @@ void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInpu
 }
 ```
 
-Refer [SampleVideoEncoder::OutFrameCallback](../tests/sample/source/SampleVideoEncoder.cpp#L46), when this callback from the Video Encoder called, it means that a encoded video frame is ready, and by using the RideHal DataBroker message queue to publish it out.
+Refer [SampleVideoEncoder::OutFrameCallback](../tests/sample/source/SampleVideoEncoder.cpp#L47), when this callback from the Video Encoder called, it means that a encoded video frame is ready, and by using the RideHal DataBroker message queue to publish it out.
 
 ```c++
 void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOutputFrame )
@@ -140,9 +140,9 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
 
 ### 1.1.3 The buffer life cycle management of the SharedBufferPool
 
-The RideHal Sample [SharedBufferPool](../tests/sample/include/ridehal/sample/SharedBufferPool.hpp#L33) gives a demo that how to create a ping-pong buffer pool that the buffer can be shared between threads in the process. It was by using a flag ["dirty"](../tests/sample/include/ridehal/sample/SharedBufferPool.hpp#L66) for each buffer to indicate whether the buffer is in use(dirty = true) or free (dirty = false).
+The RideHal Sample [SharedBufferPool](../tests/sample/include/ridehal/sample/SharedBufferPool.hpp#L33) gives a demo that how to create a ping-pong buffer pool that the buffer can be shared between threads in the process. It was by using a flag ["dirty"](../tests/sample/include/ridehal/sample/SharedBufferPool.hpp#L126) for each buffer to indicate whether the buffer is in use(dirty = true) or free (dirty = false).
 
-Here it's ["Get"](../tests/sample/source/SharedBufferPool.cpp#L63) API to try to get a free buffer from the pool, as the code shows, if no buffer's flag "dirty" is false, a nullptr will be returned to indicate that all buffers are in busy state which means still hold in the DataBroker queue or hold by the consumers.
+Here it was the ["Get"](../tests/sample/source/SharedBufferPool.cpp#L34) API to try to get a free buffer from the pool, as the code shows, if no buffer's flag "dirty" is false, a nullptr will be returned to indicate that all buffers are in busy state which means still hold in the DataBroker queue or hold by the consumers.
 
 ```c++
 std::shared_ptr<SharedBuffer_t> SharedBufferPool::Get()
@@ -181,7 +181,7 @@ void SharedBufferPool::Deleter( SharedBuffer_t *ptrToDelete )
 }
 ```
 
-And refer the [SampleRemap](../tests/sample/source/SampleRemap.cpp#L206) or [SampleQnn](../tests/sample/source/SampleQnn.cpp#L98) to know how to use this SharedBufferPool.
+And refer the [SampleRemap](../tests/sample/source/SampleRemap.cpp#L206) or [SampleQnn](../tests/sample/source/SampleQnn.cpp#L128) to know how to use this SharedBufferPool.
 
 
 # 2. RideHal buffer life cycle management between processes

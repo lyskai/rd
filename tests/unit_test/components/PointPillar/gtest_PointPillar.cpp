@@ -860,10 +860,10 @@ TEST( FadasPlr, L2_PostCenterPoint )
         PostCenterPoint_Config_t config = plrPostConfig0;
         PostCenterPoint plrPost;
         RideHalError_e ret;
-        bool labelSelect[config.numClass] = { false };
-        for ( int i = 0; i < config.numClass; i++ )
+        bool labelSelect[config.numClass] = { true };
+        for ( int i = 1; i < config.numClass; i++ )
         {
-            labelSelect[i] = true;
+            labelSelect[i] = false;
         }
         PostCenterPoint_3DBBoxFilterParams_t filterParams = { 10,
                                                               config.minXRange,

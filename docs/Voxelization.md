@@ -4,11 +4,13 @@
 - [3. Voxelization APIs](#3-voxelization-apis)
 - [4. Voxelization Examples](#4-voxelization-examples)
   - [4.1 Voxelization initialization](#41-voxelization-initialization)
-  - [4.2 4.2 Voxelization execution](#42-voxelization-execution)
+  - [4.2 Voxelization execution](#42-voxelization-execution)
 
 # 1. Voxelization overview
 
-The Component Voxelization is a preprocessing that convert pointcloud to pillars according to the definition in paper [PointPillars: Fast Encoders for Object Detection from Point Clouds](https://arxiv.org/pdf/1812.05784).
+The Component Voxelization is a preprocessing that convert pointcloud to pillars according to the definition in paper [PointPillars: Fast Encoders for Object Detection from Point Clouds](https://arxiv.org/pdf/1812.05784). The raw point cloud is converted to a stacked pillar tensor and pillar index tensor.
+
+And this Component Voxelization is based on [FastADAS FadasVM library](https://developer.qualcomm.com/sites/default/files/docs/adas-sdk/api/group__vm__pp.html).
 
 # 2. Voxelization Data Structures
 

@@ -46,7 +46,7 @@ And it's strongly recommended that to use the APIs of RideHal_SharedBuffer_t to 
 
 And in fact, the RideHal_SharedBuffer_t APIs are based on the platform DMA related APIs (PMEM for QNX, dma-buf for Linux). 
   - For QNX, check [RideHal_DmaAllocate](../source/common/Buffer_QNX.cpp#L22) and [RideHal_DmaFree](../source/common/Buffer_QNX.cpp#L74).
-  - For Linux, check [RideHal_DmaAllocate](../source/common/Buffer_Linux.cpp#L60) and [RideHal_DmaFree](../source/common/Buffer_Linux.cpp#L126).
+  - For Linux, check [RideHal_DmaAllocate](../source/common/Buffer_Linux.cpp#L60) and [RideHal_DmaFree](../source/common/Buffer_Linux.cpp#L136).
 
 ```c
 // For case that using PMEM or dma-buf to allocate memory,
@@ -96,9 +96,9 @@ And another thing, the RideHal_SharedBuffer_t can be shared between components, 
 
 - [Free](../include/ridehal/common/SharedBuffer.hpp#L107)
 
-- [GetSharedBuffer](../include/ridehal/common/SharedBuffer.hpp#L117)
+- [GetSharedBuffer](../include/ridehal/common/SharedBuffer.hpp#L117): Get a shared buffer descriptor that represent the DMA memory portion specified by batchOffset and batchSize
 
-- [data](../include/ridehal/common/SharedBuffer.hpp#L124)
+- [data](../include/ridehal/common/SharedBuffer.hpp#L124): return the actual shared buffer virtual address
 
 - [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L133): 1 plane image to tensor
 
