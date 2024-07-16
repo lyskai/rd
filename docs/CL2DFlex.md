@@ -18,6 +18,8 @@
 The structure [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L35) contains all the required configurable parameters for a CL2DFlex pipeline. It contains:
 - inputWidth, input image width.
 - inputHeight, input image height.
+- outputWidth, output image width.
+- outputHeight, output image height.
 - inputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported input image format is NV12 and UYVY for now, so it could be RIDEHAL_IMAGE_FORMAT_NV12 or RIDEHAL_IMAGE_FORMAT_UYVY.
 - outputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported output image format is RGB and NV12 for now, so it could be RIDEHAL_IMAGE_FORMAT_RGB888 or RIDEHAL_IMAGE_FORMAT_NV12.
 
@@ -47,6 +49,8 @@ Ridehal CL2DFlex component can do image color format conversion. Take a NV12 to 
     CL2DFlexConfig.inputWidth = 1920;
     CL2DFlexConfig.inputHeight = 1024;
     CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputWidth = 1920;
+    CL2DFlexConfig.outputHeight = 1024;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 ```
 ## 3.2 API Call flow
@@ -57,7 +61,7 @@ The typical call flow of a Ridehal CL2DFlex pipeline is showed as below codes:
     ret = input.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
                           CL2DFlexConfig.inputFormat );
     RideHal_SharedBuffer_t output;
-    ret = output.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+    ret = output.Allocate( CL2DFlexConfig.outputWidth, CL2DFlexConfig.outputHeight,
                            CL2DFlexConfig.outputFormat );
     ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );
     ret = CL2DFlexObj.RegisterBuffers( &input, 1 );

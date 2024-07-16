@@ -52,6 +52,8 @@ private:
     RideHal_ImageFormat_e m_outputFormat;
     uint32_t m_inputWidth;
     uint32_t m_inputHeight;
+    uint32_t m_outputWidth;
+    uint32_t m_outputHeight;
     uint32_t m_poolSize = 4;
     RideHal_BufferFlags_t m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
 

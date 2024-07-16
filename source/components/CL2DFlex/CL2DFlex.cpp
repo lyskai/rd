@@ -102,30 +102,59 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
                 if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
                      ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
                 {
-                    ret = m_OpenclSrvObj.LoadFromSource( s_pCL2DFlexSourceNV12ToRGB,
-                                                         "NV12_to_RGB" );
+                    if ( ( m_config.inputWidth == m_config.outputWidth ) &&
+                         ( m_config.inputHeight == m_config.outputHeight ) )
+                    {
+                        ret = m_OpenclSrvObj.LoadFromSource( s_pSourceConvertNV12ToRGB,
+                                                             "ConvertNV12ToRGB" );
+                    }
+                    else
+                    {
+                        ret = RIDEHAL_ERROR_FAIL; /*Resize pipeline will be add later*/
+                    }
+
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Load kernel from source for NV12 to RGB failed!" );
                         ret = RIDEHAL_ERROR_FAIL;
                     }
                 }
+
                 else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormat ) &&
                           ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
                 {
-                    ret = m_OpenclSrvObj.LoadFromSource( s_pCL2DFlexSourceUYVYToRGB,
-                                                         "UYVY_to_RGB" );
+                    if ( ( m_config.inputWidth == m_config.outputWidth ) &&
+                         ( m_config.inputHeight == m_config.outputHeight ) )
+                    {
+                        ret = m_OpenclSrvObj.LoadFromSource( s_pSourceConvertUYVYToRGB,
+                                                             "ConvertUYVYToRGB" );
+                    }
+                    else
+                    {
+                        ret = RIDEHAL_ERROR_FAIL; /*Resize pipeline will be add later*/
+                    }
+
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Load kernel from source for UYVY to RGB failed!" );
                         ret = RIDEHAL_ERROR_FAIL;
                     }
                 }
+
                 else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormat ) &&
                           ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) )
                 {
-                    ret = m_OpenclSrvObj.LoadFromSource( s_pCL2DFlexSourceUYVYToNV12,
-                                                         "UYVY_to_NV12" );
+                    if ( ( m_config.inputWidth == m_config.outputWidth ) &&
+                         ( m_config.inputHeight == m_config.outputHeight ) )
+                    {
+                        ret = m_OpenclSrvObj.LoadFromSource( s_pSourceConvertUYVYToNV12,
+                                                             "ConvertUYVYToNV12" );
+                    }
+                    else
+                    {
+                        ret = RIDEHAL_ERROR_FAIL; /*Resize pipeline will be add later*/
+                    }
+
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Load kernel from source for UYVY to NV12 failed!" );
@@ -256,8 +285,8 @@ RideHalError_e CL2DFlex::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffe
     return ret;
 }
 
-RideHalError_e CL2DFlex::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
-                                        const RideHal_SharedBuffer_t *pOutput )
+RideHalError_e CL2DFlex::ConvertFromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+                                               const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -310,7 +339,7 @@ RideHalError_e CL2DFlex::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
             ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to execute NV12 to RGB OpenCL kernel!" );
+                RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -319,8 +348,8 @@ RideHalError_e CL2DFlex::FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
     return ret;
 }
 
-RideHalError_e CL2DFlex::FromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
-                                        const RideHal_SharedBuffer_t *pOutput )
+RideHalError_e CL2DFlex::ConvertFromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
+                                               const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -369,7 +398,7 @@ RideHalError_e CL2DFlex::FromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
             ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to execute UYVY to RGB OpenCL kernel!" );
+                RIDEHAL_ERROR( "Failed to execute convert UYVY to RGB OpenCL kernel!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -378,8 +407,8 @@ RideHalError_e CL2DFlex::FromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
     return ret;
 }
 
-RideHalError_e CL2DFlex::FromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
-                                         const RideHal_SharedBuffer_t *pOutput )
+RideHalError_e CL2DFlex::ConvertFromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
+                                                const RideHal_SharedBuffer_t *pOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -432,7 +461,7 @@ RideHalError_e CL2DFlex::FromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
             ret = m_OpenclSrvObj.Execute( OpenclArgs, numOfArgs, &OpenclWorkParams );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to execute UYVY to NV12 OpenCL kernel!" );
+                RIDEHAL_ERROR( "Failed to execute convert UYVY to NV12 OpenCL kernel!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -492,12 +521,12 @@ RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInput,
         RIDEHAL_ERROR( "Output image format not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( m_config.inputWidth != pOutput->imgProps.width )
+    else if ( m_config.outputWidth != pOutput->imgProps.width )
     {
         RIDEHAL_ERROR( "Output image width not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( m_config.inputHeight != pOutput->imgProps.height )
+    else if ( m_config.outputHeight != pOutput->imgProps.height )
     {
         RIDEHAL_ERROR( "Output image height not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -507,30 +536,59 @@ RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInput,
         if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormat ) &&
              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
         {
-            ret = FromNV12ToRGB( pInput, pOutput );
+            if ( ( m_config.inputWidth == m_config.outputWidth ) &&
+                 ( m_config.inputHeight == m_config.outputHeight ) )
+            {
+                ret = ConvertFromNV12ToRGB( pInput, pOutput );
+            }
+            else
+            {
+                ret = RIDEHAL_ERROR_FAIL; /*Resize pipeline will be add later*/
+            }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to run color convertor from NV12 to RGB!" );
+                RIDEHAL_ERROR( "Failed to run OpenCL kernel from NV12 to RGB!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
+
         else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormat ) &&
                   ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) )
         {
-            ret = FromUYVYToRGB( pInput, pOutput );
+            if ( ( m_config.inputWidth == m_config.outputWidth ) &&
+                 ( m_config.inputHeight == m_config.outputHeight ) )
+            {
+                ret = ConvertFromUYVYToRGB( pInput, pOutput );
+            }
+            else
+            {
+                ret = RIDEHAL_ERROR_FAIL; /*Resize pipeline will be add later*/
+            }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to run color convertor from UYVY to RGB!" );
+                RIDEHAL_ERROR( "Failed to run OpenCL kernel from UYVY to RGB!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
+
         else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormat ) &&
                   ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) )
         {
-            ret = FromUYVYToNV12( pInput, pOutput );
+            if ( ( m_config.inputWidth == m_config.outputWidth ) &&
+                 ( m_config.inputHeight == m_config.outputHeight ) )
+            {
+                ret = ConvertFromUYVYToNV12( pInput, pOutput );
+            }
+            else
+            {
+                ret = RIDEHAL_ERROR_FAIL; /*Resize pipeline will be add later*/
+            }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to run color convertor from UYVY to NV12!" );
+                RIDEHAL_ERROR( "Failed to run OpenCL kernel from UYVY to NV12!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }

@@ -31,6 +31,20 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    m_config.outputWidth = Get( config, "output_width", 1920 );
+    if ( 0 == m_config.outputWidth )
+    {
+        RIDEHAL_ERROR( "invalid output_width\n" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+    m_config.outputHeight = Get( config, "output_height", 1024 );
+    if ( 0 == m_config.outputHeight )
+    {
+        RIDEHAL_ERROR( "invalid output_height\n" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
     m_config.inputFormat = Get( config, "input_format", RIDEHAL_IMAGE_FORMAT_NV12 );
     if ( RIDEHAL_IMAGE_FORMAT_MAX == m_config.inputFormat )
     {
@@ -100,20 +114,20 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
         RideHal_ImageProps_t imgProp;
         imgProp.format = m_config.outputFormat;
         imgProp.batchSize = 1;
-        imgProp.width = m_config.inputWidth;
-        imgProp.height = m_config.inputHeight;
+        imgProp.width = m_config.outputWidth;
+        imgProp.height = m_config.outputHeight;
         if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat )
         {
-            imgProp.stride[0] = m_config.inputWidth;
-            imgProp.actualHeight[0] = m_config.inputHeight;
-            imgProp.stride[1] = m_config.inputWidth;
-            imgProp.actualHeight[1] = m_config.inputHeight * 0.5;
+            imgProp.stride[0] = m_config.outputWidth;
+            imgProp.actualHeight[0] = m_config.outputHeight;
+            imgProp.stride[1] = m_config.outputWidth;
+            imgProp.actualHeight[1] = m_config.outputHeight * 0.5;
             imgProp.numPlanes = 2;
         }
         else
         {
-            imgProp.stride[0] = m_config.inputWidth * 3;
-            imgProp.actualHeight[0] = m_config.inputHeight;
+            imgProp.stride[0] = m_config.outputWidth * 3;
+            imgProp.actualHeight[0] = m_config.outputHeight;
             imgProp.numPlanes = 1;
         }
         imgProp.extraPadding = 0;

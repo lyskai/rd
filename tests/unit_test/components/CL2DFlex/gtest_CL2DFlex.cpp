@@ -16,8 +16,9 @@ using namespace ridehal::component;
 using namespace ridehal::test::utils;
 
 void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e outputFormatTest,
-                   uint32_t inputWidthTest, uint32_t inputHeightTest, std::string pathTest,
-                   std::string goldenPath, bool saveOutput )
+                   uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t outputWidthTest,
+                   uint32_t outputHeightTest, std::string pathTest, std::string goldenPath,
+                   bool saveOutput )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -28,6 +29,8 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
     CL2DFlexConfig.inputWidth = inputWidthTest;
     CL2DFlexConfig.inputHeight = inputHeightTest;
     CL2DFlexConfig.inputFormat = inputFormatTest;
+    CL2DFlexConfig.outputWidth = outputWidthTest;
+    CL2DFlexConfig.outputHeight = outputHeightTest;
     CL2DFlexConfig.outputFormat = outputFormatTest;
 
     RideHal_ImageProps_t imgProp1;
@@ -88,22 +91,22 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
 
     RideHal_ImageProps_t imgProp2;
     imgProp2.batchSize = 1;
-    imgProp2.width = CL2DFlexConfig.inputWidth;
-    imgProp2.height = CL2DFlexConfig.inputHeight;
+    imgProp2.width = CL2DFlexConfig.outputWidth;
+    imgProp2.height = CL2DFlexConfig.outputHeight;
     imgProp2.format = CL2DFlexConfig.outputFormat;
     if ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat )
     {
-        imgProp2.stride[0] = CL2DFlexConfig.inputWidth * 3;
-        imgProp2.actualHeight[0] = CL2DFlexConfig.inputHeight;
+        imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
+        imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
         imgProp2.extraPadding = 0;
         imgProp2.numPlanes = 1;
     }
     if ( RIDEHAL_IMAGE_FORMAT_NV12 == CL2DFlexConfig.outputFormat )
     {
-        imgProp2.stride[0] = CL2DFlexConfig.inputWidth;
-        imgProp2.stride[1] = CL2DFlexConfig.inputWidth;
-        imgProp2.actualHeight[0] = CL2DFlexConfig.inputHeight;
-        imgProp2.actualHeight[1] = CL2DFlexConfig.inputHeight / 2;
+        imgProp2.stride[0] = CL2DFlexConfig.outputWidth;
+        imgProp2.stride[1] = CL2DFlexConfig.outputWidth;
+        imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
+        imgProp2.actualHeight[1] = CL2DFlexConfig.outputHeight / 2;
         imgProp2.extraPadding = 0;
         imgProp2.numPlanes = 2;
     }
@@ -210,7 +213,8 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
     return;
 }
 
-void PerformanceTest( uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t times )
+void PerformanceTest( uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t outputWidthTest,
+                      uint32_t outputHeightTest, uint32_t times )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -221,6 +225,8 @@ void PerformanceTest( uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_
     CL2DFlexConfig.inputWidth = inputWidthTest;
     CL2DFlexConfig.inputHeight = inputHeightTest;
     CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputWidth = outputWidthTest;
+    CL2DFlexConfig.outputHeight = outputHeightTest;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 
     RideHal_SharedBuffer_t input;
@@ -282,6 +288,8 @@ void SanityTest()
     CL2DFlexConfig.inputWidth = 256;
     CL2DFlexConfig.inputHeight = 256;
     CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputWidth = 256;
+    CL2DFlexConfig.outputHeight = 256;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 
     RideHal_SharedBuffer_t input;
@@ -291,7 +299,7 @@ void SanityTest()
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     RideHal_SharedBuffer_t output;
-    ret = output.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+    ret = output.Allocate( CL2DFlexConfig.outputWidth, CL2DFlexConfig.outputHeight,
                            CL2DFlexConfig.outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -341,6 +349,8 @@ void CoverageTest()
     CL2DFlexConfig.inputWidth = 128;
     CL2DFlexConfig.inputHeight = 128;
     CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.outputWidth = 128;
+    CL2DFlexConfig.outputHeight = 128;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
     RideHal_SharedBuffer_t input;
     RideHal_SharedBuffer_t output;
@@ -378,12 +388,12 @@ void CoverageTest()
     CL2DFlexConfig.inputWidth = 1;
     ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong input width
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
-    CL2DFlexConfig.inputWidth = 256;
+    CL2DFlexConfig.inputWidth = 128;
 
     CL2DFlexConfig.inputHeight = 1;
     ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong input height
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
-    CL2DFlexConfig.inputHeight = 256;
+    CL2DFlexConfig.inputHeight = 128;
 
     CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_MAX;
     ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong input format
@@ -420,7 +430,7 @@ void CoverageTest()
     ret = input.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
                           CL2DFlexConfig.inputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-    ret = output.Allocate( CL2DFlexConfig.inputWidth, CL2DFlexConfig.inputHeight,
+    ret = output.Allocate( CL2DFlexConfig.outputWidth, CL2DFlexConfig.outputHeight,
                            CL2DFlexConfig.outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -492,7 +502,7 @@ void CoverageTest()
     ret = OpenclSrvObj.LoadFromSource( "", "" );   // create kernel with null source
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = OpenclSrvObj.LoadFromSource( s_pCL2DFlexSourceNV12ToRGB,
+    ret = OpenclSrvObj.LoadFromSource( s_pSourceConvertNV12ToRGB,
                                        "" );   // create kernel with null kernel
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
@@ -551,17 +561,17 @@ TEST( CL2DFlex, AccuracyTest )
     // md5 of golden1.rgb is 318450304ff3a55fc65b5a4bb1a641d5
     // md5 of golden2.rgb is f94a6aeae302add0424821660bcd2684
     // md5 of golden3.nv12 is 91ed68589443b87bcfff8ae7e69b03b2
-    AccuracyTest( RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024,
+    AccuracyTest( RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024,
                   "./data/test/CL2DFlex/0.nv12", "./data/test/CL2DFlex/golden1.rgb", false );
-    AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024,
+    AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024,
                   "./data/test/CL2DFlex/0.uyvy", "./data/test/CL2DFlex/golden2.rgb", false );
-    AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024,
+    AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024, 1920, 1024,
                   "./data/test/CL2DFlex/0.uyvy", "./data/test/CL2DFlex/golden3.nv12", false );
 }
 
 TEST( CL2DFlex, PerformanceTest )
 {
-    PerformanceTest( 128, 128, 100 );
+    PerformanceTest( 128, 128, 128, 128, 100 );
 }
 
 #ifndef GTEST_RIDEHAL

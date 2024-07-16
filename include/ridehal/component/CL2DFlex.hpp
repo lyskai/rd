@@ -29,6 +29,8 @@ typedef struct
 {
     size_t inputWidth;                  /**<input image width*/
     size_t inputHeight;                 /**<input image height*/
+    size_t outputWidth;                 /**<output image width*/
+    size_t outputHeight;                /**<output image height*/
     RideHal_ImageFormat_e inputFormat;  /**<input image format*/
     RideHal_ImageFormat_e outputFormat; /**<output image format*/
 } CL2DFlex_Config_t;
@@ -109,12 +111,12 @@ private:
     OpenclSrv m_OpenclSrvObj;
 
 private:
-    RideHalError_e FromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
-                                  const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e FromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
-                                  const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e FromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
-                                   const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e ConvertFromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+                                         const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e ConvertFromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
+                                         const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e ConvertFromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
+                                          const RideHal_SharedBuffer_t *pOutput );
 
 };   // class CL2DFlex
 
