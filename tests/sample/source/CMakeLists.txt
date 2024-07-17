@@ -12,6 +12,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SamplePlrPost.cpp
     SamplePlrPre.cpp
     SamplePostProcCenternet.cpp
+    SamplePostProcBevdet.cpp
     SampleCamera.cpp
     SampleDataReader.cpp
     SampleRecorder.cpp

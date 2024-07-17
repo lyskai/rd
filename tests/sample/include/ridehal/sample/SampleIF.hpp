@@ -95,6 +95,7 @@ protected:
                                   std::vector<std::string> defaultV );
     std::vector<uint32_t> Get( SampleConfig_t &config, std::string key,
                                std::vector<uint32_t> defaultV );
+    std::vector<float> Get( SampleConfig_t &config, std::string key, std::vector<float> defaultV );
     int32_t Get( SampleConfig_t &config, std::string key, int32_t defaultV );
     uint32_t Get( SampleConfig_t &config, std::string key, uint32_t defaultV );
     float Get( SampleConfig_t &config, std::string key, float defaultV );

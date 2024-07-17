@@ -265,6 +265,45 @@ std::vector<uint32_t> SampleIF::Get( SampleConfig_t &config, std::string key,
     return ret;
 }
 
+std::vector<float> SampleIF::Get( SampleConfig_t &config, std::string key,
+                                  std::vector<float> defaultV )
+{
+    std::vector<float> ret = defaultV;
+    std::string strV = "";
+    std::string::size_type prev_pos = 0, pos = 0;
+
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        ret.resize( 0 );
+        strV = it->second;
+
+        while ( ( pos = strV.find( ',', pos ) ) != std::string::npos )
+        {
+            std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
+
+            if ( "" != substring )
+            {
+                float value = std::stof( substring );
+                ret.push_back( value );
+            }
+
+            prev_pos = ++pos;
+        }
+
+        std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
+        if ( "" != substring )
+        {
+            float value = std::stof( substring );
+            ret.push_back( value );
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %s\n", key.c_str(), strV.c_str() );
+
+    return ret;
+}
+
 int32_t SampleIF::Get( SampleConfig_t &config, std::string key, int32_t defaultV )
 {
     int32_t ret = defaultV;
