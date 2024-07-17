@@ -25,9 +25,11 @@ endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
     list( APPEND _ridehal_include_dir ${CMAKE_SYSROOT}/usr/include/mm-osal/include )
-    list( APPEND _ridehal_defines _VIDC_LRH_LINUX_ )
+    list( APPEND _ridehal_defines _VIDC_LRH_LINUX_ CL_TARGET_OPENCL_VERSION=200 )
     list( APPEND _ridehal_include_dir ${CMAKE_SYSROOT}/usr/include/drm )
     list( APPEND _ridehal_include_dir ${CMAKE_SYSROOT}/usr/include/libdrm )
+else()
+    list( APPEND _ridehal_defines CL_TARGET_OPENCL_VERSION=300 )
 endif()
 
 set( _ridehal_library_dir ${_ridehal_prefix}/lib )
