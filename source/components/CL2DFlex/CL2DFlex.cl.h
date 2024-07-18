@@ -7,10 +7,10 @@
 #define KernelCode( ... ) #__VA_ARGS__
 
 static const char *s_pSourceConvertNV12ToRGB = KernelCode(
-        __constant float c_YUV2RGBCoeffs_420[5] = { 1.163999557f, 2.017999649f, -0.390999794f,
-                                                    -0.812999725f, 1.5959997177f };
+        __constant float coeffs[5] = { 1.163999557f, 2.017999649f, -0.390999794f, -0.812999725f,
+                                       1.5959997177f };
 
-        __kernel void ConvertNV12ToRGB( __global const uchar *srcptr, __global uchar *dstptr,
+        __kernel void ConvertNV12ToRGB( __global const uchar *srcPtr, __global uchar *dstPtr,
                                         int rows, int cols, int inputStride0, int inputHeight0,
                                         int inputStride1, int outputStride ) {
             int x = get_global_id( 0 );
@@ -19,19 +19,18 @@ static const char *s_pSourceConvertNV12ToRGB = KernelCode(
             {
                 if ( y < rows / 2 )
                 {
-                    __global const uchar *ysrc = srcptr + mad24( y << 1, inputStride0, ( x << 1 ) );
-                    __global const uchar *usrc = srcptr + inputStride0 * inputHeight0 +
+                    __global const uchar *ySrc = srcPtr + mad24( y << 1, inputStride0, ( x << 1 ) );
+                    __global const uchar *uSrc = srcPtr + inputStride0 * inputHeight0 +
                                                  mad24( y, inputStride1, ( x << 1 ) );
                     __global uchar *dst1 =
-                            dstptr + mad24( y << 1, cols * 3, mad24( x << 1, 3, 0 ) );
+                            dstPtr + mad24( y << 1, cols * 3, mad24( x << 1, 3, 0 ) );
                     __global uchar *dst2 = dst1 + outputStride * 3;
-                    float Y1 = ysrc[0];
-                    float Y2 = ysrc[1];
-                    float Y3 = ysrc[inputStride0];
-                    float Y4 = ysrc[inputStride0 + 1];
-                    float U = ( (float) usrc[0] ) - 128;
-                    float V = ( (float) usrc[1] ) - 128;
-                    __constant float *coeffs = c_YUV2RGBCoeffs_420;
+                    float Y1 = ySrc[0];
+                    float Y2 = ySrc[1];
+                    float Y3 = ySrc[inputStride0];
+                    float Y4 = ySrc[inputStride0 + 1];
+                    float U = ( (float) uSrc[0] ) - 128;
+                    float V = ( (float) uSrc[1] ) - 128;
                     float ruv = fma( coeffs[4], V, 0.5f );
                     float guv = fma( coeffs[3], V, fma( coeffs[2], U, 0.5f ) );
                     float buv = fma( coeffs[1], U, 0.5f );
@@ -56,10 +55,10 @@ static const char *s_pSourceConvertNV12ToRGB = KernelCode(
         } );
 
 static const char *s_pSourceConvertUYVYToRGB = KernelCode(
-        __constant float c_YUV2RGBCoeffs_420[5] = { 1.163999557f, 2.017999649f, -0.390999794f,
-                                                    -0.812999725f, 1.5959997177f };
+        __constant float coeffs[5] = { 1.163999557f, 2.017999649f, -0.390999794f, -0.812999725f,
+                                       1.5959997177f };
 
-        __kernel void ConvertUYVYToRGB( __global const uchar *srcptr, __global uchar *dstptr,
+        __kernel void ConvertUYVYToRGB( __global const uchar *srcPtr, __global uchar *dstPtr,
                                         int rows, int cols, int inputStride, int outputStride ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
@@ -67,13 +66,12 @@ static const char *s_pSourceConvertUYVYToRGB = KernelCode(
             {
                 if ( y < rows )
                 {
-                    __global const uchar *usrc = srcptr + mad24( y, inputStride, x * 4 );
-                    __global uchar *dst = dstptr + mad24( y, cols * 3, mad24( x << 1, 3, 0 ) );
-                    float U = ( (float) usrc[0] ) - 128;
-                    float Y1 = usrc[1];
-                    float V = ( (float) usrc[2] ) - 128;
-                    float Y2 = usrc[3];
-                    __constant float *coeffs = c_YUV2RGBCoeffs_420;
+                    __global const uchar *uSrc = srcPtr + mad24( y, inputStride, x * 4 );
+                    __global uchar *dst = dstPtr + mad24( y, cols * 3, mad24( x << 1, 3, 0 ) );
+                    float U = ( (float) uSrc[0] ) - 128;
+                    float Y1 = uSrc[1];
+                    float V = ( (float) uSrc[2] ) - 128;
+                    float Y2 = uSrc[3];
                     float ruv = fma( coeffs[4], V, 0.5f );
                     float guv = fma( coeffs[3], V, fma( coeffs[2], U, 0.5f ) );
                     float buv = fma( coeffs[1], U, 0.5f );
@@ -90,7 +88,7 @@ static const char *s_pSourceConvertUYVYToRGB = KernelCode(
         } );
 
 static const char *s_pSourceConvertUYVYToNV12 = KernelCode( __kernel void ConvertUYVYToNV12(
-        __global const uchar *srcptr, __global uchar *dstptr, int rows, int cols, int inputStride,
+        __global const uchar *srcPtr, __global uchar *dstPtr, int rows, int cols, int inputStride,
         int outputStride0, int outputHeight0, int outputStride1 ) {
     int x = get_global_id( 0 );
     int y = get_global_id( 1 );
@@ -98,10 +96,10 @@ static const char *s_pSourceConvertUYVYToNV12 = KernelCode( __kernel void Conver
     {
         if ( y < rows / 2 )
         {
-            __global const uchar *src = srcptr + mad24( y << 1, inputStride, x * 4 );
-            __global uchar *dst1 = dstptr + mad24( y << 1, outputStride0, x << 1 );
+            __global const uchar *src = srcPtr + mad24( y << 1, inputStride, x * 4 );
+            __global uchar *dst1 = dstPtr + mad24( y << 1, outputStride0, x << 1 );
             __global uchar *dst2 =
-                    dstptr + outputStride0 * outputHeight0 + mad24( y, outputStride1, x << 1 );
+                    dstPtr + outputStride0 * outputHeight0 + mad24( y, outputStride1, x << 1 );
             float U1 = src[0];
             float V1 = src[2];
             float U2 = src[0 + inputStride];
@@ -112,6 +110,104 @@ static const char *s_pSourceConvertUYVYToNV12 = KernelCode( __kernel void Conver
             dst1[1 + outputStride0] = src[3 + inputStride];
             dst2[0] = convert_uchar_sat( ( U1 + U2 ) / 2.0f );
             dst2[1] = convert_uchar_sat( ( V1 + V2 ) / 2.0f );
+        }
+    }
+} );
+
+static const char *s_pSourceResizeNV12ToRGB = KernelCode(
+        __constant float coeffs[5] = { 1.163999557f, 2.017999649f, -0.390999794f, -0.812999725f,
+                                       1.5959997177f };
+
+        __kernel void ResizeNV12ToRGB( __global const uchar *srcPtr, __global uchar *dstPtr,
+                                       int inputHeight, int inputWidth, int outputHeight,
+                                       int outputWidth, int inputStride0, int inputHeight0,
+                                       int inputStride1, int outputStride ) {
+            int x = get_global_id( 0 );
+            int y = get_global_id( 1 );
+            if ( x < outputWidth )
+            {
+                if ( y < outputHeight )
+                {
+                    __global const uchar *ySrc = srcPtr;
+                    __global const uchar *uSrc = srcPtr + inputStride0 * inputHeight0;
+                    __global uchar *dst = dstPtr + mad24( y, outputStride, x * 3 );
+                    int xIn = round( (float) x / (float) outputWidth * (float) inputWidth );
+                    int yIn = round( (float) y / (float) outputHeight * (float) inputHeight );
+                    int yPtr = mad24( yIn, inputStride0, xIn );
+                    float Y = ySrc[yPtr];
+                    int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
+                    float U = uSrc[uPtr] - 128.0f;
+                    float V = uSrc[uPtr + 1] - 128.0f;
+                    float ruv = fma( coeffs[4], V, 0.5f );
+                    float guv = fma( coeffs[3], V, fma( coeffs[2], U, 0.5f ) );
+                    float buv = fma( coeffs[1], U, 0.5f );
+                    dst[0] = convert_uchar_sat( Y + ruv );
+                    dst[1] = convert_uchar_sat( Y + guv );
+                    dst[2] = convert_uchar_sat( Y + buv );
+                }
+            }
+        } );
+
+static const char *s_pSourceResizeUYVYToRGB = KernelCode(
+        __constant float coeffs[5] = { 1.163999557f, 2.017999649f, -0.390999794f, -0.812999725f,
+                                       1.5959997177f };
+
+        __kernel void ResizeUYVYToRGB( __global const uchar *srcPtr, __global uchar *dstPtr,
+                                       int inputHeight, int inputWidth, int outputHeight,
+                                       int outputWidth, int inputStride, int outputStride ) {
+            int x = get_global_id( 0 );
+            int y = get_global_id( 1 );
+            if ( x < outputWidth )
+            {
+                if ( y < outputHeight )
+                {
+                    __global const uchar *src = srcPtr;
+                    __global uchar *dst = dstPtr + mad24( y, outputStride, x * 3 );
+                    int xIn = round( (float) x / (float) outputWidth * (float) inputWidth );
+                    int yIn = round( (float) y / (float) outputHeight * (float) inputHeight );
+                    int yPtr = mad24( yIn, inputStride, xIn << 1 ) + 1;
+                    float Y = src[yPtr];
+                    int uPtr = mad24( yIn, inputStride, ( xIn / 2 ) * 4 );
+                    float U = src[uPtr] - 128.0f;
+                    float V = src[uPtr + 2] - 128.0f;
+                    float ruv = fma( coeffs[4], V, 0.5f );
+                    float guv = fma( coeffs[3], V, fma( coeffs[2], U, 0.5f ) );
+                    float buv = fma( coeffs[1], U, 0.5f );
+                    dst[0] = convert_uchar_sat( Y + ruv );
+                    dst[1] = convert_uchar_sat( Y + guv );
+                    dst[2] = convert_uchar_sat( Y + buv );
+                }
+            }
+        } );
+
+static const char *s_pSourceResizeUYVYToNV12 = KernelCode( __kernel void ResizeUYVYToNV12(
+        __global const uchar *srcPtr, __global uchar *dstPtr, int inputHeight, int inputWidth,
+        int outputHeight, int outputWidth, int inputStride, int outputStride0, int outputHeight0,
+        int outputStride1 ) {
+    int x = get_global_id( 0 );
+    int y = get_global_id( 1 );
+    if ( x < outputWidth )
+    {
+        if ( y < outputHeight )
+        {
+            __global uchar *ydst = dstPtr + mad24( y, outputStride0, x );
+            int xIn = round( (float) x / (float) outputWidth * (float) inputWidth );
+            int yIn = round( (float) y / (float) outputHeight * (float) inputHeight );
+            int yPtr = mad24( yIn, inputStride, xIn << 1 ) + 1;
+            ydst[0] = srcPtr[yPtr];
+        }
+    }
+    if ( x < outputWidth / 2 )
+    {
+        if ( y < outputHeight / 2 )
+        {
+            __global uchar *udst =
+                    dstPtr + outputStride0 * outputHeight0 + mad24( y, outputStride1, x << 1 );
+            int xIn = round( (float) ( x << 1 ) / (float) outputWidth * (float) inputWidth );
+            int yIn = round( (float) ( y << 1 ) / (float) outputHeight * (float) inputHeight );
+            int uPtr = mad24( yIn, inputStride, ( xIn / 2 ) * 4 );
+            udst[0] = srcPtr[uPtr];
+            udst[1] = srcPtr[uPtr + 2];
         }
     }
 } );

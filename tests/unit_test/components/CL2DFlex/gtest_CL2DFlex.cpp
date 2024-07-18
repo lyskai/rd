@@ -47,7 +47,7 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
         imgProp1.extraPadding = 0;
         imgProp1.numPlanes = 2;
     }
-    if ( RIDEHAL_IMAGE_FORMAT_UYVY == CL2DFlexConfig.inputFormat )
+    else if ( RIDEHAL_IMAGE_FORMAT_UYVY == CL2DFlexConfig.inputFormat )
     {
         imgProp1.stride[0] = CL2DFlexConfig.inputWidth * 2;
         imgProp1.actualHeight[0] = CL2DFlexConfig.inputHeight;
@@ -101,7 +101,7 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
         imgProp2.extraPadding = 0;
         imgProp2.numPlanes = 1;
     }
-    if ( RIDEHAL_IMAGE_FORMAT_NV12 == CL2DFlexConfig.outputFormat )
+    else if ( RIDEHAL_IMAGE_FORMAT_NV12 == CL2DFlexConfig.outputFormat )
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth;
         imgProp2.stride[1] = CL2DFlexConfig.outputWidth;
@@ -285,11 +285,11 @@ void SanityTest()
     CL2DFlex_Config_t CL2DFlexConfig;
     char pName[20] = "CL2DFlex";
 
-    CL2DFlexConfig.inputWidth = 256;
-    CL2DFlexConfig.inputHeight = 256;
+    CL2DFlexConfig.inputWidth = 128;
+    CL2DFlexConfig.inputHeight = 128;
     CL2DFlexConfig.inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
-    CL2DFlexConfig.outputWidth = 256;
-    CL2DFlexConfig.outputHeight = 256;
+    CL2DFlexConfig.outputWidth = 128;
+    CL2DFlexConfig.outputHeight = 128;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 
     RideHal_SharedBuffer_t input;
@@ -554,7 +554,7 @@ TEST( CL2DFlex, CoverageTest )
     CoverageTest();
 }
 
-TEST( CL2DFlex, AccuracyTest )
+TEST( CL2DFlex, ConvertAccuracyTest )
 {
     // md5 of 0.nv12 is a1591f4b8c196a47628f0ef6bc3a721c
     // md5 of 0.uyvy is 5b1ae2203a9d97aeafe65e997f3beebc
@@ -567,6 +567,21 @@ TEST( CL2DFlex, AccuracyTest )
                   "./data/test/CL2DFlex/0.uyvy", "./data/test/CL2DFlex/golden2.rgb", false );
     AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024, 1920, 1024,
                   "./data/test/CL2DFlex/0.uyvy", "./data/test/CL2DFlex/golden3.nv12", false );
+}
+
+TEST( CL2DFlex, ResizeAccuracyTest )
+{
+    // md5 of 0.nv12 is a1591f4b8c196a47628f0ef6bc3a721c
+    // md5 of 0.uyvy is 5b1ae2203a9d97aeafe65e997f3beebc
+    // md5 of golden4.rgb is 74b6dea5b144d8321c9d58d32da7ae1c
+    // md5 of golden5.rgb is de444a8a4a064c5e689f3356c378b83a
+    // md5 of golden6.nv12 is 91cdd0def0f40ce3c0fec070c2bccd01
+    AccuracyTest( RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800,
+                  "./data/test/CL2DFlex/0.nv12", "./data/test/CL2DFlex/golden4.rgb", false );
+    AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800,
+                  "./data/test/CL2DFlex/0.uyvy", "./data/test/CL2DFlex/golden5.rgb", false );
+    AccuracyTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024, 1152, 800,
+                  "./data/test/CL2DFlex/0.uyvy", "./data/test/CL2DFlex/golden6.nv12", false );
 }
 
 TEST( CL2DFlex, PerformanceTest )

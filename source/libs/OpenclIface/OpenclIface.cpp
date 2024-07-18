@@ -228,6 +228,20 @@ RideHalError_e OpenclSrv::Deinit()
         ret = RIDEHAL_ERROR_FAIL;
     }
 
+    retCL = clReleaseCommandQueue( m_commandQueue );
+    if ( CL_SUCCESS != retCL )
+    {
+        RIDEHAL_ERROR( "Unable to release command queue, retCL = %d", retCL );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    retCL = clReleaseContext( m_context );
+    if ( CL_SUCCESS != retCL )
+    {
+        RIDEHAL_ERROR( "Unable to release context, retCL = %d", retCL );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
     std::vector<void *> ptrs;
     for ( auto &it : m_memMap )
     {
