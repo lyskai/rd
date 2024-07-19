@@ -126,6 +126,48 @@ public:
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
 
+    /**
+     * @cond GL2DFlex::RegisterInputBuffers @endcond
+     * @brief Register shared buffers for each input
+     * @param[in] pInputBuffers the input shared buffers array
+     * @param[in] numOfInputBuffers the number of shared buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffers,
+                                         uint32_t numOfInputBuffers );
+
+    /**
+     * @cond GL2DFlex::RegisterOutputBuffers @endcond
+     * @brief Register shared buffers for output
+     * @param[in] pOutputBuffers the output shared buffers array
+     * @param[in] numOfOutputBuffers the number of shared buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note This API need to be called in the same thread with Execute API
+     */
+    RideHalError_e RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffers,
+                                          uint32_t numOfOutputBuffers );
+
+    /**
+     * @cond GL2DFlex::DeregisterInputBuffers @endcond
+     * @brief Deregister shared buffers for each input
+     * @param[in] pInputBuffers the input shared buffers array
+     * @param[in] numOfInputBuffers the number of shared buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note This API need to be called in the same thread with Execute API
+     */
+    RideHalError_e DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffers,
+                                           uint32_t numOfInputBuffers );
+
+    /**
+     * @cond GL2DFlex::DeregisterOutputBuffers @endcond
+     * @brief Deregister shared buffers for output
+     * @param[in] pOutputBuffers the output shared buffers
+     * @param[in] numOfOutputBuffers the number of shared buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffers,
+                                            uint32_t numOfOutputBuffers );
+
 
 private:
     typedef struct
@@ -148,12 +190,23 @@ private:
 
     RideHalError_e CreateGLPipeline();
 
+
     RideHalError_e GetInputImageInfo( const RideHal_SharedBuffer_t *pInputBuffer,
                                       std::shared_ptr<GL_ImageInfo_t> &inputInfo );
 
     RideHalError_e GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutputBuffer,
                                        std::shared_ptr<GL_ImageInfo_t> &outputInfo,
                                        uint32_t batchIdx );
+
+    RideHalError_e CreateGLInputImage( void *bufferAddr, RideHal_ImageFormat_e format,
+                                       uint32_t width, uint32_t height, uint32_t stride,
+                                       uint32_t handle, size_t offset,
+                                       std::shared_ptr<GL_ImageInfo_t> &inputInfo );
+
+    RideHalError_e CreateGLOutputImage( void *bufferAddr, RideHal_ImageFormat_e format,
+                                        uint32_t width, uint32_t height, uint32_t stride,
+                                        uint32_t handle, size_t offset,
+                                        std::shared_ptr<GL_ImageInfo_t> &inputInfo );
 
     RideHalError_e Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
                          std::shared_ptr<GL_ImageInfo_t> &outputInfo, uint32_t batchIdx );

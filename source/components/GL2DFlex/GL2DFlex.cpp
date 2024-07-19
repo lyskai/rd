@@ -267,7 +267,8 @@ RideHalError_e GL2DFlex::Deinit()
                     if ( EGL_TRUE != rc )
                     {
                         ret = RIDEHAL_ERROR_FAIL;
-                        RIDEHAL_ERROR( "Failed to destroy ImageKHR for input: 0x%x", rc );
+                        RIDEHAL_ERROR( "Failed to destroy ImageKHR for input, error code: 0x%x",
+                                       rc );
                     }
                 }
 
@@ -289,7 +290,8 @@ RideHalError_e GL2DFlex::Deinit()
                     if ( EGL_TRUE != rc )
                     {
                         ret = RIDEHAL_ERROR_FAIL;
-                        RIDEHAL_ERROR( "Failed to destroy ImageKHR for output: 0x%x", rc );
+                        RIDEHAL_ERROR( "Failed to destroy ImageKHR for output, error code: 0x%x",
+                                       rc );
                     }
                 }
 
@@ -364,29 +366,58 @@ RideHalError_e GL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_
             ret = RIDEHAL_ERROR_INVALID_BUF;
             RIDEHAL_ERROR( "Output buffer is null" );
         }
-        else if ( m_outputFormat != pOutput->imgProps.format )
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        for ( size_t i = 0; i < m_numOfInputs; i++ )
+        {
+            if ( pInputs[i].imgProps.format != m_inputFormats[i] )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Input %u format is not correct: %d != %d", i, (int) m_outputFormat,
+                               (int) pOutput->imgProps.format );
+            }
+            else if ( pInputs[i].imgProps.width != m_inputResolutions[i].width )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Input %u width is not correct: %u != %u", i,
+                               m_inputResolutions[i].width, pInputs[i].imgProps.width );
+            }
+            else if ( pInputs[i].imgProps.height != m_inputResolutions[i].height )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Input %u height is not correct: %u != %u", i,
+                               m_inputResolutions[i].height, pInputs[i].imgProps.height );
+            }
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        if ( pOutput->imgProps.format != m_outputFormat )
         {
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             RIDEHAL_ERROR( "Output format is not correct: %d != %d", (int) m_outputFormat,
                            (int) pOutput->imgProps.format );
         }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        ret = EGLInit();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        else if ( pOutput->imgProps.width != m_outputResolution.width )
         {
-            RIDEHAL_ERROR( "Failed to Init EGL" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Output width is not correct: %u != %u", m_outputResolution.width,
+                           pOutput->imgProps.width );
         }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        ret = CreateGLPipeline();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        else if ( pOutput->imgProps.height != m_outputResolution.height )
         {
-            RIDEHAL_ERROR( "Failed to Create GL Pipeline" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Output height is not correct: %u != %u", m_outputResolution.height,
+                           pOutput->imgProps.height );
+        }
+        else if ( pOutput->imgProps.batchSize != m_numOfInputs )
+        {
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Output batch size is not correct, numOfInputs %u != batchSize %u",
+                           m_numOfInputs, pOutput->imgProps.batchSize );
         }
     }
 
@@ -400,21 +431,21 @@ RideHalError_e GL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_
             ret = GetInputImageInfo( &pInputs[i], inputInfo );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to get input image info for input %u: ", i );
+                RIDEHAL_ERROR( "Failed to get input image info for input %u", i );
                 break;
             }
 
             ret = GetOutputImageInfo( pOutput, outputInfo, i );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to get output image info for output batch %u: ", i );
+                RIDEHAL_ERROR( "Failed to get output image info for output batch %u", i );
                 break;
             }
 
             ret = Draw( inputInfo, outputInfo, i );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Failed to draw EGL image for index %u: ", i );
+                RIDEHAL_ERROR( "Failed to draw EGL image for index %u", i );
                 break;
             }
         }
@@ -422,6 +453,173 @@ RideHalError_e GL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_
 
     return ret;
 }
+
+RideHalError_e GL2DFlex::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffers,
+                                               uint32_t numOfInputBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    void *bufferAddr = nullptr;
+    std::shared_ptr<GL_ImageInfo_t> inputInfo = std::make_shared<GL_ImageInfo_t>();
+
+    for ( size_t i = 0; i < numOfInputBuffers; i++ )
+    {
+        bufferAddr = pInputBuffers[i].data();
+        if ( m_inputImageMap.find( bufferAddr ) == m_inputImageMap.end() )
+        {
+            RideHal_ImageFormat_e format = pInputBuffers[i].imgProps.format;
+            uint32_t width = pInputBuffers[i].imgProps.width;
+            uint32_t height = pInputBuffers[i].imgProps.height;
+            uint32_t stride = pInputBuffers[i].imgProps.stride[0];
+            uint32_t handle = pInputBuffers[i].buffer.dmaHandle;
+            size_t offset = pInputBuffers[i].offset;
+
+            ret = CreateGLInputImage( bufferAddr, format, width, height, stride, handle, offset,
+                                      inputInfo );
+            if ( ret != RIDEHAL_ERROR_NONE )
+            {
+                RIDEHAL_ERROR( "Failed to create GL input image for input buffer %u", i );
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e GL2DFlex::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffers,
+                                                uint32_t numOfOutputBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    void *bufferAddr = nullptr;
+    size_t outputSize = pOutputBuffers->size / pOutputBuffers->imgProps.batchSize;
+    std::shared_ptr<GL_ImageInfo_t> outputInfo = std::make_shared<GL_ImageInfo_t>();
+
+    for ( size_t i = 0; i < numOfOutputBuffers; i++ )
+    {
+        for ( size_t k = 0; k < m_numOfInputs; k++ )
+        {
+            bufferAddr = (void *) ( (uint8_t *) pOutputBuffers[i].data() + k * outputSize );
+            if ( m_outputImageMap.find( bufferAddr ) == m_outputImageMap.end() )
+            {
+                RideHal_ImageFormat_e format = pOutputBuffers[i].imgProps.format;
+                uint32_t width = pOutputBuffers[i].imgProps.width;
+                uint32_t height = pOutputBuffers[i].imgProps.height;
+                uint32_t stride = pOutputBuffers[i].imgProps.stride[0];
+                uint32_t handle = pOutputBuffers[i].buffer.dmaHandle;
+                size_t offset = pOutputBuffers[i].offset;
+
+                ret = CreateGLOutputImage( bufferAddr, format, width, height, stride, handle,
+                                           offset, outputInfo );
+                if ( ret != RIDEHAL_ERROR_NONE )
+                {
+                    RIDEHAL_ERROR( "Failed to create GL output image for output buffer %u batch %u",
+                                   i, k );
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e GL2DFlex::DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffers,
+                                                 uint32_t numOfInputBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    void *bufferAddr = nullptr;
+    if ( numOfInputBuffers > m_inputImageMap.size() )
+    {
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        RIDEHAL_ERROR( "Number of deregister buffers greater than registered buffers " );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        EGLBoolean rc = EGL_FALSE;
+        for ( size_t i = 0; i < numOfInputBuffers; i++ )
+        {
+            bufferAddr = pInputBuffers[i].data();
+            if ( m_inputImageMap.find( bufferAddr ) != m_inputImageMap.end() )
+            {
+                if ( m_inputImageMap[bufferAddr]->image != nullptr )
+                {
+                    rc = eglDestroyImageKHR( m_display, m_inputImageMap[bufferAddr]->image );
+                    if ( EGL_TRUE != rc )
+                    {
+                        ret = RIDEHAL_ERROR_FAIL;
+                        RIDEHAL_ERROR(
+                                "Failed to destroy ImageKHR for input buffer %u, error code: 0x%x",
+                                i, rc );
+                    }
+                }
+
+                if ( m_inputImageMap[bufferAddr]->bo != nullptr )
+                {
+                    gbm_bo_destroy( m_inputImageMap[bufferAddr]->bo );
+                }
+
+                (void) m_inputImageMap.erase( bufferAddr );
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e GL2DFlex::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffers,
+                                                  uint32_t numOfOutputBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    void *bufferAddr = nullptr;
+    uint32_t outputSize = pOutputBuffers->size / pOutputBuffers->imgProps.batchSize;
+
+    if ( numOfOutputBuffers > m_outputImageMap.size() )
+    {
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        RIDEHAL_ERROR( "Number of deregister buffers greater than registered buffers " );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        EGLBoolean rc = EGL_FALSE;
+        for ( size_t i = 0; i < numOfOutputBuffers; i++ )
+        {
+            for ( size_t k = 0; k < m_numOfInputs; k++ )
+            {
+                bufferAddr = (void *) ( (uint8_t *) pOutputBuffers[i].data() + k * outputSize );
+                if ( m_outputImageMap.find( bufferAddr ) != m_outputImageMap.end() )
+                {
+                    if ( m_outputImageMap[bufferAddr]->image != nullptr )
+                    {
+                        rc = eglDestroyImageKHR( m_display, m_outputImageMap[bufferAddr]->image );
+                        if ( EGL_TRUE != rc )
+                        {
+                            ret = RIDEHAL_ERROR_FAIL;
+                            RIDEHAL_ERROR( "Failed to destroy ImageKHR for output buffer %u batch "
+                                           "%u, error code: 0x%x",
+                                           i, k, rc );
+                        }
+                    }
+
+                    if ( m_outputImageMap[bufferAddr]->bo != nullptr )
+                    {
+                        gbm_bo_destroy( m_outputImageMap[bufferAddr]->bo );
+                    }
+
+                    (void) m_outputImageMap.erase( bufferAddr );
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
 
 RideHalError_e GL2DFlex::EGLInit()
 {
@@ -665,6 +863,7 @@ RideHalError_e GL2DFlex::CreateGLPipeline()
     return ret;
 }
 
+
 RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInputBuffer,
                                             std::shared_ptr<GL_ImageInfo_t> &inputInfo )
 {
@@ -674,84 +873,15 @@ RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInput
 
     if ( m_inputImageMap.find( bufferAddr ) == m_inputImageMap.end() )
     {
+        RideHal_ImageFormat_e format = pInputBuffer->imgProps.format;
         uint32_t width = pInputBuffer->imgProps.width;
         uint32_t height = pInputBuffer->imgProps.height;
         uint32_t stride = pInputBuffer->imgProps.stride[0];
-        RideHal_ImageFormat_e format = pInputBuffer->imgProps.format;
-        size_t offset = pInputBuffer->offset;
         uint32_t handle = pInputBuffer->buffer.dmaHandle;
+        size_t offset = pInputBuffer->offset;
 
-        struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
-                                             GetGBMFormatType( format ) };
-        inputInfo->bo =
-                gbm_bo_import( s_gbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
-        if ( nullptr == inputInfo->bo )
-        {
-            ret = RIDEHAL_ERROR_FAIL;
-            RIDEHAL_ERROR( "Failed to import gbm bo for input" );
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            int fd = gbm_bo_get_fd( inputInfo->bo );
-            EGLint eglImageAttribs[] = { EGL_WIDTH,
-                                         (EGLint) width,
-                                         EGL_HEIGHT,
-                                         (EGLint) height,
-                                         EGL_LINUX_DRM_FOURCC_EXT,
-                                         (EGLint) GetEGLFormatType( format ),
-                                         EGL_DMA_BUF_PLANE0_FD_EXT,
-                                         (EGLint) fd,
-                                         EGL_DMA_BUF_PLANE0_OFFSET_EXT,
-                                         (EGLint) offset,
-                                         EGL_DMA_BUF_PLANE0_PITCH_EXT,
-                                         (EGLint) stride,
-                                         EGL_NONE };
-            inputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
-                                                  NULL, eglImageAttribs );
-            if ( nullptr == inputInfo->image )
-            {
-                ret = RIDEHAL_ERROR_FAIL;
-                RIDEHAL_ERROR( "Failed to create image for input" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glGenTextures( 1, &inputInfo->texture );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to generate GL textures for input" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glBindTexture( GL_TEXTURE_EXTERNAL_OES, inputInfo->texture );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to bind GL textures for input" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glEGLImageTargetTexture2DOES( GL_TEXTURE_EXTERNAL_OES, inputInfo->image );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to render GL target texture for input" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            inputInfo->handle = handle;
-            inputInfo->offset = offset;
-            m_inputImageMap[bufferAddr] = inputInfo;
-        }
+        ret = CreateGLInputImage( bufferAddr, format, width, height, stride, handle, offset,
+                                  inputInfo );
     }
     else
     {
@@ -760,6 +890,7 @@ RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInput
 
     return ret;
 }
+
 
 RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutputBuffer,
                                              std::shared_ptr<GL_ImageInfo_t> &outputInfo,
@@ -772,116 +903,15 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
 
     if ( m_outputImageMap.find( bufferAddr ) == m_outputImageMap.end() )
     {
+        RideHal_ImageFormat_e format = pOutputBuffer->imgProps.format;
         uint32_t width = pOutputBuffer->imgProps.width;
         uint32_t height = pOutputBuffer->imgProps.height;
         uint32_t stride = pOutputBuffer->imgProps.stride[0];
-        RideHal_ImageFormat_e format = pOutputBuffer->imgProps.format;
-        size_t offset = pOutputBuffer->offset + batchIdx * outputSize;
         uint32_t handle = pOutputBuffer->buffer.dmaHandle;
+        size_t offset = pOutputBuffer->offset;
 
-        struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
-                                             GetGBMFormatType( format ) };
-        outputInfo->bo =
-                gbm_bo_import( s_gbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
-        if ( nullptr == outputInfo->bo )
-        {
-            ret = RIDEHAL_ERROR_FAIL;
-            RIDEHAL_ERROR( "Failed to import gbm bo for output" );
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            int fd = gbm_bo_get_fd( outputInfo->bo );
-            EGLint eglImageAttribs[] = { EGL_WIDTH,
-                                         (EGLint) width,
-                                         EGL_HEIGHT,
-                                         (EGLint) height,
-                                         EGL_LINUX_DRM_FOURCC_EXT,
-                                         (EGLint) GetEGLFormatType( format ),
-                                         EGL_DMA_BUF_PLANE0_FD_EXT,
-                                         (EGLint) fd,
-                                         EGL_DMA_BUF_PLANE0_OFFSET_EXT,
-                                         (EGLint) offset,
-                                         EGL_DMA_BUF_PLANE0_PITCH_EXT,
-                                         (EGLint) stride,
-                                         EGL_NONE };
-
-            outputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
-                                                   NULL, eglImageAttribs );
-            if ( nullptr == outputInfo->image )
-            {
-                ret = RIDEHAL_ERROR_FAIL;
-                RIDEHAL_ERROR( "Failed to create image for output" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glGenTextures( 1, &outputInfo->texture );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to generate GL texture for output" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glGenFramebuffers( 1, &outputInfo->framebuffer );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to generate GL frame buffers for output" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glBindTexture( GL_TEXTURE_EXTERNAL_OES, outputInfo->texture );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to bind GL texture for output" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glEGLImageTargetTexture2DOES( GL_TEXTURE_EXTERNAL_OES, outputInfo->image );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to render GL target texture for output" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glBindFramebuffer( GL_FRAMEBUFFER, outputInfo->framebuffer );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to bind GL frame buffer for output" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_EXTERNAL_OES,
-                                    outputInfo->texture, 0 );
-            ret = GLErrorCheck();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to attach GL texture to output buffer" );
-            }
-        }
-
-        if ( RIDEHAL_ERROR_NONE == ret )
-        {
-            outputInfo->handle = handle;
-            outputInfo->offset = offset;
-            m_outputImageMap[bufferAddr] = outputInfo;
-        }
+        ret = CreateGLOutputImage( bufferAddr, format, width, height, stride, handle, offset,
+                                   outputInfo );
     }
     else
     {
@@ -890,6 +920,241 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
 
     return ret;
 }
+
+
+RideHalError_e GL2DFlex::CreateGLInputImage( void *bufferAddr, RideHal_ImageFormat_e format,
+                                             uint32_t width, uint32_t height, uint32_t stride,
+                                             uint32_t handle, size_t offset,
+                                             std::shared_ptr<GL_ImageInfo_t> &inputInfo )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
+                                         GetGBMFormatType( format ) };
+    inputInfo->bo =
+            gbm_bo_import( s_gbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
+    if ( nullptr == inputInfo->bo )
+    {
+        ret = RIDEHAL_ERROR_FAIL;
+        RIDEHAL_ERROR( "Failed to import gbm bo for input" );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = EGLInit();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to Init EGL" );
+            }
+        }
+
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = CreateGLPipeline();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to Create GL Pipeline" );
+            }
+        }
+
+        int fd = gbm_bo_get_fd( inputInfo->bo );
+        EGLint eglImageAttribs[] = { EGL_WIDTH,
+                                     (EGLint) width,
+                                     EGL_HEIGHT,
+                                     (EGLint) height,
+                                     EGL_LINUX_DRM_FOURCC_EXT,
+                                     (EGLint) GetEGLFormatType( format ),
+                                     EGL_DMA_BUF_PLANE0_FD_EXT,
+                                     (EGLint) fd,
+                                     EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                     (EGLint) offset,
+                                     EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                                     (EGLint) stride,
+                                     EGL_NONE };
+        inputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
+                                              NULL, eglImageAttribs );
+        if ( nullptr == inputInfo->image )
+        {
+            ret = RIDEHAL_ERROR_FAIL;
+            RIDEHAL_ERROR( "Failed to create image for input" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glGenTextures( 1, &inputInfo->texture );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to generate GL textures for input" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glBindTexture( GL_TEXTURE_EXTERNAL_OES, inputInfo->texture );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to bind GL textures for input" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glEGLImageTargetTexture2DOES( GL_TEXTURE_EXTERNAL_OES, inputInfo->image );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to render GL target texture for input" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        inputInfo->handle = handle;
+        inputInfo->offset = offset;
+        m_inputImageMap[bufferAddr] = inputInfo;
+    }
+
+    return ret;
+}
+
+
+RideHalError_e GL2DFlex::CreateGLOutputImage( void *bufferAddr, RideHal_ImageFormat_e format,
+                                              uint32_t width, uint32_t height, uint32_t stride,
+                                              uint32_t handle, size_t offset,
+                                              std::shared_ptr<GL_ImageInfo_t> &outputInfo )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
+                                         GetGBMFormatType( format ) };
+    outputInfo->bo =
+            gbm_bo_import( s_gbmDev, GBM_BO_IMPORT_FD, &fdData, GBM_BO_TRANSFER_READ_WRITE );
+    if ( nullptr == outputInfo->bo )
+    {
+        ret = RIDEHAL_ERROR_FAIL;
+        RIDEHAL_ERROR( "Failed to import gbm bo for output" );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = EGLInit();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to Init EGL" );
+            }
+        }
+
+        if ( RIDEHAL_ERROR_NONE == ret )
+        {
+            ret = CreateGLPipeline();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to Create GL Pipeline" );
+            }
+        }
+
+        int fd = gbm_bo_get_fd( outputInfo->bo );
+        EGLint eglImageAttribs[] = { EGL_WIDTH,
+                                     (EGLint) width,
+                                     EGL_HEIGHT,
+                                     (EGLint) height,
+                                     EGL_LINUX_DRM_FOURCC_EXT,
+                                     (EGLint) GetEGLFormatType( format ),
+                                     EGL_DMA_BUF_PLANE0_FD_EXT,
+                                     (EGLint) fd,
+                                     EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                     (EGLint) offset,
+                                     EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                                     (EGLint) stride,
+                                     EGL_NONE };
+
+        outputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
+                                               NULL, eglImageAttribs );
+        if ( nullptr == outputInfo->image )
+        {
+            ret = RIDEHAL_ERROR_FAIL;
+            RIDEHAL_ERROR( "Failed to create image for output" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glGenTextures( 1, &outputInfo->texture );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to generate GL texture for output" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glGenFramebuffers( 1, &outputInfo->framebuffer );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to generate GL frame buffers for output" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glBindTexture( GL_TEXTURE_EXTERNAL_OES, outputInfo->texture );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to bind GL texture for output" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glEGLImageTargetTexture2DOES( GL_TEXTURE_EXTERNAL_OES, outputInfo->image );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to render GL target texture for output" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glBindFramebuffer( GL_FRAMEBUFFER, outputInfo->framebuffer );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to bind GL frame buffer for output" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_EXTERNAL_OES,
+                                outputInfo->texture, 0 );
+        ret = GLErrorCheck();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to attach GL texture to output buffer" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        outputInfo->handle = handle;
+        outputInfo->offset = offset;
+        m_outputImageMap[bufferAddr] = outputInfo;
+    }
+
+    return ret;
+}
+
 
 RideHalError_e GL2DFlex::Draw( std::shared_ptr<GL_ImageInfo_t> &inputInfo,
                                std::shared_ptr<GL_ImageInfo_t> &outputInfo, uint32_t batchIdx )
@@ -1071,6 +1336,7 @@ uint32_t GL2DFlex::GetEGLFormatType( RideHal_ImageFormat_e format )
     return eglFormat;
 }
 
+
 uint32_t GL2DFlex::GetGBMFormatType( RideHal_ImageFormat_e format )
 {
     uint32_t gbmFormat = (uint32_t) RIDEHAL_IMAGE_FORMAT_MAX;
@@ -1095,6 +1361,7 @@ uint32_t GL2DFlex::GetGBMFormatType( RideHal_ImageFormat_e format )
 
     return gbmFormat;
 }
+
 
 inline RideHalError_e GL2DFlex::GLErrorCheck()
 {
