@@ -111,29 +111,27 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        RideHal_ImageProps_t imgProp;
-        imgProp.format = m_config.outputFormat;
-        imgProp.batchSize = 1;
-        imgProp.width = m_config.outputWidth;
-        imgProp.height = m_config.outputHeight;
-        if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat )
+        if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat )
         {
-            imgProp.stride[0] = m_config.outputWidth;
-            imgProp.actualHeight[0] = m_config.outputHeight;
-            imgProp.stride[1] = m_config.outputWidth;
-            imgProp.actualHeight[1] = m_config.outputHeight * 0.5;
-            imgProp.numPlanes = 2;
-        }
-        else
-        {
+            RideHal_ImageProps_t imgProp;
+            imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
+            imgProp.batchSize = 1;
+            imgProp.width = m_config.outputWidth;
+            imgProp.height = m_config.outputHeight;
             imgProp.stride[0] = m_config.outputWidth * 3;
             imgProp.actualHeight[0] = m_config.outputHeight;
             imgProp.numPlanes = 1;
-        }
-        imgProp.extraPadding = 0;
+            imgProp.extraPadding = 0;
 
-        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
-                                RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
+                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+        }
+        else
+        {
+            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.outputWidth,
+                                    m_config.outputHeight, m_config.outputFormat,
+                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+        }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )

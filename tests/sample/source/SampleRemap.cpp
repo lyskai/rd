@@ -136,7 +136,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
         }
 
         m_config.bEnableUndistortion = false;
-        m_config.bEnableNormalize = true;
+        m_config.bEnableNormalize = Get( config, "normalize", true );
         m_config.normlzR.sub = 123.675;
         m_config.normlzR.mul = 1.f / 58.395;
         m_config.normlzR.add = 0.f;

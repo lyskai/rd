@@ -178,6 +178,7 @@ The command line template example:
 | roi_widthX    | false    | int       | =output_width  | The ROI width for input X |
 | roi_heightX   | false    | int       | =output_height | The ROI height for input X |
 | pool_size     | false    | int       | 4       | the image memory pool size |
+| normalize     | false    | bool      | true    | enable or disable normalization |
 | quant_scale   | false    | float     | 0.0186584480106831 | The quantization scale of the quantize model input  |
 | quant_offset  | false    | int       | 114     | The quantization offset of the quantize model input |
 | input_topic   | true     | string    | -       | the input topic name |
