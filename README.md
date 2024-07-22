@@ -18,6 +18,7 @@ Below is a summary information of the current implemented components.
 | [Voxelization](./docs/Voxelization.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | create pilliar |
 | [PostCenterPoint](./docs/PostCenterPoint.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | extract boundbing boxes |
 | [CL2DFlex](./docs/CL2DFlex.md) | YES| NO | OpenCL | GPU | Color Conversion |
+| [GL2DFlex](./docs/GL2DFlex.md) | NO | YES| OpenGL | GPU | Color Conversion, ROI Crop, Resize |
 
 # How to build
 
