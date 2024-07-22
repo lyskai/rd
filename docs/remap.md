@@ -1,68 +1,37 @@
 *Menu*:
-- [1. RideHal Remap Data Structures](#1-ridehal-remap-data-structures)
-  - [1.1 The details of Remap_Config_t](#11-remap_config_t)
-  - [1.2 The details of Remap_InputConfig_t](#12-remap_inputconfig_t)
-  - [1.3 The details of Remap_MapTable_t](#13-remap_maptable_t)
-- [2. RideHal remap APIs](#2-ridehal-remap-apis)
-  - [2.1 The details of Remap::Init](#21-remapinit)
-  - [2.2 The details of Remap::RegisterBuffers](#22-remapRegisterBuffers)
-  - [2.3 The details of Remap::DeRegisterBuffers](#23-remapdeRegisterBuffers)
-  - [2.4 The details of Remap::Start](#24-remapstart)
-  - [2.5 The details of Remap::Stop](#25-remapstop)
-  - [2.6 The details of Remap::Deinit](#26-remapdeinit)
-  - [2.7 The details of Remap::Execute](#27-remapexecute)
-- [3. Typical use case](#3-typical-use-case)
-  - [3.1 Set configurations](#31-set-configurations)
-  - [3.2 Call flow](#32-call-flow)
-  - [3.3 Supported pipelines](#33-supported-pipelines)
+- [1. Remap Overview](#1-remap-overview)
+- [2. Remap Data Structures](#2-remap-data-structures)
+- [3. Remap APIs](#3-remap-apis)
+- [4. Remap examples](#4-remap-examples)
+  - [4.1 Set configurations](#41-set-configurations)
+  - [4.2 API Call flow](#42-api-call-flow)
+  - [4.3 Supported pipelines](#43-supported-pipelines)
 
-# 1. RideHal Remap Data Structures
-## 1.1 The details of Remap_Config_t
-The structure [Remap_Config_t](../include/ridehal/component/Remap.hpp#L64) contains all the required configurable parameters for a remap pipeline. It contains:
-- processor, [RideHal_ProcessorType_e](../include/ridehal/common/Types.hpp#L83) type parameter. Now CPU, GPU and DSP processors are supported to execute remap calculation, so it could be RIDEHAL_PROCESSOR_CPU, RIDEHAL_PROCESSOR_GPU, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_PROCESSOR_HTP1.
-- inputConfigs, [Remap_InputConfig_t](../include/ridehal/component/Remap.hpp#L48) type array, Contains input images information, the array length is [RIDEHAL_MAX_INPUTS](../include/ridehal/common/Types.hpp#L23).
-- numOfInputs, number of input images.
-- outputWidth, output image width.
-- outputHeight, output image height.
-- outputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported output image format is RGB for now, so it could noly be RIDEHAL_IMAGE_FORMAT_RGB888.
-- normlzR, normalize parameter for R channel.
-- normlzG, normalize parameter for G channel.
-- normlzB, normalize parameter for B channel.
-- bEnableUndistortion, enable undistortion or not.
-- bEnableNormalize, enable normalization or not.
-## 1.2 The details of Remap_InputConfig_t
-The structure [Remap_InputConfig_t](../include/ridehal/component/Remap.hpp#L48) contains all the required configurable parameters for a input image. It contains:
-- inputFormat, [RideHal_ImageFormat_e](../include/ridehal/common/Types.hpp#L112) type parameter. The supported input image format is RGB and UYVY for now, so it could be RIDEHAL_IMAGE_FORMAT_RGB888 or RIDEHAL_IMAGE_FORMAT_UYVY.
-- inputWidth, input format width.
-- inputHeight, input format height.
-- mapWidth, output map width.
-- mapHeight, output map height.
-- remapTable, [Remap_MapTable_t](../include/ridehal/component/Remap.hpp#L36) type parameter. The remap table used if enable undistortion.
-- ROI, region of interest structure of Fadas.
-## 1.3 The details of Remap_MapTable_t
-The structure [Remap_MapTable_t](../include/ridehal/component/Remap.hpp#L36) contains two float pointers which indicate the remap table.
-- pMapX, floating point matrix. Each element is the column coordinate of the mapped location in the source image. Data size is mapWidth*mapHeight.
-- pMapY, floating point matrix. Each element is the row coordinate of the mapped location in the source image. Data size is mapWidth*mapHeight.
+# 1. Remap Overview
 
-# 2. RideHal remap APIs 
-## 2.1 The details of Remap::Init
-[Remap::Init](../include/ridehal/component/Remap.hpp#L90) do all the initialization work for a remap pipeline, including initialize the CPU,GPU,DSP processor and logger, create remap worker, create remap map. It should be called at the beginning of pipeline.
-## 2.2 The details of Remap::RegisterBuffers
-[Remap::RegisterBuffers](../include/ridehal/component/Remap.hpp#L101) register buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at execute step.
-## 2.3 The details of Remap::DeRegisterBuffers
-[Remap::DeRegisterBuffers](../include/ridehal/component/Remap.hpp#L111) deregister buffers for input and output data. This step could be done by user or skipped. If skipped, all the buffers will be registered at deinit step.
-## 2.4 The details of Remap::Start
-[Remap::Start](../include/ridehal/component/Remap.hpp#L118) start the remap pipeline, empty for now.
-## 2.5 The details of Remap::Stop
-[Remap::Stop](../include/ridehal/component/Remap.hpp#L125) stop the remap pipeline, empty for now.
-## 2.6 The details of Remap::Deinit
-[Remap::Deinit](../include/ridehal/component/Remap.hpp#L132) do all the deinitialization work for a remap pipeline, including deinitialize the CPU,GPU,DSP processor and logger, destroy remap worker, destroy remap map. It should be called at the ending of pipeline.
-## 2.7 The details of Remap::Execute
-[Remap::Execute](../include/ridehal/component/Remap.hpp#L142) execute the remap pipeline. Currently  the pipeline of multiple images input buffers remap to single output image buffer is supported.
+The RideHal Remap component is based on [FastADAS Remap APIs](https://developer.qualcomm.com/sites/default/files/docs/adas-sdk/api/group__remap.html). It can do undistortion, downscaling, color conversion, normalization and ROI scaling in one singel API calling on specific processor(CPU, GPU or DSP). 
 
-# 3. Typical use case
-## 3.1 Set configurations
-Ridehal Remap component support to do downscaling, color conversion, ROI crop, normalization and undistortion for multiple batches input images. The configuration parameters could be set as followed example:
+# 2. Remap Data Structures
+
+- [Remap_InputConfig_t](../include/ridehal/component/Remap.hpp#L48)
+- [Remap_Config_t](../include/ridehal/component/Remap.hpp#L64) 
+- [Remap_MapTable_t](../include/ridehal/component/Remap.hpp#L35) 
+
+# 3. Remap APIs 
+
+- [Remap::Init](../include/ridehal/component/Remap.hpp#L86) 
+- [Remap::RegisterBuffers](../include/ridehal/component/Remap.hpp#L99)
+- [Remap::DeRegisterBuffers](../include/ridehal/component/Remap.hpp#L111) 
+- [Remap::Start](../include/ridehal/component/Remap.hpp#L118) 
+- [Remap::Stop](../include/ridehal/component/Remap.hpp#L125) 
+- [Remap::Deinit](../include/ridehal/component/Remap.hpp#L134) 
+- [Remap::Execute](../include/ridehal/component/Remap.hpp#L146) 
+
+# 4. Remap examples
+
+## 4.1 Set configurations
+
+The remap configuration parameters can be set as following example:
 ```c++
     Remap_Config_t RemapConfig;
     char pName[10] = "Remap";
@@ -95,8 +64,10 @@ Ridehal Remap component support to do downscaling, color conversion, ROI crop, n
     RemapConfig.normlzB.mul = 1.0;
     RemapConfig.normlzB.add = 0.0;
 ```
-Note that normalization is invalid for RGB input format, the ROI.width+ROI.x should not be larger than mapWidth and the ROI.height+ROI.y should not be larger than mapHeight.
-If bEnableUndistortion is set to true, user could do undistortion or lens distortion correction for fisheye type camera by using the calibrated mapping table mapX and mapY. The mapping table mapX and mapY are floating point matrixs, each element is the column/row coordinate of the mapped location in the source image.
+The relationship of input, map, ROI, output scales are showed in following picture. The mapWidth must not be larger than inputWidth and the mapHeight must not be larger than inputHeight. The ROI.width+ROI.x must not be larger than mapWidth and the ROI.height+ROI.y must not be larger than mapHeight. The ROI.width must be equal to outputWidth and the ROI.height must be equal to output.height.
+![remap-image](./images/remap-image.jpg)
+
+If bEnableUndistortion is set to true, user can do undistortion or lens distortion correction for fisheye type camera by using the calibrated mapping table mapX and mapY. The mapping table mapX and mapY are floating point matrixs, each element is the column/row coordinate of the mapped location in the source image. The following example show how to set a map table with linear resize. 
 ```c++
     float *mapX = (float *) mapXBuffer.data();
     float *mapY = (float *) mapYBuffer.data();
@@ -111,8 +82,10 @@ If bEnableUndistortion is set to true, user could do undistortion or lens distor
     RemapConfig.inputConfigs[inputId].remapTable.pMapX = mapX;
     RemapConfig.inputConfigs[inputId].remapTable.pMapY = mapY;
 ```
-## 3.2 API Call flow
-The typical call flow of a Ridehal Remap pipeline is showed as below codes:
+
+## 4.2 API Call flow
+
+The typical call flow of a Ridehal Remap pipeline is showed as following example:
 ```c++
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     ret = RemapObj.Init( pName, pRemapConfig );
@@ -134,24 +107,27 @@ The typical call flow of a Ridehal Remap pipeline is showed as below codes:
     ret = RemapObj.Deinit();
 ```
 Generally, user should call Init API once at the beginning of the pipeline and call Deinit API once at the ending of the pipeline.
-Calling of RegisterBuffers and DeRegisterBuffers API for input/output buffer is optional, if the register step is not done by user explicitly, it would be done in Execute API implicitly. 
-## 3.3 Supported pipelines
+Calling of RegisterBuffers and DeRegisterBuffers API for input/output buffer is optional, if the register/deregister step is not done by user explicitly, it would be done in execute/deinit step implicitly. 
+
+## 4.3 Supported pipelines
+
 The supported remap pipelines for different input/output image format on each processor are listed below. In which Y means supported, N means unsupported. And norm means pipeline with normalization, corresponding to bEnableNormalize = true in the configuration parameters.
-```
-                    DSP processor       CPU processor       GPU processor
-RGB  to RGB                Y                   Y                   Y
-RGB  to RGB norm           N                   N                   N
-UYVY to RGB                Y                   Y                   Y
-UYVY to RGB norm           Y                   Y                   Y
-UYVY to BGR                Y                   N                   N
-UYVY to BGR norm           N                   N                   N
-NV12 to RGB                N                   Y                   Y
-NV12 to RGB norm           N                   Y                   Y
-NV12 to BGR                Y                   Y                   Y
-NV12 to BGR norm           N                   N                   N
-```
+
+| Pipeline         | DSP processor | CPU processor | GPU processor |
+|------------------|---------------|---------------|---------------|
+| RGB  to RGB      |     Y         |     Y         |     Y         |
+| RGB  to RGB norm |     N         |     N         |     N         |
+| UYVY to RGB      |     Y         |     Y         |     Y         |
+| UYVY to RGB norm |     Y         |     Y         |     Y         |
+| UYVY to BGR      |     Y         |     N         |     N         |
+| UYVY to BGR norm |     N         |     N         |     N         |
+| NV12 to RGB      |     N         |     Y         |     Y         |
+| NV12 to RGB norm |     N         |     Y         |     Y         |
+| NV12 to BGR      |     Y         |     Y         |     Y         |
+| NV12 to BGR norm |     N         |     N         |     N         |
 
 
 Reference:
 - [gtest_Remap](../tests/unit_test/components/Remap/gtest_Remap.cpp)
 - [SampleRemap](../tests/sample/source/SampleRemap.cpp)
+- [FastADAS Remap](https://developer.qualcomm.com/sites/default/files/docs/adas-sdk/api/group__remap.html)

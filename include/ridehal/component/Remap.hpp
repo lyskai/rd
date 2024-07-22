@@ -28,11 +28,13 @@ namespace component
 /** @brief remap tables for input images */
 typedef struct
 {
-    float *pMapX; /**<pointer for X map*/
-    float *pMapY; /**<pointer for Y map*/
+    float *pMapX; /**<pointer for X map, each element is the column coordinate of the mapped
+                     location in the source image, data size is mapWidth * mapHeight*/
+    float *pMapY; /**<pointer for Y map, each element is the row coordinate of the mapped location
+                     in the source image, data size is mapWidth * mapHeight*/
 } Remap_MapTable_t;
 
-/** @brief input images configuration */
+/** @brief remap configuration for each input image*/
 typedef struct
 {
     RideHal_ImageFormat_e inputFormat; /**<input image format*/
@@ -41,7 +43,8 @@ typedef struct
     uint32_t mapWidth;                 /**<output map width*/
     uint32_t mapHeight;                /**<output map height*/
     Remap_MapTable_t remapTable;       /**<remap table, used if enable undistortion*/
-    FadasROI_t ROI;                    /**<region of interest structure of Fadas*/
+    FadasROI_t ROI; /**<region of interest structure work on image after mapping, the ROI width and
+                       height should be consistent with output width and height*/
 } Remap_InputConfig_t;
 
 /** @brief Remap component configuration */
@@ -62,7 +65,6 @@ typedef struct
 
 class Remap : public ComponentIF
 {
-
     /*=================================================================================================
     ** API Functions
     =================================================================================================*/
@@ -78,6 +80,8 @@ public:
      * @param[in] pConfig the remap configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Do all the initialization work for remap pipeline: initialize the processor and logger,
+     * create remap worker, create remap map. Should be called at the beginning of pipeline.
      */
     RideHalError_e Init( const char *pName, const Remap_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
@@ -89,6 +93,8 @@ public:
      * @param[in] numBuffers number of buffers
      * @param[in] bufferType buffer type, could be IN, OUT, INOUT
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Register buffers for input and output data. This step could be done by user or skipped.
+     * If skipped, all the buffers will be registered at execute step.
      */
     RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                                     FadasBufType_e bufferType );
@@ -99,6 +105,8 @@ public:
      * @param[in] pBuffers a list of buffers to be deregister
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Deregister buffers for input and output data. This step could be done by user or
+     * skipped. If skipped, all the buffers will be deregistered at deinit step.
      */
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
@@ -118,8 +126,10 @@ public:
 
     /**
      * @cond Remap::Deinit @endcond
-     * @brief deinitialize the remap pipeline
+     * @brief Deinitialize the remap pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Do all the deinitialization work for remap pipeline: deinitialize processor and logger,
+     * destroy remap worker, destroy remap map. Should be called at the ending of pipeline.
      */
     RideHalError_e Deinit();
 
@@ -130,6 +140,8 @@ public:
      * @param[in] numInputs the number of input shared buffers
      * @param[out] pOutput the output shared buffer
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Execute the remap pipeline with FastADAS API. The pipeline is remapping multiple input
+     * images buffer to single output image buffer.
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
