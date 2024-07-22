@@ -76,7 +76,7 @@ RideHalError_e SamplePostProcBevdet::ParseConfig( SampleConfig_t &config )
 
     m_pointCloudRange = Get( config, "pointcloud_range",
                              std::vector<float>{ -51.2f, -51.2f, -5.0f, 51.2f, 51.2f, 3.0f } );
-    if ( 6 != m_voxelSize.size() )
+    if ( 6 != m_pointCloudRange.size() )
     {
         RIDEHAL_ERROR( "Pointcloud range must be 6!\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
