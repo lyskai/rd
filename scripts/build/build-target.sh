@@ -59,13 +59,13 @@ setup_env_qos222() {
         fi
         source /opt/qos222/env.sh
 
-    if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
-        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
-            ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
-        else
-            echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
-            exit -1
-        fi
+        if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
+            if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
+            else
+                echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
+                exit -1
+            fi
         fi
         source /opt/qnn_sdk/bin/envsetup.sh
     fi
@@ -90,13 +90,13 @@ setup_env_linux() {
             echo y | sh ./oecore-x86_64-aarch64-toolchain-nodistro.0.sh -d .
         fi
 
-    if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
-        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
-            ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
-        else
-            echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
-            exit -1
-        fi
+        if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
+            if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
+            else
+                echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
+                exit -1
+            fi
         fi
         source /opt/qnn_sdk/bin/envsetup.sh
     fi

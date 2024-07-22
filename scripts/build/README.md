@@ -23,7 +23,11 @@
     if [ ! -d $PWD/toolchain ]; then
         mkdir $PWD/toolchain
     fi
-    sudo docker run --net=host --pid=host -it --privileged --name $CONTAINER_NAME -v $PWD/ridehal:/opt/sdk/ridehal -v $PWD/toolchain:/opt/toolchain ridehal-toolchain-base:v1.0 /bin/bash
+    sudo docker run --net=host --pid=host \
+        -it --privileged --name $CONTAINER_NAME \
+        -v $PWD/ridehal:/opt/sdk/ridehal \
+        -v $PWD/toolchain:/opt/toolchain \
+        ridehal-toolchain-base:v1.0 /bin/bash
     ```
   - Create a script named run-ridehal-base-docker.sh, fill the below shell commands:
     ```
@@ -35,26 +39,31 @@
   Run the create-ridehal-base-docker.sh, a docker container named ridehal-toolchain-base-env would be created. If you want to rerun this container, just simply run the run-ridehal-base-docker.sh.
 
 - Step 3: Build ridehal package
-  The first time you created the ridehal-toolchain-base-env docker container, a directory named "toolchain" will be created under this path. You need to copy or install the platform toolchain SDK and QNN SDK to "toolchain" path, which would be shown in "/opt/toolchain" path in docker container. For the QNN SDK, rename QNN SDK folder to "qnn_sdk".
+  The first time you created the ridehal-toolchain-base-env docker container, a directory named `toolchain` will be created under this path. You need to copy or install the platform toolchain SDK and QNN SDK to `toolchain` path, which would be shown in `/opt/toolchain` path in docker container. For the QNN SDK, rename QNN SDK folder to `qnn_sdk`.
 
   - QOS222:
 
     Using below command to create a qos222 toolchain from QNX CRM.
 
     ```sh
-    python $PWD/ridehal/scripts/build/toolchain/extract-qos222-toolchain.py -i /path/to/qnx/crm_path -o $PWD/toolchain
-    # for example: python $PWD/ridehal/scripts/build/toolchain/extract-qos222-toolchain.py -i /local/mnt/workspace/QXA.QA.6.0.r23-00038-GEN4.QOS.222-1/ -o $PWD/toolchain
+    python $PWD/ridehal/scripts/build/toolchain/extract-qos222-toolchain.py \
+        -i /path/to/qnx/crm_path \
+        -o $PWD/toolchain
+    # for example:
+    python $PWD/ridehal/scripts/build/toolchain/extract-qos222-toolchain.py \
+        -i /local/mnt/workspace/QXA.QA.6.0.r23-00038-GEN4.QOS.222-1/ \
+        -o $PWD/toolchain
     ```
 
   - HGY Linux:
 
-    Place the HGY Linux SDK "oecore-x86_64-aarch64-toolchain-nodistro.0.sh" under "$PWD/toolchain/linux", the ridehal build script will automatically install it under "$PWD/toolchain/linux".
+    Place the HGY Linux SDK `oecore-x86_64-aarch64-toolchain-nodistro.0.sh` under `$PWD/toolchain/linux`, the ridehal build script will automatically install it under `$PWD/toolchain/linux`.
 
   - HGY Ubuntu:
 
-    Install the Ubuntu SDK to "$PWD/toolchain/ubuntu".
+    Install the Ubuntu SDK to `$PWD/toolchain/ubuntu`.
 
-  Rerun this container, switch to "/opt/sdk/ridehal" path, then use the scripts to build ridehal package:
+  Rerun this container, switch to `/opt/sdk/ridehal` path, then use the scripts to build ridehal package:
 
     - QOS222:
 
