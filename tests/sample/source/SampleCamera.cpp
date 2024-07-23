@@ -30,6 +30,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
         CameraFrame_t camFrame;
         camFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
         camFrame.frameIndex = frameIndex;
+        camFrame.streamId = 0;
         if ( false == m_camConfig.bRequestMode )
         {
             m_camera.ReleaseFrame( &camFrame );
@@ -76,6 +77,8 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         TRACE_ON( CAMERA );
+        m_camConfig.numStream = 1;
+
         m_camConfig.inputId = Get( config, "input_id", -1 );
         if ( -1 == m_camConfig.inputId )
         {
@@ -83,33 +86,33 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
-        m_camConfig.width = Get( config, "width", 0 );
-        if ( 0 == m_camConfig.width )
+        m_camConfig.streamConfig[0].width = Get( config, "width", 0 );
+        if ( 0 == m_camConfig.streamConfig[0].width )
         {
-            RIDEHAL_ERROR( "invalid width = %d\n", m_camConfig.width );
+            RIDEHAL_ERROR( "invalid width = %d\n", m_camConfig.streamConfig[0].width );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
-        m_camConfig.height = Get( config, "height", 0 );
-        if ( 0 == m_camConfig.height )
+        m_camConfig.streamConfig[0].height = Get( config, "height", 0 );
+        if ( 0 == m_camConfig.streamConfig[0].height )
         {
-            RIDEHAL_ERROR( "invalid height = %d\n", m_camConfig.height );
+            RIDEHAL_ERROR( "invalid height = %d\n", m_camConfig.streamConfig[0].height );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
         m_camConfig.bRequestMode = Get( config, "request_mode", false );
-        m_camConfig.streamId = Get( config, "stream_id", 0 );
+        m_camConfig.streamConfig[0].streamId = Get( config, "stream_id", 0 );
 
         m_camConfig.bAllocator = true;
         m_camConfig.ispUserCase = Get( config, "isp_use_case", 3 );
-        m_camConfig.bufCnt = Get( config, "pool_size", 4 );
-        if ( 0 == m_camConfig.bufCnt )
+        m_camConfig.streamConfig[0].bufCnt = Get( config, "pool_size", 4 );
+        if ( 0 == m_camConfig.streamConfig[0].bufCnt )
         {
             RIDEHAL_ERROR( "invalid pool_size \n" );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
-        m_camConfig.format = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
-        if ( RIDEHAL_IMAGE_FORMAT_MAX == m_camConfig.format )
+        m_camConfig.streamConfig[0].format = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
+        if ( RIDEHAL_IMAGE_FORMAT_MAX == m_camConfig.streamConfig[0].format )
         {
             RIDEHAL_ERROR( "invalid format\n" );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
