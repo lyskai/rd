@@ -26,8 +26,8 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.backendType = Get( config, "processor", RIDEHAL_PROCESSOR_HTP0 );
-    if ( RIDEHAL_PROCESSOR_MAX == m_config.backendType )
+    m_config.processorType = Get( config, "processor", RIDEHAL_PROCESSOR_HTP0 );
+    if ( RIDEHAL_PROCESSOR_MAX == m_config.processorType )
     {
         RIDEHAL_ERROR( "invalid processor %s\n", Get( config, "processor", "" ).c_str() );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -96,7 +96,7 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = SampleIF::Init( m_config.backendType );
+        ret = SampleIF::Init( m_config.processorType );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )

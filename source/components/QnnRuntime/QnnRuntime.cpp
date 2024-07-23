@@ -375,7 +375,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        m_BackendType = pConfig->backendType;
+        m_BackendType = pConfig->processorType;
         if ( m_BackendType == RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1 )
         {
             m_BackendCoreId = 1;
@@ -487,7 +487,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( pConfig->backendType != RIDEHAL_PROCESSOR_CPU )
+        if ( pConfig->processorType != RIDEHAL_PROCESSOR_CPU )
         {
             const auto returnStatus = m_QnnFunctionPointers.qnnInterface.deviceGetPlatformInfo(
                     m_LogHandle, &m_PlatformInfo );
@@ -502,7 +502,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( pConfig->backendType != RIDEHAL_PROCESSOR_CPU )
+        if ( pConfig->processorType != RIDEHAL_PROCESSOR_CPU )
         {
             if ( QNN_DEVICE_PLATFORM_INFO_VERSION_1 == m_PlatformInfo->version )
             {

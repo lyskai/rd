@@ -21,19 +21,16 @@ namespace ridehal
 namespace component
 {
 
-/** @brief QnnRuntime performation information */
+/** @brief QnnRuntime performance information */
 typedef struct
 {
     uint64_t entireExecTime; /**<qnn model entire execution time (ms) */
     uint64_t rpcExecTimeCPU; /**<execution time(ms) of remote procedure call on the CPU processor
-                              * when client invokes QnnGraph_execute or
-                              * QnnGraph_executeAsync.*/
+                                when client invokes QnnGraph_execute. */
     uint64_t rpcExecTimeHTP; /**<execution time(ms) of remote procedure call on the HTP processor
-                              * when client invokes QnnGraph_execute or
-                              * QnnGraph_executeAsync.*/
-    uint64_t rpcExecTimeAcc; /**<execution time(ms) of remote procedure call on the
-                              * accelerator when client invokes QnnGraph_execute or
-                              * QnnGraph_executeAsync.*/
+                                when client invokes QnnGraph_execute. */
+    uint64_t rpcExecTimeAcc; /**<execution time(ms) of remote procedure call on the accelerator when
+                                client invokes QnnGraph_execute. */
 } QnnRuntime_Perf_t;
 
 /** @brief UDO package information */
@@ -59,7 +56,8 @@ typedef struct
     const char *modelPath;                           /**<Qnn model path*/
     uint8_t *contextBuffer;                          /**<Pointer to qnn model context buffer */
     uint64_t contextSize;                            /**<qnn model context buffer size */
-    RideHal_ProcessorType_e backendType;             /**<Preprocessor type */
+    RideHal_ProcessorType_e processorType;           /**<Hardware compute processor that the QNN
+                                                      ** model running on*/
     Qnn_Priority_t priority = QNN_PRIORITY_DEFAULT;  /**<Qnn priority */
     QnnRuntime_UdoPackage_t *pUdoPackages = nullptr; /**<The pointer to QnnRuntime udo package */
     int numOfUdoPackages = 0;                        /**<The number of udo packages */
@@ -68,10 +66,10 @@ typedef struct
 /** @brief QnnRuntime tensor information */
 typedef struct
 {
-    const char *pName;                /**<The name of tensor*/
-    RideHal_TensorProps_t properties; /**<The property of tensor*/
-    float quantScale;                 /**<The value of quantization scale*/
-    int32_t quantOffset;              /**<The value of quantization offset*/
+    const char *pName;                /**<The name of the tensor*/
+    RideHal_TensorProps_t properties; /**<The property of the tensor*/
+    float quantScale;                 /**<The value of the quantization scale*/
+    int32_t quantOffset;              /**<The value of the quantization offset*/
 } QnnRuntime_TensorInfo_t;
 
 /** @brief The list of QnnRuntime tensor information */
@@ -127,7 +125,7 @@ public:
      * @param[in] pInputs Pointer to input shared buffer
      * @param[in] numInputs The number of input shared buffers
      * @param[out] pOutputs Pointer to output shared buffer
-     * @param[out] numOutputs The number of output shared buffers
+     * @param[in] numOutputs The number of output shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,

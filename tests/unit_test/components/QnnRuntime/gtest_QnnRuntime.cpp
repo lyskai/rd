@@ -53,7 +53,7 @@ TEST( QnnRuntime, SANITY_General )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -114,7 +114,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER;
     std::string modelPath = std::string( qnnConfig.modelPath );
     uint64_t bufferSize{ 0 };
@@ -202,7 +202,7 @@ TEST( QnnRuntime, Perf )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -273,7 +273,7 @@ TEST( QnnRuntime, RegisterBuffer )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -346,7 +346,7 @@ TEST( QnnRuntime, LoadModel )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/noexistingfile.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
 
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
@@ -417,7 +417,7 @@ TEST( QnnRuntime, LoadOpPackage )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/bevdet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
     const size_t numOfUdoPackages = 1;
     QnnRuntime_UdoPackage_t udoPackages[numOfUdoPackages];
 
@@ -569,7 +569,7 @@ TEST( QnnRuntime, CreateModelFromSo )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "QnnRuntime";
 
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_CPU;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_CPU;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
     std::string modelPath = std::string( qnnConfig.modelPath );
 
@@ -593,7 +593,7 @@ TEST( QnnRuntime, DynamicBatchSize )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -677,7 +677,7 @@ TEST( QnnRuntime, BufferFree )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -772,7 +772,7 @@ TEST( QnnRuntime, OneBufferMutipleTensors )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -860,7 +860,7 @@ TEST( QnnRuntime, TestAccuracy )
     char pName[20] = "QnnRuntime";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.backendType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
