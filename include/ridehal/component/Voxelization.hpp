@@ -83,6 +83,10 @@ public:
      * @brief Deregister buffers for voxelization
      * @param[in] pBuffers a list of buffers to be deregister
      * @param[in] numBuffers number of buffers
+     * @note It is recommended to call this API to deregister all the input/output buffers before
+     * calling API Deinit to release resource, but this is optional. If this API is not called,
+     * the Deinit API will automatically help to do deregister all the input/output buffers that
+     * registered.
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
@@ -108,7 +112,7 @@ public:
     /**
      * @brief Execute the voxelization pipeline
      * @param[in] pInPts The input point cloud where size in bytes
-     *                 is maxNumInPts x 4 x sizeof(float32_t).
+     *                 is maxNumInPts x numInFeatureDim x sizeof(float32_t).
      * @param[out] pOutPlrs The output pillar index tensor where memory (in bytes)
      *                 for each pillar is maxNumPlrs x 4 x sizeof(float32_t)
      * @param[out] pOutFeature The output stacked pillar tensor where

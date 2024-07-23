@@ -50,7 +50,7 @@ typedef struct
                                * each point, then numInFeatureDim is 4. */
     uint32_t maxNumDetOut;    /**< Maximum number of 3D bounding boxes expected in the output. */
 
-    uint32_t stride;
+    uint32_t stride; /**< Downsample ratio of the center head */
 
     float32_t threshScore; /**< Confidence score threshold. */
     float32_t threshIOU;   /**< Overlap threshold. */
@@ -126,6 +126,10 @@ public:
      * @brief Deregister buffers for PostCenterPoint
      * @param[in] pBuffers a list of buffers to be deregister
      * @param[in] numBuffers number of buffers
+     * @note It is recommended to call this API to deregister all the input/output buffers before
+     * calling API Deinit to release resource, but this is optional. If this API is not called,
+     * the Deinit API will automatically help to do deregister all the input/output buffers that
+     * registered.
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
@@ -151,17 +155,27 @@ public:
     /**
      * @brief Execute the PostCenterPoint pipeline
      * @param[in] pHeatmap Pointer to heatmap buffer
+     *            it's float32 tensor with shape [1, height, width, numClass]
      * @param[in] pXY Pointer to buffer containing x,y co-ordinates of center point
+     *            it's float32 tensor with shape [1, height, width, 2]
      * @param[in] pZ Pointer to buffer containing z co-ordinate of center point
+     *            it's float32 tensor with shape [1, height, width, 1]
      * @param[in] pSize Pointer to buffer containing length, width, height for each detection
+     *            it's float32 tensor with shape [1, height, width, 3]
      * @param[in] pTheta Pointer to buffer containing orientation of each detection
+     *            it's float32 tensor with shape [1, height, width, 2]
      * @param[in] pInPts The input point cloud where size in bytes
+     *            it's float32 tensor with shape [numPts, numInFeatureDim]
      *             NOTE: pInPts is nullptr if bMapPtsToBBox is true.
      * @param[out] pDetections Pointer to buffer that represent 3D bounding box
-     *        [N, PostCenterPoint_Object3D_t]
+     *            it's float32 tensor with shape [N, PostCenterPoint_Object3D_t]
      *                   [N, ( label,   score,   x,      y,       z,      length,
      *                         width,   height,  theta,  meanPtX, meanPtY, meanPtZ,
      *                         numPts,  meanIntensity )]
+     * @note For the width/height of the pHeatmap/pXY/pZ/pSize/pTheta, it can be calculated
+     * with below formula:
+     *     height = ( maxYRange - minYRange ) / pillarYSize / stride
+     *     width  = ( maxXRange - minXRange ) / pillarXSize / stride
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pHeatmap,
@@ -175,7 +189,8 @@ private:
     RideHalError_e RegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers,
                                            uint32_t numBuffers, FadasBufType_e bufferType );
 
-    RideHalError_e DeRegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+    RideHalError_e DeRegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers,
+                                             uint32_t numBuffers );
 
 private:
     PostCenterPoint_Config_t m_config;

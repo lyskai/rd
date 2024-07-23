@@ -19,12 +19,12 @@ And this Component Voxelization is based on [FastADAS FadasVM library](https://d
 # 3. Voxelization APIs
 
 - [Init](../include/ridehal/component/Voxelization.hpp#L65)
-- [Start](../include/ridehal/component/Voxelization.hpp#L94)
-- [Stop](../include/ridehal/component/Voxelization.hpp#L100)
-- [Deinit](../include/ridehal/component/Voxelization.hpp#L106)
-- [Execute](../include/ridehal/component/Voxelization.hpp#L119)
+- [Start](../include/ridehal/component/Voxelization.hpp#L98)
+- [Stop](../include/ridehal/component/Voxelization.hpp#L104)
+- [Deinit](../include/ridehal/component/Voxelization.hpp#L110)
+- [Execute](../include/ridehal/component/Voxelization.hpp#L123)
 - [RegisterBuffers](../include/ridehal/component/Voxelization.hpp#L79)
-- [DeRegisterBuffers](../include/ridehal/component/Voxelization.hpp#L88)
+- [DeRegisterBuffers](../include/ridehal/component/Voxelization.hpp#L92)
 
 # 4. Voxelization Examples
 
