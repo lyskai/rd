@@ -11,6 +11,7 @@
 #include "QnnSampleAppUtils.hpp"
 #include "QnnSdkBuildId.h"
 #include "QnnTypeMacros.hpp"
+#include <sstream>
 #include <unistd.h>
 
 using namespace qnn;
@@ -691,10 +692,14 @@ RideHalError_e QnnRuntime::GetInputInfo()
 
             auto rank = QNN_TENSOR_GET_RANK( tensor );
             auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+            std::stringstream ss;
+            ss << "[ ";
             for ( uint32_t j = 0; j < rank; j++ )
             {
                 tensorProp.dims[j] = dimensions[j];
+                ss << tensorProp.dims[j] << ", ";
             }
+            ss << "]";
             tensorProp.numDims = rank;
 
             auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
@@ -711,6 +716,10 @@ RideHalError_e QnnRuntime::GetInputInfo()
             const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
             tensorProp.type = SwitchFromQnnDataType( dataType );
             m_pInputTensor[i].properties = tensorProp;
+
+            RIDEHAL_INFO( "input %s: shape = %s, scale=%f, offset=%d, type=%x\n",
+                          m_pInputTensor[i].pName, ss.str(), m_pInputTensor[i].quantScale,
+                          m_pInputTensor[i].quantOffset, dataType );
         }
     }
 
@@ -776,10 +785,14 @@ RideHalError_e QnnRuntime::GetOutputInfo()
 
             auto rank = QNN_TENSOR_GET_RANK( tensor );
             auto dimensions = QNN_TENSOR_GET_DIMENSIONS( tensor );
+            std::stringstream ss;
+            ss << "[ ";
             for ( uint32_t j = 0; j < rank; j++ )
             {
                 tensorProp.dims[j] = dimensions[j];
+                ss << tensorProp.dims[j] << ", ";
             }
+            ss << "]";
             tensorProp.numDims = rank;
 
             auto quantizeParams = QNN_TENSOR_GET_QUANT_PARAMS( tensor );
@@ -796,6 +809,10 @@ RideHalError_e QnnRuntime::GetOutputInfo()
             const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
             tensorProp.type = SwitchFromQnnDataType( dataType );
             m_pOutputTensor[i].properties = tensorProp;
+
+            RIDEHAL_INFO( "output %s: shape = %s, scale=%f, offset=%d, type=%x\n",
+                          m_pOutputTensor[i].pName, ss.str(), m_pOutputTensor[i].quantScale,
+                          m_pOutputTensor[i].quantOffset, dataType );
         }
     }
 

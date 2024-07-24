@@ -82,6 +82,13 @@ RideHalError_e SamplePostProcBevdet::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    m_indexs = Get( config, "output_indexs", m_indexs );
+    if ( 6 != m_pointCloudRange.size() )
+    {
+        RIDEHAL_ERROR( "Output index must be 6!\n" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
     return ret;
 }
 
@@ -145,35 +152,35 @@ void SamplePostProcBevdet::ProcessUint8( DataFrames_t &tensors )
     std::vector<Object> selected;
     Road2DObjects_t objs;
 
-    const auto &hm_ = tensors.SharedBuffer( 0 );
-    const auto &reg_ = tensors.SharedBuffer( 1 );
-    const auto &height_ = tensors.SharedBuffer( 2 );
-    const auto &dim_ = tensors.SharedBuffer( 3 );
-    const auto &rot_ = tensors.SharedBuffer( 4 );
-    const auto &vel_ = tensors.SharedBuffer( 5 );
+    const auto &hm_ = tensors.SharedBuffer( m_indexs[0] );
+    const auto &reg_ = tensors.SharedBuffer( m_indexs[1] );
+    const auto &height_ = tensors.SharedBuffer( m_indexs[2] );
+    const auto &dim_ = tensors.SharedBuffer( m_indexs[3] );
+    const auto &rot_ = tensors.SharedBuffer( m_indexs[4] );
+    const auto &vel_ = tensors.SharedBuffer( m_indexs[5] );
 
     int H = (int) hm_.tensorProps.dims[1];
     int W = (int) hm_.tensorProps.dims[2];
     int class_num = (int) hm_.tensorProps.dims[3];
 
     uint8_t *hm = (uint8_t *) hm_.data();
-    float hm_scale = tensors.QuantScale( 0 );
-    int32_t hm_offset = tensors.QuantOffset( 0 );
+    float hm_scale = tensors.QuantScale( m_indexs[0] );
+    int32_t hm_offset = tensors.QuantOffset( m_indexs[0] );
     uint8_t *reg = (uint8_t *) reg_.data();
-    float reg_scale = tensors.QuantScale( 1 );
-    int32_t reg_offset = tensors.QuantOffset( 1 );
+    float reg_scale = tensors.QuantScale( m_indexs[1] );
+    int32_t reg_offset = tensors.QuantOffset( m_indexs[1] );
     uint8_t *height = (uint8_t *) height_.data();
-    float height_scale = tensors.QuantScale( 2 );
-    int32_t height_offset = tensors.QuantOffset( 2 );
+    float height_scale = tensors.QuantScale( m_indexs[2] );
+    int32_t height_offset = tensors.QuantOffset( m_indexs[2] );
     uint8_t *dim = (uint8_t *) dim_.data();
-    float dim_scale = tensors.QuantScale( 3 );
-    int32_t dim_offset = tensors.QuantOffset( 3 );
+    float dim_scale = tensors.QuantScale( m_indexs[3] );
+    int32_t dim_offset = tensors.QuantOffset( m_indexs[3] );
     uint8_t *rot = (uint8_t *) rot_.data();
-    float rot_scale = tensors.QuantScale( 4 );
-    int32_t rot_offset = tensors.QuantOffset( 4 );
+    float rot_scale = tensors.QuantScale( m_indexs[4] );
+    int32_t rot_offset = tensors.QuantOffset( m_indexs[4] );
     uint8_t *vel = (uint8_t *) vel_.data();
-    float vel_scale = tensors.QuantScale( 5 );
-    int32_t vel_offset = tensors.QuantOffset( 5 );
+    float vel_scale = tensors.QuantScale( m_indexs[5] );
+    int32_t vel_offset = tensors.QuantOffset( m_indexs[5] );
 
     for ( int y = 0; y < H; y++ )
     {

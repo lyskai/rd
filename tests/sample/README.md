@@ -436,6 +436,7 @@ The command line template example:
 | out_size_factor  | false     | float    | 8.0       | out size factor |
 | voxel_size  | false     | std::vector<float>    | 0.1, 0.1, 0.2       | voxel size |
 | pointcloud_range  | false     | std::vector<float>    | -51.2, -51.2, -5.0, 51.2, 51.2, 3.0  | point cloud range for axis x,y,z |
+| output_indexs  | false     | std::vector<uint32_t>    | 5,0,1,2,3,4  | bevdet output indexs |
 
 The command line template example:
 

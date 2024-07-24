@@ -76,6 +76,7 @@ private:
     std::vector<float> m_voxelSize;
     std::vector<float> m_pointCloudRange;
     float m_outSizeFactor = 8.0;
+    std::vector<uint32_t> m_indexs = { 5, 0, 1, 2, 3, 4 };
 
     DataSubscriber<DataFrames_t> m_sub;
     DataPublisher<Road2DObjects_t> m_pub;
