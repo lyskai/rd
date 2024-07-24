@@ -71,7 +71,7 @@ private:
     DataSubscriber<DataFrames_t> m_infSub;
     DataPublisher<Road2DObjects_t> m_pub;
 
-    std::vector<uint32_t> m_Indexs = { 3, 0, 1, 4, 2 };
+    std::vector<uint32_t> m_indexs = { 3, 0, 1, 4, 2 };
 
     PostCenterPoint m_plrPost;
 };   // class SamplePlrPost

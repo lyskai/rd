@@ -47,7 +47,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | parameter | required | type      | comments |
 |-----------|----------|-----------|----------|
 | -n        | true     | string    | The unique component name |
-| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder, PlrPre, PlrPost] |
+| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the previous attribute name |
 
@@ -367,7 +367,7 @@ The command line template example:
 | ratio_w      | false    | float | 12.903225806451614 | The ration to transfrom the point cloud position x to image pixel position x |
 | ratio_h      | false    | float | 12.903225806451614 | The ration to transfrom the point cloud position y to image pixel position y |
 | debug      | false    | bool | false | print out the detected 3d bounding box |
-| output_indexs | false | string | 3,0,1,4,2 | The index of the pointpillar model outputs "heapmap", "center", "center_z", "dim" and "rot" |
+| output_indexs | false | std::vector<uint32_t> | 3,0,1,4,2 | The index of the pointpillar model outputs "heapmap", "center", "center_z", "dim" and "rot" |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
 

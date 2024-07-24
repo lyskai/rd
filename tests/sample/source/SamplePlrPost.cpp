@@ -48,9 +48,9 @@ RideHalError_e SamplePlrPost::ParseConfig( SampleConfig_t &config )
 
     m_bDebug = Get( config, "debug", false );
 
-    m_Indexs = Get( config, "output_indexs", m_Indexs );
-    RIDEHAL_INFO( "output indexs = [%u %u %u %u %u]", m_Indexs[0], m_Indexs[1], m_Indexs[2],
-                  m_Indexs[3], m_Indexs[4] );
+    m_indexs = Get( config, "output_indexs", m_indexs );
+    RIDEHAL_INFO( "output indexs = [%u %u %u %u %u]", m_indexs[0], m_indexs[1], m_indexs[2],
+                  m_indexs[3], m_indexs[4] );
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
@@ -218,11 +218,11 @@ void SamplePlrPost::ThreadMain()
                 if ( nullptr != detOut )
                 {
                     RideHal_SharedBuffer_t &inPts = lidarFrames.SharedBuffer( 0 );
-                    RideHal_SharedBuffer_t &heatmap = infFrames.SharedBuffer( m_Indexs[0] );
-                    RideHal_SharedBuffer_t &xy = infFrames.SharedBuffer( m_Indexs[1] );
-                    RideHal_SharedBuffer_t &z = infFrames.SharedBuffer( m_Indexs[2] );
-                    RideHal_SharedBuffer_t &size = infFrames.SharedBuffer( m_Indexs[3] );
-                    RideHal_SharedBuffer_t &theta = infFrames.SharedBuffer( m_Indexs[4] );
+                    RideHal_SharedBuffer_t &heatmap = infFrames.SharedBuffer( m_indexs[0] );
+                    RideHal_SharedBuffer_t &xy = infFrames.SharedBuffer( m_indexs[1] );
+                    RideHal_SharedBuffer_t &z = infFrames.SharedBuffer( m_indexs[2] );
+                    RideHal_SharedBuffer_t &size = infFrames.SharedBuffer( m_indexs[3] );
+                    RideHal_SharedBuffer_t &theta = infFrames.SharedBuffer( m_indexs[4] );
 
                     ret = SampleIF::Lock();
                     if ( RIDEHAL_ERROR_NONE == ret )
