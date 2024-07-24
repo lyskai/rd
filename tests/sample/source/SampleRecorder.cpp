@@ -90,19 +90,54 @@ void SampleRecorder::ThreadMain()
             if ( num < m_maxImages )
             {
                 PROFILER_BEGIN();
-                auto &buffer = frame.buffer->sharedBuffer;
-                if ( buffer.imgProps.format < RIDEHAL_IMAGE_FORMAT_MAX )
-                {
-                    uint32_t sizeOne = buffer.size / buffer.imgProps.batchSize;
-                    for ( uint32_t i = 0; i < buffer.imgProps.batchSize; i++ )
+                if ( RIDEHAL_BUFFER_TYPE_IMAGE == frame.BufferType() )
+                { /* for Image, dump the first one only */
+                    auto &buffer = frame.buffer->sharedBuffer;
+                    if ( buffer.imgProps.format < RIDEHAL_IMAGE_FORMAT_MAX )
                     {
+                        uint32_t sizeOne = buffer.size / buffer.imgProps.batchSize;
+                        for ( uint32_t i = 0; i < buffer.imgProps.batchSize; i++ )
+                        {
+                            std::string path = "/tmp/" + m_name + "_" + std::to_string( num ) +
+                                               "_" + std::to_string( i ) + ".raw";
+                            uint8_t *ptr = (uint8_t *) buffer.data() + sizeOne * i;
+                            FILE *fp = fopen( path.c_str(), "wb" );
+                            if ( nullptr != fp )
+                            {
+                                fwrite( ptr, sizeOne, 1, fp );
+                                fclose( fp );
+                            }
+                            else
+                            {
+                                RIDEHAL_ERROR( "failed to create file: %s", path.c_str() );
+                            }
+                        }
+                        fprintf( m_file,
+                                 "%u: frameId %" PRIu64 " timestamp %" PRIu64
+                                 ": batch=%u resolution=%ux%u stride=%u actual_height=%u "
+                                 "format=%d\n",
+                                 num, frame.frameId, frame.timestamp, buffer.imgProps.batchSize,
+                                 buffer.imgProps.width, buffer.imgProps.height,
+                                 buffer.imgProps.stride[0], buffer.imgProps.actualHeight[0],
+                                 buffer.imgProps.format );
+                    }
+                    else
+                    { /* compressed image */
+                        fwrite( buffer.data(), buffer.size, 1, m_file );
+                    }
+                }
+                else
+                { /* for Tensor, dump all */
+                    for ( size_t i = 0; i < frames.frames.size(); i++ )
+                    {
+                        frame = frames.frames[i];
+                        auto &buffer = frame.buffer->sharedBuffer;
                         std::string path = "/tmp/" + m_name + "_" + std::to_string( num ) + "_" +
                                            std::to_string( i ) + ".raw";
-                        uint8_t *ptr = (uint8_t *) buffer.data() + sizeOne * i;
                         FILE *fp = fopen( path.c_str(), "wb" );
                         if ( nullptr != fp )
                         {
-                            fwrite( ptr, sizeOne, 1, fp );
+                            fwrite( buffer.data(), buffer.size, 1, fp );
                             fclose( fp );
                         }
                         else
@@ -110,17 +145,6 @@ void SampleRecorder::ThreadMain()
                             RIDEHAL_ERROR( "failed to create file: %s", path.c_str() );
                         }
                     }
-                    fprintf( m_file,
-                             "%u: frameId %" PRIu64 " timestamp %" PRIu64
-                             ": batch=%u resolution=%ux%u stride=%u actual_height=%u format=%d\n",
-                             num, frame.frameId, frame.timestamp, buffer.imgProps.batchSize,
-                             buffer.imgProps.width, buffer.imgProps.height,
-                             buffer.imgProps.stride[0], buffer.imgProps.actualHeight[0],
-                             buffer.imgProps.format );
-                }
-                else
-                { /* compressed image */
-                    fwrite( buffer.data(), buffer.size, 1, m_file );
                 }
                 num++;
                 PROFILER_END();
