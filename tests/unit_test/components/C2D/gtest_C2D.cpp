@@ -20,6 +20,9 @@ void C2DTestNormal( C2D_Config_t *c2dConfig, RideHal_ImageFormat_e outputFormat,
     RideHal_SharedBuffer_t inputs[numInputs];
     RideHal_SharedBuffer_t output;
 
+    ret = C2DObj.Init( pName, c2dConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     for ( size_t i = 0; i < numInputs; i++ )
     {
         ret = inputs[i].Allocate( c2dConfig->inputConfigs[i].inputResolution.width,
@@ -31,13 +34,28 @@ void C2DTestNormal( C2D_Config_t *c2dConfig, RideHal_ImageFormat_e outputFormat,
     ret = output.Allocate( outputWidth, outputHeight, outputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Init( pName, c2dConfig );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     ret = C2DObj.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    for ( size_t i = 0; i < numInputs; i++ )
+    {
+        ret = C2DObj.RegisterInputBuffers( &inputs[i], 1 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = C2DObj.RegisterOutputBuffers( &output, 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     ret = C2DObj.Execute( inputs, numInputs, &output );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( size_t i = 0; i < numInputs; i++ )
+    {
+        ret = C2DObj.DeregisterInputBuffers( &inputs[i], 1 );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = C2DObj.DeregisterOutputBuffers( &output, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Stop();
@@ -698,7 +716,13 @@ TEST( C2D, FAILURE_C2D_RegInputBufferFormat )
         pC2DConfig->inputConfigs[i].ROI.topY = 100;
         pC2DConfig->inputConfigs[i].ROI.width = 1080;
         pC2DConfig->inputConfigs[i].ROI.height = 720;
+    }
 
+    ret = C2DObj.Init( pName, pC2DConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
+    {
         ret = inputs[i].Allocate( pC2DConfig->inputConfigs[i].inputResolution.width,
                                   pC2DConfig->inputConfigs[i].inputResolution.height,
                                   RIDEHAL_IMAGE_FORMAT_RGB888 );
@@ -708,23 +732,20 @@ TEST( C2D, FAILURE_C2D_RegInputBufferFormat )
     ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Init( pName, pC2DConfig );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     ret = C2DObj.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
     {
         ret = C2DObj.RegisterInputBuffers( &inputs[i], inputBufferNum );
-        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = C2DObj.RegisterOutputBuffers( &output, outputBufferNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Execute( inputs, pC2DConfig->numOfInputs, &output );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
     {
@@ -770,15 +791,18 @@ TEST( C2D, FAILURE_C2D_RegInputBufferRes )
         pC2DConfig->inputConfigs[i].ROI.topY = 100;
         pC2DConfig->inputConfigs[i].ROI.width = 1080;
         pC2DConfig->inputConfigs[i].ROI.height = 720;
+    }
 
+    ret = C2DObj.Init( pName, pC2DConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
+    {
         ret = inputs[i].Allocate( 1000, 1000, pC2DConfig->inputConfigs[i].inputFormat );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-    ret = C2DObj.Init( pName, pC2DConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Start();
@@ -787,14 +811,14 @@ TEST( C2D, FAILURE_C2D_RegInputBufferRes )
     for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
     {
         ret = C2DObj.RegisterInputBuffers( &inputs[i], inputBufferNum );
-        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = C2DObj.RegisterOutputBuffers( &output, outputBufferNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Execute( inputs, pC2DConfig->numOfInputs, &output );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
     {
@@ -840,7 +864,13 @@ TEST( C2D, FAILURE_C2D_DeRegInputBuffer )
         pC2DConfig->inputConfigs[i].ROI.topY = 100;
         pC2DConfig->inputConfigs[i].ROI.width = 1080;
         pC2DConfig->inputConfigs[i].ROI.height = 720;
+    }
 
+    ret = C2DObj.Init( pName, pC2DConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
+    {
         ret = inputs[i].Allocate( pC2DConfig->inputConfigs[i].inputResolution.width,
                                   pC2DConfig->inputConfigs[i].inputResolution.height,
                                   pC2DConfig->inputConfigs[i].inputFormat );
@@ -850,8 +880,6 @@ TEST( C2D, FAILURE_C2D_DeRegInputBuffer )
     ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Init( pName, pC2DConfig );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -912,7 +940,13 @@ TEST( C2D, FAILURE_C2D_DeRegOutputBuffer )
         pC2DConfig->inputConfigs[i].ROI.topY = 100;
         pC2DConfig->inputConfigs[i].ROI.width = 1080;
         pC2DConfig->inputConfigs[i].ROI.height = 720;
+    }
 
+    ret = C2DObj.Init( pName, pC2DConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( size_t i = 0; i < pC2DConfig->numOfInputs; i++ )
+    {
         ret = inputs[i].Allocate( pC2DConfig->inputConfigs[i].inputResolution.width,
                                   pC2DConfig->inputConfigs[i].inputResolution.height,
                                   pC2DConfig->inputConfigs[i].inputFormat );
@@ -922,8 +956,6 @@ TEST( C2D, FAILURE_C2D_DeRegOutputBuffer )
     ret = output.Allocate( C2DOutputWidth, C2DOutputHeight, C2DOutputFormat );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = C2DObj.Init( pName, pC2DConfig );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = C2DObj.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -965,3 +997,4 @@ int main( int argc, char **argv )
     return nVal;
 }
 #endif
+

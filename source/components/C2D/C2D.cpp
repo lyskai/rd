@@ -156,11 +156,21 @@ RideHalError_e C2D::Deinit()
         for ( auto it = m_inputBufferSurfaceMap.begin(); it != m_inputBufferSurfaceMap.end(); it++ )
         {
             auto c2dStatus = c2dDestroySurface( it->second.surface_id );
+            if ( C2D_STATUS_OK != c2dStatus )
+            {
+                ret = RIDEHAL_ERROR_FAIL;
+                RIDEHAL_ERROR( "Failed to destroy surface for input buffer" );
+            }
         }
         for ( auto it = m_outputBufferSurfaceMap.begin(); it != m_outputBufferSurfaceMap.end();
               it++ )
         {
             auto c2dStatus = c2dDestroySurface( it->second );
+            if ( C2D_STATUS_OK != c2dStatus )
+            {
+                ret = RIDEHAL_ERROR_FAIL;
+                RIDEHAL_ERROR( "Failed to destroy surface for output buffer" );
+            }
         }
         m_inputBufferSurfaceMap.clear();
         m_outputBufferSurfaceMap.clear();
@@ -188,15 +198,65 @@ RideHalError_e C2D::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t num
     uint32_t targetSurfaceId = 0;
     C2D_OBJECT c2dObject;
 
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
+    {
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+
     if ( numInputs != m_numOfInputs )
     {
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         RIDEHAL_ERROR( "Number of inputs not correct: %u != %u", m_numOfInputs, numInputs );
     }
 
-    if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
+    if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = RIDEHAL_ERROR_BAD_STATE;
+        if ( nullptr == pInputs )
+        {
+            ret = RIDEHAL_ERROR_INVALID_BUF;
+            RIDEHAL_ERROR( "Input buffer is null" );
+        }
+        else if ( numInputs != m_numOfInputs )
+        {
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Number of inputs not correct: %u != %u", m_numOfInputs, numInputs );
+        }
+        else if ( nullptr == pOutput )
+        {
+            ret = RIDEHAL_ERROR_INVALID_BUF;
+            RIDEHAL_ERROR( "Output buffer is null" );
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        for ( size_t i = 0; i < m_numOfInputs; i++ )
+        {
+            if ( pInputs[i].imgProps.format != m_inputFormats[i] )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Input %u format is not correct: %d != %d", i,
+                               (int) m_inputFormats[i], (int) pOutput->imgProps.format );
+            }
+            else if ( pInputs[i].imgProps.width != m_inputResolutions[i].width )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Input %u width is not correct: %u != %u", i,
+                               m_inputResolutions[i].width, pInputs[i].imgProps.width );
+            }
+            else if ( pInputs[i].imgProps.height != m_inputResolutions[i].height )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Input %u height is not correct: %u != %u", i,
+                               m_inputResolutions[i].height, pInputs[i].imgProps.height );
+            }
+        }
+        if ( pOutput->imgProps.batchSize != m_numOfInputs )
+        {
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Output batch size is not correct, numOfInputs %u != batchSize %u",
+                           m_numOfInputs, pOutput->imgProps.batchSize );
+        }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -251,26 +311,6 @@ RideHalError_e C2D::RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBu
     uint32_t batchIdx = 0;
     C2D_OBJECT c2dObject;
 
-    for ( size_t i = 0; i < numOfInputBuffers; i++ )
-    {
-        /* Check input image format */
-        if ( pInputBuffer->imgProps.format != m_inputFormats[i] )
-        {
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-            RIDEHAL_ERROR( "Failed to register input buffer %u, format not correct", i );
-            break;
-        }
-
-        /* Check input image resolution */
-        if ( pInputBuffer->imgProps.width != m_inputResolutions[i].width ||
-             pInputBuffer->imgProps.height != m_inputResolutions[i].height )
-        {
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-            RIDEHAL_ERROR( "Failed to register input buffer %u, resolution not correct", i );
-            break;
-        }
-    }
-
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         for ( size_t i = 0; i < numOfInputBuffers; i++ )
@@ -304,13 +344,6 @@ RideHalError_e C2D::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutput
     uint32_t targetSurfaceId = 0;
     bool isSource = false;
     uint32_t outputSize = pOutputBuffer->size / pOutputBuffer->imgProps.batchSize;
-
-    if ( m_numOfInputs != pOutputBuffer->imgProps.batchSize )
-    {
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        RIDEHAL_ERROR( "Failed to register output buffer, numOfInputs %u != batchSize %u",
-                       m_numOfInputs, pOutputBuffer->imgProps.batchSize );
-    }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -361,6 +394,11 @@ RideHalError_e C2D::DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInput
             {
                 auto c2dStatus =
                         c2dDestroySurface( m_inputBufferSurfaceMap[bufferAddr].surface_id );
+                if ( C2D_STATUS_OK != c2dStatus )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to destroy surface for input buffer %u", i );
+                }
                 (void) m_inputBufferSurfaceMap.erase( bufferAddr );
             }
         }
@@ -393,6 +431,12 @@ RideHalError_e C2D::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *pOutp
                 if ( m_outputBufferSurfaceMap.find( bufferAddr ) != m_outputBufferSurfaceMap.end() )
                 {
                     auto c2dStatus = c2dDestroySurface( m_outputBufferSurfaceMap[bufferAddr] );
+                    if ( C2D_STATUS_OK != c2dStatus )
+                    {
+                        ret = RIDEHAL_ERROR_FAIL;
+                        RIDEHAL_ERROR( "Failed to destroy surface for output buffer %u batch %u", i,
+                                       k );
+                    }
                     (void) m_outputBufferSurfaceMap.erase( bufferAddr );
                 }
             }

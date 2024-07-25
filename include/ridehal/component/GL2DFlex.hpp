@@ -41,16 +41,16 @@ typedef struct
     uint32_t height; /**< Image height */
 } GL2DFlex_ImageResolution_t;
 
-/** @brief GL2DFlex ROI Config*/
+/** @brief GL2DFlex ROI Configuration*/
 typedef struct
 {
-    uint32_t topX;   /**< X coordinate of upper left point */
-    uint32_t topY;   /**< Y coordinate of upper left point */
+    uint32_t topX;   /**< X coordinate of top left point */
+    uint32_t topY;   /**< Y coordinate of top left point */
     uint32_t width;  /**< ROI width */
     uint32_t height; /**< ROI height */
 } GL2DFlex_ROIConfig_t;
 
-/** @brief GL2DFlex Input Configs*/
+/** @brief GL2DFlex Input Configuration*/
 typedef struct
 {
     RideHal_ImageFormat_e inputFormat;          /**< Image format of Input frame */
@@ -58,7 +58,7 @@ typedef struct
     GL2DFlex_ROIConfig_t ROI;                   /**< Reigion of Interest in Input frame */
 } GL2DFlex_InputConfig_t;
 
-/** @brief GL2DFlex Component Initialization Configs*/
+/** @brief GL2DFlex Component Initialization Configuration*/
 typedef struct
 {
     uint32_t numOfInputs; /**< Number of Input Images in each processing */
@@ -70,7 +70,7 @@ typedef struct
 
 /**
  * @brief Component GL2DFlex
- * @brief GL2DFlex convert 1 camera frame into another format normalize
+ * @brief GL2DFlex converts camera frames to another image format and do cropping and resizing
  */
 class GL2DFlex final : public ComponentIF
 {
@@ -87,7 +87,7 @@ public:
      * @cond GL2DFlex::Init @endcond
      * @brief Initialize the GL2DFlex component
      * @param[in] name the component unique instance name
-     * @param[in] pConfig the remap configuration paramaters
+     * @param[in] pConfig the GL2DFlex configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -132,6 +132,9 @@ public:
      * @param[in] pInputBuffers the input shared buffers array
      * @param[in] numOfInputBuffers the number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note This API is optional but recommended to call after input buffers allocation finished.
+     * If skip to do this, the Execute API will register input buffers automatically.
+     * This API need to be called in the same thread with Execute API
      */
     RideHalError_e RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffers,
                                          uint32_t numOfInputBuffers );
@@ -142,7 +145,9 @@ public:
      * @param[in] pOutputBuffers the output shared buffers array
      * @param[in] numOfOutputBuffers the number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note This API need to be called in the same thread with Execute API
+     * @note This API is optional but recommended to call after output buffers allocation finished.
+     * If skip to do this, the Execute API will register output buffers automatically.
+     * This API need to be called in the same thread with Execute API
      */
     RideHalError_e RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffers,
                                           uint32_t numOfOutputBuffers );
@@ -153,7 +158,6 @@ public:
      * @param[in] pInputBuffers the input shared buffers array
      * @param[in] numOfInputBuffers the number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note This API need to be called in the same thread with Execute API
      */
     RideHalError_e DeregisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffers,
                                            uint32_t numOfInputBuffers );

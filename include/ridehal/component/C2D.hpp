@@ -31,13 +31,13 @@ typedef struct
 /** @brief C2D ROI Config*/
 typedef struct
 {
-    uint32_t topX;   /**< X coordinate of upper left point */
-    uint32_t topY;   /**< Y coordinate of upper left point */
+    uint32_t topX;   /**< X coordinate of top left point */
+    uint32_t topY;   /**< Y coordinate of top left point */
     uint32_t width;  /**< ROI width */
     uint32_t height; /**< ROI height */
 } C2D_ROIConfig_t;
 
-/** @brief C2D Input Configs*/
+/** @brief C2D Input Configurations*/
 typedef struct
 {
     RideHal_ImageFormat_e inputFormat;     /**< Image format of Input frame */
@@ -45,7 +45,7 @@ typedef struct
     C2D_ROIConfig_t ROI;                   /**< Reigion of Interest in Input frame */
 } C2D_InputConfig_t;
 
-/** @brief C2D Component Initialization Configs*/
+/** @brief C2D Component Initialization Configurations*/
 typedef struct
 {
     uint32_t numOfInputs; /**< Number of Input Images in each processing */
@@ -72,7 +72,7 @@ public:
      * @cond C2D::Init @endcond
      * @brief Initialize the C2D component
      * @param[in] name the component unique instance name
-     * @param[in] pConfig the remap configuration paramaters
+     * @param[in] pConfig the C2D configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
@@ -117,6 +117,8 @@ public:
      * @param[in] pInputBuffer the input shared buffers array
      * @param[in] numOfInputBuffers the number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note This API is optional but recommended to call after input buffers allocation finished.
+     * If skip to do this, the Execute API will register input buffers automatically.
      */
     RideHalError_e RegisterInputBuffers( const RideHal_SharedBuffer_t *pInputBuffer,
                                          uint32_t numOfInputBuffers );
@@ -127,6 +129,8 @@ public:
      * @param[in] pOutputBuffer the output shared buffer
      * @param[in] numOfOutputBuffers the number of shared buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note This API is optional but recommended to call after output buffers allocation finished.
+     * If skip to do this, the Execute API will register output buffers automatically.
      */
     RideHalError_e RegisterOutputBuffers( const RideHal_SharedBuffer_t *pOutputBuffer,
                                           uint32_t numOfOutputBuffers );
