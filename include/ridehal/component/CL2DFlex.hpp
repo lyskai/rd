@@ -27,8 +27,8 @@ namespace component
 /** @brief CL2DFlex component configuration */
 typedef struct
 {
-    size_t inputWidth;                  /**<input image width*/
-    size_t inputHeight;                 /**<input image height*/
+    size_t inputWidth;                  /**<input image width, an integer multiple of 2*/
+    size_t inputHeight;                 /**<input image height, an integer multiple of 2*/
     size_t outputWidth;                 /**<output image width*/
     size_t outputHeight;                /**<output image height*/
     RideHal_ImageFormat_e inputFormat;  /**<input image format*/
@@ -53,6 +53,9 @@ public:
      * @param[in] pConfig the CL2DFlex configuration paramaters
      * @param[in] level the logger message level
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Do all the initialization work for a CL2DFlex pipeline: parse configuration parameters,
+     * setup OpenCL command queue and context, load OpenCL kernel and build OpenCL program. Must be
+     * called at the beginning of pipeline.
      */
     RideHalError_e Init( const char *pName, const CL2DFlex_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
@@ -75,6 +78,9 @@ public:
      * @cond CL2DFlex::Deinit @endcond
      * @brief Deinitialize the CL2DFlex pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Do all the deinitialization work for a CL2DFlex pipeline: release OpenCL context,
+     * command queue, kernel and program, deregister all the OpenCL buffers remained. Must be
+     * called at the ending of pipeline.
      */
     RideHalError_e Deinit();
 
@@ -84,6 +90,8 @@ public:
      * @param[in] pBuffers buffers to be registered
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Register device buffers from host buffers for input and output data. This step can be
+     * done by user or skipped. If skipped, all the buffers will be registered at execute step.
      */
     RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
@@ -93,6 +101,8 @@ public:
      * @param[in] pBuffers buffers to be deregistered
      * @param[in] numBuffers number of buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Deregister device buffers from host buffers for input and output data. This step can
+     * be done by user or skipped. If skipped, all the buffers will be deregistered at deinit step.
      */
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
@@ -102,6 +112,9 @@ public:
      * @param[in] pInput the input shared buffer
      * @param[out] pOutput the output shared buffer
      * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Execute the CL2DFlex pipeline. Currently support color conversion and resize of single
+     * image input to single output image. The supported color conversion pipelines are NV12 to RGB,
+     * UYVY to RGB, UYVY to NV12.
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInput,
                             const RideHal_SharedBuffer_t *pOutput );
