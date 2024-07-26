@@ -7,19 +7,19 @@
   - [4.2 Call flow](#42-api-call-flow)
 
 # 1. CL2DFlex Overview
-The RideHal CL2DFlex component is based on OpenCL library, it provides user-friendly APIs and visible CL kernels to do color conversion and resize on single image input. 
+The RideHal CL2DFlex component is based on OpenCL library, it provides user-friendly APIs and visible CL kernels to do color conversion and resize on single image input. Currently support color conversion and resize of single image input to single output image. The supported color conversion pipelines are NV12 to RGB, UYVY to RGB, UYVY to NV12.
 
 # 2. CL2DFlex Data Structures
 - [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L36)
 
 # 3. CL2DFlex APIs 
-- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L60) 
-- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L68) 
-- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L75)
-- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L85)
-- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L96) 
-- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L107)  
-- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L119) 
+- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L59)
+- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L70)  
+- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L76) 
+- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L87) 
+- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L94)
+- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L104)  
+- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L113)
 
 # 4. Typical use case
 

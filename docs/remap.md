@@ -19,40 +19,49 @@ The RideHal Remap component is based on [FastADAS Remap APIs](https://developer.
 
 # 3. Remap APIs 
 
-- [Remap::Init](../include/ridehal/component/Remap.hpp#L86) 
-- [Remap::RegisterBuffers](../include/ridehal/component/Remap.hpp#L99)
-- [Remap::DeRegisterBuffers](../include/ridehal/component/Remap.hpp#L111) 
-- [Remap::Start](../include/ridehal/component/Remap.hpp#L118) 
-- [Remap::Stop](../include/ridehal/component/Remap.hpp#L125) 
-- [Remap::Deinit](../include/ridehal/component/Remap.hpp#L134) 
-- [Remap::Execute](../include/ridehal/component/Remap.hpp#L146) 
+- [Remap::Init](../include/ridehal/component/Remap.hpp#L85) 
+- [Remap::RegisterBuffers](../include/ridehal/component/Remap.hpp#L97)
+- [Remap::Start](../include/ridehal/component/Remap.hpp#L104) 
+- [Remap::Execute](../include/ridehal/component/Remap.hpp#L115) 
+- [Remap::Stop](../include/ridehal/component/Remap.hpp#L122) 
+- [Remap::DeRegisterBuffers](../include/ridehal/component/Remap.hpp#L132) 
+- [Remap::Deinit](../include/ridehal/component/Remap.hpp#L140) 
 
 # 4. Remap examples
 
 ## 4.1 Set configurations
 
-The remap configuration parameters can be set as following example:
+The remap configuration parameters of 2 different input images can be set as following example:
 ```c++
     Remap_Config_t RemapConfig;
     char pName[10] = "Remap";
     RemapConfig.processor = RIDEHAL_PROCESSOR_HTP0;
     RemapConfig.numOfInputs = 2;
-    for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
-    {
-        RemapConfig.inputConfigs[inputId].inputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
-        RemapConfig.inputConfigs[inputId].inputWidth = 512;
-        RemapConfig.inputConfigs[inputId].inputHeight = 512;
-        RemapConfig.inputConfigs[inputId].mapWidth = 256;
-        RemapConfig.inputConfigs[inputId].mapHeight = 256;
-        RemapConfig.inputConfigs[inputId].ROI.x = 0;
-        RemapConfig.inputConfigs[inputId].ROI.y = 0;
-        RemapConfig.inputConfigs[inputId].ROI.width = 256;
-        RemapConfig.inputConfigs[inputId].ROI.height = 256;
-    }
+
+    RemapConfig.inputConfigs[0].inputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
+    RemapConfig.inputConfigs[0].inputWidth = 512;
+    RemapConfig.inputConfigs[0].inputHeight = 512;
+    RemapConfig.inputConfigs[0].mapWidth = 256;
+    RemapConfig.inputConfigs[0].mapHeight = 256;
+    RemapConfig.inputConfigs[0].ROI.x = 0;
+    RemapConfig.inputConfigs[0].ROI.y = 0;
+    RemapConfig.inputConfigs[0].ROI.width = 256;
+    RemapConfig.inputConfigs[0].ROI.height = 256;
+
+    RemapConfig.inputConfigs[1].inputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
+    RemapConfig.inputConfigs[1].inputWidth = 768;
+    RemapConfig.inputConfigs[1].inputHeight = 768;
+    RemapConfig.inputConfigs[1].mapWidth = 512;
+    RemapConfig.inputConfigs[1].mapHeight = 512;
+    RemapConfig.inputConfigs[1].ROI.x = 256;
+    RemapConfig.inputConfigs[1].ROI.y = 256;
+    RemapConfig.inputConfigs[1].ROI.width = 256;
+    RemapConfig.inputConfigs[1].ROI.height = 256;
+
     RemapConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
     RemapConfig.outputWidth = 256;
     RemapConfig.outputHeight = 256;
-    RemapConfig.bEnableUndistortion = true;
+    RemapConfig.bEnableUndistortion = false;
     RemapConfig.bEnableNormalize = true;
     RemapConfig.normlzR.sub = 0.0;
     RemapConfig.normlzR.mul = 1.0;

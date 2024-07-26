@@ -74,7 +74,6 @@ public:
     ~Remap();
 
     /**
-     * @cond Remap::Init @endcond
      * @brief Initialize the remap pipeline
      * @param[in] pName the remap unique instance name
      * @param[in] pConfig the remap configuration paramaters
@@ -87,7 +86,6 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @cond Remap::RegisterBuffers @endcond
      * @brief Register buffers for remap
      * @param[in] pBuffers a list of buffers to be registeer
      * @param[in] numBuffers number of buffers
@@ -100,41 +98,12 @@ public:
                                     FadasBufType_e bufferType );
 
     /**
-     * @cond Remap::DeRegisterBuffers @endcond
-     * @brief Deregister buffers for remap
-     * @param[in] pBuffers a list of buffers to be deregister
-     * @param[in] numBuffers number of buffers
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note Deregister buffers for input and output data. This step could be done by user or
-     * skipped. If skipped, all the buffers will be deregistered at deinit step.
-     */
-    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
-
-    /**
-     * @cond Remap::Start @endcond
      * @brief Start the remap pipeline, empty for now
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Start();
 
     /**
-     * @cond Remap::Stop @endcond
-     * @brief Stop the remap pipeline, empty for now
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Stop();
-
-    /**
-     * @cond Remap::Deinit @endcond
-     * @brief Deinitialize the remap pipeline
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note Do all the deinitialization work for remap pipeline: deinitialize processor and logger,
-     * destroy remap worker, destroy remap map. Should be called at the ending of pipeline.
-     */
-    RideHalError_e Deinit();
-
-    /**
-     * @cond Remap::Execute @endcond
      * @brief execute the remap pipeline
      * @param[in] pInputs the input shared buffers
      * @param[in] numInputs the number of input shared buffers
@@ -145,6 +114,30 @@ public:
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
+
+    /**
+     * @brief Stop the remap pipeline, empty for now
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Stop();
+
+    /**
+     * @brief Deregister buffers for remap
+     * @param[in] pBuffers a list of buffers to be deregister
+     * @param[in] numBuffers number of buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Deregister buffers for input and output data. This step could be done by user or
+     * skipped. If skipped, all the buffers will be deregistered at deinit step.
+     */
+    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+
+    /**
+     * @brief Deinitialize the remap pipeline
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Do all the deinitialization work for remap pipeline: deinitialize processor and logger,
+     * destroy remap worker, destroy remap map. Should be called at the ending of pipeline.
+     */
+    RideHalError_e Deinit();
 
 private:
     FadasRemap m_fadasRemapObj;

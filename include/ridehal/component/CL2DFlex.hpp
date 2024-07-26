@@ -47,7 +47,6 @@ public:
     ~CL2DFlex();
 
     /**
-     * @cond CL2DFlex::Init @endcond
      * @brief Initialize the CL2DFlex pipeline
      * @param[in] pName the CL2DFlex unique instance name
      * @param[in] pConfig the CL2DFlex configuration paramaters
@@ -61,31 +60,6 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @cond CL2DFlex::Start @endcond
-     * @brief Start the CL2DFlex pipeline, empty for now
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Start();
-
-    /**
-     * @cond CL2DFlex::Stop @endcond
-     * @brief Stop the CL2DFlex pipeline, empty for now
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Stop();
-
-    /**
-     * @cond CL2DFlex::Deinit @endcond
-     * @brief Deinitialize the CL2DFlex pipeline
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note Do all the deinitialization work for a CL2DFlex pipeline: release OpenCL context,
-     * command queue, kernel and program, deregister all the OpenCL buffers remained. Must be
-     * called at the ending of pipeline.
-     */
-    RideHalError_e Deinit();
-
-    /**
-     * @cond CL2DFlex::RegisterBuffers @endcond
      * @brief Register buffers for CL2DFlex
      * @param[in] pBuffers buffers to be registered
      * @param[in] numBuffers number of buffers
@@ -96,18 +70,12 @@ public:
     RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
 
     /**
-     * @cond CL2DFlex::DeRegisterBuffers @endcond
-     * @brief Deregister buffers for CL2DFlex
-     * @param[in] pBuffers buffers to be deregistered
-     * @param[in] numBuffers number of buffers
+     * @brief Start the CL2DFlex pipeline, empty for now
      * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note Deregister device buffers from host buffers for input and output data. This step can
-     * be done by user or skipped. If skipped, all the buffers will be deregistered at deinit step.
      */
-    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+    RideHalError_e Start();
 
     /**
-     * @cond CL2DFlex::Execute @endcond
      * @brief Execute the CL2DFlex pipeline
      * @param[in] pInput the input shared buffer
      * @param[out] pOutput the output shared buffer
@@ -118,6 +86,31 @@ public:
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInput,
                             const RideHal_SharedBuffer_t *pOutput );
+
+    /**
+     * @brief Stop the CL2DFlex pipeline, empty for now
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Stop();
+
+    /**
+     * @brief Deregister buffers for CL2DFlex
+     * @param[in] pBuffers buffers to be deregistered
+     * @param[in] numBuffers number of buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Deregister device buffers from host buffers for input and output data. This step can
+     * be done by user or skipped. If skipped, all the buffers will be deregistered at deinit step.
+     */
+    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+
+    /**
+     * @brief Deinitialize the CL2DFlex pipeline
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Do all the deinitialization work for a CL2DFlex pipeline: release OpenCL context,
+     * command queue, kernel and program, deregister all the OpenCL buffers remained. Must be
+     * called at the ending of pipeline.
+     */
+    RideHalError_e Deinit();
 
 private:
     CL2DFlex_Config_t m_config;
