@@ -8,7 +8,7 @@
 
 # 1. Voxelization overview
 
-The Component Voxelization is a preprocessing that convert pointcloud to pillars according to the definition in paper [PointPillars: Fast Encoders for Object Detection from Point Clouds](https://arxiv.org/pdf/1812.05784). The raw point cloud is converted to a stacked pillar tensor and pillar index tensor.
+The Component Voxelization is a preprocessing that convert pointcloud to pillars according to the definition in paper [PointPillars: Fast Encoders for Object Detection from Point Clouds](https://arxiv.org/pdf/1812.05784). The raw point cloud is transformed into a stacked pillar tensor and a pillar index tensor.
 
 And this Component Voxelization is based on [FastADAS FadasVM library](https://developer.qualcomm.com/sites/default/files/docs/adas-sdk/api/group__vm__pp.html).
 
@@ -19,12 +19,12 @@ And this Component Voxelization is based on [FastADAS FadasVM library](https://d
 # 3. Voxelization APIs
 
 - [Init](../include/ridehal/component/Voxelization.hpp#L65)
-- [Start](../include/ridehal/component/Voxelization.hpp#L98)
-- [Stop](../include/ridehal/component/Voxelization.hpp#L104)
-- [Deinit](../include/ridehal/component/Voxelization.hpp#L110)
-- [Execute](../include/ridehal/component/Voxelization.hpp#L123)
 - [RegisterBuffers](../include/ridehal/component/Voxelization.hpp#L79)
-- [DeRegisterBuffers](../include/ridehal/component/Voxelization.hpp#L92)
+- [Start](../include/ridehal/component/Voxelization.hpp#L86)
+- [Execute](../include/ridehal/component/Voxelization.hpp#L99)
+- [Stop](../include/ridehal/component/Voxelization.hpp#L107)
+- [DeRegisterBuffers](../include/ridehal/component/Voxelization.hpp#L119)
+- [Deinit](../include/ridehal/component/Voxelization.hpp#L125)
 
 # 4. Voxelization Examples
 
@@ -85,9 +85,9 @@ ret = plrPre.Start();
 
 ## 4.2 Voxelization execution
 
-The gtest code [SANITY_Voxelization](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L203) is a good example, below is a copy of it.
+The [SANITY_Voxelization](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L203) gtest code is a good example. Below is a copy of it.
 
-After the initialization of the component voxelization, the input and output tensor buffer need to be allocated.
+After initializing the component voxelization, allocate memory for the input and output tensor buffers.
 
 ```c++
     RideHal_TensorProps_t inPtsTsProp = {
@@ -120,4 +120,4 @@ After the initialization of the component voxelization, the input and output ten
     ret = plrPre.Execute( &inPts, &outPlrs, &outFeature );
 ```
 
-And the [SamplePlrPre](../tests/sample/source/SamplePlrPre.cpp#L158) is an end to end pipeline demo that how to call Execute API to create pillars from input pointclouds.
+The [SamplePlrPre](../tests/sample/source/SamplePlrPre.cpp#L158) is an end-to-end pipeline demo that demonstrates how to call the Execute API to create pillars from input point clouds

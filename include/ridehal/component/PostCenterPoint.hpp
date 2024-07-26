@@ -110,47 +110,23 @@ public:
 
     /**
      * @brief Register buffers for PostCenterPoint
-     * @param[in] pBuffers a list of buffers to be registeer
+     * @param[in] pBuffers a list of buffers to be registered
      * @param[in] numBuffers number of buffers
      * @param[in] bufferType buffer type, could be IN, OUT, INOUT
-     * @note It is recommended to call this API to register all the input/output buffers to
-     * the PostCenterPoint during the initialization phase. But for some reasons, the input buffers
-     * maybe not known during the initialization, so it's also OK to not do this, the Execute API
-     * will help to do the register only once in case the buffer is not registered before.
+     * @note Calling this API to register all input/output buffers for the PostCenterPoint during
+     * the initialization phase is recommended. However, if the input buffers are not known at
+     * initialization, it’s also acceptable to skip this step. The Execute API will handle
+     * registration once, in case the buffer hasn’t been registered before.
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                                     FadasBufType_e bufferType );
 
     /**
-     * @brief Deregister buffers for PostCenterPoint
-     * @param[in] pBuffers a list of buffers to be deregister
-     * @param[in] numBuffers number of buffers
-     * @note It is recommended to call this API to deregister all the input/output buffers before
-     * calling API Deinit to release resource, but this is optional. If this API is not called,
-     * the Deinit API will automatically help to do deregister all the input/output buffers that
-     * registered.
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
-
-    /**
      * @brief Start the PostCenterPoint pipeline
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Start();
-
-    /**
-     * @brief Stop the PostCenterPoint pipeline
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Stop();
-
-    /**
-     * @brief Deinitialize the PostCenterPoint pipeline
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Deinit();
 
     /**
      * @brief Execute the PostCenterPoint pipeline
@@ -184,6 +160,30 @@ public:
                             const RideHal_SharedBuffer_t *pTheta,
                             const RideHal_SharedBuffer_t *pInPts,
                             RideHal_SharedBuffer_t *pDetections );
+
+    /**
+     * @brief Stop the PostCenterPoint pipeline
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Stop();
+
+    /**
+     * @brief Deregister buffers for PostCenterPoint
+     * @param[in] pBuffers a list of buffers to be deregistered
+     * @param[in] numBuffers number of buffers
+     * @note Although it is recommended to call this API to deregister all input/output buffers
+     * before invoking the Deinit API to release resources, doing so is optional. If this API is not
+     * called, the Deinit API will automatically handle deregistering any input/output buffers that
+     * were previously registered.
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+
+    /**
+     * @brief Deinitialize the PostCenterPoint pipeline
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Deinit();
 
 private:
     RideHalError_e RegisterBuffersToFadas( const RideHal_SharedBuffer_t *pBuffers,

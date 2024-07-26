@@ -22,12 +22,12 @@ And this Component PostCenterPoint is based on [FastADAS FadasVM library](https:
 # 3. PostCenterPoint APIs
 
 - [Init](../include/ridehal/component/PostCenterPoint.hpp#L108)
-- [Start](../include/ridehal/component/PostCenterPoint.hpp#L141)
-- [Stop](../include/ridehal/component/PostCenterPoint.hpp#L147)
-- [Deinit](../include/ridehal/component/PostCenterPoint.hpp#L153)
-- [Execute](../include/ridehal/component/PostCenterPoint.hpp#L181)
 - [RegisterBuffers](../include/ridehal/component/PostCenterPoint.hpp#L122)
-- [DeRegisterBuffers](../include/ridehal/component/PostCenterPoint.hpp#L135)
+- [Start](../include/ridehal/component/PostCenterPoint.hpp#L129)
+- [Execute](../include/ridehal/component/PostCenterPoint.hpp#L157)
+- [Stop](../include/ridehal/component/PostCenterPoint.hpp#L168)
+- [DeRegisterBuffers](../include/ridehal/component/PostCenterPoint.hpp#L180)
+- [Deinit](../include/ridehal/component/PostCenterPoint.hpp#L186)
 
 # 4. PostCenterPoint Examples
 
@@ -67,11 +67,11 @@ ret = plrPost.Start();
 
 ### 4.1.1 How to configure the `filterParams`
 
-The [filterParams](../include/ridehal/component/PostCenterPoint.hpp#L58) is only valid and will be used if both [bMapPtsToBBox](../include/ridehal/component/PostCenterPoint.hpp#L61) and [bBBoxFilter](../include/ridehal/component/PostCenterPoint.hpp#L67) were true.
+The [filterParams](../include/ridehal/component/PostCenterPoint.hpp#L58) are only valid and will be used if both [bMapPtsToBBox](../include/ridehal/component/PostCenterPoint.hpp#L61) and [bBBoxFilter](../include/ridehal/component/PostCenterPoint.hpp#L67) are true.
 
-If `bMapPtsToBBox` was true, for each detected 3D bounding box, the PostCenterPoint will check the input pointcloud to calculate the mean values of x/y/z coordinates and intensities of all points inside this bounding box. And this is time consuming, and for real case, the ADAS application may only require to do this mean calcuation for certain class and only do this for the first several bounding boxes with high scores.
+When `bMapPtsToBBox` was true, the PostCenterPoint checks the input point cloud for each detected 3D bounding box. It calculates the mean values of x/y/z coordinates and intensities for all points inside this bounding box. However, this process can be time-consuming. In real-world scenarios, ADAS applications may only require this mean calculation for specific classes and limit it to the first several bounding boxes with high scores.
 
-Thus a configuration of `filterParams` for example as below to speed up:
+As an example configuration, consider using filterParams to optimize performance:
 
 ```c
 PostCenterPoint_Config_t config = plrPostConfig0;
@@ -93,7 +93,7 @@ config.bBBoxFilter = true;
 
 ## 4.2 PostCenterPoint execution
 
-The gtest code [SANITY_PostCenterPoint](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L336) is a good example, it does load the related input and output buffers from raw file by calling API [LoadRaw](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L121) or [LoadPoints](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L103). And this code also demonstrates that how to decode the detection output buffer, below is a copy of it.
+The [SANITY_PostCenterPoint](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L336) gtest code is a good example. It loads the related input and output buffers from a raw file by calling APIs [LoadRaw](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L121) or [LoadPoints](../tests/unit_test/components/PointPillar/gtest_PointPillar.cpp#L103). Additionally, this code demonstrates how to decode the detection output buffer. Below is a copy of it.
 
 ```c++
     PostCenterPoint_Object3D_t *pObj = (PostCenterPoint_Object3D_t *) det.data();
@@ -108,5 +108,5 @@ The gtest code [SANITY_PostCenterPoint](../tests/unit_test/components/PointPilla
     }
 ```
 
-And the [SamplePlrPost](../tests/sample/source/SamplePlrPost.cpp#L228) is an end to end pipeline demo that how to call Execute API to extract bounding boxes.
+And the [SamplePlrPost](../tests/sample/source/SamplePlrPost.cpp#L228) provides an end-to-end pipeline demo that illustrates how to call the Execute API to extract bounding boxes.
 
