@@ -215,6 +215,8 @@ void SampleC2D::ThreadMain()
 
                 PROFILER_BEGIN();
                 TRACE_BEGIN( frames.FrameId( 0 ) );
+                void *pOutputData = buffer->sharedBuffer.data();
+                memset( pOutputData, 0, buffer->sharedBuffer.size );
                 ret = m_c2d.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
@@ -272,3 +274,4 @@ REGISTER_SAMPLE( C2D, SampleC2D );
 
 }   // namespace sample
 }   // namespace ridehal
+
