@@ -120,6 +120,30 @@ public:
     RideHalError_e GetOutputInfo( QnnRuntime_TensorInfoList_t *pList );
 
     /**
+     * @cond QnnRuntime::RegisterBuffers @endcond
+     * @brief Rigister memory with specific shared buffers
+     * @param[in] pSharedBuffers Pointer to shared buffers
+     * @param[in] numBuffers The number of shared buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
+                                    uint32_t numBuffers );
+
+    /**
+     * @cond QnnRuntime::Start @endcond
+     * @brief Start the QnnRuntime object
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Start() final;
+
+    /**
+     * @cond QnnRuntime::EnablePerf @endcond
+     * @brief Enable qnn performance calculation
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e EnablePerf();
+
+    /**
      * @cond QnnRuntime::Execute @endcond
      * @brief Execute qnn model with input and output buffer
      * @param[in] pInputs Pointer to input shared buffer
@@ -132,32 +156,12 @@ public:
                             const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs );
 
     /**
-     * @cond QnnRuntime::Deinit @endcond
-     * @brief Deinit the QnnRuntime object
+     * @cond QnnRuntime::GetPerf @endcond
+     * @brief Get qnn latest performance data
+     * @param[out] pPerf Pointer to QnnRuntime perf structure
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e Deinit() final;
-
-    /**
-     * @cond QnnRuntime::Start @endcond
-     * @brief Start the QnnRuntime object
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Start() final;
-
-    /**
-     * @cond QnnRuntime::Stop @endcond
-     * @brief Stop the QnnRuntime object
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Stop() final;
-
-    /**
-     * @cond QnnRuntime::EnablePerf @endcond
-     * @brief Enable qnn performance calculation
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e EnablePerf();
+    RideHalError_e GetPerf( QnnRuntime_Perf_t *pPerf );
 
     /**
      * @cond QnnRuntime::DisablePerf @endcond
@@ -167,22 +171,11 @@ public:
     RideHalError_e DisablePerf();
 
     /**
-     * @cond QnnRuntime::GetPerf @endcond
-     * @brief Get qnn latest performance data
-     * @param[out] pPerf Pointer to QnnRuntime perf structure
+     * @cond QnnRuntime::Stop @endcond
+     * @brief Stop the QnnRuntime object
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e GetPerf( QnnRuntime_Perf_t *pPerf );
-
-    /**
-     * @cond QnnRuntime::RegisterBuffers @endcond
-     * @brief Rigister memory with specific shared buffers
-     * @param[in] pSharedBuffers Pointer to shared buffers
-     * @param[in] numBuffers The number of shared buffers
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e RegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
-                                    uint32_t numBuffers );
+    RideHalError_e Stop() final;
 
     /**
      * @cond QnnRuntime::DeRegisterBuffers @endcond
@@ -193,6 +186,13 @@ public:
      */
     RideHalError_e DeRegisterBuffers( const RideHal_SharedBuffer_t *pSharedBuffers,
                                       uint32_t numBuffers );
+
+    /**
+     * @cond QnnRuntime::Deinit @endcond
+     * @brief Deinit the QnnRuntime object
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Deinit() final;
 
 private:
     /**

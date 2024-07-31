@@ -35,23 +35,23 @@ QnnRuntime is an AI infenrence framework designed to assist users in running QNN
 
 - [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L120) Get output tensor information
 
-- [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L131) Execute qnn model with input and output buffer
+- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L129) Rigister memory with specific shared buffers
 
-- [QnnRuntime::Deinit](../include/ridehal/component/QnnRuntime.hpp#L139) Deinit the QnnRuntime object
+- [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L137) Start the QnnRuntime object
 
-- [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L146) Start the QnnRuntime object
+- [QnnRuntime::EnablePerf](../include/ridehal/component/QnnRuntime.hpp#L144) Enable qnn performance calculation
 
-- [QnnRuntime::Stop](../include/ridehal/component/QnnRuntime.hpp#L153) Stop the QnnRuntime object
+- [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L155) Execute qnn model with input and output buffer
 
-- [QnnRuntime::EnablePerf](../include/ridehal/component/QnnRuntime.hpp#L160) Enable qnn performance calculation
+- [QnnRuntime::GetPerf](../include/ridehal/component/QnnRuntime.hpp#L164) Get qnn latest performance data
 
-- [QnnRuntime:DisablePerf](../include/ridehal/component/QnnRuntime.hpp#L167) Disable qnn performance calculation
+- [QnnRuntime:DisablePerf](../include/ridehal/component/QnnRuntime.hpp#L171) Disable qnn performance calculation
 
-- [QnnRuntime::GetPerf](../include/ridehal/component/QnnRuntime.hpp#L175) Get qnn latest performance data
+- [QnnRuntime::Stop](../include/ridehal/component/QnnRuntime.hpp#L178) Stop the QnnRuntime object
 
-- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L184) Rigister memory with specific shared buffers
+- [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L187) DeRigister memory with specific shared buffers
 
-- [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L194) DeRigister memory with specific shared buffers
+- [QnnRuntime::Deinit](../include/ridehal/component/QnnRuntime.hpp#L195) Deinit the QnnRuntime object
 
 # 4. QnnRuntime Examples
 
@@ -118,7 +118,7 @@ for ( int i = 0; i < outputNum; ++i )
 
 ## 4.4 Use QnnRuntime::Execute to run qnn inference
 
-Once user successfully load qnn model and create input/output buffers, then it's time to feed them into qnn context and execute qnn inference cycles. With [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L131), Please refer below code block on how to achieve this:
+Once user successfully load qnn model and create input/output buffers, then it's time to feed them into qnn context and execute qnn inference cycles. With [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L155), Please refer below code block on how to achieve this:
 
 ```c++
 // Execute qnn model inference
@@ -129,7 +129,7 @@ qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
 
 ## 4.5 Register/DeRegister Buffers
 
-Addtionally, QnnRuntime provides independent interfaces - [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L184)/[QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L194) to register/deregister buffers. Actually, it is a bridge mapping buffer address between CPU and HTP. Qnn inference could run on registered buffers without creating a new buffer space for input and output data.
+Addtionally, QnnRuntime provides independent interfaces - [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L129)/[QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L187) to register/deregister buffers. Actually, it is a bridge mapping buffer address between CPU and HTP. Qnn inference could run on registered buffers without creating a new buffer space for input and output data.
 ```c++
 // Get input tensor information
 QnnRuntime_TensorInfoList_t tensorInputList;
