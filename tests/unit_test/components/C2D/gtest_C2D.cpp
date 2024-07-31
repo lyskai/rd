@@ -200,6 +200,59 @@ void C2DTestAccuracy( C2D_Config_t *c2dConfig, RideHal_ImageFormat_e outputForma
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
+void C2DTestPerf( C2D_Config_t *c2dConfig, RideHal_ImageFormat_e outputFormat, uint32_t outputWidth,
+                  uint32_t outputHeight, char *data_list_file, uint32_t times )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    C2D C2DObj;
+    char pName[5] = "C2D";
+    uint32_t numInputs = c2dConfig->numOfInputs;
+    RideHal_SharedBuffer_t inputs[numInputs];
+    RideHal_SharedBuffer_t output;
+
+    char *data_list[numInputs];
+    void *pOutputData = nullptr;
+
+    readTXT( data_list_file, data_list );
+
+    ret = C2DObj.Init( pName, c2dConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( size_t i = 0; i < numInputs; i++ )
+    {
+        ret = inputs[i].Allocate( c2dConfig->inputConfigs[i].inputResolution.width,
+                                  c2dConfig->inputConfigs[i].inputResolution.height,
+                                  c2dConfig->inputConfigs[i].inputFormat );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        loadRawData( data_list[i], inputs[i].data(), inputs[i].size );
+    }
+
+    ret = output.Allocate( numInputs, outputWidth, outputHeight, outputFormat );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = C2DObj.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    for ( int i = 0; i < times; i++ )
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        ret = C2DObj.Execute( inputs, numInputs, &output );
+        auto end = std::chrono::high_resolution_clock::now();
+
+        double duration_ms = std::chrono::duration<double, std::milli>( end - start ).count();
+        printf( "execute time for loop %d: %f ms\n", i, (float) duration_ms );
+    }
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = C2DObj.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = C2DObj.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
 TEST( C2D, SANITY_C2D_ConvertUYVYtoRGB )
 {
     C2D_Config_t C2DConfig;
@@ -1176,6 +1229,58 @@ TEST( C2D, ACCURACY_C2D_ConvertNV12toRGB_4Batch_ROI )
 
     C2DTestAccuracy( pC2DConfig, outputFormat, outputWidth, outputHeight, input_file_list,
                      golden_file_list );
+}
+
+TEST( C2D, PERF_C2D_ConvertNV12toUYVY_4Batch_ROI )
+{
+    C2D_Config_t C2DConfig;
+    C2D_Config_t *pC2DConfig = &C2DConfig;
+    char input_file_list[] = "data/test/c2d/input_data/NV12/input_data_list.txt";
+
+    pC2DConfig->numOfInputs = 4;
+    for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
+    {
+        pC2DConfig->inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+        pC2DConfig->inputConfigs[i].inputResolution.width = 1920;
+        pC2DConfig->inputConfigs[i].inputResolution.height = 1024;
+        pC2DConfig->inputConfigs[i].ROI.topX = 100;
+        pC2DConfig->inputConfigs[i].ROI.topY = 100;
+        pC2DConfig->inputConfigs[i].ROI.width = 600;
+        pC2DConfig->inputConfigs[i].ROI.height = 600;
+    }
+
+    RideHal_ImageFormat_e outputFormat = RIDEHAL_IMAGE_FORMAT_UYVY;
+    uint32_t outputWidth = 1024;
+    uint32_t outputHeight = 768;
+    uint32_t times = 4;
+
+    C2DTestPerf( pC2DConfig, outputFormat, outputWidth, outputHeight, input_file_list, times );
+}
+
+TEST( C2D, PERF_C2D_ConvertNV12toRGB_4Batch_ROI )
+{
+    C2D_Config_t C2DConfig;
+    C2D_Config_t *pC2DConfig = &C2DConfig;
+    char input_file_list[] = "data/test/c2d/input_data/NV12/input_data_list.txt";
+
+    pC2DConfig->numOfInputs = 4;
+    for ( size_t i = 0; i < C2DConfig.numOfInputs; i++ )
+    {
+        pC2DConfig->inputConfigs[i].inputFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+        pC2DConfig->inputConfigs[i].inputResolution.width = 1920;
+        pC2DConfig->inputConfigs[i].inputResolution.height = 1024;
+        pC2DConfig->inputConfigs[i].ROI.topX = 100;
+        pC2DConfig->inputConfigs[i].ROI.topY = 100;
+        pC2DConfig->inputConfigs[i].ROI.width = 600;
+        pC2DConfig->inputConfigs[i].ROI.height = 600;
+    }
+
+    RideHal_ImageFormat_e outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    uint32_t outputWidth = 1024;
+    uint32_t outputHeight = 768;
+    uint32_t times = 4;
+
+    C2DTestPerf( pC2DConfig, outputFormat, outputWidth, outputHeight, input_file_list, times );
 }
 
 
