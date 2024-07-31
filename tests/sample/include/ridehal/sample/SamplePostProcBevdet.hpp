@@ -63,6 +63,7 @@ private:
     float ComputeIou( const Object &box1, const Object &box2 );
 
 private:
+    Point2D_t ProjectToImage( Point2D_t &pt, Point2D_t &center, float yaw );
     std::string m_inputTopicName;
     std::string m_outputTopicName;
 
@@ -76,6 +77,12 @@ private:
     std::vector<float> m_voxelSize;
     std::vector<float> m_pointCloudRange;
     float m_outSizeFactor = 8.0;
+    float m_minX = 8.0;
+    float m_maxY = 8.0;
+    float m_offsetX = 8.0;
+    float m_offsetY = 8.0;
+    float m_ratioW = 8.0;
+    float m_ratioH = 8.0;
     std::vector<uint32_t> m_indexs = { 5, 0, 1, 2, 3, 4 };
 
     DataSubscriber<DataFrames_t> m_sub;

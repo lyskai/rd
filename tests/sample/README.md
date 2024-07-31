@@ -437,6 +437,12 @@ The command line template example:
 | voxel_size  | false     | std::vector<float>    | 0.1, 0.1, 0.2       | voxel size |
 | pointcloud_range  | false     | std::vector<float>    | -51.2, -51.2, -5.0, 51.2, 51.2, 3.0  | point cloud range for axis x,y,z |
 | output_indexs  | false     | std::vector<uint32_t>    | 5,0,1,2,3,4  | bevdet output indexs |
+| offset_x      | false    | float     | 832.5     | The min_x corresponding pixel position x of the pre-generated lidar image |
+| offset_y      | false    | float     | 0.0     | The min_y corresponding pixel position y of the pre-generated lidar image |
+| ratio_w      | false    | float | 12.75 | The ration to transfrom the point cloud position x to image pixel position x |
+| ratio_h      | false    | float | 12.75 | The ration to transfrom the point cloud position y to image pixel position y |
+| min_x         | false    | float     | -10.0     | Minimum range value in x direction |
+| max_y         | false    | float     | 40.0   | Maximum range value in y direction |
 
 The command line template example:
 

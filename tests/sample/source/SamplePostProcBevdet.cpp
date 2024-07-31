@@ -45,6 +45,23 @@ static float fastSigmoid( float x )
 SamplePostProcBevdet::SamplePostProcBevdet() {}
 SamplePostProcBevdet::~SamplePostProcBevdet() {}
 
+Point2D_t SamplePostProcBevdet::ProjectToImage( Point2D_t &pt, Point2D_t &center, float yaw )
+{
+    Point2D_t imgPt;
+    float yaw_ = yaw - M_PI / 2;
+
+    imgPt.x = cos( yaw_ ) * pt.x + sin( yaw_ ) * pt.y + center.x;
+    imgPt.y = -sin( yaw_ ) * pt.x + cos( yaw_ ) * pt.y + center.y;
+
+    imgPt.x = m_offsetX + m_ratioW * ( imgPt.x - m_minX );
+    imgPt.y = m_offsetY + m_ratioH * ( m_maxY - imgPt.y );
+
+    imgPt.x = std::round( imgPt.x );
+    imgPt.y = std::round( imgPt.y );
+
+    return imgPt;
+}
+
 RideHalError_e SamplePostProcBevdet::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -52,6 +69,13 @@ RideHalError_e SamplePostProcBevdet::ParseConfig( SampleConfig_t &config )
     m_scoreThreshold = Get( config, "score_threshold", 0.49f );
     m_NMSThreshold = Get( config, "nms_threshold", 0.6f );
     m_outSizeFactor = Get( config, "out_size_factor", 8.0f );
+
+    m_minX = Get( config, "min_x", -10.0f );
+    m_maxY = Get( config, "max_y", 40.0f );
+    m_offsetX = Get( config, "offset_x", 832.5f );
+    m_offsetY = Get( config, "offset_y", 0.0f );
+    m_ratioW = Get( config, "ratio_w", 12.75f );
+    m_ratioH = Get( config, "ratio_h", 12.75f );
 
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
@@ -227,12 +251,26 @@ void SamplePostProcBevdet::ProcessUint8( DataFrames_t &tensors )
                        "dz: %f,",
                        i, selected[i].classId, selected[i].prob, selected[i].x, selected[i].y,
                        selected[i].yaw, selected[i].dx, selected[i].dy, selected[i].dz );
+        Road2DObject_t obj;
+        obj.classId = selected[i].classId;
+        obj.prob = selected[i].prob;
+        Point2D_t center{ selected[i].x, selected[i].y };
+        Point2D_t pt0{ -selected[i].dx / 2, selected[i].dy / 2 };
+        Point2D_t pt1{ selected[i].dx / 2, selected[i].dy / 2 };
+        Point2D_t pt2{ selected[i].dx / 2, -selected[i].dy / 2 };
+        Point2D_t pt3{ -selected[i].dx / 2, -selected[i].dy / 2 };
+
+        obj.points[0] = ProjectToImage( pt0, center, selected[i].yaw );
+        obj.points[1] = ProjectToImage( pt1, center, selected[i].yaw );
+        obj.points[2] = ProjectToImage( pt2, center, selected[i].yaw );
+        obj.points[3] = ProjectToImage( pt3, center, selected[i].yaw );
+        objs.objs.push_back( obj );
     }
 
-    // objs.frameId = tensors.FrameId( 0 );
-    // objs.timestamp = tensors.Timestamp( 0 );
+    objs.frameId = tensors.FrameId( 0 );
+    objs.timestamp = tensors.Timestamp( 0 );
 
-    // m_pub.Publish( objs );
+    m_pub.Publish( objs );
     RIDEHAL_DEBUG( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
                    tensors.FrameId( 0 ) );
 }
