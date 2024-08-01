@@ -123,8 +123,15 @@ void *FadasIface_GetBufPtr( int32_t bufFd )
     void *bufPtr = nullptr;
     if ( 0 < bufFd )
     {
-        HAP_mmap_get( bufFd, (void **) &bufPtr, NULL );
-        HAP_mmap_put( bufFd );
+        AEEResult retVal = HAP_mmap_get( bufFd, (void **) &bufPtr, NULL );
+        if ( AEE_SUCCESS != retVal )
+        {
+            FARF( ERROR, "Failed to get mmap!" );
+        }
+        else
+        {
+            HAP_mmap_put( bufFd );
+        }
     }
     else
     {

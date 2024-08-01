@@ -11,7 +11,7 @@ Below is a summary information of the current implemented components.
 | Component |  QNX HOST  | HGY Ubuntu  | Library  |   Processor     |  Feaures |
 |-----------|------------|-------------|----------|-----------------|---------------------------------------|
 | [Camera](./docs/camera.md) | YES| YES | qcarcam | Camera | camera streaming |
-| [Remap](./docs/remap.md)| YES | YES | FastADAS | CPU, HTP0, HTP1 | Color Conversion, ROI Crop, Downscaling, Undistortion |
+| [Remap](./docs/remap.md)| YES | YES | FastADAS | CPU, HTP0, HTP1, GPU | Color Conversion, ROI Crop, Downscaling, Undistortion |
 | [C2D](./docs/C2D.md) | YES| NO | C2D | GPU | Color Conversion, ROI Crop, Resize |
 | [QnnRuntime](./docs/qnnruntime.md) | YES| YES | QNN | CPU, GPU, HTP0, HTP1 | AI model inference |
 | [VideoEncoder](./docs/videoencoder.md) | YES| YES | vidc | VPU | H264, H265 |
