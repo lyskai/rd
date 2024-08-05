@@ -372,7 +372,7 @@ class DataOnline():
                 dtype = RideHalTypeToNumpyType[tsMeta.type]
                 data = np.frombuffer(rawDa, dtype)
                 if tsMeta.type >= RIDEHAL_TENSOR_TYPE_SFIXED_POINT_8 and tsMeta.type <= RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32:
-                    data = tsMeta.quantScale*(data.astype(np.float32) - tsMeta.quantOffset)
+                    data = tsMeta.quantScale*(data.astype(np.float32) + tsMeta.quantOffset)
                 dims = [tsMeta.dims[i] for i in range(tsMeta.numDims)]
                 datas[name] = data.reshape(dims)
                 offset += tsMeta.size

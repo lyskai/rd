@@ -17,13 +17,13 @@ class OnlineInference():
             quant_offset = encoding['quant_offset']
             if x.dtype in [np.float32, np.float64] and dtype == np.uint8:
                 # print('  auto quantize %s with quant_scale=%f quant_offset=%d'%(encoding['name'], quant_scale, quant_offset))
-                x = np.clip(np.round(x/quant_scale + quant_offset), 0, 255)
+                x = np.clip(np.round(x/quant_scale - quant_offset), 0, 255)
                 x = x.astype(np.uint8)
             elif x.dtype in [np.float32, np.float64] and dtype == np.uint16:
-                x = np.clip(np.round(x/quant_scale + quant_offset), 0, 0xFFFF)
+                x = np.clip(np.round(x/quant_scale - quant_offset), 0, 0xFFFF)
                 x = x.astype(np.uint16)
             elif x.dtype in [np.float32, np.float64] and dtype == np.uint32:
-                x = np.clip(np.round(x/quant_scale + quant_offset), 0, 0xFFFFFFFF)
+                x = np.clip(np.round(x/quant_scale - quant_offset), 0, 0xFFFFFFFF)
                 x = x.astype(np.uint32)
             else:
                 raise Exception("don't support from dtype %s to %s for %s"%(x.dtype, dtype, encoding['name']))
@@ -57,7 +57,7 @@ class OnlineInference():
         elif type(inputs) == dict:
             inputs_ = []
             for idx in range(len(self.modelInfo['inputs'])):
-                encoding = self.inputsEncodings[idx]
+                encoding = self.modelInfo['inputs'][idx]
                 name = encoding['name']
                 inp = inputs[name]
                 inp = self.convert(inp, encoding)
