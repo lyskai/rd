@@ -764,12 +764,12 @@ void FadasSrv::DeregBuf( void *pBuffer )
                 {
                     RIDEHAL_ERROR( "Failed to FadasIface_munmap %p(%d, %llu): ret = %x\n", ptr, fd,
                                    size, retVal );
-                }
-                retVal = fastrpc_munmap( extDomainId, fd, ptr, size );
-                if ( AEE_SUCCESS != retVal )
-                {
-                    RIDEHAL_ERROR( "Failed to fastrpc_munmap %p(%d, %llu): ret = %x\n", ptr, fd,
-                                   size, retVal );
+                    retVal = fastrpc_munmap( extDomainId, fd, ptr, size );
+                    if ( AEE_SUCCESS != retVal )
+                    {
+                        RIDEHAL_ERROR( "Failed to fastrpc_munmap %p(%d, %llu): ret = %x\n", ptr, fd,
+                                       size, retVal );
+                    }
                 }
                 remote_register_buf_v2( extDomainId, ptr, size, -1 );
             }
