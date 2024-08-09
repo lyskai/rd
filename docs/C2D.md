@@ -112,17 +112,17 @@ ret = C2DObj.Execute( inputs, C2DConfig.numOfInputs, &output );
 
 - Step 4: Stop and deinitialize the pipeline
 ```c++
+    ret = C2DObj.Stop();
     for ( size_t i = 0; i < numInputs; i++ )
     {
         ret = C2DObj.DeregisterInputBuffers( &inputs[i], 1 );
     }
-
     ret = C2DObj.DeregisterOutputBuffers( &output, 1 );
-    ret = C2DObj.Stop();
     ret = C2DObj.Deinit();
 ```
 
 Reference: 
 - [gtest_ComponentC2D](../tests/unit_test/components/C2D/gtest_C2D.cpp)
 - [SampleC2D](../tests/sample/source/SampleC2D.cpp)
+
 

@@ -1,7 +1,7 @@
 # Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
 # Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
-set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
+set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/tests/utils )
 
 add_executable( gtest_GL2DFlex gtest_GL2DFlex.cpp )
 target_include_directories( gtest_GL2DFlex PUBLIC ${HEADERS_DIR} )
@@ -11,4 +11,5 @@ install(TARGETS gtest_GL2DFlex DESTINATION bin)
 
 set( GTEST_RIDEHAL_SOURCES ${GTEST_RIDEHAL_SOURCES}
      ${CMAKE_CURRENT_SOURCE_DIR}/gtest_GL2DFlex.cpp PARENT_SCOPE )
+
 

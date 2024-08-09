@@ -37,9 +37,6 @@ void GL2DFlexTestNormal( GL2DFlex_Config_t *pConfig, RideHal_ImageFormat_e outpu
     ret = GL2DFlexObj.Init( pName, pConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = GL2DFlexObj.Start();
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     for ( size_t i = 0; i < numInputs; i++ )
     {
         ret = GL2DFlexObj.RegisterInputBuffers( &inputs[i], 1 );
@@ -49,7 +46,13 @@ void GL2DFlexTestNormal( GL2DFlex_Config_t *pConfig, RideHal_ImageFormat_e outpu
     ret = GL2DFlexObj.RegisterOutputBuffers( &output, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    ret = GL2DFlexObj.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     ret = GL2DFlexObj.Execute( inputs, numInputs, &output );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = GL2DFlexObj.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     for ( size_t i = 0; i < numInputs; i++ )
@@ -59,9 +62,6 @@ void GL2DFlexTestNormal( GL2DFlex_Config_t *pConfig, RideHal_ImageFormat_e outpu
     }
 
     ret = GL2DFlexObj.DeregisterOutputBuffers( &output, 1 );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-    ret = GL2DFlexObj.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = GL2DFlexObj.Deinit();

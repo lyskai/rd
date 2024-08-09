@@ -143,27 +143,10 @@ RideHalError_e SampleGL2DFlex::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_outputFormat )
-        {
-            RideHal_ImageProps_t imgProp;
-            imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
-            imgProp.batchSize = m_config.numOfInputs;
-            imgProp.width = m_outputWidth;
-            imgProp.height = m_outputHeight;
-            imgProp.stride[0] = m_outputWidth * 3;
-            imgProp.actualHeight[0] = m_outputHeight;
-            imgProp.numPlanes = 1;
-            imgProp.extraPadding = 0;
 
-            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
-                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
-        }
-        else
-        {
-            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
-                                    m_outputWidth, m_outputHeight, m_outputFormat,
-                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
-        }
+        ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
+                                m_outputWidth, m_outputHeight, m_outputFormat,
+                                RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -225,6 +208,10 @@ void SampleGL2DFlex::ThreadMain()
 
                 PROFILER_BEGIN();
                 TRACE_BEGIN( frames.FrameId( 0 ) );
+
+                void *pOutputData = buffer->sharedBuffer.data();
+                memset( pOutputData, 0, buffer->sharedBuffer.size );
+
                 ret = m_GL2DFlex.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
@@ -282,3 +269,4 @@ REGISTER_SAMPLE( GL2DFlex, SampleGL2DFlex );
 
 }   // namespace sample
 }   // namespace ridehal
+

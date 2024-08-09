@@ -114,17 +114,18 @@ The Ridehal GL2DFlex component is used for image cropping, color conversion and 
 
 - Step 4: Stop and deinitialize the pipeline
 ```c++
+    ret = GL2DFlexObj.Stop();
     for ( size_t i = 0; i < numInputs; i++ )
     {
         ret = GL2DFlexObj.DeregisterInputBuffers( &inputs[i], 1 );
     }
 
     ret = GL2DFlexObj.DeregisterOutputBuffers( &output, 1 );
-    ret = GL2DFlexObj.Stop();
     ret = GL2DFlexObj.Deinit();
 ```
 
 Reference: 
 - [gtest_GL2DFlex](../tests/unit_test/components/GL2DFlex/gtest_GL2DFlex.cpp)
 - [SampleGL2DFlex](../tests/sample/source/SampleGL2DFlex.cpp)
+
 
