@@ -79,3 +79,43 @@ ratioW: 12.903225806451614
 ratioH: 12.903225806451614
 ...
 ```
+
+# Tools that convert point clound files from nuScenes dataset to the inputs of the Sample DataReader.
+
+## Usage
+
+```sh
+usage: nuscenes2dr.py [-h] [-r RANGE] [-p PATH] [-n NUM_OF_SAMPLES] [-v VERSION]
+
+convert lidar pointcloud from nuScenes dataset to inputs of the Sample DataReader
+
+options:
+  -h, --help            show this help message and exit
+  -r RANGE, --range RANGE
+                        the range of points: [minX, maxX, minY, maxY, minZ, maxZ]
+  -p PATH, --path PATH  the root path of nuScenes dataset
+  -n NUM_OF_SAMPLES, --num_of_samples NUM_OF_SAMPLES
+                        generate n samples from nuScenes dataset
+  -v VERSION, --version VERSION
+                        the version of nuScenes dataset, [v1.0-trainval, v1.0-test, v1.0-mini]
+```
+
+
+## example commands:
+
+Note this tool is only verified with the data set from (nuScenes)[https://www.nuscenes.org/nuscenes]
+
+```sh
+python scripts/utils/data_reader/nuscenes2dr.py -n 100 -p /path/to/nuscenes -v v1.0-trainval
+```
+
+Note: the "LIDAR_TOP/info.txt" contains the "offsetX"/"offsetY"/"ratioW"/"rationH" which will be used by the RideHalSampleApp as parameters.
+
+```sh
+# contents of LIDAR0/info.txt
+offsetX: 832.5
+offsetY: 0
+ratioW: 12.75
+ratioH: 12.75
+...
+```
