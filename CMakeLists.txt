@@ -1,5 +1,3 @@
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 cmake_minimum_required(VERSION 3.15.0)
 

@@ -1,5 +1,3 @@
-# Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 set( HEADERS_DIR
     ${PROJECT_SOURCE_DIR}/include

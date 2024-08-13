@@ -1,5 +1,3 @@
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 add_executable( gtest_ComponentIF gtest_ComponentIF.cpp )
 target_link_libraries( gtest_ComponentIF gtest RideHalComponentCommon )

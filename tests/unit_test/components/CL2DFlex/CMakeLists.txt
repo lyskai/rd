@@ -1,5 +1,3 @@
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/tests/utils)
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/components/CL2DFlex )

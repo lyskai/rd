@@ -1,5 +1,7 @@
-#  Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-#  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# All rights reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+
 import os
 import argparse
 import numpy as np
@@ -36,7 +38,7 @@ if not os.path.exists('/tmp/rgb2yuv'):
 # the generate lidar image resolution
 W, H = 1920, 1024
 
-minX, maxX, minY, maxY, minZ, maxZ = [eval(x) for x in args.range.split(' ')]
+minX, maxX, minY, maxY, minZ, maxZ = [float(x) for x in args.range.split(' ')]
 
 '''
                                      Y
@@ -143,6 +145,8 @@ os.makedirs(args.output, exist_ok=True)
 pcds = []
 for i in range(args.maximum):
     p = '%s/%06d.bin'%(args.input, i+args.offset)
+    if not os.path.isfile(p):
+        p = '%s/%s.raw'%(args.input, i+args.offset)
     if os.path.isfile(p):
         pcds.append(p)
 

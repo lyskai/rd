@@ -1,5 +1,7 @@
-//  Copyright 2020-2024 Qualcomm Technologies, Inc. All rights reserved.
-//  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// All rights reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
+
 #ifndef RIDEHAL_FADAS_SRV_HPP
 #define RIDEHAL_FADAS_SRV_HPP
 

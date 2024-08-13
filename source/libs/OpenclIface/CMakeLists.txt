@@ -1,6 +1,4 @@
 
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/OpenclIface )

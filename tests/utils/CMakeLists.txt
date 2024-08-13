@@ -1,5 +1,3 @@
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 set( TEST_UTILS_SOURCES
     md5_utils.cpp

@@ -1,5 +1,3 @@
-#  Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-#  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 if( NOT DEFINED ENV{QNN_SDK_ROOT} )
     message( WARNING "env QNN_SDK_ROOT is not defined" )

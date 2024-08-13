@@ -1,5 +1,3 @@
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 set( GTEST_RIDEHAL_SOURCES gtest_RideHal.cpp )
 set( GTEST_RIDEHAL_INCLUDES ${PROJECT_SOURCE_DIR}/include )

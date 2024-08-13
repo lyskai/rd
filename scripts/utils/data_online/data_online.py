@@ -1,5 +1,7 @@
-#  Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-#  Confidential & Proprietary - Qualcomm Technologies, Inc. ('QTI')
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# All rights reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
+
 import socket
 import struct
 import numpy as np
@@ -175,7 +177,7 @@ class DataOnline():
             self.target = kwargs['target']
             print('Create DataOnline Target: target = %s' % (self.target))
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.connect((ip, eval(port)))
+            self.sock.connect((ip, int(port)))
             if self.timeout > 0:
                 timeout = struct.pack('<QQ', self.timeout, 0)
                 self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDTIMEO, timeout)
@@ -413,7 +415,7 @@ if __name__ == '__main__':
             count += 1
     else:
         # test image write
-        W,H = [eval(x) for x in args.resolution.split(' ')]
+        W,H = [int(x) for x in args.resolution.split(' ')]
         imgFiles = glob.glob('%s/*.%s'%(args.data_path, args.format))
         for imgF in imgFiles:
             img = np.fromfile(imgF, np.uint8)

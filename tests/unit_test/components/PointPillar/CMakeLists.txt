@@ -1,5 +1,3 @@
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
 
 set( HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 add_executable( gtest_PointPillar gtest_PointPillar.cpp )
