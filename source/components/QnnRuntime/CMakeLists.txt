@@ -1,6 +1,10 @@
 
-if( NOT DEFINED ENV{QNN_SDK_ROOT} )
-    message( WARNING "env QNN_SDK_ROOT is not defined" )
+if( DEFINED ENV{QNN_SDK_ROOT} )
+    set( QNN_SDK_ROOT $ENV{QNN_SDK_ROOT} )
+endif()
+
+if ( NOT DEFINED QNN_SDK_ROOT )
+    message( WARNING "QNN_SDK_ROOT is not defined" )
     return()
 endif()
 
@@ -10,7 +14,7 @@ set( QNN_HEADERS
     ${HEADERS_DIR}/ridehal/component/QnnRuntime.hpp
 )
 
-set( QNN_SAMPLEAPP_DIR $ENV{QNN_SDK_ROOT}/examples/QNN/SampleApp )
+set( QNN_SAMPLEAPP_DIR ${QNN_SDK_ROOT}/examples/QNN/SampleApp )
 
 set( QNN_SOURCES
     ${QNN_SAMPLEAPP_DIR}/src/Log/LogUtils.cpp
@@ -41,7 +45,7 @@ target_include_directories( RideHalQnnRuntime PUBLIC
     ${QNN_SAMPLEAPP_DIR}/src/PAL/include
     ${QNN_SAMPLEAPP_DIR}/src/Utils
     ${QNN_SAMPLEAPP_DIR}/src/WrapperUtils
-    $ENV{QNN_SDK_ROOT}/include/QNN
+    ${QNN_SDK_ROOT}/include/QNN
 )
 
 target_compile_definitions( RideHalQnnRuntime PUBLIC QNN_API= )

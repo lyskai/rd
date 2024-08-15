@@ -1,5 +1,6 @@
-//  Copyright 2022-2023 Qualcomm Technologies, Inc. All rights reserved.
-//  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
+// Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+// All rights reserved.
+// Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 #include <assert.h>
 #include <math.h>
