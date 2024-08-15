@@ -1,8 +1,6 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // All rights reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
-
-
 #ifndef RIDEHAL_SHARED_BUFFER_HPP
 #define RIDEHAL_SHARED_BUFFER_HPP
 
@@ -145,6 +143,23 @@ public:
      */
     RideHalError_e ImageToTensor( RideHal_SharedBuffer *pLuma, RideHal_SharedBuffer *pChroma );
 
+    /**
+     * @brief Import a shared DMA memory allocated by the other process
+     * @param[in] pSharedBuffer pointer to hold the shared buffer information
+     * @note: Except the pSharedBuffer->buffer.pData will be ignored, all the
+     * other information must be provided and will be used to import the shared
+     * DMA memory allocated by the other process in this process, and create a
+     * new RideHal_SharedBuffer descriptor.
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Import( const RideHal_SharedBuffer *pSharedBuffer );
+
+    /**
+     * @brief Un-Import a shared memory allocated by the other process
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e UnImport();
+
 private:
     /**
      * @brief Initialize the shared buffer variables
@@ -166,12 +181,36 @@ RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t s
 
 /**
  * @brief Free the DMA memory
- * @param pData the allocated DMA data address
- * @param dmaHandle the allocated DMA handle
- * @param size the wanted DMA memory size
+ * @param[in] pData the allocated DMA data address
+ * @param[in] dmaHandle the allocated DMA handle
+ * @param[in] size the DMA memory size
  * @return RIDEHAL_ERROR_NONE on success, others on failure
  */
 RideHalError_e RideHal_DmaFree( void *pData, uint64_t dmaHandle, size_t size );
+
+/**
+ * @brief Import the DMA memory
+ * @param[out] pData the imported DMA data address
+ * @param[out] pDmaHandle the imported DMA handle
+ * @param[in] pid the process id that allocated this DMA memory
+ * @param[in] dmaHandle the DMA handle
+ * @param[in] size the DMA memory size
+ * @param[in] flags the DMA buffer flags
+ * @param[in] usage the DMA buffer usage
+ * @return RIDEHAL_ERROR_NONE on success, others on failure
+ */
+RideHalError_e RideHal_DmaImport( void **pData, uint64_t *pDmaHandle, uint64_t pid,
+                                  uint64_t dmaHandle, size_t size, RideHal_BufferFlags_t flags,
+                                  RideHal_BufferUsage_e usage );
+
+/**
+ * @brief Un-Import the DMA memory
+ * @param[in] pData the imported DMA data address
+ * @param[in] dmaHandle the imported DMA handle
+ * @param[in] size the DMA memory size
+ * @return RIDEHAL_ERROR_NONE on success, others on failure
+ */
+RideHalError_e RideHal_DmaUnImport( void *pData, uint64_t dmaHandle, size_t size );
 }   // namespace common
 }   // namespace ridehal
 
