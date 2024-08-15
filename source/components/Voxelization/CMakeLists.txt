@@ -7,8 +7,9 @@ set( VOXELICATION_HEADERS
 
 set( PLRPRE_SOURCES Voxelization.cpp )
 
-list( APPEND TARGET_LIBRARIES RideHalComponentCommon FadasIface )
-
+list( APPEND TARGET_LIBRARIES RideHalComponentCommon FadasIface OpenclIface )
+list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/OpenclIface )
+list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/components/Voxelization )
 add_library( RideHalVoxelization OBJECT ${PLRPRE_SOURCES} )
 
 set_property( TARGET RideHalVoxelization PROPERTY LINKER_LANGUAGE CXX )

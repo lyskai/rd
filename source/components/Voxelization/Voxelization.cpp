@@ -4,6 +4,7 @@
 
 
 #include "ridehal/component/Voxelization.hpp"
+#include "Voxelization.cl.h"
 
 namespace ridehal
 {
@@ -20,6 +21,9 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     bool bIFInitOK = false;
     bool bFadasInitOK = false;
+    bool bOpencl1InitOK = false;
+    bool bOpencl2InitOK = false;
+    bool bcoorAllocOK = false;
 
     ret = ComponentIF::Init( pName, level );
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -34,28 +38,99 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = m_plrPre.Init( pConfig->processor, pName, level );
-        if ( RIDEHAL_ERROR_NONE != ret )
+        if ( RIDEHAL_PROCESSOR_GPU == pConfig->processor )
         {
-            RIDEHAL_ERROR( "Failed to init FadasPlrPre!" );
+            ret = m_OpenclSrvObj1.Init( pName, level );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Init OpenclSrvObj1 failed!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                ret = m_OpenclSrvObj1.LoadFromSource( s_pSourceClusterPoints, "ClusterPoints" );
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Load kernel from source for ClusterPoints failed!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                bOpencl1InitOK = true;
+                ret = m_OpenclSrvObj2.Init( pName, level );
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Init OpenclSrvObj2 failed!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather, "FeatureGather" );
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Load kernel from source for FeatureGather failed!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                bOpencl2InitOK = true;
+                size_t gridXSize =
+                        ceil( ( pConfig->maxXRange - pConfig->minXRange ) / pConfig->pillarXSize );
+                size_t gridYSize =
+                        ceil( ( pConfig->maxYRange - pConfig->minYRange ) / pConfig->pillarYSize );
+                RideHal_TensorProps_t coorToPlrIdxProp = {
+                        RIDEHAL_TENSOR_TYPE_INT_32,
+                        { ( uint32_t )( gridXSize * gridYSize * 2 ), 0 },
+                        1,
+                };
+                ret = m_coorToPlrIdx.Allocate( &coorToPlrIdxProp );
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to allocate coorToPlrIdx buffer!" );
+            }
+            else
+            {
+                bcoorAllocOK = true;
+                RideHal_TensorProps_t outPlrsProp = {
+                        RIDEHAL_TENSOR_TYPE_INT_32,
+                        { pConfig->maxNumPlrs + 1,
+                          0 }, /* add one more place to record pillar number */
+                        1,
+                };
+                ret = m_numOfPts.Allocate( &outPlrsProp );
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to allocate numOfPts buffer!" );
+            }
         }
         else
         {
-            bFadasInitOK = TRUE;
-            ret = m_plrPre.SetParams( pConfig->pillarXSize, pConfig->pillarYSize,
-                                      pConfig->pillarZSize, pConfig->minXRange, pConfig->minYRange,
-                                      pConfig->minZRange, pConfig->maxXRange, pConfig->maxYRange,
-                                      pConfig->maxZRange, pConfig->maxNumInPts,
-                                      pConfig->numInFeatureDim, pConfig->maxNumPlrs,
-                                      pConfig->maxNumPtsPerPlr, pConfig->numOutFeatureDim );
+            ret = m_plrPre.Init( pConfig->processor, pName, level );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to init FadasPlrPre!" );
+            }
+            else
+            {
+                bFadasInitOK = true;
+                ret = m_plrPre.SetParams(
+                        pConfig->pillarXSize, pConfig->pillarYSize, pConfig->pillarZSize,
+                        pConfig->minXRange, pConfig->minYRange, pConfig->minZRange,
+                        pConfig->maxXRange, pConfig->maxYRange, pConfig->maxZRange,
+                        pConfig->maxNumInPts, pConfig->numInFeatureDim, pConfig->maxNumPlrs,
+                        pConfig->maxNumPtsPerPlr, pConfig->numOutFeatureDim );
+            }
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                ret = m_plrPre.CreatePreProc();
+            }
         }
     }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        ret = m_plrPre.CreatePreProc();
-    }
-
 
     if ( ret != RIDEHAL_ERROR_NONE )
     { /* do error clean up */
@@ -65,7 +140,18 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
         {
             (void) m_plrPre.Deinit();
         }
-
+        if ( bOpencl1InitOK )
+        {
+            (void) m_OpenclSrvObj1.Deinit();
+        }
+        if ( bOpencl2InitOK )
+        {
+            (void) m_OpenclSrvObj2.Deinit();
+        }
+        if ( bcoorAllocOK )
+        {
+            (void) m_coorToPlrIdx.Free();
+        }
         if ( bIFInitOK )
         {
             (void) ComponentIF::Deinit();
@@ -126,18 +212,51 @@ RideHalError_e Voxelization::Deinit()
     else
     {
         RideHalError_e ret2;
-        ret2 = m_plrPre.DestroyPreProc();
-        if ( RIDEHAL_ERROR_NONE != ret2 )
+        if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
         {
-            RIDEHAL_ERROR( "PlrPre DestroyPreProc failed: %d!", ret2 );
-            ret = ret2;
-        }
+            ret2 = m_OpenclSrvObj1.Deinit();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "Release OpenclSrvObj1 resources failed!" );
+                ret = ret2;
+            }
 
-        ret2 = m_plrPre.Deinit();
-        if ( RIDEHAL_ERROR_NONE != ret2 )
+            ret2 = m_OpenclSrvObj2.Deinit();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "Release OpenclSrvObj2 resources failed!" );
+                ret = ret2;
+            }
+
+            ret2 = m_numOfPts.Free();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "Failed to free numOfPts buffer!" );
+                ret = ret2;
+            }
+
+            ret2 = m_coorToPlrIdx.Free();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "Failed to free coorToPlrIdx buffer!" );
+                ret = ret2;
+            }
+        }
+        else
         {
-            RIDEHAL_ERROR( "PlrPre Deinit failed: %d!", ret2 );
-            ret = ret2;
+            ret2 = m_plrPre.DestroyPreProc();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "PlrPre DestroyPreProc failed: %d!", ret2 );
+                ret = ret2;
+            }
+
+            ret2 = m_plrPre.Deinit();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "PlrPre Deinit failed: %d!", ret2 );
+                ret = ret2;
+            }
         }
 
         ret2 = ComponentIF::Deinit();
@@ -174,11 +293,24 @@ RideHalError_e Voxelization::RegisterBuffers( const RideHal_SharedBuffer_t *pBuf
             const RideHal_SharedBuffer_t *pBuf = &pBuffers[i];
             if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuf->type )
             {
-                int32_t fd = m_plrPre.RegBuf( pBuf, bufferType );
-                if ( 0 > fd )
+                if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
                 {
-                    RIDEHAL_ERROR( "Failed to register buffer[%d]!", i );
-                    ret = RIDEHAL_ERROR_FAIL;
+                    cl_mem bufferCL;
+                    ret = m_OpenclSrvObj1.RegBuf( pBuffers[i].data(), pBuffers[i].size,
+                                                  pBuffers[i].buffer.dmaHandle, &bufferCL );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        RIDEHAL_ERROR( "Failed to register buffer[%d] for GPU!", i );
+                    }
+                }
+                else
+                {
+                    int32_t fd = m_plrPre.RegBuf( pBuf, bufferType );
+                    if ( 0 > fd )
+                    {
+                        RIDEHAL_ERROR( "Failed to register buffer[%d]!", i );
+                        ret = RIDEHAL_ERROR_FAIL;
+                    }
                 }
             }
             else
@@ -220,7 +352,18 @@ RideHalError_e Voxelization::DeRegisterBuffers( const RideHal_SharedBuffer_t *pB
             const RideHal_SharedBuffer_t *pBuf = &pBuffers[i];
             if ( RIDEHAL_BUFFER_TYPE_TENSOR == pBuf->type )
             {
-                m_plrPre.DeregBuf( pBuf->data() );
+                if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
+                {
+                    ret = m_OpenclSrvObj1.DeregBuf( pBuffers[i].data() );
+                    if ( RIDEHAL_ERROR_NONE != ret )
+                    {
+                        RIDEHAL_ERROR( "Failed to deregister buffer[%d] for GPU!", i );
+                    }
+                }
+                else
+                {
+                    m_plrPre.DeregBuf( pBuf->data() );
+                }
             }
             else
             {
@@ -231,6 +374,175 @@ RideHalError_e Voxelization::DeRegisterBuffers( const RideHal_SharedBuffer_t *pB
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
+                                        const RideHal_SharedBuffer_t *pOutPlrs,
+                                        const RideHal_SharedBuffer_t *pOutFeature )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    bool bRegOK = true;
+
+    cl_mem bufferSrc;
+    ret = m_OpenclSrvObj1.RegBuf( pInPts->data(), pInPts->size, pInPts->buffer.dmaHandle,
+                                  &bufferSrc );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register input points buffer!" );
+        bRegOK = false;
+    }
+
+    cl_mem bufferDst1;
+    ret = m_OpenclSrvObj1.RegBuf( pOutPlrs->data(), pOutPlrs->size, pOutPlrs->buffer.dmaHandle,
+                                  &bufferDst1 );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register output pillars buffer!" );
+        bRegOK = false;
+    }
+
+    cl_mem bufferDst2;
+    ret = m_OpenclSrvObj1.RegBuf( pOutFeature->data(), pOutFeature->size,
+                                  pOutFeature->buffer.dmaHandle, &bufferDst2 );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register output features buffer!" );
+        bRegOK = false;
+    }
+
+    /* initialize points number in pillar, pillar number to 0 */
+    (void) memset( m_numOfPts.data(), 0, m_numOfPts.size );
+    cl_mem bufferNumOfPts;
+    ret = m_OpenclSrvObj1.RegBuf( m_numOfPts.data(), m_numOfPts.size, m_numOfPts.buffer.dmaHandle,
+                                  &bufferNumOfPts );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register numOfPts buffer!" );
+        bRegOK = false;
+    }
+
+    size_t gridXSize = ceil( ( m_config.maxXRange - m_config.minXRange ) / m_config.pillarXSize );
+    size_t gridYSize = ceil( ( m_config.maxYRange - m_config.minYRange ) / m_config.pillarYSize );
+    /* initialize pillar coordinate to -1 */
+    (void) memset( m_coorToPlrIdx.data(), -1, m_coorToPlrIdx.size );
+    cl_mem bufferCoorToPlr;
+    ret = m_OpenclSrvObj1.RegBuf( m_coorToPlrIdx.data(), m_coorToPlrIdx.size,
+                                  m_coorToPlrIdx.buffer.dmaHandle, &bufferCoorToPlr );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register coorToPlrIdx buffer!" );
+        bRegOK = false;
+    }
+
+    if ( true == bRegOK )
+    {
+        size_t numOfArgs1 = 19;
+        OpenclIfcae_Arg_t OpenclArgs1[19];
+        OpenclArgs1[0].pArg = (void *) &bufferSrc;
+        OpenclArgs1[0].argSize = sizeof( cl_mem );
+        OpenclArgs1[1].pArg = (void *) &bufferDst1;
+        OpenclArgs1[1].argSize = sizeof( cl_mem );
+        OpenclArgs1[2].pArg = (void *) &bufferDst2;
+        OpenclArgs1[2].argSize = sizeof( cl_mem );
+        OpenclArgs1[3].pArg = (void *) &bufferCoorToPlr;
+        OpenclArgs1[3].argSize = sizeof( cl_mem );
+        OpenclArgs1[4].pArg = (void *) &bufferNumOfPts;
+        OpenclArgs1[4].argSize = sizeof( cl_mem );
+        OpenclArgs1[5].pArg = (void *) &m_config.minXRange;
+        OpenclArgs1[5].argSize = sizeof( cl_float );
+        OpenclArgs1[6].pArg = (void *) &m_config.minYRange;
+        OpenclArgs1[6].argSize = sizeof( cl_float );
+        OpenclArgs1[7].pArg = (void *) &m_config.minZRange;
+        OpenclArgs1[7].argSize = sizeof( cl_float );
+        OpenclArgs1[8].pArg = (void *) &m_config.maxXRange;
+        OpenclArgs1[8].argSize = sizeof( cl_float );
+        OpenclArgs1[9].pArg = (void *) &m_config.maxYRange;
+        OpenclArgs1[9].argSize = sizeof( cl_float );
+        OpenclArgs1[10].pArg = (void *) &m_config.maxZRange;
+        OpenclArgs1[10].argSize = sizeof( cl_float );
+        OpenclArgs1[11].pArg = (void *) &m_config.pillarXSize;
+        OpenclArgs1[11].argSize = sizeof( cl_float );
+        OpenclArgs1[12].pArg = (void *) &m_config.pillarYSize;
+        OpenclArgs1[12].argSize = sizeof( cl_float );
+        OpenclArgs1[13].pArg = (void *) &m_config.pillarZSize;
+        OpenclArgs1[13].argSize = sizeof( cl_float );
+        OpenclArgs1[14].pArg = (void *) &gridXSize;
+        OpenclArgs1[14].argSize = sizeof( cl_int );
+        OpenclArgs1[15].pArg = (void *) &gridYSize;
+        OpenclArgs1[15].argSize = sizeof( cl_int );
+        OpenclArgs1[16].pArg = (void *) &m_config.maxNumPlrs;
+        OpenclArgs1[16].argSize = sizeof( cl_int );
+        OpenclArgs1[17].pArg = (void *) &m_config.maxNumPtsPerPlr;
+        OpenclArgs1[17].argSize = sizeof( cl_int );
+        OpenclArgs1[18].pArg = (void *) &m_config.numOutFeatureDim;
+        OpenclArgs1[18].argSize = sizeof( cl_int );
+
+        OpenclIface_WorkParams_t OpenclWorkParams1;
+        OpenclWorkParams1.workDim = 1;
+        size_t numPts = pInPts->tensorProps.dims[0];
+        size_t globalWorkSize1[1] = { numPts };
+        OpenclWorkParams1.pGlobalWorkSize = globalWorkSize1;
+        size_t globalWorkOffset1[1] = { 0 };
+        OpenclWorkParams1.pGlobalWorkOffset = globalWorkOffset1;
+        /*set local work size to NULL, device would choose optimal size automatically*/
+        OpenclWorkParams1.pLocalWorkSize = NULL;
+
+        ret = m_OpenclSrvObj1.Execute( OpenclArgs1, numOfArgs1, &OpenclWorkParams1 );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to execute ClusterPoints OpenCL kernel!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        else
+        {
+            size_t numOfArgs2 = 12;
+            OpenclIfcae_Arg_t OpenclArgs2[12];
+            OpenclArgs2[0].pArg = (void *) &bufferDst1;
+            OpenclArgs2[0].argSize = sizeof( cl_mem );
+            OpenclArgs2[1].pArg = (void *) &bufferDst2;
+            OpenclArgs2[1].argSize = sizeof( cl_mem );
+            OpenclArgs2[2].pArg = (void *) &m_config.minXRange;
+            OpenclArgs2[2].argSize = sizeof( cl_float );
+            OpenclArgs2[3].pArg = (void *) &m_config.minYRange;
+            OpenclArgs2[3].argSize = sizeof( cl_float );
+            OpenclArgs2[4].pArg = (void *) &m_config.minZRange;
+            OpenclArgs2[4].argSize = sizeof( cl_float );
+            OpenclArgs2[5].pArg = (void *) &m_config.pillarXSize;
+            OpenclArgs2[5].argSize = sizeof( cl_float );
+            OpenclArgs2[6].pArg = (void *) &m_config.pillarYSize;
+            OpenclArgs2[6].argSize = sizeof( cl_float );
+            OpenclArgs2[7].pArg = (void *) &m_config.pillarZSize;
+            OpenclArgs2[7].argSize = sizeof( cl_float );
+            OpenclArgs2[8].pArg = (void *) &m_config.maxNumPlrs;
+            OpenclArgs2[8].argSize = sizeof( cl_int );
+            OpenclArgs2[9].pArg = (void *) &m_config.maxNumPtsPerPlr;
+            OpenclArgs2[9].argSize = sizeof( cl_int );
+            OpenclArgs2[10].pArg = (void *) &m_config.numOutFeatureDim;
+            OpenclArgs2[10].argSize = sizeof( cl_int );
+            int numOfPillar = ( (int *) m_numOfPts.data() )[m_config.maxNumPlrs];
+            OpenclArgs2[11].pArg = (void *) &numOfPillar;
+            OpenclArgs2[11].argSize = sizeof( cl_int );
+
+            OpenclIface_WorkParams_t OpenclWorkParams2;
+            OpenclWorkParams2.workDim = 1;
+            size_t globalWorkSize2[1] = { m_config.maxNumPlrs };
+            OpenclWorkParams2.pGlobalWorkSize = globalWorkSize2;
+            size_t globalWorkOffset2[1] = { 0 };
+            OpenclWorkParams2.pGlobalWorkOffset = globalWorkOffset2;
+            /*set local work size to NULL, device would choose optimal size automatically*/
+            OpenclWorkParams2.pLocalWorkSize = NULL;
+
+            ret = m_OpenclSrvObj2.Execute( OpenclArgs2, numOfArgs2, &OpenclWorkParams2 );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to execute FeatureGather OpenCL kernel!" );
+                ret = RIDEHAL_ERROR_FAIL;
             }
         }
     }
@@ -294,7 +606,14 @@ RideHalError_e Voxelization::Execute( const RideHal_SharedBuffer_t *pInPts,
     }
     else
     {
-        ret = m_plrPre.PointPillarRun( pInPts, pOutPlrs, pOutFeature );
+        if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
+        {
+            ret = ExecuteCL( pInPts, pOutPlrs, pOutFeature );
+        }
+        else
+        {
+            ret = m_plrPre.PointPillarRun( pInPts, pOutPlrs, pOutFeature );
+        }
     }
 
     return ret;

@@ -147,7 +147,8 @@ static void SaveRaw( std::string path, void *pData, size_t size )
 
 
 static void SANITY_Voxelization( RideHal_ProcessorType_e processor, Voxelization_Config_t &cfg,
-                                 const char *pcdFile = nullptr, bool bDumpOutput = false )
+                                 const char *pcdFile = nullptr, bool bDumpOutput = false,
+                                 bool bPerformanceTest = false, int times = 1000 )
 {
     Voxelization_Config_t config = cfg;
     config.processor = processor;
@@ -201,7 +202,21 @@ static void SANITY_Voxelization( RideHal_ProcessorType_e processor, Voxelization
     ret = plrPre.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = plrPre.Execute( &inPts, &outPlrs, &outFeature );
+    if ( bPerformanceTest )
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+        for ( int i = 0; i < times; i++ )
+        {
+            ret = plrPre.Execute( &inPts, &outPlrs, &outFeature );
+        }
+        auto end = std::chrono::high_resolution_clock::now();
+        double duration_ms = std::chrono::duration<double, std::milli>( end - start ).count();
+        printf( "\nexecute time = %f ms\n", (float) duration_ms / (float) times );
+    }
+    else
+    {
+        ret = plrPre.Execute( &inPts, &outPlrs, &outFeature );
+    }
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( bDumpOutput )
@@ -215,6 +230,17 @@ static void SANITY_Voxelization( RideHal_ProcessorType_e processor, Voxelization
 
     ret = plrPre.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
+TEST( FadasPlr, SANITY_VoxelizationGPU )
+{
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig0 );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig1 );
+
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig0, "data/test/plr/pointcloud.bin",
+                         false, true, 1000 );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig1, "data/test/plr/pointcloud.bin",
+                         false, true, 1000 );
 }
 
 TEST( FadasPlr, SANITY_VoxelizationCPU )
@@ -232,8 +258,10 @@ TEST( FadasPlr, SANITY_VoxelizationDSP )
     SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig1 );
 
 
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig0, "data/test/plr/pointcloud.bin" );
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig1, "data/test/plr/pointcloud.bin" );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig0, "data/test/plr/pointcloud.bin",
+                         false, true, 1000 );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_HTP0, plrPreConfig1, "data/test/plr/pointcloud.bin",
+                         false, true, 1000 );
 }
 
 

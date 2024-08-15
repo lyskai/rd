@@ -7,15 +7,19 @@
 #define RIDEHAL_VOXELIZATION_HPP
 
 #include <cinttypes>
+#include <cmath>
 #include <inttypes.h>
 #include <memory>
+#include <string.h>
 #include <unistd.h>
 
 #include "FadasPlr.hpp"
+#include "OpenclIface.hpp"
 #include "ridehal/component/ComponentIF.hpp"
 
 using namespace ridehal::common;
 using namespace ridehal::libs::FadasIface;
+using namespace ridehal::libs::OpenclIface;
 
 namespace ridehal
 {
@@ -128,8 +132,16 @@ public:
 
 private:
     Voxelization_Config_t m_config;
-
     FadasPlrPreProc m_plrPre;
+    OpenclSrv m_OpenclSrvObj1;
+    OpenclSrv m_OpenclSrvObj2;
+    RideHal_SharedBuffer_t m_numOfPts;     /*internal buffer used by OpenCL kernel*/
+    RideHal_SharedBuffer_t m_coorToPlrIdx; /*internal buffer used by OpenCL kernel*/
+
+private:
+    RideHalError_e ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
+                              const RideHal_SharedBuffer_t *pOutPlrs,
+                              const RideHal_SharedBuffer_t *pOutFeature );
 
 };   // class Voxelization
 

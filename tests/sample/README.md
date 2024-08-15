@@ -1,26 +1,27 @@
 *Menu*:
-- [1. RideHal Sample Application command line arguments](#1-ridehal-sample-application-command-line-arguments)
-- [2. RideHal Samples](#2-ridehal-samples)
-  - [2.1 RideHal DataReader Sample](#21-ridehal-datareader-sample)
-  - [2.2 RideHal Camera Sample](#22-ridehal-camera-sample)
-  - [2.3 RideHal C2D Sample](#23-ridehal-c2d-sample)
-  - [2.4 RideHal Remap Sample](#24-ridehal-remap-sample)
-  - [2.5 RideHal Qnn Sample](#25-ridehal-qnn-sample)
-  - [2.6 RideHal PostProcCenternet Sample](#26-ridehal-postproccenternet-sample)
-  - [2.7 RideHal TinyViz Sample](#27-ridehal-tinyviz-sample)
-  - [2.8 RideHal VideoEncoder Sample](#28-ridehal-videoencoder-sample)
-  - [2.9 RideHal Recorder Sample](#29-ridehal-recorder-sample)
-  - [2.10 RideHal PlrPre Sample](#210-ridehal-plrpre-sample)
-  - [2.11 RideHal PlrPost Sample](#211-ridehal-plrpost-sample)
-  - [2.12 RideHal DataOnline Sample](#212-ridehal-dataonline-sample)
-  - [2.13 RideHal CL2DFlex Sample](#213-ridehal-cl2dflex-sample)
-  - [2.14 RideHal PostProcBevdet Sample](#214-ridehal-postprocbevdet-sample)
-  - [2.15 RideHal GL2DFlex Sample](#215-ridehal-gl2dflex-sample)
-- [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
-  - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
-  - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
-  - [3.3 1 DataReader based Pointpillar QNN perception pipelines](#33-1-datareader-based-pointpillar-qnn-perception-pipelines)
-  - [3.4 1 QNN model data online inference pipeline](#34-1-qnn-model-data-online-inference-pipeline)
+- [RideHal Sample Application](#ridehal-sample-application)
+  - [1. RideHal Sample Application command line arguments](#1-ridehal-sample-application-command-line-arguments)
+  - [2. RideHal Samples](#2-ridehal-samples)
+    - [2.1 RideHal DataReader Sample](#21-ridehal-datareader-sample)
+    - [2.2 RideHal Camera Sample](#22-ridehal-camera-sample)
+    - [2.3 RideHal C2D Sample](#23-ridehal-c2d-sample)
+    - [2.4 RideHal Remap Sample](#24-ridehal-remap-sample)
+    - [2.5 RideHal Qnn Sample](#25-ridehal-qnn-sample)
+    - [2.6 RideHal PostProcCenternet Sample](#26-ridehal-postproccenternet-sample)
+    - [2.7 RideHal TinyViz Sample](#27-ridehal-tinyviz-sample)
+    - [2.8 RideHal VideoEncoder Sample](#28-ridehal-videoencoder-sample)
+    - [2.9 RideHal Recorder Sample](#29-ridehal-recorder-sample)
+    - [2.10 RideHal PlrPre Sample](#210-ridehal-plrpre-sample)
+    - [2.11 RideHal PlrPost Sample](#211-ridehal-plrpost-sample)
+    - [2.12 RideHal DataOnline Sample](#212-ridehal-dataonline-sample)
+    - [2.13 RideHal CL2DFlex Sample](#213-ridehal-cl2dflex-sample)
+    - [2.14 RideHal PostProcBevdet Sample](#214-ridehal-postprocbevdet-sample)
+    - [2.15 RideHal GL2DFlex Sample](#215-ridehal-gl2dflex-sample)
+  - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
+    - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
+    - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
+    - [3.3 1 DataReader based Pointpillar QNN perception pipelines](#33-1-datareader-based-pointpillar-qnn-perception-pipelines)
+    - [3.4 1 QNN model data online inference pipeline](#34-1-qnn-model-data-online-inference-pipeline)
 
 # RideHal Sample Application
 
@@ -318,7 +319,7 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu] |
+| processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu, gpu] |
 | pillar_size_x | false    | float     | 0.16    | Pillar size in x direction in meters |
 | pillar_size_y | false    | float     | 0.16    | Pillar size in y direction in meters |
 | pillar_size_z | false    | float     | 4.0     | Pillar size in z direction in meters |
