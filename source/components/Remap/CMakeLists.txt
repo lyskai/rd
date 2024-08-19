@@ -9,8 +9,6 @@ set( REMAP_SOURCES Remap.cpp )
 
 list( APPEND TARGET_LIBRARIES RideHalComponentCommon FadasIface FadasIfaceStub)
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface )
-list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/bld/include )
-list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/externals/include )
 
 add_library( RideHalRemap OBJECT ${REMAP_SOURCES} )
 

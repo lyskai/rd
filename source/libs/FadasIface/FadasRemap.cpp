@@ -4,6 +4,13 @@
 
 #include "FadasRemap.hpp"
 
+/* These are temporary used macro definations for some image formats supported in engineering build
+ * fadas library but not exist in formal release header files, will be removed when engineering
+ * build merged to mainline*/
+#define FADAS_REMAP_PIPELINE_Y8UV8_TO_BGR888_RH ( (FadasRemapPipeline_e) 12 )
+#define FADAS_REMAP_PIPELINE_UYVY_TO_BGR888_RH ( (FadasRemapPipeline_e) 16 )
+#define FADAS_REMAP_PIPELINE_MAX_RH ( (FadasRemapPipeline_e) 17 )
+
 namespace ridehal
 {
 namespace libs
@@ -64,7 +71,7 @@ FadasRemapPipeline_e FadasRemap::RemapGetPipelineCPU( RideHal_ImageFormat_e inpu
                                                       RideHal_ImageFormat_e outputFormat,
                                                       bool bEnableNormalize )
 {
-    FadasRemapPipeline_e pipeline = FADAS_REMAP_PIPELINE_MAX;
+    FadasRemapPipeline_e pipeline = FADAS_REMAP_PIPELINE_MAX_RH;
 
     if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == inputFormat ) &&
          ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
@@ -89,7 +96,7 @@ FadasRemapPipeline_e FadasRemap::RemapGetPipelineCPU( RideHal_ImageFormat_e inpu
               ( RIDEHAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
               ( false == bEnableNormalize ) )   // UYVY to BGR pipeline
     {
-        pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_BGR888;
+        pipeline = FADAS_REMAP_PIPELINE_UYVY_TO_BGR888_RH;
     }
     else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == inputFormat ) &&
               ( RIDEHAL_IMAGE_FORMAT_RGB888 == outputFormat ) &&
@@ -110,7 +117,7 @@ FadasRemapPipeline_e FadasRemap::RemapGetPipelineCPU( RideHal_ImageFormat_e inpu
               ( false == bEnableNormalize ) )   // NV12 to BGR pipeline
     {
 
-        pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_BGR888;
+        pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_BGR888_RH;
     }
     else
     {
@@ -242,7 +249,7 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
         {
             FadasRemapPipeline_e pipeline = RemapGetPipelineCPU(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
-            if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
+            if ( FADAS_REMAP_PIPELINE_MAX_RH == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for CPU!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -279,7 +286,7 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
         {
             FadasRemapPipeline_e pipeline = RemapGetPipelineCPU(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
-            if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
+            if ( FADAS_REMAP_PIPELINE_MAX_RH == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for GPU!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -372,7 +379,7 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
             int32_t pThreadsAffinity[] = { 0, 1, 2, 3 };
             FadasRemapPipeline_e pipeline = RemapGetPipelineCPU(
                     m_inputFormats[inputId], m_outputFormat, m_bEnableNormalize );
-            if ( FADAS_REMAP_PIPELINE_MAX == pipeline )
+            if ( FADAS_REMAP_PIPELINE_MAX_RH == pipeline )
             {
                 RIDEHAL_ERROR( "Invalid remap pipelie for CPU!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
