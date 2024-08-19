@@ -1,6 +1,3 @@
-#  Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-#  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-
 set( CMAKE_SYSTEM_NAME Linux )
 set( CMAKE_SYSTEM_PROCESSOR aarch64 )
 

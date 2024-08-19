@@ -111,7 +111,7 @@ RideHalError_e PostCenterPoint::Init( const char *pName, const PostCenterPoint_C
         RideHal_TensorProps_t tensorProps;
         tensorProps.type = RIDEHAL_TENSOR_TYPE_UINT_8;
         tensorProps.dims[0] = m_config.maxNumDetOut;
-        tensorProps.dims[1] = sizeof( Fadas3DBBoxMetadata_t );
+        tensorProps.dims[1] = sizeof( FadasPlr3DBBoxMetadata_t );
         tensorProps.numDims = 2;
         ret = m_metadata.Allocate( &tensorProps );
     }
@@ -408,7 +408,7 @@ RideHalError_e PostCenterPoint::Execute( const RideHal_SharedBuffer_t *pHeatmap,
     FadasCuboidf32_t *pBBoxList;
     uint32_t *pLabels;
     float32_t *pScores;
-    Fadas3DBBoxMetadata_t *pMetadata;
+    FadasPlr3DBBoxMetadata_t *pMetadata;
 
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
@@ -526,7 +526,7 @@ RideHalError_e PostCenterPoint::Execute( const RideHal_SharedBuffer_t *pHeatmap,
             pBBoxList = (FadasCuboidf32_t *) m_BBoxList.data();
             pLabels = (uint32_t *) m_labels.data();
             pScores = (float32_t *) m_scores.data();
-            pMetadata = (Fadas3DBBoxMetadata_t *) m_metadata.data();
+            pMetadata = (FadasPlr3DBBoxMetadata_t *) m_metadata.data();
             pDetections->tensorProps.dims[0] = numDetOut;
             RIDEHAL_DEBUG( "number of detections %" PRIu32, numDetOut );
             for ( uint32_t i = 0; i < numDetOut; i++ )

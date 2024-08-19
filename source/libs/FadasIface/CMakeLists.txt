@@ -2,16 +2,15 @@
 
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/include )
 list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface )
-list( APPEND HEADERS_DIR ${PROJECT_SOURCE_DIR}/source/libs/FadasIface/bld/include )
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
+    list( APPEND HEADERS_DIR  ${CMAKE_SYSROOT}/usr/include/amss/multimedia/fadas )
+endif()
 
 set( FADASIFACE_HEADERS
     FadasIface.h
     FadasSrv.hpp
     FadasRemap.hpp
     FadasPlr.hpp
-    bld/include/fadas.h
-    bld/include/fadasRemap.h
-    bld/include/fadasVM.h
 )
 
 add_library(FadasIfaceStub SHARED)

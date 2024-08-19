@@ -1,6 +1,7 @@
 #!/bin/bash
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary.
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# All rights reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
 #
 # This is a sample script for running local builds with rideware-toolchain.
 # Run it from the ridehal source directory like this:

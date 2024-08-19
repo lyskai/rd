@@ -5,6 +5,13 @@
 #include "FadasPlr.hpp"
 #include <string.h>
 
+#ifndef __QNXNTO__
+/* The Ubuntu or Linux FadasVM mainline code dosn't support filterParams, with the macro
+ * DISABLE_CPU_FILTER defined to disable it for CPU. For DSP, engineer version library can be
+ * provided to support the filterParams */
+#define DISABLE_CPU_FILTER
+#endif
+
 namespace ridehal
 {
 namespace libs
@@ -412,6 +419,7 @@ RideHalError_e FadasPlrPostProc::CreatePostProcCPU()
     bboxInitParams.threshIOU = m_threshIOU;
     if ( true == m_bBBoxFilter )
     {
+#ifndef DISABLE_CPU_FILTER
         bboxInitParams.filterParams.minCentre.x = m_minCentreX;
         bboxInitParams.filterParams.minCentre.y = m_minCentreY;
         bboxInitParams.filterParams.minCentre.z = m_minCentreZ;
@@ -420,6 +428,9 @@ RideHalError_e FadasPlrPostProc::CreatePostProcCPU()
         bboxInitParams.filterParams.maxCentre.z = m_maxCentreZ;
         bboxInitParams.filterParams.maxNumFilter = m_maxNumFilter;
         bboxInitParams.filterParams.labelSelect = (bool *) m_labelSelect.data();
+#else
+        RIDEHAL_WARN( "CPU BBoxFilter is not supported, will ignore it!" );
+#endif
     }
 
     m_plrHandler.hHandle = FadasVM_ExtractBBox_Create( &bboxInitParams );
@@ -674,9 +685,13 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunCPU(
         outBuf.pLabels = (uint32_t *) pLabels->data();
         outBuf.pScores = (float32_t *) pScores->data();
         outBuf.pMetadata = (Fadas3DBBoxMetadata_t *) pMetadata->data();
-
+#ifndef DISABLE_CPU_FILTER
         error = FadasVM_ExtractBBox_Run( m_plrHandler.hHandle, numPtsIn, pInPtsBuf, rpnBuf, outBuf,
                                          pNumDetOut, m_bMapPtsToBBox, m_bBBoxFilter );
+#else
+        error = FadasVM_ExtractBBox_Run( m_plrHandler.hHandle, numPtsIn, pInPtsBuf, rpnBuf, outBuf,
+                                         pNumDetOut, m_bMapPtsToBBox );
+#endif
         if ( FADAS_ERROR_NONE != error )
         {
             RIDEHAL_ERROR( "CPU ExtractBBox Run fail: %d!", error );

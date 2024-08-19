@@ -42,7 +42,11 @@ else()
   list( APPEND TARGET_LIBRARIES TinyViz )
 endif()
 
-if( NOT DEFINED ENV{QNN_SDK_ROOT} )
+if( DEFINED ENV{QNN_SDK_ROOT} )
+    set( QNN_SDK_ROOT $ENV{QNN_SDK_ROOT} )
+endif()
+
+if ( NOT DEFINED QNN_SDK_ROOT )
   message(STATUS "build sample without QnnRuntime")
 else()
   list( APPEND RIDEHAL_SAMPLE_SOURCES SampleQnn.cpp )

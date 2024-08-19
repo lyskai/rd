@@ -1,6 +1,7 @@
 #!/bin/sh
-# Copyright 2024 Qualcomm Technologies, Inc. All rights reserved.
-# Confidential & Proprietary.
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# All rights reserved.
+# Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 set -xe
 
@@ -241,7 +242,7 @@ cmake \
     -DCMAKE_PREFIX_PATH=$destdir/opt/ridehal \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     ../../tests/sample || exit 1
-make -j 16 VERBOSE=1 || exit 1
+make -j 16 || exit 1
 # Install the RideHalSampleApp
 make DESTDIR=$destdir install || exit 1
 

@@ -16,8 +16,6 @@ target_link_libraries( RideHalTestUtils PUBLIC ${TARGET_LIBRARIES} )
 
 target_include_directories( RideHalTestUtils PUBLIC ${HEADERS_DIR})
 
-install(TARGETS RideHalTestUtils DESTINATION lib)
-
 add_executable( RideHalMD5 md5_utils.cpp )
 target_link_libraries( RideHalMD5 ${TARGET_LIBRARIES} )
 target_compile_definitions(RideHalMD5 PUBLIC MD5_UTILS_TEST)

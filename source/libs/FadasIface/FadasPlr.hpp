@@ -15,6 +15,19 @@ namespace libs
 namespace FadasIface
 {
 
+#ifdef __QNXNTO__
+typedef Fadas3DBBoxMetadata_t FadasPlr3DBBoxMetadata_t;
+#else
+/* The Ubuntu or Linux FadasVM mainline code dosn't support meanIntensity, with this workaround and
+ * with engineer version library to support the meanIntensity. */
+typedef struct
+{
+    FadasPt_3Df32_t meanPt;
+    uint32_t numPts;
+    float32_t meanIntensity;
+} FadasPlr3DBBoxMetadata_t;
+#endif
+
 class FadasPlrPreProc : public FadasSrv
 {
 public:

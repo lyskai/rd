@@ -1391,7 +1391,7 @@ TEST( FadasPlr, L2_FadasPlrPostProc )
             RideHal_TensorProps_t tensorProps;
             tensorProps.type = RIDEHAL_TENSOR_TYPE_UINT_8;
             tensorProps.dims[0] = config.maxNumDetOut;
-            tensorProps.dims[1] = sizeof( Fadas3DBBoxMetadata_t );
+            tensorProps.dims[1] = sizeof( FadasPlr3DBBoxMetadata_t );
             tensorProps.numDims = 2;
             ret = metadata.Allocate( &tensorProps );
             ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );

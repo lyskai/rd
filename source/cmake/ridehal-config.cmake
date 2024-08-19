@@ -9,17 +9,22 @@ set( _ridehal_include_dir
   ${_ridehal_prefix}/include/ridehal/libs/OpenclIface )
 
 set( _ridehal_defines )
-if( NOT DEFINED ENV{QNN_SDK_ROOT} )
-  message( WARNING "env QNN_SDK_ROOT is not defined" )
+
+if( DEFINED ENV{QNN_SDK_ROOT} )
+    set( QNN_SDK_ROOT $ENV{QNN_SDK_ROOT} )
+endif()
+
+if( NOT DEFINED QNN_SDK_ROOT )
+  message( WARNING "QNN_SDK_ROOT is not defined" )
 else()
-  set( QNN_SAMPLEAPP_DIR $ENV{QNN_SDK_ROOT}/examples/QNN/SampleApp )
+  set( QNN_SAMPLEAPP_DIR ${QNN_SDK_ROOT}/examples/QNN/SampleApp )
   list( APPEND _ridehal_include_dir
     ${QNN_SAMPLEAPP_DIR}/src
     ${QNN_SAMPLEAPP_DIR}/src/Log
     ${QNN_SAMPLEAPP_DIR}/src/PAL/include
     ${QNN_SAMPLEAPP_DIR}/src/Utils
     ${QNN_SAMPLEAPP_DIR}/src/WrapperUtils
-    $ENV{QNN_SDK_ROOT}/include/QNN
+    ${QNN_SDK_ROOT}/include/QNN
 )
 endif()
 
@@ -28,6 +33,7 @@ if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
     list( APPEND _ridehal_defines _VIDC_LRH_LINUX_ CL_TARGET_OPENCL_VERSION=200 )
     list( APPEND _ridehal_include_dir ${CMAKE_SYSROOT}/usr/include/drm )
     list( APPEND _ridehal_include_dir ${CMAKE_SYSROOT}/usr/include/libdrm )
+    list( APPEND _ridehal_include_dir ${CMAKE_SYSROOT}/usr/include/amss/multimedia/fadas )
 else()
     list( APPEND _ridehal_defines CL_TARGET_OPENCL_VERSION=300 )
 endif()
