@@ -54,9 +54,9 @@ private:
     Camera m_camera;
     Camera_Config_t m_camConfig = { 0 };
 
-    std::string m_topicName;
+    std::map<uint32_t, std::string> m_topicNameMap;
 
-    DataPublisher<DataFrames_t> m_pub;
+    std::map<uint32_t, std::shared_ptr<DataPublisher<DataFrames_t>>> m_pubMap;
     uint64_t m_frameId = 0;
 
     /* if true, ignore any camera Init or Start error */

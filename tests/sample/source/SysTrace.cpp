@@ -105,6 +105,21 @@ void SysTrace::Event( uint64_t id )
     }
 }
 
+void SysTrace::Event( uint32_t streamId, uint64_t id )
+{
+    if ( nullptr != s_pTraceFile )
+    {
+        SysTrace_Record_t record;
+        (void) snprintf( record.name, sizeof( record.name ), "%s_%u", m_name.c_str(), streamId );
+        std::lock_guard<std::mutex> l( s_lock );
+        record.id = id;
+        record.timestamp = Timestamp();
+        record.cat = SYSTRACE_EVENT_FRAME_READY;
+        record.ph = SYSTRACE_PHASE_COMPLETE;
+        fwrite( &record, sizeof( record ), 1, s_pTraceFile );
+    }
+}
+
 void SysTrace::Begin( SysTrace_Category_e cat )
 {
     if ( nullptr != s_pTraceFile )

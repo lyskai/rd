@@ -57,10 +57,17 @@ namespace sample
     {                                                                                              \
         m_systrace.Event( id_or_cat );                                                             \
     } while ( 0 )
+
+#define TRACE_CAMERA_EVENT( streamId, id )                                                         \
+    do                                                                                             \
+    {                                                                                              \
+        m_systrace.Event( streamId, id );                                                          \
+    } while ( 0 )
 #else
 #define TRACE_BEGIN( id_or_cat )
 #define TRACE_END( id_or_cat )
 #define TRACE_EVENT( id_or_cat )
+#define TRACE_CAMERA_EVENT( streamId, id )
 #endif
 
 typedef enum
@@ -131,6 +138,16 @@ public:
      * @return void
      */
     void Event( uint64_t id );
+
+
+    /**
+     * @brief A Event that represent a frame with id is ready for the camera stream identified by
+     * the streamId
+     * @param[in] streamId the camera streamId
+     * @param[in] id the frame ID
+     * @return void
+     */
+    void Event( uint32_t streamId, uint64_t id );
 
     /**
      * @brief A event identified by the category happens

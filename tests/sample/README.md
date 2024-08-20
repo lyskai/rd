@@ -105,6 +105,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 
 | attribute | required | type      | default | comments |
 |-----------|----------|-----------|---------|----------|
+| number    | false    | int       | 1       | The number of camera streams |
 | input_id  | true     | int       | -       | The camera input id |
 | width     | true     | int       | -       | The image width |
 | height    | true     | int       | -       | The image height |
@@ -117,6 +118,14 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | op_mode   | false    | int       | 2       | The input operation mode, 1: Inline ISP, 2: Injection to ISP. |
 | ignore_error | false | bool      | false   | Ignore the error of Camera Init&Start |
 | topic     | true     | string    | -       | The output topic name |
+| widthX     | true     | int       | -       | The image width for the stream X |
+| heightX    | true     | int       | -       | The image height for the stream X |
+| formatX    | false    | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy] |
+| stream_idX | false    | int       | ${X}       | The camera stream id for the stream X |
+| pool_sizeX | false    | int       | 4       | The image memory pool size for the stream X |
+| topicX     | true     | string    | -       | The output topic name for the stream X |
+
+Note: "X" is value from 1 to number-1, thus the attribute with suffix "X" is repeated for different streams.
 
 The command line template example:
 
