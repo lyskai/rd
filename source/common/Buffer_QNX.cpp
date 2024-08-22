@@ -150,9 +150,9 @@ RideHalError_e RideHal_DmaImport( void **pData, uint64_t *pDmaHandle, uint64_t p
             RIDEHAL_LOG_ERROR( "DmaImport map failed" );
             ret = RIDEHAL_ERROR_FAIL;
         }
-        else if ( pemeSize != size )
+        else if ( pemeSize < size )
         {
-            RIDEHAL_LOG_ERROR( "DmaImport size mismatch: %" PRIu32 " != %" PRIu64, pemeSize, size );
+            RIDEHAL_LOG_ERROR( "DmaImport size mismatch: %" PRIu32 " < %" PRIu64, pemeSize, size );
             ret = RIDEHAL_ERROR_FAIL;
             (void) pmem_unmap_handle( pmemHandle, pAddr );
         }
