@@ -17,11 +17,13 @@
     - [2.13 RideHal CL2DFlex Sample](#213-ridehal-cl2dflex-sample)
     - [2.14 RideHal PostProcBevdet Sample](#214-ridehal-postprocbevdet-sample)
     - [2.15 RideHal GL2DFlex Sample](#215-ridehal-gl2dflex-sample)
+    - [2.16 RideHal Shared Ring Sample](#216-ridehal-shared-ring-sample)
   - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
     - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
     - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
     - [3.3 1 DataReader based Pointpillar QNN perception pipelines](#33-1-datareader-based-pointpillar-qnn-perception-pipelines)
     - [3.4 1 QNN model data online inference pipeline](#34-1-qnn-model-data-online-inference-pipeline)
+    - [3.5 1 QNN model data online shared memory between process pipeline](#35-1-qnn-model-data-online-shared-memory-between-process-pipeline)
 
 # RideHal Sample Application
 
@@ -489,6 +491,26 @@ The command line template example:
     -k output_topic -v /sensor/camera/CAM1/raw
 ```
 
+### 2.16 RideHal Shared Ring Sample
+
+| attribute| required | type      | default | comments |
+|----------|----------|-----------|---------|----------|
+| topic    | true     | string    | -       | the topic name |
+| type     | false    | string    | pub     | valid type: "pub" or "sub". If the type is "pub", get the message from DataBroker and forward it to the Shared Ring, else get the message from the Shared Ring and forward it to DataBroker. |
+| queue_depth | false    | int       | 2       | the subscriber queue depth |
+
+The command line template example:
+
+```sh
+# for type pub
+  -n CAM0_P -t SharedRing -k type -v pub \
+    -k topic -v /sensor/camera/CAM0/raw \
+
+# for type sub
+  -n CAM0_S0 -t SharedRing -k type -v sub \
+    -k topic -v /sensor/camera/CAM0/raw \
+```
+
 ## 3. Typical RideHal Sample Application pipelines
 
 ### 3.1 4 DataReader based QNN perception pipelines
@@ -648,4 +670,47 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /data/online/DO0/output \
     -k output_topic -v /data/online/DO0/input \
     -k model_io_info_topic -v /data/online/DO0/model/info -d
+```
+
+### 3.5 1 QNN model data online shared memory between process pipeline
+
+```sh
+./bin/rhrun ./bin/RideHalSampleApp \
+  -n CAM0 -t DataReader -k width0 -v 1920 -k height0 -v 1024 \
+    -k data_path0 -v /data/4K_street_1000_500_1920_1024_uyvy \
+    -k format0 -v uyvy -k topic -v /sensor/camera/CAM0/raw \
+  -n CAM0_P -t SharedRing -k type -v pub \
+    -k topic -v /sensor/camera/CAM0/raw -d &
+
+./bin/rhrun ./bin/RideHalSampleApp \
+  -n CAM0_S0 -t SharedRing -k type -v sub \
+    -k topic -v /sensor/camera/CAM0/raw \
+  -n REMAP0 -t Remap -k batch_size -v 1 \
+    -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v uyvy \
+    -k output_width -v 1152 -k output_height -v 800 -k output_format -v rgb \
+    -k input_topic -v /sensor/camera/CAM0/raw \
+    -k output_topic -v /sensor/camera/CAM0/remap \
+  -n REMAP0_P -t SharedRing -k type -v pub \
+    -k topic -v /sensor/camera/CAM0/remap -d &
+
+./bin/rhrun ./bin/RideHalSampleApp \
+  -n REMAP0_S0 -t SharedRing -k type -v sub \
+    -k topic -v /sensor/camera/CAM0/remap \
+  -n CNT0 -t Qnn -k processor -v htp0 \
+    -k model_path -v data/centernet/program.bin \
+    -k input_topic -v /sensor/camera/CAM0/remap \
+    -k output_topic -v /sensor/camera/CAM0/qnn \
+  -n CNT0_P -t SharedRing -k type -v pub \
+    -k topic -v /sensor/camera/CAM0/qnn -d &
+
+./bin/rhrun ./bin/RideHalSampleApp \
+  -n CAM0_S1 -t SharedRing -k type -v sub \
+    -k topic -v /sensor/camera/CAM0/raw \
+  -n CNT0_S0 -t SharedRing -k type -v sub \
+    -k topic -v /sensor/camera/CAM0/qnn \
+  -n POSTPROC_CNT0 -t PostProcCenternet \
+    -k width -v 1920 -k height -v 1024 \
+    -k input_topic -v /sensor/camera/CAM0/qnn \
+    -k output_topic -v /sensor/camera/CAM0/objs \
+  -n VIZ -t TinyViz -k cameras -v CAM0 -k winH -v 1050 -d
 ```

@@ -19,6 +19,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SharedBufferPool.cpp
     SampleCL2DFlex.cpp
     SampleDataOnline.cpp
+    SampleSharedRing.cpp
     SysTrace.cpp
 )
 
@@ -33,7 +34,7 @@ if( NOT TARGET RideHal )
   message(FATAL_ERROR "RideHal SDK not found")
 endif()
 
-set( TARGET_LIBRARIES RideHal )
+set( TARGET_LIBRARIES RideHal SharedRing )
 
 if( NOT TARGET TinyViz )
   message(STATUS "build sample without TinyViz")

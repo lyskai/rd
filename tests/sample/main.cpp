@@ -110,7 +110,7 @@ int main( int argc, char *argv[] )
     std::vector<PipelineConfig_t> pipelineConfigs;
     PipelineConfig_t cameraConfig;
     std::string key;
-    int flags, opt;
+    int opt;
     while ( ( opt = getopt( argc, argv, "dn:t:k:v:h" ) ) != -1 )
     {
         switch ( opt )
