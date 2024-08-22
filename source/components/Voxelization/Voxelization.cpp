@@ -48,7 +48,23 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
             }
             else
             {
-                ret = m_OpenclSrvObj1.LoadFromSource( s_pSourceClusterPoints, "ClusterPoints" );
+                if ( ( VOXELIZATION_INPUT_XYZR == pConfig->inputMode ) &&
+                     ( 4 == pConfig->numInFeatureDim ) )
+                {
+                    ret = m_OpenclSrvObj1.LoadFromSource( s_pSourceClusterPoints,
+                                                          "ClusterPointsFromXYZR" );
+                }
+                else if ( ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode ) &&
+                          ( 5 == pConfig->numInFeatureDim ) )
+                {
+                    ret = m_OpenclSrvObj1.LoadFromSource( s_pSourceClusterPoints,
+                                                          "ClusterPointsFromXYZRT" );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "GPU voxelization mode is invalid!" );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
             }
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -67,7 +83,23 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
             }
             else
             {
-                ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather, "FeatureGather" );
+                if ( ( VOXELIZATION_INPUT_XYZR == pConfig->inputMode ) &&
+                     ( 4 == pConfig->numInFeatureDim ) )
+                {
+                    ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather,
+                                                          "FeatureGatherFromXYZR" );
+                }
+                else if ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode &&
+                          ( 5 == pConfig->numInFeatureDim ) )
+                {
+                    ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather,
+                                                          "FeatureGatherFromXYZRT" );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "GPU voxelization mode is invalid!" );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
             }
             if ( RIDEHAL_ERROR_NONE != ret )
             {
@@ -110,7 +142,15 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
         }
         else
         {
-            ret = m_plrPre.Init( pConfig->processor, pName, level );
+            if ( VOXELIZATION_INPUT_XYZR != pConfig->inputMode )
+            {
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                RIDEHAL_ERROR( "Fadas only support 4 dimensions point cloud input!" );
+            }
+            else
+            {
+                ret = m_plrPre.Init( pConfig->processor, pName, level );
+            }
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to init FadasPlrPre!" );

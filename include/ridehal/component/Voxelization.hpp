@@ -28,6 +28,19 @@ namespace component
 
 #define VOXELIZATION_PILLAR_COORDS_DIM ( sizeof( FadasVM_PointPillar_t ) / sizeof( float ) )
 
+/**< voxelization input pointclouds type used for OpenCL implementation.
+ * for VOXELIZATION_INPUT_XYZR, the input pcd file have 4 dimensions [x,y,z,r],
+ * and the 10 output points in pillar features are
+ * [x,y,z,r,x-xMean,y-yMean,z-zMean,x-xPillar,y-yPillar,z-zPillar].
+ * for VOXELIZATION_INPUT_XYZRT, the input pcd file have 5 dimensions [x,y,z,r,t],
+ * and the 10 output points in pillar features are
+ * [x,y,z,r,t,x-xMean,y-yMean,z-zMean,x-xPillar,y-yPillar]. */
+typedef enum
+{
+    VOXELIZATION_INPUT_XYZR,
+    VOXELIZATION_INPUT_XYZRT,
+} Voxelization_InputMode_e;
+
 /** @brief Voxelization component configuration */
 typedef struct
 {
@@ -48,6 +61,9 @@ typedef struct
     uint32_t maxNumPlrs;       /**< Maximum number of point pillars that can be created. */
     uint32_t maxNumPtsPerPlr;  /**< Maximum number of points to map to each pillar. */
     uint32_t numOutFeatureDim; /**< Number of features for each point in point pillars. */
+    Voxelization_InputMode_e inputMode =
+            VOXELIZATION_INPUT_XYZR; /**< voxelization input pointclouds type, default value is
+                                        VOXELIZATION_INPUT_XYZR. */
 } Voxelization_Config_t;
 
 /**
