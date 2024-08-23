@@ -208,10 +208,13 @@ RideHalError_e SampleCamera::Start()
     TRACE_BEGIN( SYSTRACE_TASK_START );
     ret = m_camera.Start();
     TRACE_END( SYSTRACE_TASK_START );
-    if ( m_bIgnoreError )
+    if ( ret != RIDEHAL_ERROR_NONE )
     {
-        RIDEHAL_ERROR( "Start failed: %d, ignore it" );
-        ret = RIDEHAL_ERROR_NONE;
+        if ( m_bIgnoreError )
+        {
+            RIDEHAL_ERROR( "Start failed: %d, ignore it", ret );
+            ret = RIDEHAL_ERROR_NONE;
+        }
     }
 
     return ret;
