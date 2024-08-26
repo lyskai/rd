@@ -459,7 +459,7 @@ RideHalError_e Camera::Start()
 
     if ( RIDEHAL_COMPONENT_STATE_READY == m_state )
     {
-        m_state = RIDEHAL_COMPONENT_STATE_STATING;
+        m_state = RIDEHAL_COMPONENT_STATE_STARTING;
         status = QCarCamReserve( m_QcarCamHndl );
         if ( QCARCAM_RET_OK != status )
         {

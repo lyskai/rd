@@ -525,7 +525,7 @@ RideHalError_e VideoEncoder::Start()
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        m_state = RIDEHAL_COMPONENT_STATE_STATING;
+        m_state = RIDEHAL_COMPONENT_STATE_STARTING;
         RIDEHAL_DEBUG( "Starting vidc" );
         rc = device_ioctl( m_vidcEncoderData.pIoHandle, VIDC_IOCTL_START, nullptr, 0, nullptr, 0 );
         if ( VIDC_ERR_NONE != rc )
@@ -1312,7 +1312,7 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
             m_eventCb( VIDEO_ENCODER_EVENT_ERROR, pEvent, m_pAppPriv );
             break;
         case VIDC_EVT_RESP_START:
-            if ( RIDEHAL_COMPONENT_STATE_STATING == m_state )
+            if ( RIDEHAL_COMPONENT_STATE_STARTING == m_state )
             {
                 RIDEHAL_DEBUG( "Started vidc" );
                 m_state = RIDEHAL_COMPONENT_STATE_RUNNING;

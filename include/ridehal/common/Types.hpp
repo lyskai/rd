@@ -179,7 +179,7 @@ typedef enum
     RIDEHAL_COMPONENT_STATE_INITIAL = 0,    /**< the initial state */
     RIDEHAL_COMPONENT_STATE_INITIALIZING,   /**< the state during initializing */
     RIDEHAL_COMPONENT_STATE_READY,          /**< the ready state */
-    RIDEHAL_COMPONENT_STATE_STATING,        /**< the state during starting */
+    RIDEHAL_COMPONENT_STATE_STARTING,       /**< the state during starting */
     RIDEHAL_COMPONENT_STATE_RUNNING,        /**< the running state */
     RIDEHAL_COMPONENT_STATE_STOPING,        /**< the state during stopping */
     RIDEHAL_COMPONENT_STATE_ERROR,          /**< the error state */
