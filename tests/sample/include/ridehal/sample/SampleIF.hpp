@@ -91,6 +91,7 @@ protected:
     RideHalError_e Lock();
     RideHalError_e Unlock();
 
+    uint32_t StringToU32( std::string strV );
     std::string Get( SampleConfig_t &config, std::string key, const char *defaultV );
     std::string Get( SampleConfig_t &config, std::string key, std::string defaultV );
     std::vector<std::string> Get( SampleConfig_t &config, std::string key,

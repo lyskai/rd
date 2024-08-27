@@ -164,6 +164,29 @@ const char *SampleIF::GetName()
     return m_name.c_str();
 }
 
+uint32_t SampleIF::StringToU32( std::string strV )
+{
+    uint32_t retV = 0;
+
+    if ( 0 == strncmp( strV.c_str(), "0x", 2 ) )
+    {
+        retV = strtoul( strV.c_str(), nullptr, 16 );
+    }
+    else if ( 0 == strncmp( strV.c_str(), "0b", 2 ) )
+    {
+        retV = strtoul( &strV.c_str()[2], nullptr, 2 );
+    }
+    else if ( 0 == strncmp( strV.c_str(), "0", 1 ) )
+    {
+        retV = strtoul( strV.c_str(), nullptr, 8 );
+    }
+    else
+    {
+        retV = strtoul( strV.c_str(), nullptr, 10 );
+    }
+    return retV;
+}
+
 std::string SampleIF::Get( SampleConfig_t &config, std::string key, const char *defaultV )
 {
     std::string ret = defaultV;
@@ -247,7 +270,7 @@ std::vector<uint32_t> SampleIF::Get( SampleConfig_t &config, std::string key,
 
             if ( "" != substring )
             {
-                uint32_t value = strtoul( substring.c_str(), nullptr, 10 );
+                uint32_t value = StringToU32( substring );
                 ret.push_back( value );
             }
 
@@ -257,7 +280,7 @@ std::vector<uint32_t> SampleIF::Get( SampleConfig_t &config, std::string key,
         std::string substring( strV.substr( prev_pos, pos - prev_pos ) );
         if ( "" != substring )
         {
-            uint32_t value = strtoul( substring.c_str(), nullptr, 10 );
+            uint32_t value = StringToU32( substring );
             ret.push_back( value );
         }
     }
@@ -326,7 +349,7 @@ uint32_t SampleIF::Get( SampleConfig_t &config, std::string key, uint32_t defaul
     auto it = config.find( key );
     if ( it != config.end() )
     {
-        ret = (uint32_t) std::stoi( it->second );
+        ret = StringToU32( it->second );
     }
 
     RIDEHAL_DEBUG( "Get config %s = %u\n", key.c_str(), ret );

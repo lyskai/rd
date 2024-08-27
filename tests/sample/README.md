@@ -18,6 +18,7 @@
     - [2.14 RideHal PostProcBevdet Sample](#214-ridehal-postprocbevdet-sample)
     - [2.15 RideHal GL2DFlex Sample](#215-ridehal-gl2dflex-sample)
     - [2.16 RideHal Shared Ring Sample](#216-ridehal-shared-ring-sample)
+    - [2.17 RideHal FpsAdapter Sample](#217-ridehal-fpsadapter-sample)
   - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
     - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
     - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
@@ -509,6 +510,22 @@ The command line template example:
 # for type sub
   -n CAM0_S0 -t SharedRing -k type -v sub \
     -k topic -v /sensor/camera/CAM0/raw \
+```
+
+### 2.17 RideHal FpsAdapter Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| frame_drop_patten | false | int  | 0       | The frame drop bit patten defined by FpsAdapter, value of 1 to keep frame, value of 0 to drop frame. |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+```sh
+  -n FpsAdpter0 -t FpsAdapter \
+    -k frame_drop_patten -v 0b100 \
+    -k input_topic -v /sensor/camera/CAM0/raw_30fps \
+    -k output_topic -v /sensor/camera/CAM0/raw_10fps
 ```
 
 ## 3. Typical RideHal Sample Application pipelines

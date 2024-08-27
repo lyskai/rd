@@ -20,6 +20,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleCL2DFlex.cpp
     SampleDataOnline.cpp
     SampleSharedRing.cpp
+    SampleFpsAdapter.cpp
     SysTrace.cpp
 )
 

@@ -155,7 +155,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             }
         }
 
-        m_camConfig.camFrameDropPat = Get( config, "frame_drop_patten", 0 );
+        m_camConfig.camFrameDropPat = Get( config, "frame_drop_patten", (uint32_t)0 );
 
         m_camConfig.opMode = Get( config, "op_mode", (uint32_t) QCARCAM_OPMODE_OFFLINE_ISP );
 

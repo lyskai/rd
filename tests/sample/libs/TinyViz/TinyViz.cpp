@@ -88,8 +88,6 @@ bool TinyViz::start()
 
     m_RendererThread = std::make_unique<std::thread>( &TinyViz::rendererThread, this );
 
-    // workaround: to wait for renderer initialization ( segfault otherwise )
-    sleep( 2 );
     return true;
 }
 
