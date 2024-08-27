@@ -111,9 +111,9 @@ typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer;
     uint64_t timestampNs; /**< frame data's timestamp. */
-    uint64_t appMarkData;   /**< frame data's mark data, this data will be copied to corresponding
-                          output   compressed frame's VideoEncoder_OutputFrame_t. API won't touch this
-                          data,   only copy it. */
+    uint64_t appMarkData; /**< frame data's mark data, this data will be copied to corresponding
+                        output   compressed frame's VideoEncoder_OutputFrame_t. API won't touch this
+                        data,   only copy it. */
     VideoEncoder_OnTheFlyCmd_t *pOnTheFlyCmd =
             nullptr; /**< use to send on-the-fly commands to encoder, like intra refresh, bps reset
                      and so on. */

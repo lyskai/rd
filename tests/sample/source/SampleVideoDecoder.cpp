@@ -4,7 +4,7 @@
 
 
 
-#include "ridehal/sample/SampleVideoEncoder.hpp"
+#include "ridehal/sample/SampleVideoDecoder.hpp"
 
 
 namespace ridehal
@@ -12,34 +12,37 @@ namespace ridehal
 namespace sample
 {
 
-SampleVideoEncoder::SampleVideoEncoder() {}
-SampleVideoEncoder ::~SampleVideoEncoder() {}
+SampleVideoDecoder::SampleVideoDecoder() {}
+SampleVideoDecoder ::~SampleVideoDecoder() {}
 
 
-void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame )
+void SampleVideoDecoder::InFrameCallback( const VideoDecoder_InputFrame_t *pInputFrame )
 {
     uint64_t frameId = pInputFrame->appMarkData;
-
-    RIDEHAL_DEBUG( "InFrameCallback for frameId %" PRIu64, frameId );
+    uint64_t bufHandle = pInputFrame->sharedBuffer.buffer.dmaHandle;
 
     std::lock_guard<std::mutex> l( m_lock );
-    auto it = m_camFrameMap.find( frameId );
-    if ( it != m_camFrameMap.end() )
-    { /* release the input camera frame */
-        TRACE_EVENT( SYSTRACE_EVENT_VENC_INPUT_DONE );
-        m_camFrameMap.erase( frameId );
+    auto it = m_inFrameMap.find( bufHandle );
+    if ( it != m_inFrameMap.end() )
+    {
+        /* key-point: release the input buffer */
+        TRACE_EVENT( SYSTRACE_EVENT_VDEC_INPUT_DONE );
+        RIDEHAL_DEBUG( "Dec-InFrameCallback for handle 0x%x frameId %" PRIu64, bufHandle, frameId );
+        m_inFrameMap.erase( bufHandle );
     }
     else
     {
-        RIDEHAL_ERROR( "InFrameCallback with invalid frameId %" PRIu64, frameId );
+        RIDEHAL_ERROR( "Dec-InFrameCallback with invalid handle 0x%x frameId %" PRIu64, bufHandle,
+                       frameId );
     }
 }
 
-void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOutputFrame )
+void SampleVideoDecoder::OutFrameCallback( const VideoDecoder_OutputFrame_t *pOutputFrame )
 {
     DataFrames_t frames;
     DataFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
+    uint64_t bufHandle = pOutputFrame->sharedBuffer.buffer.dmaHandle;
 
     pSharedBuffer->sharedBuffer = pOutputFrame->sharedBuffer;
     pSharedBuffer->pubHandle = 0;
@@ -47,14 +50,13 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     PROFILER_BEGIN();
     PROFILER_END();
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
-        VideoEncoder_OutputFrame_t outFrame;
+        VideoDecoder_OutputFrame_t outFrame;
         outFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
         outFrame.appMarkData = 0;
 
-        RIDEHAL_DEBUG( "enc-out-buf back, handle:0x%x",
-                       pSharedBuffer->sharedBuffer.buffer.dmaHandle );
+        RIDEHAL_DEBUG( "dec-out-buf back, handle:0x%x", bufHandle );
 
-        m_encoder.SubmitOutputFrame( &outFrame );
+        m_decoder.SubmitOutputFrame( &outFrame );
         delete pSharedBuffer;
     } );
 
@@ -71,52 +73,50 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.timestamp = info.timestamp;
         frames.Add( frame );
         TRACE_END( frame.frameId );
-        RIDEHAL_DEBUG( "enc-outFrameCallback, frameId %" PRIu64 " tsNs:%" PRIu64 " type %d size %" PRIu32,
-                       info.frameId, info.timestamp, pOutputFrame->frameType, pOutputFrame->sharedBuffer.size );
         m_pub.Publish( frames );
+        RIDEHAL_DEBUG( "OutFrameCallback for frameId %" PRIu64 " handle 0x%x size %" PRIu32,
+                       info.frameId, bufHandle, pOutputFrame->sharedBuffer.size );
     }
     else
     {
-        /* for the first input-buffer, will produce two output buffer */
         frame.frameId = pOutputFrame->appMarkData;
         frame.buffer = buffer;
         frame.timestamp = pOutputFrame->timestampNs;
         frames.frames.push_back( frame );
-        TRACE_EVENT( SYSTRACE_EVENT_VENC_OUTPUT_WITH_2ND_FRAME );
-        RIDEHAL_DEBUG( "enc-outFrameCallback, frame info queue is empty, frameId:%" PRIu64 " tsNs:%" PRIu64,
-                       frame.frameId, frame.timestamp );
+        TRACE_EVENT( SYSTRACE_EVENT_VDEC_OUTPUT_WITH_2ND_FRAME );
         m_pub.Publish( frames );
+        RIDEHAL_DEBUG( "frame info queue is empty! handle 0x%x", bufHandle );
     }
 }
 
-void SampleVideoEncoder::EventCallback( const VideoEncoder_EventType_e eventId,
+void SampleVideoDecoder::EventCallback( const VideoDecoder_EventType_e eventId,
                                         const void *pPayload )
 {
     RIDEHAL_INFO( "Received event: %d, pPayload:%p\n", eventId, pPayload );
 }
 
-void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame,
+void SampleVideoDecoder::InFrameCallback( const VideoDecoder_InputFrame_t *pInputFrame,
                                           void *pPrivData )
 {
-    SampleVideoEncoder *self = (SampleVideoEncoder *) pPrivData;
+    SampleVideoDecoder *self = (SampleVideoDecoder *) pPrivData;
     self->InFrameCallback( pInputFrame );
 }
 
-void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOutputFrame,
+void SampleVideoDecoder::OutFrameCallback( const VideoDecoder_OutputFrame_t *pOutputFrame,
                                            void *pPrivData )
 {
-    SampleVideoEncoder *self = (SampleVideoEncoder *) pPrivData;
+    SampleVideoDecoder *self = (SampleVideoDecoder *) pPrivData;
     self->OutFrameCallback( pOutputFrame );
 }
 
-void SampleVideoEncoder::EventCallback( const VideoEncoder_EventType_e eventId,
+void SampleVideoDecoder::EventCallback( const VideoDecoder_EventType_e eventId,
                                         const void *pPayload, void *pPrivData )
 {
-    SampleVideoEncoder *self = (SampleVideoEncoder *) pPrivData;
+    SampleVideoDecoder *self = (SampleVideoDecoder *) pPrivData;
     self->EventCallback( eventId, pPayload );
 }
 
-RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
+RideHalError_e SampleVideoDecoder::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -134,20 +134,13 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.numInputBufferReq = Get( config, "pool_size", 4 );
-    if ( 0 == m_config.numInputBufferReq )
+    m_config.numInputBuffer = Get( config, "pool_size", 4 );
+    if ( 0 == m_config.numInputBuffer )
     {
-        RIDEHAL_ERROR( "invalid pool_size = %u\n", m_config.numInputBufferReq );
+        RIDEHAL_ERROR( "invalid pool_size = %u\n", m_config.numInputBuffer );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    m_config.numOutputBufferReq = m_config.numInputBufferReq;
-
-    m_config.bitRate = Get( config, "bitrate", 8000000 );
-    if ( 0 == m_config.bitRate )
-    {
-        RIDEHAL_ERROR( "invalid bitrate = %u\n", m_config.bitRate );
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-    }
+    m_config.numOutputBuffer = m_config.numInputBuffer;
 
     m_config.frameRate = Get( config, "fps", 30 );
     if ( 0 == m_config.frameRate )
@@ -170,18 +163,15 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.gop = 20;
-    m_config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
-    m_config.inFormat = RIDEHAL_IMAGE_FORMAT_NV12;
-    m_config.outFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
-    m_config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
+    m_config.inFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
+
     m_config.bInputDynamicMode = true;
     m_config.bOutputDynamicMode = false;
 
     return ret;
 }
 
-RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &config )
+RideHalError_e SampleVideoDecoder::Init( std::string name, SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -194,20 +184,21 @@ RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &confi
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = m_encoder.Init( (char *) name.c_str(), &m_config );
+        ret = m_decoder.Init( (char *) name.c_str(), &m_config );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = m_encoder.RegisterCallback( SampleVideoEncoder::InFrameCallback,
-                                          SampleVideoEncoder::OutFrameCallback,
-                                          SampleVideoEncoder::EventCallback, (void *) this );
+        ret = m_decoder.RegisterCallback( SampleVideoDecoder::InFrameCallback,
+                                          SampleVideoDecoder::OutFrameCallback,
+                                          SampleVideoDecoder::EventCallback, (void *) this );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         TRACE_BEGIN( SYSTRACE_TASK_INIT );
-        ret = m_sub.Init( name, m_inputTopicName );
+        /* queueDepth should be bigger than input-buf num */
+        ret = m_sub.Init( name, m_inputTopicName, 128, false );
         TRACE_END( SYSTRACE_TASK_INIT );
     }
 
@@ -219,26 +210,31 @@ RideHalError_e SampleVideoEncoder::Init( std::string name, SampleConfig_t &confi
     return ret;
 }
 
-RideHalError_e SampleVideoEncoder::Start()
+RideHalError_e SampleVideoDecoder::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     TRACE_BEGIN( SYSTRACE_TASK_START );
-    ret = m_encoder.Start();
+    ret = m_decoder.Start();
     TRACE_END( SYSTRACE_TASK_START );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_stop = false;
-        m_thread = std::thread( &SampleVideoEncoder::ThreadMain, this );
+        m_thread = std::thread( &SampleVideoDecoder::ThreadMain, this );
     }
 
     return ret;
 }
 
 
-void SampleVideoEncoder::ThreadMain()
+void SampleVideoDecoder::ThreadMain()
 {
     RideHalError_e ret;
+    uint64_t bufHandle;
+    uint8_t frameHead[128];  /* handle frame header */
+    uint32_t frameHeadSize;
+    bool foundFrameHead = false;
+
     while ( false == m_stop )
     {
         DataFrames_t frames;
@@ -247,26 +243,27 @@ void SampleVideoEncoder::ThreadMain()
         if ( 0 == ret )
         {
             frame = frames.frames[0];
-            RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", timestamp %" PRIu64 "\n ", frame.frameId,
-                           frame.timestamp );
 
-            VideoEncoder_InputFrame_t inputFrame;
+            VideoDecoder_InputFrame_t inputFrame;
             inputFrame.sharedBuffer = frame.buffer->sharedBuffer;
             inputFrame.timestampNs = frame.timestamp;
             inputFrame.appMarkData = frame.frameId;
-            inputFrame.pOnTheFlyCmd = nullptr;
+            bufHandle = inputFrame.sharedBuffer.buffer.dmaHandle;
 
+            RIDEHAL_DEBUG( "receive frameId %" PRIu64 ", handle 0x%x ts %" PRIu64 "\n ",
+                           frame.frameId, bufHandle, frame.timestamp );
             {
                 std::lock_guard<std::mutex> l( m_lock );
-                m_camFrameMap[frame.frameId] = frame;
+                m_inFrameMap[bufHandle] = frame;
             }
             TRACE_BEGIN( frame.frameId );
-            ret = m_encoder.SubmitInputFrame( &inputFrame );
+            ret = m_decoder.SubmitInputFrame( &inputFrame );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "failed to submit input frameId %" PRIu64, frame.frameId );
+                RIDEHAL_ERROR( "failed to submit input handle 0x%x frameId %" PRIu64, bufHandle,
+                               frame.frameId );
                 std::lock_guard<std::mutex> l( m_lock );
-                m_camFrameMap.erase( frame.frameId );
+                m_inFrameMap.erase( bufHandle );
             }
             else
             {
@@ -278,7 +275,7 @@ void SampleVideoEncoder::ThreadMain()
     }
 }
 
-RideHalError_e SampleVideoEncoder::Stop()
+RideHalError_e SampleVideoDecoder::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -289,24 +286,24 @@ RideHalError_e SampleVideoEncoder::Stop()
     }
 
     TRACE_BEGIN( SYSTRACE_TASK_STOP );
-    ret = m_encoder.Stop();
+    ret = m_decoder.Stop();
     TRACE_END( SYSTRACE_TASK_STOP );
 
     return ret;
 }
 
-RideHalError_e SampleVideoEncoder::Deinit()
+RideHalError_e SampleVideoDecoder::Deinit()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
-    ret = m_encoder.Deinit();
+    ret = m_decoder.Deinit();
     TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;
 }
 
-REGISTER_SAMPLE( VideoEncoder, SampleVideoEncoder );
+REGISTER_SAMPLE( VideoDecoder, SampleVideoDecoder );
 
 }   // namespace sample
 }   // namespace ridehal

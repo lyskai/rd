@@ -29,6 +29,7 @@ add_subdirectory(QnnRuntime)
 add_subdirectory(CL2DFlex)
 add_subdirectory(Remap)
 add_subdirectory(VideoEncoder)
+add_subdirectory(VideoDecoder)
 add_subdirectory(Voxelization)
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )

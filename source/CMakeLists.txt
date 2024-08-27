@@ -15,6 +15,7 @@ set( TARGET_LIBRARIES
     RideHalCamera
     RideHalRemap
     RideHalVideoEncoder
+    RideHalVideoDecoder
     RideHalVoxelization
     RideHalPostCenterPoint
     RideHalCL2DFlex

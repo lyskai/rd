@@ -26,6 +26,8 @@ CatMap = {
   5 : "FrameReady",
   6 : "VidcInputDone",
   7 : "Vidc2ndOutputDone",
+  8 : "VidcInputDone",
+  9 : "Vidc2ndOutputDone",
 }
 
 class MyStructure(ctypes.Structure):

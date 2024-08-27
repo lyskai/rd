@@ -15,6 +15,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleDataReader.cpp
     SampleRecorder.cpp
     SampleRemap.cpp
+    SampleVideoDecoder.cpp
     SampleVideoEncoder.cpp
     SharedBufferPool.cpp
     SampleCL2DFlex.cpp
