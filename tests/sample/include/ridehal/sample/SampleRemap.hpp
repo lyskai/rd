@@ -47,6 +47,7 @@ public:
 private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
     void ThreadMain();
+    RideHalError_e LoadMap( RideHal_SharedBuffer_t buffer, std::string path );
 
 private:
     Remap_Config_t m_config;
@@ -63,6 +64,9 @@ private:
     DataPublisher<DataFrames_t> m_pub;
 
     Remap m_remap;
+
+    RideHal_SharedBuffer_t m_mapXBuffer;
+    RideHal_SharedBuffer_t m_mapYBuffer;
 };   // class SampleRemap
 
 }   // namespace sample

@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleRemap.hpp"
 
 
@@ -22,6 +21,51 @@ static uint32_t s_rideHalFormatToBytesPerPixel[RIDEHAL_IMAGE_FORMAT_MAX] = {
 
 SampleRemap::SampleRemap() {}
 SampleRemap::~SampleRemap() {}
+
+RideHalError_e SampleRemap::LoadMap( RideHal_SharedBuffer_t buffer, std::string path )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    FILE *file = nullptr;
+    size_t length = 0;
+    size_t size = buffer.size;
+
+    file = fopen( path.c_str(), "rb" );
+    if ( nullptr == file )
+    {
+        RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_END );
+        length = (size_t) ftell( file );
+        if ( size != length )
+        {
+            RIDEHAL_ERROR( "Invalid file size for %s, need %d but got %d", path.c_str(), size,
+                           length );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_SET );
+        auto r = fread( buffer.data(), 1, length, file );
+        if ( length != r )
+        {
+            RIDEHAL_ERROR( "failed to read map table file %s", path.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( nullptr != file )
+    {
+        fclose( file );
+    }
+
+    return ret;
+}
 
 RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
 {
@@ -63,6 +107,27 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
     {
         RIDEHAL_ERROR( "invalid batch_size\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+    m_config.bEnableUndistortion = Get( config, "map_table", false );
+    m_config.bEnableNormalize = Get( config, "normalize", true );
+    if ( true == m_config.bEnableNormalize )
+    {
+        m_config.normlzR.sub = Get( config, "Rsub", 123.675f );
+        m_config.normlzR.mul = Get( config, "Rmul", 0.0171f );
+        m_config.normlzR.add = Get( config, "Radd", 0.0f );
+        m_config.normlzG.sub = Get( config, "Gsub", 116.28f );
+        m_config.normlzG.mul = Get( config, "Gmul", 0.0175f );
+        m_config.normlzG.add = Get( config, "Gadd", 0.0f );
+        m_config.normlzB.sub = Get( config, "Bsub", 103.53f );
+        m_config.normlzB.mul = Get( config, "Bmul", 0.0174f );
+        m_config.normlzB.add = Get( config, "Badd", 0.0f );
+        m_config.normlzR.add = m_config.normlzR.add / quantScale + quantOffset;
+        m_config.normlzR.mul = m_config.normlzR.mul / quantScale;
+        m_config.normlzG.add = m_config.normlzG.add / quantScale + quantOffset;
+        m_config.normlzG.mul = m_config.normlzG.mul / quantScale;
+        m_config.normlzB.add = m_config.normlzB.add / quantScale + quantOffset;
+        m_config.normlzB.mul = m_config.normlzB.mul / quantScale;
     }
 
     for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
@@ -137,25 +202,56 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
-        m_config.bEnableUndistortion = false;
-        m_config.bEnableNormalize = Get( config, "normalize", true );
-        m_config.normlzR.sub = 123.675;
-        m_config.normlzR.mul = 1.f / 58.395;
-        m_config.normlzR.add = 0.f;
-        m_config.normlzG.sub = 116.28;
-        m_config.normlzG.mul = 1.f / 57.12;
-        m_config.normlzG.add = 0.f;
-        m_config.normlzB.sub = 103.53;
-        m_config.normlzB.mul = 1.f / 57.375;
-        m_config.normlzB.add = 0.f;
-
-
-        m_config.normlzR.add = m_config.normlzR.add / quantScale + quantOffset;
-        m_config.normlzR.mul = m_config.normlzR.mul / quantScale;
-        m_config.normlzG.add = m_config.normlzG.add / quantScale + quantOffset;
-        m_config.normlzG.mul = m_config.normlzG.mul / quantScale;
-        m_config.normlzB.add = m_config.normlzB.add / quantScale + quantOffset;
-        m_config.normlzB.mul = m_config.normlzB.mul / quantScale;
+        if ( true == m_config.bEnableUndistortion )
+        {
+            bool bAllocateOK = true;
+            uint32_t mapSize = m_config.inputConfigs[i].mapWidth *
+                               m_config.inputConfigs[i].mapHeight * sizeof( float );
+            ret = m_mapXBuffer.Allocate( mapSize );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                bAllocateOK = false;
+                RIDEHAL_ERROR( "failed to allocate mapX%u!\n", i );
+            }
+            ret = m_mapYBuffer.Allocate( mapSize );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                bAllocateOK = false;
+                RIDEHAL_ERROR( "failed to allocate mapY%u!\n", i );
+            }
+            if ( true == bAllocateOK )
+            {
+                bool bReadOK = true;
+                std::string mapXPath =
+                        Get( config, "mapX_path" + std::to_string( i ), "/tmp/mapX.raw" );
+                std::string mapYPath =
+                        Get( config, "mapY_path" + std::to_string( i ), "/tmp/mapY.raw" );
+                ret = LoadMap( m_mapXBuffer, mapXPath );
+                if ( RIDEHAL_ERROR_NONE == ret )
+                {
+                    m_config.inputConfigs[i].remapTable.pMapX = (float *) m_mapXBuffer.data();
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "failed to read mapX table for input %u!\n", i );
+                    bReadOK = false;
+                }
+                ret = LoadMap( m_mapYBuffer, mapYPath );
+                if ( RIDEHAL_ERROR_NONE == ret )
+                {
+                    m_config.inputConfigs[i].remapTable.pMapY = (float *) m_mapYBuffer.data();
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "failed to read mapY table for input %u!\n", i );
+                    bReadOK = false;
+                }
+                if ( false == bReadOK )
+                {
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+            }
+        }
     }
 
     m_poolSize = Get( config, "pool_size", 4 );
@@ -314,6 +410,10 @@ RideHalError_e SampleRemap::Stop()
 
     TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_remap.Stop();
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "failed to stop remap!\n" );
+    }
     TRACE_END( SYSTRACE_TASK_STOP );
 
     return ret;
@@ -325,6 +425,19 @@ RideHalError_e SampleRemap::Deinit()
 
     TRACE_BEGIN( SYSTRACE_TASK_DEINIT );
     ret = m_remap.Deinit();
+    if ( true == m_config.bEnableUndistortion )
+    {
+        ret = m_mapXBuffer.Free();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "failed to free mapX buffer!\n" );
+        }
+        ret = m_mapYBuffer.Free();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "failed to free mapY buffer!\n" );
+        }
+    }
     TRACE_END( SYSTRACE_TASK_DEINIT );
 
     return ret;

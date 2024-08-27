@@ -505,8 +505,8 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
             {
                 for ( int j = 0; j < mapWidth; j++ )
                 {
-                    mapX[i * mapWidth + j] = j / mapWidth * inputWidth;
-                    mapY[i * mapWidth + j] = i / mapHeight * inputHeight;
+                    mapX[i * mapWidth + j] = (float) j / (float) mapWidth * (float) inputWidth;
+                    mapY[i * mapWidth + j] = (float) i / (float) mapHeight * (float) inputHeight;
                 }
             }
 
@@ -925,6 +925,9 @@ TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backen
     SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, true, false );
 #endif
+    printf( "map table general accuracy test\n" );
+    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, false, true, false );
 }
 
 TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU backend, RGB to
