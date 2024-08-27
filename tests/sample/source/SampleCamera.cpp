@@ -101,6 +101,9 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 
+        m_camConfig.srcId = Get( config, "src_id", 0 );
+        m_camConfig.inputMode = Get( config, "input_mode", 0 );
+
         m_camConfig.bRequestMode = Get( config, "request_mode", false );
         m_camConfig.bAllocator = true;
         m_camConfig.ispUserCase = Get( config, "isp_use_case", 3 );

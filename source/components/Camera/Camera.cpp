@@ -310,8 +310,8 @@ RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger
     {
         QCarCamInputStream_t inputParams = { 0 };
         inputParams.inputId = pConfig->inputId;
-        inputParams.srcId = 0;
-        inputParams.inputMode = 0;
+        inputParams.srcId = pConfig->srcId;
+        inputParams.inputMode = pConfig->inputMode;
 
         QCarCamOpen_t openParams = { (QCarCamOpmode_e) 0, 0 };
         openParams.opMode = (QCarCamOpmode_e) pConfig->opMode;

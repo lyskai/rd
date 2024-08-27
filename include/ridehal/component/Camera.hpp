@@ -62,6 +62,8 @@ typedef struct Camera_Config
     bool bRequestMode;        /**< Flag to set request buffer mode */
     uint32_t numStream;       /**< Number of camera stream */
     uint32_t inputId;         /**< Camera input id */
+    uint32_t srcId;           /**< Input source identifier. See #QCarCamInputSrc_t */
+    uint32_t inputMode;       /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
     uint32_t ispUserCase;     /**< ISP user case defined by qcarcam */
     uint32_t fps;             /**< Frames per second */
     uint32_t camFrameDropPat; /**< Frame drop patten defined by qcarcam. Set to 0 when frame drop is
