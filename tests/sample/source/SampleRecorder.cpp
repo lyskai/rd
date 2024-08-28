@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleRecorder.hpp"
 
 
@@ -173,6 +172,14 @@ RideHalError_e SampleRecorder::Stop()
     if ( m_thread.joinable() )
     {
         m_thread.join();
+    }
+
+    if ( nullptr != m_file )
+    {
+        fclose( m_file );
+        m_file = nullptr;
+        RIDEHAL_INFO( "recording done!" );
+        printf( "recording done!\n" );
     }
 
     PROFILER_SHOW();
