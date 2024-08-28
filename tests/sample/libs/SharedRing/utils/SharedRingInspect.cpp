@@ -176,11 +176,15 @@ int main( int argc, char *argv[] )
 {
     int opt;
     std::string topicName;
+    bool bShowAll = false;
 
-    while ( ( opt = getopt( argc, argv, "t:h" ) ) != -1 )
+    while ( ( opt = getopt( argc, argv, "at:h" ) ) != -1 )
     {
         switch ( opt )
         {
+            case 'a':
+                bShowAll = true;
+                break;
             case 't':
                 topicName = optarg;
                 break;
@@ -222,9 +226,12 @@ int main( int argc, char *argv[] )
         DumpRing( "used" + std::to_string( i ), &pRingMem->used[i] );
     }
 
-    for ( int i = 0; i < SHARED_RING_NUM_DESC; i++ )
+    if ( bShowAll )
     {
-        DumpDesc( "desc" + std::to_string( i ), &pRingMem->descs[i] );
+        for ( int i = 0; i < SHARED_RING_NUM_DESC; i++ )
+        {
+            DumpDesc( "desc" + std::to_string( i ), &pRingMem->descs[i] );
+        }
     }
 
     return 0;

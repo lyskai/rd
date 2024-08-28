@@ -257,17 +257,17 @@ void SharedPublisher::ThreadMain()
             auto it = m_dataFrames.find( idx );
             if ( it != m_dataFrames.end() )
             {
-                RIDEHAL_DEBUG( "release idx = %d back", idx, m_shName.c_str() );
                 m_dataFrames.erase( idx );
-                auto ret2 = m_pRingMem->avail.Push( idx );
-                if ( RIDEHAL_ERROR_NONE != ret2 )
-                {
-                    RIDEHAL_ERROR( "Failed to release %d back when free", idx );
-                }
             }
             else
             {
                 RIDEHAL_ERROR( "idx %d not found", idx );
+            }
+            RIDEHAL_DEBUG( "release idx = %d back", idx, m_shName.c_str() );
+            auto ret2 = m_pRingMem->avail.Push( idx );
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "Failed to release %d back when free", idx );
             }
         }
     }
@@ -304,7 +304,6 @@ RideHalError_e SharedPublisher::Publish( DataFrames_t &data )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     uint16_t idx = 0;
-    bool bConsumed = false;
 
     if ( false == m_bStarted )
     {
@@ -330,7 +329,8 @@ RideHalError_e SharedPublisher::Publish( DataFrames_t &data )
         std::lock_guard<std::mutex> l( m_lock );
         if ( m_subscribers.size() > 0 )
         {
-            bConsumed = true;
+            m_dataFrames[idx] = data;
+            RIDEHAL_DEBUG( "idx = %d publish for %s", idx, m_shName.c_str() );
             SharedRing_Desc_t *pDesc = &m_pRingMem->descs[idx];
             pDesc->ref = (int32_t) m_subscribers.size();
             pDesc->numDataFrames = (uint32_t) data.frames.size();
@@ -384,16 +384,6 @@ RideHalError_e SharedPublisher::Publish( DataFrames_t &data )
             {
                 RIDEHAL_ERROR( "Failed to release %d back as no subscribers", idx );
             }
-        }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        if ( bConsumed )
-        {
-            std::lock_guard<std::mutex> l( m_lock );
-            m_dataFrames[idx] = data;
-            RIDEHAL_DEBUG( "idx = %d publish for %s", idx, m_shName.c_str() );
         }
     }
 
