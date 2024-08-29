@@ -1,6 +1,7 @@
 
 set( HEADERS_DIR
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/source/libs/OpenclIface
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
@@ -68,7 +69,7 @@ set_property( TARGET RideHalSample PROPERTY POSITION_INDEPENDENT_CODE ON )
 
 target_include_directories( RideHalSample PUBLIC ${HEADERS_DIR} )
 
-target_link_libraries( RideHalSample PUBLIC ${TARGET_LIBRARIES} )
+target_link_libraries( RideHalSample PUBLIC ${TARGET_LIBRARIES} OpenclIface )
 
 target_compile_definitions( RideHalSample PUBLIC ${RIDEHAL_SAMPLE_DEFINITIONS} )
 

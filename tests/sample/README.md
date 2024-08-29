@@ -249,6 +249,7 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
+| processor     | false    | string    | "cpu"   | The processor type, options from [cpu, gpu] |
 | roi_x         | false    | int       | 0       | The ROI top x |
 | roi_y         | false    | int       | 0       | The ROI top y |
 | width         | false    | int       | 1920    | The ROI width |
@@ -263,6 +264,7 @@ The command line template example:
 
 ```sh
   -n POSTPROC_CNT0 -t PostProcCenternet \
+    -k processor -v cpu \
     -k width -v 1928 -k height -v 1028 \
     -k input_topic -v /sensor/camera/CAM0/qnn \
     -k output_topic -v /sensor/camera/CAM0/objs \
@@ -562,6 +564,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
   -n POSTPROC_CNT0 -t PostProcCenternet \
+    -k processor -v gpu \
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM0/qnn \
     -k output_topic -v /sensor/camera/CAM0/objs \
@@ -578,6 +581,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM1/remap \
     -k output_topic -v /sensor/camera/CAM1/qnn \
   -n POSTPROC_CNT1 -t PostProcCenternet \
+    -k processor -v gpu \
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM1/qnn \
     -k output_topic -v /sensor/camera/CAM1/objs \
@@ -594,6 +598,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM2/remap \
     -k output_topic -v /sensor/camera/CAM2/qnn \
   -n POSTPROC_CNT2 -t PostProcCenternet \
+    -k processor -v gpu \
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM2/qnn \
     -k output_topic -v /sensor/camera/CAM2/objs \
@@ -610,6 +615,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM3/remap \
     -k output_topic -v /sensor/camera/CAM3/qnn \
   -n POSTPROC_CNT3 -t PostProcCenternet \
+    -k processor -v gpu \
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM3/qnn \
     -k output_topic -v /sensor/camera/CAM3/objs \
@@ -639,6 +645,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM0/remap \
     -k output_topic -v /sensor/camera/CAM0/qnn \
   -n POSTPROC_CNT0 -t PostProcCenternet \
+    -k processor -v gpu \
     -k width -v 1928 -k height -v 1208 \
     -k input_topic -v /sensor/camera/CAM0/qnn \
     -k output_topic -v /sensor/camera/CAM0/objs \
@@ -655,6 +662,7 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k input_topic -v /sensor/camera/CAM1/remap \
     -k output_topic -v /sensor/camera/CAM1/qnn \
   -n POSTPROC_CNT1 -t PostProcCenternet \
+    -k processor -v gpu \
     -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM1/qnn \
     -k output_topic -v /sensor/camera/CAM1/objs \
