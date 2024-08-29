@@ -125,6 +125,8 @@ private:
     std::vector<SharedBufferPool> m_bufferPools;
     bool m_stop;
 
+    uint32_t m_timeout = 2;
+
     DataSubscriber<DataFrames_t> m_sub;
     DataPublisher<DataFrames_t> m_pub;
 

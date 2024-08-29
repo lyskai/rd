@@ -110,6 +110,8 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 |-----------|----------|-----------|---------|----------|
 | number    | false    | int       | 1       | The number of camera streams |
 | input_id  | true     | int       | -       | The camera input id |
+| src_id    | true     | int       | 0       | Input source identifier |
+| input_mode | true    | int       | 0       | The input mode id |
 | width     | true     | int       | -       | The image width |
 | height    | true     | int       | -       | The image height |
 | request_mode | false | bool      | false   | The camera request mode |
@@ -415,6 +417,7 @@ The command line template example:
 | output_topic  | true     | string    | -       | the output topic name |
 | model_io_info_topic | false    | string    | "/data/online/${name}/model/info"       | This topic will be used to subscribe the input/output tensor informatin of the QNN model which will consume the online datas from host PC tool.  |
 | cache         | false    | bool      | true    | use cached memory or not for the buffer pool |
+| timeout       | false    | int      | 2    | socket send timeout in seconds |
 
 The command line template example:
 

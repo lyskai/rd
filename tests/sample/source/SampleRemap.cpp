@@ -16,7 +16,8 @@ static uint32_t s_rideHalFormatToBytesPerPixel[RIDEHAL_IMAGE_FORMAT_MAX] = {
         3, /* RIDEHAL_IMAGE_FORMAT_BGR888 */
         2, /* RIDEHAL_IMAGE_FORMAT_UYVY */
         1, /* RIDEHAL_IMAGE_FORMAT_NV12 */
-        2  /* RIDEHAL_IMAGE_FORMAT_P010 */
+        2, /* RIDEHAL_IMAGE_FORMAT_P010 */
+        1  /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
 };
 
 SampleRemap::SampleRemap() {}

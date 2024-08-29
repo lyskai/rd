@@ -36,6 +36,8 @@ RideHalError_e SampleDataOnline::ParseConfig( SampleConfig_t &config )
 
     m_port = Get( config, "port", 6666 );
 
+    m_timeout = Get( config, "timeout", 2 );
+
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
     {
@@ -435,12 +437,12 @@ void SampleDataOnline::ThreadPubMain()
         }
 
         struct timeval timeout;
-        timeout.tv_sec = 2;
+        timeout.tv_sec = m_timeout;
         timeout.tv_usec = 0;
         int rv = setsockopt( m_client, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof( timeout ) );
         if ( 0 != rv )
         {
-            RIDEHAL_WARN( "Failed to set socket 2s timeout, errno = %d", rv );
+            RIDEHAL_WARN( "Failed to set socket %u s timeout, errno = %d", m_timeout, rv );
         }
 
         RIDEHAL_INFO( "remote client online from port %d", m_port );
@@ -519,11 +521,22 @@ void SampleDataOnline::ThreadSubMain()
                 pData += frame.size();
             }
 
-            rv = send( m_client, m_payload.data(), m_payload.size(), 0 );
-            if ( rv != m_payload.size() )
+            size_t offset = 0;
+            size_t totalSize = m_payload.size();
+            pData = m_payload.data();
+            do
             {
-                RIDEHAL_ERROR( "send failed: %d", rv );
-            }
+                rv = send( m_client, &pData[offset], totalSize - offset, 0 );
+                if ( rv >= 0 )
+                {
+                    offset += rv;
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "send failed: %d", rv );
+                    break;
+                }
+            } while ( offset < totalSize );
         }
     }
 }

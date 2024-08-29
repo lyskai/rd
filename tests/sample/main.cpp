@@ -201,8 +201,9 @@ int main( int argc, char *argv[] )
         CV.wait( lock );
     }
 
-    for ( auto sample : samples )
+    for ( int i = (int) samples.size() - 1; i >= 0; i-- )
     {
+        auto sample = samples[i];
         ret = sample->Stop();
         if ( ret != RIDEHAL_ERROR_NONE )
         {
@@ -214,8 +215,9 @@ int main( int argc, char *argv[] )
         }
     }
 
-    for ( auto sample : samples )
+    for ( int i = (int) samples.size() - 1; i >= 0; i-- )
     {
+        auto sample = samples[i];
         ret = sample->Deinit();
         if ( ret != RIDEHAL_ERROR_NONE )
         {
