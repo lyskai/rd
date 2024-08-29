@@ -70,7 +70,7 @@ static const char *s_pSourceClusterPoints = KernelCode(
         }
 
         __kernel void ClusterPointsFromXYZRT(
-                __global const float *pInPts, __global float *pOutPlrs, __global float *pOutFeature,
+                __global const float *pInPts, __global int *pOutPlrs, __global float *pOutFeature,
                 __global int *coorToPlrIdx, __global int *numOfPts, const float minXRange,
                 const float minYRange, const float minZRange, const float maxXRange,
                 const float maxYRange, const float maxZRange, const float pillarXSize,
@@ -98,9 +98,8 @@ static const char *s_pSourceClusterPoints = KernelCode(
                         plrIdx = coorToPlrIdx[id];
                         if ( plrIdx < maxNumPlrs )
                         {
-                            pOutPlrs[plrIdx * 4 + 0] = (float) xCoor;
-                            pOutPlrs[plrIdx * 4 + 1] = (float) yCoor;
-                            pOutPlrs[plrIdx * 4 + 2] = 0.0;
+                            pOutPlrs[plrIdx * 4 + 0] = xCoor;
+                            pOutPlrs[plrIdx * 4 + 1] = yCoor;
                         }
                     }
                     else
@@ -113,7 +112,6 @@ static const char *s_pSourceClusterPoints = KernelCode(
                         if ( atomic_load( (atomic_int *) &numOfPts[plrIdx] ) < maxNumPtsPerPlr )
                         {
                             int numPts = atomic_inc( &numOfPts[plrIdx] );
-                            pOutPlrs[plrIdx * 4 + 3] = numPts + 1;
                             if ( numPts < maxNumPtsPerPlr )
                             {
                                 int featureID = plrIdx * maxNumPtsPerPlr * numOutFeatureDim +
@@ -135,10 +133,11 @@ static const char *s_pSourceClusterPoints = KernelCode(
 static const char *s_pSourceFeatureGather = KernelCode(
 
         __kernel void FeatureGatherFromXYZR(
-                __global float *pOutPlrs, __global float *pOutFeature, const float minXRange,
-                const float minYRange, const float minZRange, const float pillarXSize,
-                const float pillarYSize, const float pillarZSize, const int maxNumPlrs,
-                const int maxNumPtsPerPlr, const int numOutFeatureDim, const int numOfPillar ) {
+                __global float *pOutPlrs, __global float *pOutFeature, __global int *numOfPts,
+                const float minXRange, const float minYRange, const float minZRange,
+                const float pillarXSize, const float pillarYSize, const float pillarZSize,
+                const int maxNumPlrs, const int maxNumPtsPerPlr, const int numOutFeatureDim,
+                const int numOfPillar ) {
             int x = get_global_id( 0 );
             if ( x < numOfPillar )
             {
@@ -197,15 +196,16 @@ static const char *s_pSourceFeatureGather = KernelCode(
         }
 
         __kernel void FeatureGatherFromXYZRT(
-                __global float *pOutPlrs, __global float *pOutFeature, const float minXRange,
-                const float minYRange, const float minZRange, const float pillarXSize,
-                const float pillarYSize, const float pillarZSize, const int maxNumPlrs,
-                const int maxNumPtsPerPlr, const int numOutFeatureDim, const int numOfPillar ) {
+                __global int *pOutPlrs, __global float *pOutFeature, __global int *numOfPts,
+                const float minXRange, const float minYRange, const float minZRange,
+                const float pillarXSize, const float pillarYSize, const float pillarZSize,
+                const int maxNumPlrs, const int maxNumPtsPerPlr, const int numOutFeatureDim,
+                const int numOfPillar ) {
             int x = get_global_id( 0 );
             if ( x < numOfPillar )
             {
-                pOutPlrs[x * 4 + 3] = min( pOutPlrs[x * 4 + 3], (float) maxNumPtsPerPlr );
-                int numPts = (int) pOutPlrs[x * 4 + 3];
+                numOfPts[x] = min( numOfPts[x], maxNumPtsPerPlr );
+                int numPts = numOfPts[x];
                 float meanX = 0.0;
                 float meanY = 0.0;
                 float meanZ = 0.0;
@@ -249,10 +249,8 @@ static const char *s_pSourceFeatureGather = KernelCode(
             }
             else
             {
-                pOutPlrs[x * 4 + 0] = 0.0;
-                pOutPlrs[x * 4 + 1] = 0.0;
-                pOutPlrs[x * 4 + 2] = 0.0;
-                pOutPlrs[x * 4 + 3] = 0.0;
+                pOutPlrs[x * 4 + 0] = 0;
+                pOutPlrs[x * 4 + 1] = 0;
             }
         }
 

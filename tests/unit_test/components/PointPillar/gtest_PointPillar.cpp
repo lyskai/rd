@@ -63,7 +63,7 @@ static Voxelization_Config_t plrPreConfig2 = {
         1.0,                      /* max Range, x, y, z */
         300000,                   /* maxNumInPts */
         5,                        /* numInFeatureDim*/
-        12000,                    /* maxNumPlrs */
+        25000,                    /* maxNumPlrs */
         32,                       /* maxNumPtsPerPlr */
         10,                       /* numOutFeatureDim */
         VOXELIZATION_INPUT_XYZRT, /* voxelization input pointclouds type */
@@ -179,11 +179,23 @@ static void SANITY_Voxelization( RideHal_ProcessorType_e processor, Voxelization
             { config.maxNumInPts, config.numInFeatureDim, 0 },
             2,
     };
-    RideHal_TensorProps_t outPlrsTsProp = {
-            RIDEHAL_TENSOR_TYPE_FLOAT_32,
-            { config.maxNumPlrs, VOXELIZATION_PILLAR_COORDS_DIM, 0 },
-            2,
-    };
+    RideHal_TensorProps_t outPlrsTsProp;
+    if ( ( VOXELIZATION_INPUT_XYZRT == config.inputMode ) )
+    {
+        outPlrsTsProp = {
+                RIDEHAL_TENSOR_TYPE_INT_32,
+                { config.maxNumPlrs, 2, 0 },
+                2,
+        };
+    }
+    else
+    {
+        outPlrsTsProp = {
+                RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                { config.maxNumPlrs, VOXELIZATION_PILLAR_COORDS_DIM, 0 },
+                2,
+        };
+    }
     RideHal_TensorProps_t outFeatureTsProp = {
             RIDEHAL_TENSOR_TYPE_FLOAT_32,
             { config.maxNumPlrs, config.maxNumPtsPerPlr, config.numOutFeatureDim, 0 },
@@ -260,8 +272,8 @@ TEST( FadasPlr, SANITY_VoxelizationGPU )
                          false, true, 100 );
     SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig1, "data/test/plr/pointcloud.bin",
                          false, true, 100 );
-    SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig2,
-                         "data/test/plr/pointcloud_XYZRT.bin" );
+    SANITY_Voxelization( RIDEHAL_PROCESSOR_GPU, plrPreConfig2, "data/test/plr/pointcloud_XYZRT.bin",
+                         false, true, 100 );
 }
 
 TEST( FadasPlr, SANITY_VoxelizationCPU )

@@ -541,33 +541,35 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
         }
         else
         {
-            size_t numOfArgs2 = 12;
-            OpenclIfcae_Arg_t OpenclArgs2[12];
+            size_t numOfArgs2 = 13;
+            OpenclIfcae_Arg_t OpenclArgs2[13];
             OpenclArgs2[0].pArg = (void *) &bufferDst1;
             OpenclArgs2[0].argSize = sizeof( cl_mem );
             OpenclArgs2[1].pArg = (void *) &bufferDst2;
             OpenclArgs2[1].argSize = sizeof( cl_mem );
-            OpenclArgs2[2].pArg = (void *) &m_config.minXRange;
-            OpenclArgs2[2].argSize = sizeof( cl_float );
-            OpenclArgs2[3].pArg = (void *) &m_config.minYRange;
+            OpenclArgs2[2].pArg = (void *) &bufferNumOfPts;
+            OpenclArgs2[2].argSize = sizeof( cl_mem );
+            OpenclArgs2[3].pArg = (void *) &m_config.minXRange;
             OpenclArgs2[3].argSize = sizeof( cl_float );
-            OpenclArgs2[4].pArg = (void *) &m_config.minZRange;
+            OpenclArgs2[4].pArg = (void *) &m_config.minYRange;
             OpenclArgs2[4].argSize = sizeof( cl_float );
-            OpenclArgs2[5].pArg = (void *) &m_config.pillarXSize;
+            OpenclArgs2[5].pArg = (void *) &m_config.minZRange;
             OpenclArgs2[5].argSize = sizeof( cl_float );
-            OpenclArgs2[6].pArg = (void *) &m_config.pillarYSize;
+            OpenclArgs2[6].pArg = (void *) &m_config.pillarXSize;
             OpenclArgs2[6].argSize = sizeof( cl_float );
-            OpenclArgs2[7].pArg = (void *) &m_config.pillarZSize;
+            OpenclArgs2[7].pArg = (void *) &m_config.pillarYSize;
             OpenclArgs2[7].argSize = sizeof( cl_float );
-            OpenclArgs2[8].pArg = (void *) &m_config.maxNumPlrs;
-            OpenclArgs2[8].argSize = sizeof( cl_int );
-            OpenclArgs2[9].pArg = (void *) &m_config.maxNumPtsPerPlr;
+            OpenclArgs2[8].pArg = (void *) &m_config.pillarZSize;
+            OpenclArgs2[8].argSize = sizeof( cl_float );
+            OpenclArgs2[9].pArg = (void *) &m_config.maxNumPlrs;
             OpenclArgs2[9].argSize = sizeof( cl_int );
-            OpenclArgs2[10].pArg = (void *) &m_config.numOutFeatureDim;
+            OpenclArgs2[10].pArg = (void *) &m_config.maxNumPtsPerPlr;
             OpenclArgs2[10].argSize = sizeof( cl_int );
-            int numOfPillar = ( (int *) m_numOfPts.data() )[m_config.maxNumPlrs];
-            OpenclArgs2[11].pArg = (void *) &numOfPillar;
+            OpenclArgs2[11].pArg = (void *) &m_config.numOutFeatureDim;
             OpenclArgs2[11].argSize = sizeof( cl_int );
+            int numOfPillar = ( (int *) m_numOfPts.data() )[m_config.maxNumPlrs];
+            OpenclArgs2[12].pArg = (void *) &numOfPillar;
+            OpenclArgs2[12].argSize = sizeof( cl_int );
 
             OpenclIface_WorkParams_t OpenclWorkParams2;
             OpenclWorkParams2.workDim = 1;
@@ -619,13 +621,24 @@ RideHalError_e Voxelization::Execute( const RideHal_SharedBuffer_t *pInPts,
         RIDEHAL_ERROR( "pOutPlrs is nullptr!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( ( RIDEHAL_BUFFER_TYPE_TENSOR != pOutPlrs->type ) ||
-              ( nullptr == pOutPlrs->buffer.pData ) || ( 2 != pOutPlrs->tensorProps.numDims ) ||
-              ( RIDEHAL_TENSOR_TYPE_FLOAT_32 != pOutPlrs->tensorProps.type ) ||
-              ( m_config.maxNumPlrs != pOutPlrs->tensorProps.dims[0] ) ||
-              ( VOXELIZATION_PILLAR_COORDS_DIM != pOutPlrs->tensorProps.dims[1] ) )
+    else if ( ( VOXELIZATION_INPUT_XYZR == m_config.inputMode ) &&
+              ( ( RIDEHAL_BUFFER_TYPE_TENSOR != pOutPlrs->type ) ||
+                ( nullptr == pOutPlrs->buffer.pData ) || ( 2 != pOutPlrs->tensorProps.numDims ) ||
+                ( RIDEHAL_TENSOR_TYPE_FLOAT_32 != pOutPlrs->tensorProps.type ) ||
+                ( m_config.maxNumPlrs != pOutPlrs->tensorProps.dims[0] ) ||
+                ( VOXELIZATION_PILLAR_COORDS_DIM != pOutPlrs->tensorProps.dims[1] ) ) )
     {
-        RIDEHAL_ERROR( "pOutPlrs is invalid!" );
+        RIDEHAL_ERROR( "pOutPlrs is invalid for XYZR pointcloud input!" );
+        ret = RIDEHAL_ERROR_INVALID_BUF;
+    }
+    else if ( ( VOXELIZATION_INPUT_XYZRT == m_config.inputMode ) &&
+              ( ( RIDEHAL_BUFFER_TYPE_TENSOR != pOutPlrs->type ) ||
+                ( nullptr == pOutPlrs->buffer.pData ) || ( 2 != pOutPlrs->tensorProps.numDims ) ||
+                ( RIDEHAL_TENSOR_TYPE_INT_32 != pOutPlrs->tensorProps.type ) ||
+                ( m_config.maxNumPlrs != pOutPlrs->tensorProps.dims[0] ) ||
+                ( 2 != pOutPlrs->tensorProps.dims[1] ) ) )
+    {
+        RIDEHAL_ERROR( "pOutPlrs is invalid for XYZRT pointcloud input!" );
         ret = RIDEHAL_ERROR_INVALID_BUF;
     }
     else if ( nullptr == pOutFeature )
