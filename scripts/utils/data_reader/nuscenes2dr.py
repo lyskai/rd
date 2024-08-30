@@ -106,11 +106,11 @@ def generate_data(nusc):
             data_path, _, _ = nusc.get_sample_data(token)
             dir = '%s/%s' % (cwd, sensor)
             if sensor == 'LIDAR_TOP':
-                pcd = np.fromfile(data_path, np.float32).reshape(-1, 4)
+                pcd = np.fromfile(data_path, np.float32).reshape(-1, 5)
                 img = np.zeros([height, width, 3],dtype=np.uint8)
                 img[:, :, :] = [255, 255, 255]
                 # print("pcd: ", pcd)
-                pcdL = [(x,y,z) for x,y,z,r in pcd]
+                pcdL = [(x,y,z) for x,y,z,r,t in pcd]
                 pcdL.sort(key=lambda x:x[2]) # sort by Z
                 for x,y,z in pcdL:
                     w = int(offsetX + ratioW * (x - minX))
