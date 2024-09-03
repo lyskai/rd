@@ -98,8 +98,8 @@ static const char *s_pSourceClusterPoints = KernelCode(
                         plrIdx = coorToPlrIdx[id];
                         if ( plrIdx < maxNumPlrs )
                         {
-                            pOutPlrs[plrIdx * 4 + 0] = xCoor;
-                            pOutPlrs[plrIdx * 4 + 1] = yCoor;
+                            pOutPlrs[plrIdx * 2 + 0] = xCoor;
+                            pOutPlrs[plrIdx * 2 + 1] = yCoor;
                         }
                     }
                     else
@@ -249,8 +249,8 @@ static const char *s_pSourceFeatureGather = KernelCode(
             }
             else
             {
-                pOutPlrs[x * 4 + 0] = 0;
-                pOutPlrs[x * 4 + 1] = 0;
+                pOutPlrs[x * 2 + 0] = 0;
+                pOutPlrs[x * 2 + 1] = 0;
             }
         }
 

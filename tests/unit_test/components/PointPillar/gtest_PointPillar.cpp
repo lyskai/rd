@@ -52,15 +52,15 @@ static Voxelization_Config_t plrPreConfig1 = {
 
 static Voxelization_Config_t plrPreConfig2 = {
         RIDEHAL_PROCESSOR_GPU,
-        0.16,
-        0.16,
-        4.0, /* pillar size: x, y, z */
-        0.0,
-        -39.68,
-        -3.0, /* min Range, x, y, z */
-        69.12,
-        39.68,
-        1.0,                      /* max Range, x, y, z */
+        0.2,
+        0.2,
+        8.0, /* pillar size: x, y, z */
+        -51.2,
+        -51.2,
+        -5.0, /* min Range, x, y, z */
+        51.2,
+        51.2,
+        3.0,                      /* max Range, x, y, z */
         300000,                   /* maxNumInPts */
         5,                        /* numInFeatureDim*/
         25000,                    /* maxNumPlrs */
