@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SamplePlrPre.hpp"
 
 
@@ -40,6 +39,20 @@ RideHalError_e SamplePlrPre::ParseConfig( SampleConfig_t &config )
     m_config.maxNumPlrs = Get( config, "max_pillars", 12000 );
     m_config.maxNumPtsPerPlr = Get( config, "max_points_per_pillar", 32 );
     m_config.numOutFeatureDim = Get( config, "out_feature_dim", 10 );
+    std::string inputMode = Get( config, "input_mode", "xyzr" );
+    if ( "xyzr" == inputMode )
+    {
+        m_config.inputMode = VOXELIZATION_INPUT_XYZR;
+    }
+    else if ( "xyzrt" == inputMode )
+    {
+        m_config.inputMode = VOXELIZATION_INPUT_XYZRT;
+    }
+    else
+    {
+        RIDEHAL_ERROR( "invalid input_mode\n" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )

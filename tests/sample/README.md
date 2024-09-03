@@ -362,6 +362,7 @@ The command line template example:
 | max_pillars    | false   | int       | 12000   | Maximum number of point pillars that can be created |
 | max_points_per_pillar | false | int  | 32       | Maximum number of pMaximum number of points to map to each pillar |
 | out_feature_dim | false  | int       | 10      | Number of features for each point in point pillars |
+| input_mode    | false    | string    | "xyzr"  | The input pointclouds type used for OpenCL implementation, options from [xyzr, xyzrt] |
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
