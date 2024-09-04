@@ -2,7 +2,6 @@
 // All rights reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
-
 #include "ridehal/sample/SamplePostProcCenternet.hpp"
 #include <algorithm>
 #include <assert.h>
@@ -28,7 +27,7 @@ static const char *s_pSourceBboxDet = KernelCode( __kernel void BboxDet(
 
     int idx = ( y * width + x ) * clsNum + c;
     float obj_hm = ( hm[idx] + hmOffset ) * hmScale;
-    float obj_prob = 1.0 / ( exp( -1.0 * obj_hm ) + 1.0 );
+    float obj_prob = native_recip( native_exp( -1.0 * obj_hm ) + 1.0 );
     uint padding = ( kernelSize - 1 ) / 2;
     int offset = -1 * padding;
     uint l = 0, m = 0;
@@ -36,6 +35,7 @@ static const char *s_pSourceBboxDet = KernelCode( __kernel void BboxDet(
     float cur_hm = -1.0, cur_prob = -1.0, max_prob = -1.0;
     int max_index = 0;
     bool valid = false;
+    float4 coords;
 
     if ( obj_prob > thresh )
     {
@@ -55,33 +55,28 @@ static const char *s_pSourceBboxDet = KernelCode( __kernel void BboxDet(
 
         if ( idx == max_index )
         {
-            uint reg_idx = ( y * width + x ) * 2;
-            float c_x = x + ( reg[reg_idx] + regOffset ) * regScale;
-            float c_y = y + ( reg[reg_idx + 1] + regOffset ) * regScale;
-            float wreg_val = ( wh[reg_idx] + whOffset ) * whScale;
-            float hreg_val = ( wh[reg_idx + 1] + whOffset ) * whScale;
+            uint reg_idx = ( y * width + x );
+            float2 xyReg = convert_float2( vload2( reg_idx, reg ) );
+            float2 whReg = convert_float2( vload2( reg_idx, wh ) );
+            float2 wh2 = (float2) ( width, height );
+            xyReg = ( xyReg + regOffset ) * regScale + (float2) ( x, y );
+            whReg = ( whReg + whOffset ) * whScale * 0.5f;
 
-            float topX = ( c_x - wreg_val / 2.0 ) / width;
-            float topY = ( c_y - hreg_val / 2.0 ) / height;
-            float bottomX = ( c_x + wreg_val / 2.0 ) / width;
-            float bottomY = ( c_y + hreg_val / 2.0 ) / height;
-            topX = ( topX > 0 ) ? ( topX * imgWidth ) : 0 + roiX;
-            topY = ( topY > 0 ) ? ( topY * imgHeight ) : 0 + roiY;
-            bottomX = ( ( bottomX < 1 ) ? bottomX : 0.99 ) * imgWidth + roiX;
-            bottomY = ( ( bottomY < 1 ) ? bottomY : 0.99 ) * imgHeight + roiY;
+            float4 imgWH4 = (float4) ( imgWidth, imgHeight, imgWidth, imgHeight );
+            float4 roiXY4 = (float4) ( roiX, roiY, roiX, roiY );
 
-            if ( ( topX < bottomX ) && ( topY < bottomY ) )
+            coords.s01 = ( xyReg - whReg ) / wh2;
+            coords.s23 = ( xyReg + whReg ) / wh2;
+            coords = clamp( coords, 0.0f, 0.99f );
+            coords = mad( coords, imgWH4, roiXY4 );
+            if ( ( coords.s0 < coords.s2 ) && ( coords.s1 < coords.s3 ) )
             {
                 uint obj_idx = atomic_inc( &objClsIds[maxObjNum] );
                 if ( obj_idx < maxObjNum )
                 {
-                    uint coord_idx = obj_idx * 4;
                     objClsIds[obj_idx] = c;
                     objProbs[obj_idx] = obj_prob;
-                    objCoords[coord_idx] = topX;
-                    objCoords[coord_idx + 1] = topY;
-                    objCoords[coord_idx + 2] = bottomX;
-                    objCoords[coord_idx + 3] = bottomY;
+                    vstore4( coords, obj_idx, objCoords );
                 }
             }
         }
@@ -518,14 +513,11 @@ RideHalError_e SamplePostProcCenternet::PostProcCL( DataFrames_t &tensors )
     openclWorkParams.pGlobalWorkSize = globalWorkSize;
     openclWorkParams.pGlobalWorkOffset = globalWorkOffset;
     openclWorkParams.pLocalWorkSize = NULL;
+
     uint32_t *pdetClsIds = (uint32_t *) m_outputClsIdBuf.data();
-    float *pdetProbs = (float *) m_outputProbBuf.data();
-    float *pdetCoords = (float *) m_outputCoordsBuf.data();
     *( pdetClsIds + MAX_OBJ_NUM ) = 0;
 
     ret = m_OpenclSrvObj.Execute( m_openclArgs, numArgs, &openclWorkParams );
-
-    uint32_t objNum = *( pdetClsIds + MAX_OBJ_NUM );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to execute BboxDet kernel" );
@@ -535,6 +527,9 @@ RideHalError_e SamplePostProcCenternet::PostProcCL( DataFrames_t &tensors )
     // non-maximum suppression
     Road2DObject_t detObj;
     Road2DObjects_t objs;
+    uint32_t objNum = *( pdetClsIds + MAX_OBJ_NUM );
+    float *pdetProbs = (float *) m_outputProbBuf.data();
+    float *pdetCoords = (float *) m_outputCoordsBuf.data();
     for ( uint32_t i = 0; i < objNum; i++ )
     {
         uint32_t idx = i * 4;

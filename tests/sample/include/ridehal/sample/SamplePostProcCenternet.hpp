@@ -101,7 +101,6 @@ private:
     OpenclSrv m_OpenclSrvObj;
     OpenclIfcae_Arg_t m_openclArgs[22];
 
-
     DataSubscriber<DataFrames_t> m_sub;
     DataPublisher<Road2DObjects_t> m_pub;
 };   // class SamplePostProcCenternet
