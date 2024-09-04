@@ -46,14 +46,16 @@
     Using below command to create a qos222 toolchain from QNX CRM.
 
     ```sh
-    python $PWD/ridehal/scripts/build/toolchain/extract-qos222-toolchain.py \
-        -i /path/to/qnx/crm_path \
+    python $PWD/ridehal/scripts/build/toolchain/extract-qnx-toolchain.py \
+        -i /path/to/qnx/crm_path -v QOS222 \
         -o $PWD/toolchain
     # for example:
-    python $PWD/ridehal/scripts/build/toolchain/extract-qos222-toolchain.py \
-        -i /local/mnt/workspace/QXA.QA.6.0.r23-00038-GEN4.QOS.222-1/ \
+    python $PWD/ridehal/scripts/build/toolchain/extract-qnx-toolchain.py \
+        -i /local/mnt/workspace/QXA.QA.6.0.r23-00038-GEN4.QOS.222-1/ -v QOS222 \
         -o $PWD/toolchain
     ```
+
+    Note: For QNX Snapdragon_Auto.HQX.4.5.6.0, the version is "-v QHS220".
 
   - HGY Linux:
 

@@ -14,6 +14,33 @@ from shutil import copytree, rmtree, move, copy2
 from pathlib import Path
 from string import Template
 
+##################################
+# Main
+
+if sys.version_info[0] < 3:
+    sys.exit( "This script requires Python 3!" )
+
+parser = argparse.ArgumentParser( description="Creates QNX toolchain for docker image from locally built QNX perforce tree." )
+parser.add_argument( "-i", "--input",   help="directory that contains the locally built QNX perforce tree (parent dir of qnx_ap)" )
+parser.add_argument( "-v", "--version",   help="the QNX toolchain version", default="QOS222" )
+parser.add_argument( "-o", "--output",  default="toolchain", help="basename of output file" )
+args = parser.parse_args()
+
+if not args.input:
+    parser.print_help(sys.stdout)
+    sys.exit( "\nNo input directory provided!" )
+
+if not os.path.exists( args.input ) or not os.path.isdir( args.input ):
+    sys.exit( "The provided input directory: " + args.input + " does not exist!" )
+
+inputDir = args.input
+
+tcRootDirName = "qos222"
+sdpString     = args.version
+sdpVersion    = "7.1"
+
+outputDir = args.output
+
 def print_traceback_and_exit():
     print( '-'*45 )
     print( "Encountered an unexpected error: " )
@@ -122,9 +149,7 @@ export TOOLCHAIN_SYSROOT=$QNX_TARGET/aarch64le
 
 def generate_toolchain_file( toolchainFilePath, sdpVersion ):
     with open( toolchainFilePath, "wt") as textFile:
-        textFile.write( '''#  Copyright 2020 Qualcomm Technologies, Inc. All rights reserved.
-#  Confidential & Proprietary - Qualcomm Technologies, Inc. ("QTI")
-
+        textFile.write( '''
 set( CMAKE_SYSTEM_NAME QNX )
 set( CMAKE_SYSTEM_PROCESSOR aarch64 )
 
@@ -138,32 +163,6 @@ set( CMAKE_CXX_COMPILER_TARGET ${{arch}} )
 set( CMAKE_SYSROOT $ENV{{QNX_TARGET}}/aarch64le/ )
 '''.format(sdpVersion) )
 
-##################################
-# Main
-
-if sys.version_info[0] < 3:
-    sys.exit( "This script requires Python 3!" )
-
-parser = argparse.ArgumentParser( description="Creates QNX toolchain for docker image from locally built QNX perforce tree." )
-parser.add_argument( "-i", "--input",   help="directory that contains the locally built QNX perforce tree (parent dir of qnx_ap)" )
-parser.add_argument( "-o", "--output",  default="toolchain", help="basename of output file" )
-args = parser.parse_args()
-
-if not args.input:
-    parser.print_help(sys.stdout)
-    sys.exit( "\nNo input directory provided!" )
-
-if not os.path.exists( args.input ) or not os.path.isdir( args.input ):
-    sys.exit( "The provided input directory: " + args.input + " does not exist!" )
-
-inputDir = args.input
-
-tcRootDirName = "qos222"
-sdpString     = "QOS222"
-sdpVersion    = "7.1"
-
-outputDir = args.output
-
 print( "Using input directory: "  + inputDir )
 print( "Using output directory: " + outputDir )
 print( "Version: {} {}".format(sdpString, sdpVersion) )
@@ -173,9 +172,9 @@ tcLibDir   = tcRootPath + "/target/qnx7/aarch64le/usr/lib"
 tcIncDir   = tcRootPath + "/target/qnx7/aarch64le/usr/include"
 srcLibDir  = inputDir   + "/qnx_ap/install/aarch64le/lib"
 srcIncDir  = inputDir   + "/qnx_ap/install/usr/include"
-srcPrebuiltIncDir = inputDir + "/qnx_ap/qnx_bins/prebuilt_QOS222/target/qnx7/usr/include"
-srcPrebuiltLibDir = inputDir + "/qnx_ap/qnx_bins/prebuilt_QOS222/target/qnx7/aarch64le/usr/lib"
-srcPatchIncDir = inputDir + "/qnx_ap/qnx_bins/prebuilt_QOS222_patches/target/qnx7/usr/include"
+srcPrebuiltIncDir = inputDir + "/qnx_ap/qnx_bins/prebuilt_" + sdpString + "/target/qnx7/usr/include"
+srcPrebuiltLibDir = inputDir + "/qnx_ap/qnx_bins/prebuilt_" + sdpString + "/target/qnx7/aarch64le/usr/lib"
+srcPatchIncDir = inputDir + "/qnx_ap/qnx_bins/prebuilt_" + sdpString + "_patches/target/qnx7/usr/include"
 
 print( "Creating toolchain root directory: " + tcRootDirName + "\n" )
 make_directory( tcRootPath )
@@ -327,7 +326,8 @@ libList = libListVidc + libListFastCV + libListC2d + libListPmem + libListQgptp 
         "libfastrpc_pmem.so.1", "libfastcvopt.so.1",
         "libadreno_utils.so", "libESXGLESv2_Adreno.so", "libglnext-llvm.so", "libESXEGL_Adreno.so",
         "libsysprofiler.so", "libQProfilerInterface.so", "libfdt_utils.so", "libtzbsplib.so", "libtzbsplib.so.1",
-        "libsmmu_clientS.a", "libfastcvopt.a", "libfastcvoptS.a"
+        "libsmmu_clientS.a", "libfastcvopt.a", "libfastcvoptS.a",
+        "liblibstd.so", "libmmap_peer.so", "libxml_config.so", "libOpenCL_Adreno.so"
     ] + libListRSM
 
 targetLibDirs = [
