@@ -90,11 +90,28 @@ RideHalError_e SamplePlrPre::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        RideHal_TensorProps_t outPlrsTsProp = {
-                RIDEHAL_TENSOR_TYPE_FLOAT_32,
-                { m_config.maxNumPlrs, VOXELIZATION_PILLAR_COORDS_DIM, 0 },
-                2,
-        };
+        RideHal_TensorProps_t outPlrsTsProp;
+        if ( VOXELIZATION_INPUT_XYZR == m_config.inputMode )
+        {
+            outPlrsTsProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { m_config.maxNumPlrs, VOXELIZATION_PILLAR_COORDS_DIM, 0 },
+                    2,
+            };
+        }
+        else if ( VOXELIZATION_INPUT_XYZRT == m_config.inputMode )
+        {
+            outPlrsTsProp = {
+                    RIDEHAL_TENSOR_TYPE_INT_32,
+                    { m_config.maxNumPlrs, 2, 0 },
+                    2,
+            };
+        }
+        else
+        {
+            RIDEHAL_ERROR( "invalid input_mode\n" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
 
         ret = m_coordsPool.Init( name + ".coords", LOGGER_LEVEL_INFO, m_poolSize, outPlrsTsProp,
                                  RIDEHAL_BUFFER_USAGE_HTP );
