@@ -182,11 +182,11 @@ The command line template example:
 | processor     | false    | string    | "htp0"  | The processor type, options from [htp0, htp1, cpu, gpu] |
 | output_width  | false    | int       | 1152    | The output image width |
 | output_height | false    | int       | 800     | The output image height |
-| output_format | false    | string    | rgb     | The output image format, options from [rgb]|
+| output_format | false    | string    | rgb     | The output image format, options from [rgb, bgr]|
 | batch_size    | false    | int       | 1       | The Remap input batch size |
 | input_widthX  | false    | int       | 1920    | The input X image width |
 | input_heightX | false    | int       | 1024    | The input X image height |
-| input_formatX | false    | string    | uyvy    | The input X image format, options from [uyvy]|
+| input_formatX | false    | string    | uyvy    | The input X image format, options from [uyvy, nv12]|
 | map_widthX    | false    | int       | =output_width  | The map width for input X |
 | map_heightX   | false    | int       | =output_height | The map height for input X |
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |
