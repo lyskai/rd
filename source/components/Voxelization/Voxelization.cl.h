@@ -219,8 +219,8 @@ static const char *s_pSourceFeatureGather = KernelCode(
                 meanX = meanX / numPts;
                 meanY = meanY / numPts;
                 meanZ = meanZ / numPts;
-                float pillarX = minXRange + pOutPlrs[x * 4 + 0] * pillarXSize + 0.5 * pillarXSize;
-                float pillarY = minYRange + pOutPlrs[x * 4 + 1] * pillarYSize + 0.5 * pillarYSize;
+                float pillarX = minXRange + pOutPlrs[x * 2 + 0] * pillarXSize + 0.5 * pillarXSize;
+                float pillarY = minYRange + pOutPlrs[x * 2 + 1] * pillarYSize + 0.5 * pillarYSize;
                 for ( int j = 0; j < maxNumPtsPerPlr; j++ )
                 {
                     int id2 = x * maxNumPtsPerPlr * numOutFeatureDim + j * numOutFeatureDim;
