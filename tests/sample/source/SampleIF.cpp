@@ -395,6 +395,10 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         {
             ret = RIDEHAL_IMAGE_FORMAT_NV12;
         }
+        else if ( "nv12_ubwc" == format )
+        {
+            ret = RIDEHAL_IMAGE_FORMAT_NV12_UBWC;
+        }
         else if ( "p010" == format )
         {
             ret = RIDEHAL_IMAGE_FORMAT_P010;

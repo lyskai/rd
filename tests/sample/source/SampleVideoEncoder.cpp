@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleVideoEncoder.hpp"
 
 
@@ -71,8 +70,10 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.timestamp = info.timestamp;
         frames.Add( frame );
         TRACE_END( frame.frameId );
-        RIDEHAL_DEBUG( "enc-outFrameCallback, frameId %" PRIu64 " tsNs:%" PRIu64 " type %d size %" PRIu32,
-                       info.frameId, info.timestamp, pOutputFrame->frameType, pOutputFrame->sharedBuffer.size );
+        RIDEHAL_DEBUG( "enc-outFrameCallback, frameId %" PRIu64 " tsNs:%" PRIu64
+                       " type %d size %" PRIu32,
+                       info.frameId, info.timestamp, pOutputFrame->frameType,
+                       pOutputFrame->sharedBuffer.size );
         m_pub.Publish( frames );
     }
     else
@@ -83,7 +84,8 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.timestamp = pOutputFrame->timestampNs;
         frames.frames.push_back( frame );
         TRACE_EVENT( SYSTRACE_EVENT_VENC_OUTPUT_WITH_2ND_FRAME );
-        RIDEHAL_DEBUG( "enc-outFrameCallback, frame info queue is empty, frameId:%" PRIu64 " tsNs:%" PRIu64,
+        RIDEHAL_DEBUG( "enc-outFrameCallback, frame info queue is empty, frameId:%" PRIu64
+                       " tsNs:%" PRIu64,
                        frame.frameId, frame.timestamp );
         m_pub.Publish( frames );
     }
@@ -172,7 +174,7 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
 
     m_config.gop = 20;
     m_config.rateControlMode = VIDEO_ENCODER_RCM_CBR_CFR;
-    m_config.inFormat = RIDEHAL_IMAGE_FORMAT_NV12;
+    m_config.inFormat = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
     m_config.outFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
     m_config.profile = VIDEO_ENCODER_PROFILE_HEVC_MAIN;
     m_config.bInputDynamicMode = true;

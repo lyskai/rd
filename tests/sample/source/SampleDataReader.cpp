@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleDataReader.hpp"
 #include <chrono>
 #include <time.h>
@@ -14,11 +13,12 @@ namespace sample
 {
 
 static std::string s_rideHalFormatToStr[RIDEHAL_IMAGE_FORMAT_MAX] = {
-        ".rgb",  /* RIDEHAL_IMAGE_FORMAT_RGB888 */
-        ".bgr",  /* RIDEHAL_IMAGE_FORMAT_BGR888 */
-        ".uyvy", /* RIDEHAL_IMAGE_FORMAT_UYVY */
-        ".nv12", /* RIDEHAL_IMAGE_FORMAT_NV12 */
-        ".p010"  /* RIDEHAL_IMAGE_FORMAT_P010 */
+        ".rgb",       /* RIDEHAL_IMAGE_FORMAT_RGB888 */
+        ".bgr",       /* RIDEHAL_IMAGE_FORMAT_BGR888 */
+        ".uyvy",      /* RIDEHAL_IMAGE_FORMAT_UYVY */
+        ".nv12",      /* RIDEHAL_IMAGE_FORMAT_NV12 */
+        ".p010",      /* RIDEHAL_IMAGE_FORMAT_P010 */
+        ".nv12_ubwc", /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
 };
 
 #define SIZE_OF_FLOAT16 2

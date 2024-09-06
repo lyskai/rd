@@ -1109,6 +1109,9 @@ vidc_color_format_type VideoEncoder::GetVidcFormat( RideHal_ImageFormat_e format
         case RIDEHAL_IMAGE_FORMAT_NV12:
             ret = VIDC_COLOR_FORMAT_NV12;
             break;
+        case RIDEHAL_IMAGE_FORMAT_NV12_UBWC:
+            ret = VIDC_COLOR_FORMAT_NV12_UBWC;
+            break;
         case RIDEHAL_IMAGE_FORMAT_P010:
             ret = VIDC_COLOR_FORMAT_NV12_P010;
             break;
@@ -1670,7 +1673,6 @@ RideHalError_e VideoEncoder::PrepareBuffer( ioctl_session_t *pIoHandle,
                 imgProps.compressedSize = bufSize;
                 imgProps.format = m_outFormat;
                 ret = sharedBuffer.Allocate( &imgProps );
-                // ret = sharedBuffer.Allocate( bufSize );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "Allocate outputBuffer failed %d for index=%" PRId32, ret, i );

@@ -147,8 +147,8 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
                     planeDef.nBufAddrAlignment, planeDef.nPlaneBufSize,
                     planeDef.nPlanePaddingSize );
             this->imgProps.stride[i] = planeDef.nActualStride;
-            this->imgProps.actualHeight[i] = planeDef.nActualPlaneBufHeight;
-            size += (size_t) planeDef.nActualStride * planeDef.nActualPlaneBufHeight;
+            this->imgProps.actualHeight[i] = planeDef.nPlaneBufSize / planeDef.nActualStride;
+            size += (size_t) planeDef.nPlaneBufSize;
             if ( i == ( numPlanes - 1 ) )
             {
                 this->imgProps.extraPadding = planeDef.nPlanePaddingSize;

@@ -51,7 +51,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | parameter | required | type      | comments |
 |-----------|----------|-----------|----------|
 | -n        | true     | string    | The unique component name |
-| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex] |
+| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex, SharedRing, FpsAdapter] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the previous attribute name |
 
@@ -63,12 +63,12 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 |-----------|----------|-----------|---------|----------|
 | number    | false    | int       | 1       | The number of simulated sensors |
 | typeX     | false    | string    | "image"  | The buffer type for the simulated sensor X, options from [image, tensor] |
-| formatX   | false    | string    | "nv12"  | The image format for the simulated camera X, options from [nv12, uyvy, rgb, bgr, p010] |
+| formatX   | false    | string    | "nv12"  | The image format for the simulated camera X, options from [nv12, uyvy, rgb, bgr, p010, nv12_ubwc] |
 | widthX    | false    | int       | 1920    | The image width for the simulated camera X |
 | heightX   | false    | int       | 1024    | The image height for the simulated camera X |
 | data_pathX | true    | string    | -       | The data path for the simulated sensor X that contain the image files |
 | tensor_typeX | false | string    | float32 | The tensor type, options from [int8, int16, int32, int64, uint8, uint16, uint32, uint64, float16, float32, float64, sfixed_point8, sfixed_point16, sfixed_point32, ufixed_point8, ufixed_point16, ufixed_point32 ] |
-| dimsX     | true     | string    | -       | The tensor dimensions, in foramt "N,H,W,C", "N,S,C", "N,C", or "N" depends on the number of dimensions. |
+| dimsX     | true     | string    | -       | The tensor dimensions, in format "N,H,W,C", "N,S,C", "N,C", or "N" depends on the number of dimensions. |
 | fps       | false    | int       | 30      | The frame rate per second |
 | pool_size | false    | int       | 4       | the image memory pool size |
 | cache     | false    | bool      | true    | use cached memory or not for the image memory |
@@ -116,7 +116,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | height    | true     | int       | -       | The image height |
 | request_mode | false | bool      | false   | The camera request mode |
 | pool_size | false    | int       | 4       | The image memory pool size |
-| format    | false    | string    | "nv12"  | The camera frame format, options from [nv12, uyvy] |
+| format    | false    | string    | "nv12"  | The camera frame format, options from [nv12, uyvy, p010, nv12_ubwc] |
 | frame_drop_patten | false | int  | 0       | The frame drop patten defined by qcarcam |
 | stream_id | false    | int       | 0       | The camera stream id |
 | isp_use_case | false | int       | 3       | The ISP use case |
@@ -125,7 +125,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | topic     | true     | string    | -       | The output topic name |
 | widthX     | true     | int       | -       | The image width for the stream X |
 | heightX    | true     | int       | -       | The image height for the stream X |
-| formatX    | false    | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy] |
+| formatX    | false    | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy, p010, nv12_ubwc] |
 | stream_idX | false    | int       | ${X}       | The camera stream id for the stream X |
 | pool_sizeX | false    | int       | 4       | The image memory pool size for the stream X |
 | topicX     | true     | string    | -       | The output topic name for the stream X |
@@ -301,6 +301,7 @@ The command line template example for Lidar pipeline:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
+| formatX       | false    | string    | "nv12"  | The image format, options from [nv12, nv12_ubwc] |
 | width         | true     | int       | -       | The image width |
 | height        | true     | int       | -       | The image height |
 | pool_size     | false    | int       | 4       | The image memory pool size |
