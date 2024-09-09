@@ -1753,9 +1753,9 @@ RideHalError_e QnnRuntime::CheckInputTensors( const RideHal_SharedBuffer_t *pInp
             const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
             if ( pInputs[i].tensorProps.type != SwitchFromQnnDataType( dataType ) )
             {
-                RIDEHAL_ERROR(
-                        "Unmatched data type. shared buffer data type: %u, QNN data type: %u",
-                        pInputs[i].tensorProps.type, dataType );
+                RIDEHAL_ERROR( "Unmatched data type. tensor name: %s, shared buffer data type: %u, "
+                               "QNN data type: %x",
+                               m_pInputTensor[i].pName, pInputs[i].tensorProps.type, dataType );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
@@ -1763,9 +1763,9 @@ RideHalError_e QnnRuntime::CheckInputTensors( const RideHal_SharedBuffer_t *pInp
             const uint32_t rank = QNN_TENSOR_GET_RANK( tensor );
             if ( rank != pInputs[i].tensorProps.numDims )
             {
-                RIDEHAL_ERROR( "Input tensors dim is not equal to model input tensors dim. "
-                               "Input dim: %u, model input dim: %u",
-                               pInputs[i].tensorProps.numDims, rank );
+                RIDEHAL_ERROR( "Input tensors dim is not equal to model input tensors dim. tensor "
+                               "name: %s, Input dim: %u, model input dim: %u",
+                               m_pInputTensor[i].pName, pInputs[i].tensorProps.numDims, rank );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
@@ -1815,9 +1815,9 @@ RideHalError_e QnnRuntime::CheckOutputTensors( const RideHal_SharedBuffer_t *pOu
             const auto dataType = QNN_TENSOR_GET_DATA_TYPE( tensor );
             if ( pOutputs[i].tensorProps.type != SwitchFromQnnDataType( dataType ) )
             {
-                RIDEHAL_ERROR(
-                        "Unmatched data type. shared buffer data type: %u, QNN data type: %u",
-                        pOutputs[i].tensorProps.type, dataType );
+                RIDEHAL_ERROR( "Unmatched data type. tensor name: %s, shared buffer data type: %u, "
+                               "QNN data type: %x",
+                               m_pOutputTensor[i].pName, pOutputs[i].tensorProps.type, dataType );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
@@ -1826,8 +1826,8 @@ RideHalError_e QnnRuntime::CheckOutputTensors( const RideHal_SharedBuffer_t *pOu
             if ( rank != pOutputs[i].tensorProps.numDims )
             {
                 RIDEHAL_ERROR( "Output tensors dim is not equal to model output tensors dim. "
-                               "Output dim: %u, model output dim: %u",
-                               pOutputs[i].tensorProps.numDims, rank );
+                               "tensor name: %s, Output dim: %u, model output dim: %u",
+                               m_pOutputTensor[i].pName, pOutputs[i].tensorProps.numDims, rank );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
