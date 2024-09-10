@@ -123,7 +123,7 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
             imgProp.stride[0] = m_config.outputWidth * 3;
             imgProp.actualHeight[0] = m_config.outputHeight;
             imgProp.numPlanes = 1;
-            imgProp.extraPadding = 0;
+            imgProp.planeBufSize[0] = 0;
 
             ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
                                     RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );

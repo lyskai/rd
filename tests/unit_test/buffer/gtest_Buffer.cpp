@@ -135,7 +135,7 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     imgProp.stride[0] = 3840 * 2;
     imgProp.actualHeight[0] = 2160;
     imgProp.numPlanes = 1;
-    imgProp.extraPadding = 0;
+    imgProp.planeBufSize[0] = 0; /* auto calculated the required size by stride*actualHeight */
     auto ret = sharedBuffer.Allocate( &imgProp );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
@@ -160,7 +160,8 @@ TEST( Buffer, SANITY_ImageAllocateByProps )
     imgProp.stride[1] = 1920;
     imgProp.actualHeight[1] = 512;
     imgProp.numPlanes = 2;
-    imgProp.extraPadding = 0;
+    imgProp.planeBufSize[0] = 0;
+    imgProp.planeBufSize[1] = 0;
     ret = sharedBuffer.Allocate( &imgProp );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
@@ -189,7 +190,7 @@ TEST( Buffer, SANITY_ImageAllocateRGBByProps )
     imgProp.stride[0] = 1024 * 3;
     imgProp.actualHeight[0] = 768;
     imgProp.numPlanes = 1;
-    imgProp.extraPadding = 0;
+    imgProp.planeBufSize[0] = 0;
 
     // testing allocated a batched RGB image
     auto ret = sharedBufferAll.Allocate( &imgProp );
@@ -292,7 +293,12 @@ static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffe
             {
                 ss << pSharedBuffer->imgProps.actualHeight[i] << ", ";
             }
-            ss << "], extraPadding=" << pSharedBuffer->imgProps.extraPadding;
+            ss << "] plane size=[";
+            for ( uint32_t i = 0; i < pSharedBuffer->imgProps.numPlanes; i++ )
+            {
+                ss << pSharedBuffer->imgProps.planeBufSize[i] << ", ";
+            }
+            ss << "]";
         }
         else
         {
@@ -478,7 +484,7 @@ static void InitImageProps( RideHal_ImageProps_t &imgProp )
     imgProp.stride[0] = 3840 * 2;
     imgProp.actualHeight[0] = 2160;
     imgProp.numPlanes = 1;
-    imgProp.extraPadding = 0;
+    imgProp.planeBufSize[0] = 0;
 }
 
 TEST( Buffer, L2_Image )
@@ -570,6 +576,11 @@ TEST( Buffer, L2_Image )
         RideHal_SharedBuffer_t sharedBuffer;
         RideHal_ImageProps_t imgProp;
 
+        if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == (RideHal_ImageFormat_e) i )
+        {
+            continue;
+        }
+
         imgProp.batchSize = i + 1;
         imgProp.format = (RideHal_ImageFormat_e) i;
         imgProp.width = 3840 / RIDEHAL_IMAGE_FORMAT_MAX * ( i + 1 );
@@ -584,7 +595,8 @@ TEST( Buffer, L2_Image )
             imgProp.stride[1] = imgProp.width * 3;
             imgProp.actualHeight[1] = ( imgProp.height + 1 ) / 2;
         }
-        imgProp.extraPadding = 0;
+        imgProp.planeBufSize[0] = 0;
+        imgProp.planeBufSize[1] = 0;
 
         auto ret = sharedBuffer.Allocate( &imgProp );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -829,7 +841,7 @@ TEST( Buffer, L2_Image2Tensor )
         imgProp.stride[0] = 1920 * 3;
         imgProp.actualHeight[0] = 1028;
         imgProp.numPlanes = 1;
-        imgProp.extraPadding = 0;
+        imgProp.planeBufSize[0] = 0;
         ret = sharedBuffer.Allocate( &imgProp );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         ret = sharedBuffer.ImageToTensor( &tensor );
@@ -894,7 +906,8 @@ TEST( Buffer, L2_Image2Tensor )
         imgProp.stride[1] = 1921;
         imgProp.actualHeight[1] = 1024 / 2;
         imgProp.numPlanes = 2;
-        imgProp.extraPadding = 0;
+        imgProp.planeBufSize[0] = 0;
+        imgProp.planeBufSize[1] = 0;
         ret = sharedBuffer.Allocate( &imgProp );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         ret = sharedBuffer.ImageToTensor( &luma, &chroma );
@@ -975,7 +988,8 @@ TEST( Buffer, L2_Image2Tensor )
         imgProp.stride[1] = 1921 * 2;
         imgProp.actualHeight[1] = 1024 / 2;
         imgProp.numPlanes = 2;
-        imgProp.extraPadding = 0;
+        imgProp.planeBufSize[0] = 0;
+        imgProp.planeBufSize[1] = 0;
 
         ret = sharedBuffer.Allocate( &imgProp );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );

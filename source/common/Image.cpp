@@ -147,23 +147,9 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
                     planeDef.nBufAddrAlignment, planeDef.nPlaneBufSize,
                     planeDef.nPlanePaddingSize );
             this->imgProps.stride[i] = planeDef.nActualStride;
-            this->imgProps.actualHeight[i] = planeDef.nPlaneBufSize / planeDef.nActualStride;
-            size += (size_t) planeDef.nPlaneBufSize;
-            if ( i == ( numPlanes - 1 ) )
-            {
-                this->imgProps.extraPadding = planeDef.nPlanePaddingSize;
-                size += planeDef.nPlanePaddingSize;
-            }
-            else
-            {
-                if ( 0 != planeDef.nPlanePaddingSize )
-                {
-                    RIDEHAL_LOG_ERROR( "plane %d padding size %u != 0 for image width=%u, "
-                                       "height=%u, format=%d",
-                                       i, planeDef.nPlanePaddingSize, width, height, format );
-                    ret = RIDEHAL_ERROR_UNSUPPORTED;
-                }
-            }
+            this->imgProps.actualHeight[i] = planeDef.nActualPlaneBufHeight;
+            this->imgProps.planeBufSize[i] = planeDef.nPlaneBufSize + planeDef.nPlanePaddingSize;
+            size += (size_t) this->imgProps.planeBufSize[i];
         }
         else
         {
@@ -280,6 +266,17 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
                             pImgProps->format );
                     ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 }
+                else if ( ( 0 != pImgProps->planeBufSize[i] ) &&
+                          ( pImgProps->planeBufSize[i] <
+                            ( pImgProps->stride[i] * pImgProps->actualHeight[i] ) ) )
+                {
+                    RIDEHAL_LOG_ERROR(
+                            "given plane buffer size %u(<%u) too small for plane %u for format %d",
+                            pImgProps->planeBufSize[i],
+                            pImgProps->stride[i] * pImgProps->actualHeight[i], i,
+                            pImgProps->format );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
                 else
                 {
                     /* OK */
@@ -294,9 +291,15 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
             {
                 for ( i = 0; i < pImgProps->numPlanes; i++ )
                 {
-                    size += (size_t) pImgProps->stride[i] * pImgProps->actualHeight[i];
+                    if ( 0 != pImgProps->planeBufSize[i] )
+                    {
+                        size += (size_t) pImgProps->planeBufSize[i];
+                    }
+                    else
+                    {
+                        size += (size_t) pImgProps->stride[i] * pImgProps->actualHeight[i];
+                    }
                 }
-                size += pImgProps->extraPadding;
                 size = size * pImgProps->batchSize;
             }
         }
@@ -309,6 +312,13 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         this->imgProps = *pImgProps;
+        for ( i = 0; i < pImgProps->numPlanes; i++ )
+        {
+            if ( 0 == pImgProps->planeBufSize[i] )
+            {
+                this->imgProps.planeBufSize[i] = pImgProps->stride[i] * pImgProps->actualHeight[i];
+            }
+        }
         this->type = RIDEHAL_BUFFER_TYPE_IMAGE;
         ret = Allocate( size, usage, flags );
     }
@@ -524,7 +534,7 @@ RideHalError_e RideHal_SharedBuffer::ImageToTensor( RideHal_SharedBuffer *pLuma,
                       s_rideHalFormatToBytesPerPixel[this->imgProps.format];
 
         pChroma->buffer = this->buffer;
-        pChroma->offset = this->offset + this->imgProps.actualHeight[0] * this->imgProps.stride[0];
+        pChroma->offset = this->offset + this->imgProps.planeBufSize[0];
         pChroma->type = RIDEHAL_BUFFER_TYPE_TENSOR;
         if ( RIDEHAL_IMAGE_FORMAT_NV12 == this->imgProps.format )
         {

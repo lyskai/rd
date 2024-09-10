@@ -127,10 +127,12 @@ typedef struct
     uint32_t actualHeight[RIDEHAL_NUM_IMAGE_PLANES];
     /**< The image actual height in scanlines for each plane */
 
-    uint32_t numPlanes; /**< The number of the image planes */
+    uint32_t planeBufSize[RIDEHAL_NUM_IMAGE_PLANES];
+    /**< The image actual buffer size for each plane.
+     * This equals to (stride * actualHeight + padding size).
+     */
 
-    uint32_t extraPadding;
-    /**< The extra paddings in bytes at the end of the last image plane */
+    uint32_t numPlanes; /**< The number of the image planes */
 
     uint32_t compressedSize;
     /**< the size in bytes of the compressed image */

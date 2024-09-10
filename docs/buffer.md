@@ -26,7 +26,7 @@ And the below picture shows a case what's the actual buffer looks like for an im
 
 ![Image format with 2 plane](./images/image-prop-2-plane.jpg)
 
-For each plane, it may have paddings along width and height, it may also has paddings between the 2 planes. And some extra paddings is also needed at the end of the last plane.
+For each plane, it may have paddings along width and height, it may also has paddings between the 2 planes. And some extra paddings is also needed at the end of the each plane.
 
 And the below picture shows a case what's the actual buffer looks like for an image format such as RGB that has 1 plane.
 
@@ -36,7 +36,7 @@ Thus now, it's easy to understand those members of the type [RideHal_ImageProps_
 
 For the batchSize, it was generally designed for the BEV kind of AI models, check below section [3.1](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model).
 
-For the compressedSize, it was designed for the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L222) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight/numPlanes/extraPadding will be invalid and should not be used.
+For the compressedSize, it was designed for the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L222) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight/planeBufSize/numPlanes will be invalid and should not be used.
 
 # 1.2 The details of RideHal_SharedBuffer_t.
 
@@ -72,10 +72,12 @@ shareBuffer.imgProps.width = width;
 shareBuffer.imgProps.height = height;
 shareBuffer.imgProps.numPlanes = numPlanes;
 shareBuffer.imgProps.stride[0] = stride0;
-shareBuffer.imgProps.stride[numPlanes-1] = ...;
 shareBuffer.imgProps.actualHeight[0] = actualHeight0;
+shareBuffer.imgProps.planeBufSize[0] = stride0*actualHeight0;
+...
+shareBuffer.imgProps.stride[numPlanes-1] = strideX;
 shareBuffer.imgProps.actualHeight[numPlanes-1] = actualHeightX;
-shareBuffer.imgProps.extraPadding = extraPadding;
+shareBuffer.imgProps.planeBufSize[numPlanes-1] = strideX*actualHeight;
 
 // and then this can be feed into a RideHal Component
 

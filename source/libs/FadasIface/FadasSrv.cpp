@@ -573,9 +573,8 @@ int32_t FadasSrv::RegisterImage( const RideHal_SharedBuffer_t *pBuffer, FadasBuf
     uint32_t batch = pBuffer->imgProps.batchSize;
     size_t sizeOne = ( size_t )( pBuffer->size / batch );
     RideHal_ImageFormat_e format = pBuffer->imgProps.format;
-    uint32_t sizePlane0 = pBuffer->imgProps.stride[0] * pBuffer->imgProps.actualHeight[0];
-    uint32_t sizePlane1 = pBuffer->imgProps.stride[1] * pBuffer->imgProps.actualHeight[1] +
-                          pBuffer->imgProps.extraPadding;
+    uint32_t sizePlane0 = pBuffer->imgProps.planeBufSize[0];
+    uint32_t sizePlane1 = pBuffer->imgProps.planeBufSize[1];
 
     auto it = memMap.find( pBuffer->data() );
     if ( it == memMap.end() )

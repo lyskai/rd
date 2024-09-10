@@ -116,8 +116,8 @@ class DataImageMeta(MyStructure):
                  ('height',ctypes.c_uint),
                  ('stride',ctypes.c_uint*4),
                  ('actualHeight',ctypes.c_uint*4),
+                 ('planeBufSize',ctypes.c_uint*4),
                  ('numPlanes',ctypes.c_uint),
-                 ('extraPadding',ctypes.c_uint),
                  ('compressedSize',ctypes.c_uint),
                  ('reserved',ctypes.c_ubyte*60) ]
 
@@ -138,10 +138,11 @@ class DataImage():
             for i in range(numPlanes):
                 self.meta.stride[i] = self.meta.width * bps
             self.meta.actualHeight[0] = self.meta.height
+            self.meta.planeBufSize[0] = self.meta.height * self.meta.width
             if format in [RIDEHAL_IMAGE_FORMAT_NV12,  RIDEHAL_IMAGE_FORMAT_P010]:
                 self.meta.actualHeight[1] = self.meta.height//2
+                self.meta.planeBufSize[1] = self.meta.height * self.meta.width // 2
             self.meta.numPlanes = numPlanes
-            self.meta.extraPadding = 0
             if format in [RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264,  RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265]:
                 self.meta.compressedSize = 1024*1024
 

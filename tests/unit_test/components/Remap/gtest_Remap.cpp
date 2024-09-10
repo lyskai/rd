@@ -716,7 +716,7 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
         {
             imgProp.stride[0] = RemapConfig.inputConfigs[inputId].inputWidth * 2;
             imgProp.actualHeight[0] = RemapConfig.inputConfigs[inputId].inputHeight;
-            imgProp.extraPadding = 0;
+            imgProp.planeBufSize[0] = 0;
             imgProp.numPlanes = 1;
         }
         else if ( RIDEHAL_IMAGE_FORMAT_NV12 == RemapConfig.inputConfigs[inputId].inputFormat )
@@ -725,14 +725,15 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
             imgProp.actualHeight[0] = RemapConfig.inputConfigs[inputId].inputHeight;
             imgProp.stride[1] = RemapConfig.inputConfigs[inputId].inputWidth;
             imgProp.actualHeight[1] = RemapConfig.inputConfigs[inputId].inputHeight / 2;
-            imgProp.extraPadding = 0;
+            imgProp.planeBufSize[0] = 0;
+            imgProp.planeBufSize[1] = 0;
             imgProp.numPlanes = 2;
         }
         else if ( RIDEHAL_IMAGE_FORMAT_RGB888 == RemapConfig.inputConfigs[inputId].inputFormat )
         {
             imgProp.stride[0] = RemapConfig.inputConfigs[inputId].inputWidth * 3;
             imgProp.actualHeight[0] = RemapConfig.inputConfigs[inputId].inputHeight;
-            imgProp.extraPadding = 0;
+            imgProp.planeBufSize[0] = 0;
             imgProp.numPlanes = 1;
         }
 
@@ -779,7 +780,7 @@ void ImageTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inp
     imgProp.format = RemapConfig.outputFormat;
     imgProp.stride[0] = RemapConfig.outputWidth * 3;
     imgProp.actualHeight[0] = RemapConfig.outputHeight;
-    imgProp.extraPadding = 0;
+    imgProp.planeBufSize[0] = 0;
     imgProp.numPlanes = 1;
 
     RideHal_SharedBuffer_t output;

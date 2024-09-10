@@ -46,14 +46,15 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
         imgProp1.stride[1] = CL2DFlexConfig.inputWidth;
         imgProp1.actualHeight[0] = CL2DFlexConfig.inputHeight;
         imgProp1.actualHeight[1] = CL2DFlexConfig.inputHeight / 2;
-        imgProp1.extraPadding = 0;
+        imgProp1.planeBufSize[0] = 0;
+        imgProp1.planeBufSize[1] = 0;
         imgProp1.numPlanes = 2;
     }
     else if ( RIDEHAL_IMAGE_FORMAT_UYVY == CL2DFlexConfig.inputFormat )
     {
         imgProp1.stride[0] = CL2DFlexConfig.inputWidth * 2;
         imgProp1.actualHeight[0] = CL2DFlexConfig.inputHeight;
-        imgProp1.extraPadding = 0;
+        imgProp1.planeBufSize[0] = 0;
         imgProp1.numPlanes = 1;
     }
 
@@ -100,7 +101,7 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
-        imgProp2.extraPadding = 0;
+        imgProp2.planeBufSize[0] = 0;
         imgProp2.numPlanes = 1;
     }
     else if ( RIDEHAL_IMAGE_FORMAT_NV12 == CL2DFlexConfig.outputFormat )
@@ -109,7 +110,8 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
         imgProp2.stride[1] = CL2DFlexConfig.outputWidth;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
         imgProp2.actualHeight[1] = CL2DFlexConfig.outputHeight / 2;
-        imgProp2.extraPadding = 0;
+        imgProp2.planeBufSize[0] = 0;
+        imgProp2.planeBufSize[1] = 0;
         imgProp2.numPlanes = 2;
     }
 
@@ -243,14 +245,15 @@ void PerformanceTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat
         imgProp1.stride[1] = CL2DFlexConfig.inputWidth;
         imgProp1.actualHeight[0] = CL2DFlexConfig.inputHeight;
         imgProp1.actualHeight[1] = CL2DFlexConfig.inputHeight / 2;
-        imgProp1.extraPadding = 0;
+        imgProp1.planeBufSize[0] = 0;
+        imgProp1.planeBufSize[1] = 0;
         imgProp1.numPlanes = 2;
     }
     else if ( RIDEHAL_IMAGE_FORMAT_UYVY == CL2DFlexConfig.inputFormat )
     {
         imgProp1.stride[0] = CL2DFlexConfig.inputWidth * 2;
         imgProp1.actualHeight[0] = CL2DFlexConfig.inputHeight;
-        imgProp1.extraPadding = 0;
+        imgProp1.planeBufSize[0] = 0;
         imgProp1.numPlanes = 1;
     }
 
@@ -267,7 +270,7 @@ void PerformanceTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
-        imgProp2.extraPadding = 0;
+        imgProp2.planeBufSize[0] = 0;
         imgProp2.numPlanes = 1;
     }
     else if ( RIDEHAL_IMAGE_FORMAT_NV12 == CL2DFlexConfig.outputFormat )
@@ -276,7 +279,8 @@ void PerformanceTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat
         imgProp2.stride[1] = CL2DFlexConfig.outputWidth;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
         imgProp2.actualHeight[1] = CL2DFlexConfig.outputHeight / 2;
-        imgProp2.extraPadding = 0;
+        imgProp2.planeBufSize[0] = 0;
+        imgProp2.planeBufSize[1] = 0;
         imgProp2.numPlanes = 2;
     }
 

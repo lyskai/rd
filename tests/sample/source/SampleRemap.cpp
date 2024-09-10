@@ -300,7 +300,7 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
                 m_config.outputWidth * s_rideHalFormatToBytesPerPixel[m_config.outputFormat];
         imgProp.actualHeight[0] = m_config.outputHeight;
         imgProp.numPlanes = 1;
-        imgProp.extraPadding = 0;
+        imgProp.planeBufSize[0] = 0;
 
         ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
                                 RIDEHAL_BUFFER_USAGE_HTP );
