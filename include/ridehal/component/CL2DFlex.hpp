@@ -119,17 +119,23 @@ private:
     OpenclSrv m_OpenclSrvObj;
 
 private:
-    RideHalError_e ConvertFromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+    RideHalError_e ConvertFromNV12ToRGB( cl_mem bufferSrc, cl_mem bufferDst,
+                                         const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ConvertFromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
+    RideHalError_e ConvertFromUYVYToRGB( cl_mem bufferSrc, cl_mem bufferDst,
+                                         const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ConvertFromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
+    RideHalError_e ConvertFromUYVYToNV12( cl_mem bufferSrc, cl_mem bufferDst,
+                                          const RideHal_SharedBuffer_t *pInput,
                                           const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromNV12ToRGB( const RideHal_SharedBuffer_t *pInput,
+    RideHalError_e ResizeFromNV12ToRGB( cl_mem bufferSrc, cl_mem bufferDst,
+                                        const RideHal_SharedBuffer_t *pInput,
                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromUYVYToRGB( const RideHal_SharedBuffer_t *pInput,
+    RideHalError_e ResizeFromUYVYToRGB( cl_mem bufferSrc, cl_mem bufferDst,
+                                        const RideHal_SharedBuffer_t *pInput,
                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromUYVYToNV12( const RideHal_SharedBuffer_t *pInput,
+    RideHalError_e ResizeFromUYVYToNV12( cl_mem bufferSrc, cl_mem bufferDst,
+                                         const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
 
 };   // class CL2DFlex
