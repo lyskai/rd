@@ -459,8 +459,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             else if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_inputFormats[inputId] )
             {
                 srcImg.props.format = FADAS_IMAGE_FORMAT_Y8UV8;
-                srcImg.plane[1] =
-                        pSrc + srcImg.props.stride[0] * inputs[inputId].imgProps.actualHeight[0];
+                srcImg.plane[1] = pSrc + inputs[inputId].imgProps.planeBufSize[0];
             }
             else
             {

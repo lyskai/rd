@@ -12,13 +12,13 @@ static const char *s_pSourceConvertNV12ToRGB = KernelCode(
         __constant float coeffs[5] = { 1.163999557f, 2.017999649f, -0.390999794f, -0.812999725f,
                                        1.5959997177f };
         __kernel void ConvertNV12ToRGB( __global const uchar *srcPtr, __global uchar *dstPtr,
-                                        int rows, int cols, int inputStride0, int inputHeight0,
+                                        int rows, int cols, int inputStride0, int inputPlane0Size,
                                         int inputStride1, int outputStride ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global const uchar *ySrc = srcPtr + mad24( y << 1, inputStride0, ( x << 1 ) );
             __global const uchar *uSrc =
-                    srcPtr + inputStride0 * inputHeight0 + mad24( y, inputStride1, ( x << 1 ) );
+                    srcPtr + inputPlane0Size + mad24( y, inputStride1, ( x << 1 ) );
             __global uchar *dst1 = dstPtr + mad24( y << 1, outputStride, x * 6 );
             __global uchar *dst2 = dst1 + outputStride;
             float Y1 = max( 0, ySrc[0] - 16 );
@@ -64,13 +64,12 @@ static const char *s_pSourceConvertUYVYToRGB = KernelCode(
 
 static const char *s_pSourceConvertUYVYToNV12 = KernelCode( __kernel void ConvertUYVYToNV12(
         __global const uchar *srcPtr, __global uchar *dstPtr, int rows, int cols, int inputStride,
-        int outputStride0, int outputHeight0, int outputStride1 ) {
+        int outputStride0, int outputPlane0Size, int outputStride1 ) {
     int x = get_global_id( 0 );
     int y = get_global_id( 1 );
     __global const uchar *src = srcPtr + mad24( y << 1, inputStride, x * 4 );
     __global uchar *dst1 = dstPtr + mad24( y << 1, outputStride0, x << 1 );
-    __global uchar *dst2 =
-            dstPtr + outputStride0 * outputHeight0 + mad24( y, outputStride1, x << 1 );
+    __global uchar *dst2 = dstPtr + outputPlane0Size + mad24( y, outputStride1, x << 1 );
     float U1 = src[0];
     float V1 = src[2];
     float U2 = src[0 + inputStride];
@@ -88,12 +87,12 @@ static const char *s_pSourceResizeNV12ToRGB = KernelCode(
                                        1.5959997177f };
         __kernel void ResizeNV12ToRGB( __global const uchar *srcPtr, __global uchar *dstPtr,
                                        int inputHeight, int inputWidth, int outputHeight,
-                                       int outputWidth, int inputStride0, int inputHeight0,
+                                       int outputWidth, int inputStride0, int inputPlane0Size,
                                        int inputStride1, int outputStride ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global const uchar *ySrc = srcPtr;
-            __global const uchar *uSrc = srcPtr + inputStride0 * inputHeight0;
+            __global const uchar *uSrc = srcPtr + inputPlane0Size;
             __global uchar *dst = dstPtr + mad24( y, outputStride, x * 3 );
             int xIn = round( (float) x / (float) outputWidth * (float) inputWidth );
             int yIn = round( (float) y / (float) outputHeight * (float) inputHeight );
@@ -131,7 +130,7 @@ static const char *s_pSourceResizeUYVYToRGB = KernelCode(
 
 static const char *s_pSourceResizeUYVYToNV12 = KernelCode( __kernel void ResizeUYVYToNV12(
         __global const uchar *srcPtr, __global uchar *dstPtr, int inputHeight, int inputWidth,
-        int outputHeight, int outputWidth, int inputStride, int outputStride0, int outputHeight0,
+        int outputHeight, int outputWidth, int inputStride, int outputStride0, int outputPlane0Size,
         int outputStride1 ) {
     int x = get_global_id( 0 );
     int y = get_global_id( 1 );
@@ -144,8 +143,7 @@ static const char *s_pSourceResizeUYVYToNV12 = KernelCode( __kernel void ResizeU
     {
         if ( y < outputHeight / 2 )
         {
-            __global uchar *udst =
-                    dstPtr + outputStride0 * outputHeight0 + mad24( y, outputStride1, x << 1 );
+            __global uchar *udst = dstPtr + outputPlane0Size + mad24( y, outputStride1, x << 1 );
             int xIn2 = round( (float) ( x << 1 ) / (float) outputWidth * (float) inputWidth );
             int yIn2 = round( (float) ( y << 1 ) / (float) outputHeight * (float) inputHeight );
             int uPtr = mad24( yIn2, inputStride, ( xIn2 / 2 ) * 4 );

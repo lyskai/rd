@@ -308,7 +308,7 @@ RideHalError_e CL2DFlex::ConvertFromNV12ToRGB( cl_mem bufferSrc, cl_mem bufferDs
     OpenclArgs[3].argSize = sizeof( cl_int );
     OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
     OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( pInput->imgProps.actualHeight[0] );
+    OpenclArgs[5].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
     OpenclArgs[5].argSize = sizeof( cl_int );
     OpenclArgs[6].pArg = (void *) &( pInput->imgProps.stride[1] );
     OpenclArgs[6].argSize = sizeof( cl_int );
@@ -394,7 +394,7 @@ RideHalError_e CL2DFlex::ConvertFromUYVYToNV12( cl_mem bufferSrc, cl_mem bufferD
     OpenclArgs[4].argSize = sizeof( cl_int );
     OpenclArgs[5].pArg = (void *) &( pOutput->imgProps.stride[0] );
     OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( pOutput->imgProps.actualHeight[0] );
+    OpenclArgs[6].pArg = (void *) &( pOutput->imgProps.planeBufSize[0] );
     OpenclArgs[6].argSize = sizeof( cl_int );
     OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[1] );
     OpenclArgs[7].argSize = sizeof( cl_int );
@@ -440,7 +440,7 @@ RideHalError_e CL2DFlex::ResizeFromNV12ToRGB( cl_mem bufferSrc, cl_mem bufferDst
     OpenclArgs[5].argSize = sizeof( cl_int );
     OpenclArgs[6].pArg = (void *) &( pInput->imgProps.stride[0] );
     OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( pInput->imgProps.actualHeight[0] );
+    OpenclArgs[7].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
     OpenclArgs[7].argSize = sizeof( cl_int );
     OpenclArgs[8].pArg = (void *) &( pInput->imgProps.stride[1] );
     OpenclArgs[8].argSize = sizeof( cl_int );
@@ -534,7 +534,7 @@ RideHalError_e CL2DFlex::ResizeFromUYVYToNV12( cl_mem bufferSrc, cl_mem bufferDs
     OpenclArgs[6].argSize = sizeof( cl_int );
     OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[0] );
     OpenclArgs[7].argSize = sizeof( cl_int );
-    OpenclArgs[8].pArg = (void *) &( pOutput->imgProps.actualHeight[0] );
+    OpenclArgs[8].pArg = (void *) &( pOutput->imgProps.planeBufSize[0] );
     OpenclArgs[8].argSize = sizeof( cl_int );
     OpenclArgs[9].pArg = (void *) &( pOutput->imgProps.stride[1] );
     OpenclArgs[9].argSize = sizeof( cl_int );

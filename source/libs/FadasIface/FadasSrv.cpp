@@ -580,24 +580,16 @@ int32_t FadasSrv::RegisterImage( const RideHal_SharedBuffer_t *pBuffer, FadasBuf
     if ( it == memMap.end() )
     {
         fd = FadasMemMap( pBuffer );
-        if ( fd >= 0 )
+        if ( 0 <= fd )
         {
             if ( FADAS_BUF_TYPE_IN == bufferType )
             {
+                /*for input buffer the batch must be 1*/
+                ret = FadasRegisterBuf( bufferType, ptr, fd, sizePlane0, offset, 1 );
                 if ( RIDEHAL_IMAGE_FORMAT_NV12 == format )
-                { /* register both of plane0 and plane1 for NV12 format, NV12 must be input so the
-                   * batch should be 1. */
-                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizePlane0, 0, 1 );
-                    if ( RIDEHAL_ERROR_NONE != ret )
-                    {
-                        RIDEHAL_ERROR( "FadasIface_FadasRegBuf failed!" );
-                        fd = -1;
-                    }
-                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizePlane1, sizePlane0, 1 );
-                }
-                else
-                {
-                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizeOne, offset, batch );
+                { /* register both of plane0 and plane1 for NV12 format */
+                    ret = FadasRegisterBuf( bufferType, ptr, fd, sizePlane1, sizePlane0 + offset,
+                                            1 );
                 }
             }
             else
@@ -669,7 +661,7 @@ int32_t FadasSrv::RegisterTensor( const RideHal_SharedBuffer_t *pBuffer, FadasBu
     if ( it == memMap.end() )
     {
         fd = FadasMemMap( pBuffer );
-        if ( fd >= 0 )
+        if ( 0 <= fd )
         {
             ret = FadasRegisterBuf( bufferType, ptr, fd, sizeOne, offset, batch );
             if ( RIDEHAL_ERROR_NONE == ret )
