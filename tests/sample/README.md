@@ -463,6 +463,7 @@ The command line template example:
 |---------------|----------|-----------|---------|----------|
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
+| processor     | false    | string    | "cpu"   | The processor type, options from [cpu, gpu] |
 | score_threshold  | false     | float    | 0.49       | The score threshold |
 | nms_threshold  | false     | float    | 0.6       | The NMS threshold |
 | out_size_factor  | false     | float    | 8.0       | out size factor |
@@ -480,6 +481,7 @@ The command line template example:
 
 ```sh
 -n BEVDETPP -t PostProcBevdet \
+    -k processor -v gpu \
     -k input_topic -v /sensor/camera/CAM/qnn \
     -k output_topic -v /sensor/camera/CAM/bevdetpp \
 ```
