@@ -498,7 +498,7 @@ RideHalError_e C2D::CreateSourceSurface( const RideHal_SharedBuffer_t *pSharedBu
     uint32_t height = pSharedBuffer->imgProps.height;
     uint32_t stride0 = pSharedBuffer->imgProps.stride[0];
     uint32_t stride1 = pSharedBuffer->imgProps.stride[1];
-    uint32_t actualHeight0 = pSharedBuffer->imgProps.actualHeight[0];
+    uint32_t planeBufSize0 = pSharedBuffer->imgProps.planeBufSize[0];
     RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
 
     uint32_t surfaceId = 0;
@@ -511,7 +511,7 @@ RideHalError_e C2D::CreateSourceSurface( const RideHal_SharedBuffer_t *pSharedBu
         case RIDEHAL_IMAGE_FORMAT_NV12:
         case RIDEHAL_IMAGE_FORMAT_P010:
             ret = CreateYUVSurface( bufferAddr, &surfaceId, format, width, height, stride0, stride1,
-                                    actualHeight0, isSource );
+                                    planeBufSize0, isSource );
             break;
         case RIDEHAL_IMAGE_FORMAT_RGB888:
         case RIDEHAL_IMAGE_FORMAT_BGR888:
@@ -560,7 +560,7 @@ RideHalError_e C2D::CreateTargetSurface( const RideHal_SharedBuffer_t *pSharedBu
     uint32_t height = pSharedBuffer->imgProps.height;
     uint32_t stride0 = pSharedBuffer->imgProps.stride[0];
     uint32_t stride1 = pSharedBuffer->imgProps.stride[1];
-    uint32_t actualHeight0 = pSharedBuffer->imgProps.actualHeight[0];
+    uint32_t planeBufSize0 = pSharedBuffer->imgProps.planeBufSize[0];
     RideHal_ImageFormat_e format = pSharedBuffer->imgProps.format;
 
     bool isSource = false;
@@ -573,7 +573,7 @@ RideHalError_e C2D::CreateTargetSurface( const RideHal_SharedBuffer_t *pSharedBu
         case RIDEHAL_IMAGE_FORMAT_NV12:
         case RIDEHAL_IMAGE_FORMAT_P010:
             ret = CreateYUVSurface( bufferAddr, surfaceId, format, width, height, stride0, stride1,
-                                    actualHeight0, isSource );
+                                    planeBufSize0, isSource );
             break;
         case RIDEHAL_IMAGE_FORMAT_RGB888:
         case RIDEHAL_IMAGE_FORMAT_BGR888:
@@ -594,7 +594,7 @@ RideHalError_e C2D::CreateTargetSurface( const RideHal_SharedBuffer_t *pSharedBu
 
 RideHalError_e C2D::CreateYUVSurface( void *bufferAddr, uint32_t *surfaceId,
                                       RideHal_ImageFormat_e format, uint32_t width, uint32_t height,
-                                      uint32_t stride0, uint32_t stride1, uint32_t actualHeight0,
+                                      uint32_t stride0, uint32_t stride1, uint32_t planeBufSize0,
                                       bool isSource )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -603,7 +603,7 @@ RideHalError_e C2D::CreateYUVSurface( void *bufferAddr, uint32_t *surfaceId,
     (void) memset( &surfaceDef, 0, sizeof( C2D_YUV_SURFACE_DEF ) );
 
     surfaceDef.plane0 = bufferAddr;
-    surfaceDef.plane1 = (void *) ( (uint8_t *) surfaceDef.plane0 + stride0 * actualHeight0 );
+    surfaceDef.plane1 = (void *) ( (uint8_t *) surfaceDef.plane0 + planeBufSize0 );
     surfaceDef.format = GetC2DFormatType( format );
     surfaceDef.width = width;
     surfaceDef.height = height;

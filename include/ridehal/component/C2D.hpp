@@ -216,7 +216,7 @@ private:
      */
     RideHalError_e CreateYUVSurface( void *bufferAddr, uint32_t *surfaceId,
                                      RideHal_ImageFormat_e format, uint32_t width, uint32_t height,
-                                     uint32_t stride0, uint32_t stride1, uint32_t actualHeight0,
+                                     uint32_t stride0, uint32_t stride1, uint32_t planeBufSize0,
                                      bool isSource );
     /**
      * @cond C2D::CreateRGBSurface @endcond
@@ -256,4 +256,5 @@ private:
 }   // namespace ridehal
 
 #endif   // RIDEHAL_C2D_HPP
+
 
