@@ -439,11 +439,11 @@ void CoverTest5()
     return;
 }
 
-void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e inputFormatTest,
-                  RideHal_ImageFormat_e outputFormatTest, uint32_t inputWidthTest,
-                  uint32_t inputHeightTest, uint32_t outputWidthTest, uint32_t outputHeightTest,
-                  bool bEnableUndistortionTest, bool bEnableNormalizeTest, bool bCheckAccuracyTest,
-                  bool bCheckPerformanceTest )
+void SuccessTest( uint32_t batchTest, RideHal_ProcessorType_e processorTest,
+                  RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e outputFormatTest,
+                  uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t outputWidthTest,
+                  uint32_t outputHeightTest, bool bEnableUndistortionTest,
+                  bool bEnableNormalizeTest, bool bCheckAccuracyTest, bool bCheckPerformanceTest )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -452,7 +452,7 @@ void SuccessTest( RideHal_ProcessorType_e processorTest, RideHal_ImageFormat_e i
     char pName[10] = "Remap";
 
     RemapConfig.processor = processorTest;
-    RemapConfig.numOfInputs = 2;
+    RemapConfig.numOfInputs = batchTest;
     for ( uint32_t inputId = 0; inputId < RemapConfig.numOfInputs; inputId++ )
     {
         RemapConfig.inputConfigs[inputId].inputFormat = inputFormatTest;
@@ -916,33 +916,33 @@ TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backen
                                      // pipeline, no undistortion and no renormalization
 {
     printf( "DSP general accuracy test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 512, 512, 256, 256, false, false, true, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, 512, 512, 256, 256, false, false, true, false );
     printf( "CPU general accuracy test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, true, false );
 #if defined( __QNXNTO__ )
     printf( "GPU general accuracy test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, true, false );
 #endif
     printf( "map table general accuracy test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 512, 512, 256, 256, true, false, true, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, 512, 512, 256, 256, true, false, true, false );
 }
 
 TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU backend, RGB to
                                         // RGB pipeline, no undistortion and no renormalization
 {
     printf( "DSP general performance test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  1920, 1024, 1152, 800, false, false, false, true );
     printf( "CPU general performance test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  1920, 1024, 1152, 800, false, false, false, true );
 #if defined( __QNXNTO__ )
     printf( "GPU general performance test\n" );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  1920, 1024, 1152, 800, false, false, false, true );
 #endif
 }
@@ -959,81 +959,81 @@ TEST( Remap, CoverTest )   // fail path tests
 TEST( Remap, CPUSuccessPipeline1Test )   // general success test on CPU for UYVY/RGB to RGB, with
                                          // and without normalization, no undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, true, false, false );
 }
 
 TEST( Remap, CPUSuccessPipeline2Test )   // general success test on CPU for UYVY/RGB to RGB, with
                                          // and without normalization, undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, true, false, false );
 }
 
 #if defined( __QNXNTO__ )                // nv12 input format on CPU is not supported in HGY
 TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12/UYVY to BGR, with
                                          // and without undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888, 512,
-                 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888, 512,
-                 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 512, 512, 256, 256, true, false, false, false );
 }
 
 TEST( Remap, CPUSuccessPipeline4Test )   // general success test on CPU for NV12 to RGB, with
                                          // and without normalization, undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, true, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, true, false, false );
 }
 #endif
 
 TEST( Remap, DSPSuccessPipeline1Test )   // general success test on DSP for UYVY/RGB to RGB, with
                                          // and without normalization, no undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 512, 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, true, false, false );
 }
 
 TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY/RGB to RGB, with
                                          // and without normalization, undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 RIDEHAL_IMAGE_FORMAT_RGB888, 512, 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
-                 512, 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, true, true, false, false );
 }
 
 TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12/UYVY to BGR, with
                                          // and without undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  512, 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  512, 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
                  512, 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
                  512, 512, 256, 256, true, false, false, false );
 }
 
@@ -1041,45 +1041,45 @@ TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12
 TEST( Remap, GPUSuccessPipeline1Test )   // general success test on GPU for UYVY/RGB to RGB, with
                                          // and without normalization, no undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, true, false, false );
 }
 
 TEST( Remap, GPUSuccessPipeline2Test )   // general success test on GPU for UYVY/RGB to RGB, with
                                          // and without normalization, undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, true, false, false );
 }
 
 TEST( Remap, GPUSuccessPipeline3Test )   // general success test on GPU for NV12/UYVY to BGR, with
                                          // and without undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888, 512,
-                 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888, 512,
-                 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+                 512, 512, 256, 256, true, false, false, false );
 }
 
 TEST( Remap, GPUSuccessPipeline4Test )   // general success test on GPU for NV12 to RGB, with
                                          // and without normalization, undistortion
 {
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, false, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, false, true, false, false );
-    SuccessTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 512,
-                 512, 256, 256, true, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, false, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, false, true, false, false );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 512, 512, 256, 256, true, true, false, false );
 }
 #endif
 
