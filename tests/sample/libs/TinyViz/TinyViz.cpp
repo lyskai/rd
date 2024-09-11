@@ -35,10 +35,10 @@ uint32_t TinyViz::GetSDLFormat( RideHal_ImageFormat_e format )
     switch ( format )
     {
         case RIDEHAL_IMAGE_FORMAT_RGB888:
-            pixelFormat = SDL_PIXELFORMAT_RGB888;
+            pixelFormat = SDL_PIXELFORMAT_RGB24;
             break;
         case RIDEHAL_IMAGE_FORMAT_BGR888:
-            pixelFormat = SDL_PIXELFORMAT_BGR888;
+            pixelFormat = SDL_PIXELFORMAT_BGR24;
             break;
         case RIDEHAL_IMAGE_FORMAT_UYVY:
             pixelFormat = SDL_PIXELFORMAT_UYVY;
