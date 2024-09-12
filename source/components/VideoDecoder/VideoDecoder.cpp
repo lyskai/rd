@@ -558,7 +558,6 @@ RideHalError_e VideoDecoder::SubmitInputFrame( const VideoDecoder_InputFrame_t *
     const RideHal_SharedBuffer_t *inputBuffer = nullptr;
     uint64_t handle = MAX_UINT64;
     vidc_frame_data_type frameData;
-    vidc_buffer_info_type bufferInfo;
 
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
@@ -576,25 +575,23 @@ RideHalError_e VideoDecoder::SubmitInputFrame( const VideoDecoder_InputFrame_t *
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         inputBuffer = &pInput->sharedBuffer;
-        bufferInfo.buf_addr = (uint8_t *) inputBuffer->data();
         ret = ValidateBuffer( inputBuffer, VIDEO_CODEC_BUF_TYPE_INPUT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         handle = inputBuffer->buffer.dmaHandle;
-        bufferInfo.buf_size = inputBuffer->size;
 
         RIDEHAL_DEBUG( "dec-input-begin: handle 0x%x tsNs %" PRIu64 " markData %" PRIu64
                        " buf_addr 0x%x handle 0x%x buf_size %" PRIu32,
-                       handle, pInput->timestampNs, pInput->appMarkData, bufferInfo.buf_addr,
-                       inputBuffer->buffer.dmaHandle, bufferInfo.buf_size );
+                       handle, pInput->timestampNs, pInput->appMarkData, inputBuffer->data(),
+                       inputBuffer->buffer.dmaHandle, inputBuffer->size );
 
         (void) memset( &frameData, 0, sizeof( vidc_frame_data_type ) );
         frameData.frm_clnt_data = handle;
         frameData.buf_type = VIDC_BUFFER_INPUT;
-        frameData.frame_addr = bufferInfo.buf_addr;
-        frameData.alloc_len = bufferInfo.buf_size;
+        frameData.frame_addr = (uint8_t *) inputBuffer->data();
+        frameData.alloc_len = inputBuffer->buffer.size;
 #if defined( __QNXNTO__ )
         frameData.frame_handle = (pmem_handle_t) inputBuffer->buffer.dmaHandle;
 #else
@@ -1629,7 +1626,6 @@ RideHalError_e VideoDecoder::AllocateBuffer( VideoCodec_BufType bufferType )
     }
     else if ( VIDEO_CODEC_BUF_TYPE_OUTPUT == bufferType )
     {
-        // todo: getRequirement for outputBuf from driver for reconfig.  0823th
         bufCnt = m_numOutputBuffer;
         bufSize = ctx->vidcOutputBufferSize;
     }
