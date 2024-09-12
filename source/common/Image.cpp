@@ -312,11 +312,15 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         this->imgProps = *pImgProps;
-        for ( i = 0; i < pImgProps->numPlanes; i++ )
+        if ( pImgProps->format < RIDEHAL_IMAGE_FORMAT_MAX )
         {
-            if ( 0 == pImgProps->planeBufSize[i] )
+            for ( i = 0; i < pImgProps->numPlanes; i++ )
             {
-                this->imgProps.planeBufSize[i] = pImgProps->stride[i] * pImgProps->actualHeight[i];
+                if ( 0 == pImgProps->planeBufSize[i] )
+                {
+                    this->imgProps.planeBufSize[i] =
+                            pImgProps->stride[i] * pImgProps->actualHeight[i];
+                }
             }
         }
         this->type = RIDEHAL_BUFFER_TYPE_IMAGE;
