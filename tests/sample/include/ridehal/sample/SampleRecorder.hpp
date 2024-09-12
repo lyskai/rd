@@ -54,6 +54,7 @@ private:
     DataSubscriber<DataFrames_t> m_sub;
 
     uint32_t m_maxImages = 1000;
+    FILE *m_meta = nullptr;
     FILE *m_file = nullptr;
 };   // class SampleRecorder
 

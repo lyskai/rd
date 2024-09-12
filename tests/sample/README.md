@@ -327,15 +327,17 @@ The command line template example:
 | topic         | true     | string    | -       | the input topic name |
 
 For compressed image format, all the images are saved into 1 file with name "/tmp/\${name}.raw".
-For the non-compressed image format, the file with name "/tmp/\${name}.raw" is used to record image information, with separated images with name "/tmp/${name}\_\${id}\_\${batch_id}.raw" to save the real image content, below is an example:
+For the non-compressed image format, with separated images with name "/tmp/${name}\_\${id}\_\${batch_id}.raw" to save the real image content.
+The file with name "/tmp/\${name}.meta" is used to record image information, below is an example:
+
 ```sh
-$ cat /tmp/REC0.raw
+$ cat /tmp/REC0.meta
 0: frameId 0 timestamp 322037864334718: batch=3 resolution=1024x768 stride=2048 actual_height=768 format=2
 $ ls -l /tmp/*.raw
 -rw-rw-r--   2 root      root        1572864 Jan 04 17:27 /tmp/REC0_0_0.raw
 -rw-rw-r--   2 root      root        1572864 Jan 04 17:27 /tmp/REC0_0_1.raw
 -rw-rw-r--   2 root      root        1572864 Jan 04 17:27 /tmp/REC0_0_2.raw
--rw-rw-r--   2 root      root            107 Jan 04 17:27 /tmp/REC0.raw
+-rw-rw-r--   2 root      root            107 Jan 04 17:27 /tmp/REC0.meta
 ```
 
 The command line template example:

@@ -61,6 +61,17 @@ RideHalError_e SampleRecorder::Init( std::string name, SampleConfig_t &config )
         }
     }
 
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        std::string path = "/tmp/" + name + ".meta";
+        m_meta = fopen( path.c_str(), "wb" );
+        if ( nullptr == m_meta )
+        {
+            RIDEHAL_ERROR( "can't create meta file %s", path.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
     return ret;
 }
 
@@ -113,7 +124,7 @@ void SampleRecorder::ThreadMain()
                                 RIDEHAL_ERROR( "failed to create file: %s", path.c_str() );
                             }
                         }
-                        fprintf( m_file,
+                        fprintf( m_meta,
                                  "%u: frameId %" PRIu64 " timestamp %" PRIu64
                                  ": batch=%u resolution=%ux%u stride=%u actual_height=%u "
                                  "format=%d\n",
@@ -125,6 +136,11 @@ void SampleRecorder::ThreadMain()
                     else
                     { /* compressed image */
                         fwrite( buffer.data(), buffer.size, 1, m_file );
+                        fprintf( m_meta,
+                                 "%u: frameId %" PRIu64 " timestamp %" PRIu64
+                                 ": resolution=%ux%u size=%" PRIu64 " format=%d\n",
+                                 num, frame.frameId, frame.timestamp, buffer.imgProps.width,
+                                 buffer.imgProps.height, buffer.size, buffer.imgProps.format );
                     }
                 }
                 else
@@ -150,9 +166,11 @@ void SampleRecorder::ThreadMain()
                 num++;
                 PROFILER_END();
             }
-            else if ( nullptr != m_file )
+            else if ( nullptr != m_meta )
             {
+                fclose( m_meta );
                 fclose( m_file );
+                m_meta = nullptr;
                 m_file = nullptr;
                 RIDEHAL_INFO( "recording done!" );
                 printf( "recording done!\n" );
@@ -174,9 +192,11 @@ RideHalError_e SampleRecorder::Stop()
         m_thread.join();
     }
 
-    if ( nullptr != m_file )
+    if ( nullptr != m_meta )
     {
+        fclose( m_meta );
         fclose( m_file );
+        m_meta = nullptr;
         m_file = nullptr;
         RIDEHAL_INFO( "recording done!" );
         printf( "recording done!\n" );
