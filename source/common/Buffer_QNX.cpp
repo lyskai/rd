@@ -24,7 +24,7 @@ static uint32_t s_usageToPMemID[RIDEHAL_BUFFER_USAGE_MAX] = {
 static void __attribute__( ( constructor ) ) QnxPMemHeapInit( void )
 {
     /* for pmem_map_handle_v2, must ensure pmem_init is done */
-    pmem_init();
+    (void) pmem_init();
 }
 
 RideHalError_e RideHal_DmaAllocate( void **pData, uint64_t *pDmaHandle, size_t size,
@@ -106,7 +106,6 @@ RideHalError_e RideHal_DmaImport( void **pData, uint64_t *pDmaHandle, uint64_t p
                                   uint64_t dmaHandle, size_t size, RideHal_BufferFlags_t flags,
                                   RideHal_BufferUsage_e usage )
 {
-    int rc = 0;
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     uint32_t pmemFlags = PMEM_FLAGS_CACHE_NONE | PMEM_FLAGS_PHYS_NON_CONTIG | PMEM_FLAGS_SHMEM;
     uint32_t pmemID = PMEM_DMA_ID;

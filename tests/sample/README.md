@@ -19,6 +19,7 @@
     - [2.15 RideHal GL2DFlex Sample](#215-ridehal-gl2dflex-sample)
     - [2.16 RideHal Shared Ring Sample](#216-ridehal-shared-ring-sample)
     - [2.17 RideHal FpsAdapter Sample](#217-ridehal-fpsadapter-sample)
+    - [RideHal VideoDecoder Sample](#218-ridehal-videodecoder-sample)
   - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
     - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
     - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
@@ -51,7 +52,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | parameter | required | type      | comments |
 |-----------|----------|-----------|----------|
 | -n        | true     | string    | The unique component name |
-| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex, SharedRing, FpsAdapter] |
+| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, VideoDecoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex, SharedRing, FpsAdapter] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the previous attribute name |
 
@@ -301,7 +302,7 @@ The command line template example for Lidar pipeline:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| formatX       | false    | string    | "nv12"  | The image format, options from [nv12, nv12_ubwc] |
+| format        | false    | string    | "nv12"  | The image format, options from [nv12, nv12_ubwc] |
 | width         | true     | int       | -       | The image width |
 | height        | true     | int       | -       | The image height |
 | pool_size     | false    | int       | 4       | The image memory pool size |
@@ -549,6 +550,25 @@ The command line template example:
     -k frame_drop_patten -v 0b100 \
     -k input_topic -v /sensor/camera/CAM0/raw_30fps \
     -k output_topic -v /sensor/camera/CAM0/raw_10fps
+```
+
+### 2.18 RideHal VideoDecoder Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| width         | true     | int       | -       | The image width |
+| height        | true     | int       | -       | The image height |
+| pool_size     | false    | int       | 4       | The image memory pool size |
+| fps           | false    | int       | 30      | The frame rate per second |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n VDEC1 -t VideoDecoder -k width -v 1920 -k height -v 1024 \
+    -k input_topic -v /sensor/camera/CAM0/hevc \
+    -k output_topic -v /sensor/camera/CAM0_DEC/raw \
 ```
 
 ## 3. Typical RideHal Sample Application pipelines

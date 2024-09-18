@@ -81,7 +81,6 @@ RideHalError_e RideHal_SharedBuffer::Allocate( size_t size, RideHal_BufferUsage_
     void *pData = nullptr;
     uint64_t dmaHandle = 0;
     BufferManager *pBufferManager = BufferManager::GetDefaultBufferManager();
-    uint64_t id;
 
     if ( nullptr == pBufferManager )
     {

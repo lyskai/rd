@@ -121,7 +121,7 @@ public:
      * @brief get the valid buffer virtual address
      * @return the valid buffer virtual address
      */
-    void *data() const { return (void *) ( ( (uint8_t *) buffer.pData ) + offset ); }
+    void *data() const { return (void *) ( &( (uint8_t *) buffer.pData )[offset] ); }
 
     /**
      * @brief Convert the shared buffer type from image to tensor

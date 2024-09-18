@@ -89,7 +89,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
                     ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather,
                                                           "FeatureGatherFromXYZR" );
                 }
-                else if ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode &&
+                else if ( ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode ) &&
                           ( 5 == pConfig->numInFeatureDim ) )
                 {
                     ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather,

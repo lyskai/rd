@@ -221,7 +221,7 @@ Camera::~Camera()
     }
 }
 
-RideHalError_e Camera::Init( char *pName, const Camera_Config_t *pConfig, Logger_Level_e level )
+RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig, Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
@@ -667,7 +667,7 @@ RideHalError_e Camera::Resume()
     return ret;
 }
 
-RideHalError_e Camera::ReleaseFrame( CameraFrame_t *pFrame )
+RideHalError_e Camera::ReleaseFrame( const CameraFrame_t *pFrame )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
@@ -748,7 +748,7 @@ CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pFrameinfo )
     return pCameraFrame;
 }
 
-RideHalError_e Camera::RequestFrame( CameraFrame_t *pFrame )
+RideHalError_e Camera::RequestFrame( const CameraFrame_t *pFrame )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;

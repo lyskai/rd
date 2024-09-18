@@ -3,8 +3,8 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-#ifndef _RIDEHAL_CAM_HPP_
-#define _RIDEHAL_CAM_HPP_
+#ifndef RIDEHAL_CAMERA_HPP
+#define RIDEHAL_CAMERA_HPP
 
 #include "qcarcam.h"
 #include "ridehal/component/ComponentIF.hpp"
@@ -87,6 +87,15 @@ public:
     ~Camera();
 
     /**
+     * @brief get camera inputs info
+     *
+     * @param[out] pCamInputs Input info queried from Camera
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
+
+    /**
      * @brief init the Camera object
      *
      * @param[in] pName   Name of the component
@@ -95,61 +104,8 @@ public:
      *
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e Init( char *pName, const Camera_Config_t *pConfig,
+    RideHalError_e Init( const char *pName, const Camera_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
-
-    /**
-     * @brief Start the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Start() final;
-
-    /**
-     * @brief Stop the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Stop() final;
-
-    /**
-     * @brief Deinit the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Deinit() final;
-
-    /**
-     * @brief Pause the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Pause();
-
-    /**
-     * @brief Resume the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Resume();
-
-    /**
-     * @brief release a camera frame
-     *
-     * @param[in] pFrame the camera frame to be released
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
-
-    /**
-     * @brief request a frame from camera
-     *
-     * @param[in] pFrame the frame to request from camera
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e RequestFrame( CameraFrame_t *pFrame );
 
     /**
      * @brief set a list of shared buffers to camera
@@ -176,13 +132,57 @@ public:
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
 
     /**
-     * @brief get camera inputs info
-     *
-     * @param[out] pCamInputs Input info queried from Camera
+     * @brief Start the Camera object
      *
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
+    RideHalError_e Start() final;
+
+    /**
+     * @brief Pause the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Pause();
+
+    /**
+     * @brief Resume the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Resume();
+
+    /**
+     * @brief release a camera frame
+     *
+     * @param[in] pFrame the camera frame to be released
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e ReleaseFrame( const CameraFrame_t *pFrame );
+
+    /**
+     * @brief request a frame from camera
+     *
+     * @param[in] pFrame the frame to request from camera
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RequestFrame( const CameraFrame_t *pFrame );
+
+    /**
+     * @brief Stop the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Stop() final;
+
+    /**
+     * @brief Deinit the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Deinit() final;
 
 private:
     QCarCamColorFmt_e GetQcarCamFormat( RideHal_ImageFormat_e colorFormat );
@@ -218,4 +218,4 @@ private:
 }   // namespace component
 }   // namespace ridehal
 
-#endif   // _RIDEHAL_RIDEHALCAM_HPP_
+#endif   // RIDEHAL_CAMERA_HPP

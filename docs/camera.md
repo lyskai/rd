@@ -14,6 +14,7 @@
   - [3.1 Non request buffer mode](#31-Non-request-buffer-mode)
   - [3.2 Request buffer mode](#32-Request-buffer-mode)
   - [3.3 Set external allocated buffers to Camera](#33-Set-external-allocated-buffers-to-Camera)
+- [4. References](#4-references)
 
 
 # 1. Introduction
@@ -36,52 +37,99 @@ stop the streaming at any time when camera is running. At the end we need to cal
 # 2. Data structures
 ## 2.1 Type definitions
 ### 2.1.1 Camera frame structure
+
+- [CameraFrame_t](../include/ridehal/component/Camera.hpp#L30)
+
 ```c
+/** @brief Camera frame structure */
 typedef struct
 {
     RideHal_SharedBuffer_t sharedBuffer; /**< Shared buffer associated with the image */
     uint64_t timestamp;                  /**< Hardware timestamp (in nanoseconds) */
-    uint64_t timestampQGPTP;             /**< Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
-    uint32_t frameIndex;                 /**< Index of the camera frame */
-    uint32_t flags;                      /**< Flag to indicate error state of the buffer */
+    uint64_t timestampQGPTP; /**< Generic Precision Time Protocol (GPTP) timestamp in nanoseconds */
+    uint32_t frameIndex;     /**< Index of the camera frame */
+    uint32_t flags;          /**< Flag to indicate error state of the buffer */
+    uint32_t streamId;       /**< Qcarcam buffer list id */
 } CameraFrame_t;
 ```
+
 ### 2.1.2 Camera input structure
+
+- [CameraInputs_t](../include/ridehal/component/Camera.hpp#L39)
+
 ```c
+/** @brief Camera input structure */
 typedef struct
 {
-    QCarCamInput_t      *pCameraInputs;  /**< pointer to the list of qcarcam inputs info */
-    QCarCamInputModes_t *pCamInputModes; /**< pointer to the list of qcarcam input modes for each input */
-    uint32_t            numInputs;       /**< num of qcarcam inputs */
+    QCarCamInput_t *pCameraInputs; /**< pointer to the list of qcarcam inputs info */
+    QCarCamInputModes_t
+            *pCamInputModes; /**< pointer to the list of qcarcam input modes for each input */
+    uint32_t numInputs;      /**< num of qcarcam inputs */
 } CameraInputs_t;
 ```
+
 ### 2.1.3 Camera configuration
+
+- [CameraStreamConfig_t](../include/ridehal/component/Camera.hpp#L56)
+
+```c
+/** @brief Camera stream config */
+typedef struct
+{
+    uint32_t streamId;            /**< Camera stream id */
+    uint32_t width;               /**< Frame width */
+    uint32_t height;              /**< Frame height */
+    uint32_t bufCnt;              /**< Buffer count set to camera */
+    RideHal_ImageFormat_e format; /**< Camera frame format */
+} CameraStreamConfig_t;
+```
+
+- [Camera_Config_t](../include/ridehal/component/Camera.hpp#L73)
+
 ```c
 typedef struct Camera_Config
 {
-    bool bAllocator;              /**< Flag to indicate if component is buffer allocator*/
-    bool bRequestMode;            /**< Flag to set request buffer mode */
-    uint32_t streamId;            /**< Camera stream id */
-    uint32_t inputId;             /**< Camera input id */
-    uint32_t ispUserCase;         /**< ISP user case defined by qcarcam */
-    uint32_t width;               /**< Frame width */
-    uint32_t height;              /**< Frame height */
-    uint32_t fps;                 /**< Frames per second */
-    uint32_t bufCnt;              /**< Buffer count set to camera */
-    uint32_t camFrameDropPat;     /**< Frame drop patten defined by qcarcam */
-    uint32_t opMode;              /**< Operation mode defined by qcarcam */
-    RideHal_ImageFormat_e format; /**< Camera frame format */
+    bool bAllocator;          /**< Flag to indicate if component is buffer allocator*/
+    bool bRequestMode;        /**< Flag to set request buffer mode */
+    uint32_t numStream;       /**< Number of camera stream */
+    uint32_t inputId;         /**< Camera input id */
+    uint32_t srcId;           /**< Input source identifier. See #QCarCamInputSrc_t */
+    uint32_t inputMode;       /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
+    uint32_t ispUserCase;     /**< ISP user case defined by qcarcam */
+    uint32_t fps;             /**< Frames per second */
+    uint32_t camFrameDropPat; /**< Frame drop patten defined by qcarcam. Set to 0 when frame drop is
+                                 not used */
+    uint32_t opMode;          /**< Operation mode defined by qcarcam */
+    CameraStreamConfig_t streamConfig[MAX_CAMERA_STREAM]; /**< Per stream configuration */
 } Camera_Config_t;
 ```
+
 ### 2.1.4 Callback function for frame done
+
 ```c
 typedef void ( *RideHal_CamFrameCallback_t )( CameraFrame_t *pFrame, void *pPrivData );
 ```
-### 2.1.5 Callback function for camera event 
+
+### 2.1.5 Callback function for camera event
+
 ```c
 typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void *pPayload, void *pPrivData );
 ```
 ## 2.2 APIs
+
+- [GetInputsInfo](../include/ridehal/component/Camera.hpp#L96)
+```c
+    /**
+     * @brief get camera inputs info
+     *
+     * @param[out] pCamInputs Input info queried from Camera
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
+```
+
+- [Init](../include/ridehal/component/Camera.hpp#L107)
 ```c
     /**
      * @brief init the Camera object
@@ -94,70 +142,25 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
      */
     RideHalError_e Init( char *pName, const Camera_Config_t *pConfig,
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
+```
 
+- [SetBuffers](../include/ridehal/component/Camera.hpp#L119)
+```c
     /**
-     * @brief Start the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Start() final;
-
-    /**
-     * @brief Stop the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Stop() final;
-
-     /**
-     * @brief Deinit the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Deinit() final;
-
-   /**
-     * @brief Pause the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Pause();
-
-   /**
-     * @brief Resume the Camera object
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e Resume();
-
-    /**
-     * @brief release a camera frame
-     *
-     * @param[in] pFrame the camera frame to be released
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
-
-    /**
-     * @brief request a frame from camera
-     *
-     * @param[in] pFrame the frame to request from camera
-     *
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e RequestFrame( CameraFrame_t *pFrame );
-
-        /**
      * @brief set a list of shared buffers to camera
      *
      * @param[in] pBuffer Pointer to the buffer list
      * @param[in] numBuffers Number of buffers in the list
+     * @param[in] streamId Buffer list id
      *
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32_t numBuffers );
+    RideHalError_e SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32_t numBuffers,
+                               uint32_t streamId );
+```
 
+- [RegisterCallback](../include/ridehal/component/Camera.hpp#L131)
+```c
     /**
      * @brief register callbacks to camera
      *
@@ -169,21 +172,87 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
      */
     RideHalError_e RegisterCallback( RideHal_CamFrameCallback_t frameCallback,
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
+```
 
+- [Start](../include/ridehal/component/Camera.hpp#L139)
+```c
     /**
-     * @brief get camera inputs info
-     *
-     * @param[out] pCamInputs Input info queried from Camera
+     * @brief Start the Camera object
      *
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
-
+    RideHalError_e Start() final;
 ```
+
+- [Pause](../include/ridehal/component/Camera.hpp#L146)
+```c
+    /**
+     * @brief Pause the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Pause();
+```
+
+- [Resume](../include/ridehal/component/Camera.hpp#L163)
+```c
+    /**
+     * @brief Resume the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Resume();
+```
+
+- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L162)
+```c
+    /**
+     * @brief release a camera frame
+     *
+     * @param[in] pFrame the camera frame to be released
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
+```
+
+- [RequestFrame](../include/ridehal/component/Camera.hpp#L171)
+```c
+    /**
+     * @brief request a frame from camera
+     *
+     * @param[in] pFrame the frame to request from camera
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RequestFrame( CameraFrame_t *pFrame );
+```
+
+- [Stop](../include/ridehal/component/Camera.hpp#L178)
+```c
+    /**
+     * @brief Stop the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Stop() final;
+```
+
+- [Deinit](../include/ridehal/component/Camera.hpp#L185)
+```c
+    /**
+     * @brief Deinit the Camera object
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Deinit() final;
+```
+
 # 3. Typical use case and sample codes
 
 ## 3.1 Non request buffer mode
 Camera works on non request buffer mode when bRequestMode is set to false in camera config. In this mode new camera frames are delivered in frame callback function and user shall release the frame back to camera when processing of the frame is done in application.
+
 ```c
 Camera_Config_t camConfig;
 camConfig.bRequestMode = false;
@@ -231,7 +300,12 @@ for ( int i = 0; i < BUFFFER_COUNT; i++ )
 
 pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_ERROR );
 
-pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT );
+pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT, 0 );
 
 ...
 ```
+
+# 4. References
+
+- [SampleCamera](../tests/sample/source/SampleCamera.cpp)
+- [gtest Camera](../tests/unit_test/components/Camera/gtest_Camera.cpp#L124).
