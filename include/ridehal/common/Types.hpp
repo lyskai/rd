@@ -133,9 +133,6 @@ typedef struct
      */
 
     uint32_t numPlanes; /**< The number of the image planes */
-
-    uint32_t compressedSize;
-    /**< the size in bytes of the compressed image */
 } RideHal_ImageProps_t;
 
 /** @brief The RideHal tensor data type. */

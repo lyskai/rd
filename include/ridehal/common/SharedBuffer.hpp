@@ -15,7 +15,9 @@ namespace common
 typedef struct RideHal_SharedBuffer
 {
     RideHal_Buffer_t buffer;   /**< The shared buffer */
-    size_t size;               /**< The size of the valid buffer in the shared buffer */
+    size_t size;               /**< The size of the valid buffer in the shared buffer.
+                                * Note: For the compressed image in the H264 or H265 format, this size represents
+                                * the encoded bit stream data lenth, which can be changed during runtime. */
     size_t offset;             /**< The offset of the valid buffer in the shared buffer */
     RideHal_BufferType_e type; /**< The buffer type */
     union

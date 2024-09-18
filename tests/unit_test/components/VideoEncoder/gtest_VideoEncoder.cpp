@@ -121,7 +121,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
         imgProps.batchSize = 1;
         imgProps.width = config.width;
         imgProps.height = config.height;
-        imgProps.compressedSize = 118784;
+        imgProps.numPlanes = 1;
+        imgProps.planeBufSize[0] = 118784;
         imgProps.format = config.outFormat;
         ret = sharedBuffer->Allocate( &imgProps );
         // ret = sharedBuffer->Allocate( 118784 );
@@ -137,7 +138,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
     imgProps.batchSize = 1;
     imgProps.width = config.width;
     imgProps.height = config.height;
-    imgProps.compressedSize = 118784;
+    imgProps.numPlanes = 1;
+    imgProps.planeBufSize[0] = 118784;
     imgProps.format = config.outFormat;
     ret = sharedBuffer->Allocate( &imgProps );
     // ret = sharedBuffer->Allocate( 118784 );
@@ -319,7 +321,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_ConfigBuffer )
         imgProps.batchSize = 1;
         imgProps.width = config.width;
         imgProps.height = config.height;
-        imgProps.compressedSize = 118784;
+        imgProps.numPlanes = 1;
+        imgProps.planeBufSize[0] = 118784;
         imgProps.format = config.outFormat;
         ret = outBufferList[i].Allocate( &imgProps );
         // ret = sharedBuffer->Allocate( 118784 );
@@ -524,7 +527,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_InitError )
         imgProps.batchSize = 1;
         imgProps.width = 176;
         imgProps.height = 144;
-        imgProps.compressedSize = 118784;
+        imgProps.numPlanes = 1;
+        imgProps.planeBufSize[0] = 118784;
         imgProps.format = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264;
         ret = outBufferList[i].Allocate( &imgProps );
         // ret = sharedBuffer->Allocate( 118784 );
@@ -756,7 +760,8 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     imgProps.batchSize = 1;
     imgProps.width = config.width;
     imgProps.height = config.height;
-    imgProps.compressedSize = 118784;
+    imgProps.numPlanes = 1;
+    imgProps.planeBufSize[0] = 118784;
     imgProps.format = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
     ret = sharedBuffer.Allocate( &imgProps );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );

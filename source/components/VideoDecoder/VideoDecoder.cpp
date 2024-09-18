@@ -1648,7 +1648,8 @@ RideHalError_e VideoDecoder::AllocateBuffer( VideoCodec_BufType bufferType )
                 imgProps.batchSize = 1;
                 imgProps.width = m_width;
                 imgProps.height = m_height;
-                imgProps.compressedSize = bufSize;
+                imgProps.numPlanes = 1;
+                imgProps.planeBufSize[0] = bufSize;
                 imgProps.format = m_inFormat;
                 ret = sharedBuffer.Allocate( &imgProps );
                 if ( RIDEHAL_ERROR_NONE != ret )

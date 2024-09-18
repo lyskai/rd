@@ -234,10 +234,19 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
         }
         else
         { /* check properties for compressed image */
-            if ( 0 == pImgProps->compressedSize )
+            if ( 1 != pImgProps->numPlanes )
             {
-                RIDEHAL_LOG_ERROR( "invalid compressedSize" );
+                RIDEHAL_LOG_ERROR( "invalid numPlanes for compressed image" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else if ( 0 == pImgProps->planeBufSize[0] )
+            {
+                RIDEHAL_LOG_ERROR( "invalid planeBufSize[0] for compressed image" );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else
+            {
+                /* OK */
             }
         }
     }
@@ -305,22 +314,18 @@ RideHalError_e RideHal_SharedBuffer::Allocate( const RideHal_ImageProps_t *pImgP
         }
         else
         {
-            size = pImgProps->compressedSize;
+            size = pImgProps->planeBufSize[0];
         }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         this->imgProps = *pImgProps;
-        if ( pImgProps->format < RIDEHAL_IMAGE_FORMAT_MAX )
+        for ( i = 0; i < pImgProps->numPlanes; i++ )
         {
-            for ( i = 0; i < pImgProps->numPlanes; i++ )
+            if ( 0 == pImgProps->planeBufSize[i] )
             {
-                if ( 0 == pImgProps->planeBufSize[i] )
-                {
-                    this->imgProps.planeBufSize[i] =
-                            pImgProps->stride[i] * pImgProps->actualHeight[i];
-                }
+                this->imgProps.planeBufSize[i] = pImgProps->stride[i] * pImgProps->actualHeight[i];
             }
         }
         this->type = RIDEHAL_BUFFER_TYPE_IMAGE;

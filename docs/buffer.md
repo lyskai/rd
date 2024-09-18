@@ -32,11 +32,11 @@ And the below picture shows a case what's the actual buffer looks like for an im
 
 ![Image format with 1 plane](./images/image-prop-1-plane.jpg)
 
-Thus now, it's easy to understand those members of the type [RideHal_ImageProps_t](../include/ridehal/common/Types.hpp#L118) except batchSize and compressedSize.
+Thus now, it's easy to understand those members of the type [RideHal_ImageProps_t](../include/ridehal/common/Types.hpp#L118) except batchSize.
 
 For the batchSize, it was generally designed for the BEV kind of AI models, check below section [3.1](#31-a-ridehal_sharedbuffer_t-image-for-bev-kind-of-ai-model).
 
-For the compressedSize, it was designed for the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L222) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight/planeBufSize/numPlanes will be invalid and should not be used.
+For or the compressed image with the format H264 or H265, and the code [SANITY_CompressedImageAllocateByProps](../tests/unit_test/buffer/gtest_Buffer.cpp#L222) which gives an example that how to allocate a buffer for a compressed image and this is the only way. And please note that for the compressed image, the member stride/actualHeight will be invalid and should not be used.
 
 # 1.2 The details of RideHal_SharedBuffer_t.
 
@@ -88,27 +88,27 @@ And another thing, the RideHal_SharedBuffer_t can be shared between components, 
 
 # 2. RideHal buffer APIs
 
-- [Allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L61)
+- [Allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L63)
 
-- [Allocate a batched images with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L76)
+- [Allocate a batched images with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc](../include/ridehal/common/SharedBuffer.hpp#L78)
 
-- [Allocate an image(s) with specified image properties](../include/ridehal/common/SharedBuffer.hpp#L88)
+- [Allocate an image(s) with specified image properties](../include/ridehal/common/SharedBuffer.hpp#L90)
 
-- [Allocate a tensor with specified tensor properties](../include/ridehal/common/SharedBuffer.hpp#L99)
+- [Allocate a tensor with specified tensor properties](../include/ridehal/common/SharedBuffer.hpp#L101)
 
-- [Free](../include/ridehal/common/SharedBuffer.hpp#L107)
+- [Free](../include/ridehal/common/SharedBuffer.hpp#L109)
 
-- [GetSharedBuffer](../include/ridehal/common/SharedBuffer.hpp#L117): Get a shared buffer descriptor that represent the DMA memory portion specified by batchOffset and batchSize
+- [GetSharedBuffer](../include/ridehal/common/SharedBuffer.hpp#L119): Get a shared buffer descriptor that represent the DMA memory portion specified by batchOffset and batchSize
 
-- [data](../include/ridehal/common/SharedBuffer.hpp#L124): return the actual shared buffer virtual address
+- [data](../include/ridehal/common/SharedBuffer.hpp#L126): return the actual shared buffer virtual address
 
-- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L133): 1 plane image to tensor
+- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L135): 1 plane image to tensor
 
-- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L144): 2 plane yuv image to luma and chroma tensor
+- [ImageToTensor](../include/ridehal/common/SharedBuffer.hpp#L146): 2 plane yuv image to luma and chroma tensor
 
-- [Import](../include/ridehal/common/SharedBuffer.hpp#L155): Import a DMA memory allocated by the other process.
+- [Import](../include/ridehal/common/SharedBuffer.hpp#L157): Import a DMA memory allocated by the other process.
 
-- [UnImport](../include/ridehal/common/SharedBuffer.hpp#L161): Un-Import a DMA memory allocated by the other process.
+- [UnImport](../include/ridehal/common/SharedBuffer.hpp#L163): Un-Import a DMA memory allocated by the other process.
 
 # 3. RideHal_SharedBuffer_t Examples
 
@@ -127,7 +127,7 @@ Thus, the SharedBufferAll can be feed into the BEV kind of the AI models, and th
 
 ## 3.2 Allocate buffers to hold images
 
-The [SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L12) demonstrate that how to allocate 1 camera buffer for format UYVY or NV12, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L61)" to allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc.
+The [SANITY_ImageAllocateByWHF](../tests/unit_test/buffer/gtest_Buffer.cpp#L12) demonstrate that how to allocate 1 camera buffer for format UYVY or NV12, it was through using API "[Allocate](../include/ridehal/common/SharedBuffer.hpp#L63)" to allocate an image with the best alignment that can be shared between CPU/GPU/VPU/HTP, etc.
 
 But if want to allocate a list of ping-pong buffers, the usage is generally as below.
 

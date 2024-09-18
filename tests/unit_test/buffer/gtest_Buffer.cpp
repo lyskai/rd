@@ -231,8 +231,8 @@ TEST( Buffer, SANITY_CompressedImageAllocateByProps )
     imgProp.batchSize = 1;
     imgProp.width = 3840;
     imgProp.height = 2160;
-    imgProp.numPlanes = 0;
-    imgProp.compressedSize = 1024 * 64;
+    imgProp.numPlanes = 1;
+    imgProp.planeBufSize[0] = 1024 * 64;
     auto ret = sharedBuffer.Allocate( &imgProp );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ASSERT_NE( nullptr, sharedBuffer.data() );
@@ -241,7 +241,7 @@ TEST( Buffer, SANITY_CompressedImageAllocateByProps )
                    (uint8_t *) sharedBuffer.data() + sharedBuffer.size, std::rand );
     ASSERT_EQ( sharedBuffer.buffer.size, sharedBuffer.size );
     ASSERT_EQ( 1024 * 64, sharedBuffer.size );
-    ASSERT_EQ( 0, sharedBuffer.imgProps.numPlanes );
+    ASSERT_EQ( 1, sharedBuffer.imgProps.numPlanes );
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
@@ -302,7 +302,12 @@ static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffe
         }
         else
         {
-            ss << " compressedSize=" << pSharedBuffer->imgProps.compressedSize;
+            ss << " plane size=[";
+            for ( uint32_t i = 0; i < pSharedBuffer->imgProps.numPlanes; i++ )
+            {
+                ss << pSharedBuffer->imgProps.planeBufSize[i] << ", ";
+            }
+            ss << "]";
         }
         str = ss.str();
     }
@@ -566,9 +571,10 @@ TEST( Buffer, L2_Image )
 
         InitImageProps( imgProp );
         imgProp.format = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
-        imgProp.compressedSize = 0;
+        imgProp.numPlanes = 1;
+        imgProp.planeBufSize[0] = 0;
         ret = sharedBuffer.Allocate( &imgProp );
-        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid foramt */
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret ); /* pImgProps with invalid size */
     }
 
     for ( int i = 0; i < (int) RIDEHAL_IMAGE_FORMAT_MAX; i++ )

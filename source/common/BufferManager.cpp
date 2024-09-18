@@ -52,7 +52,12 @@ static std::string GetBufferTextInfo( const RideHal_SharedBuffer_t *pSharedBuffe
         }
         else
         {
-            ss << " compressedSize=" << pSharedBuffer->imgProps.compressedSize;
+            ss << " plane size=[";
+            for ( uint32_t i = 0; i < pSharedBuffer->imgProps.numPlanes; i++ )
+            {
+                ss << pSharedBuffer->imgProps.planeBufSize[i] << ", ";
+            }
+            ss << "]";
         }
         str = ss.str();
     }

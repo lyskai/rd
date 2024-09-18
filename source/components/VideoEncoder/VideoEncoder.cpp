@@ -1670,7 +1670,8 @@ RideHalError_e VideoEncoder::PrepareBuffer( ioctl_session_t *pIoHandle,
                 imgProps.batchSize = 1;
                 imgProps.width = m_width;
                 imgProps.height = m_height;
-                imgProps.compressedSize = bufSize;
+                imgProps.numPlanes = 1;
+                imgProps.planeBufSize[0] = bufSize;
                 imgProps.format = m_outFormat;
                 ret = sharedBuffer.Allocate( &imgProps );
                 if ( RIDEHAL_ERROR_NONE != ret )
