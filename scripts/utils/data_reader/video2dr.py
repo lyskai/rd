@@ -29,7 +29,7 @@ parser.add_argument('-r', '--resolution', type=str, default='1920 1024',
                     help='The resolution of camera',
                     required=False)
 parser.add_argument('-f', '--format', type=str, default='uyvy',
-                    help='The color format of camera, [uyvy, nv12, nv21, rgb]',
+                    help='The color format of camera, [uyvy, nv12, nv21, rgb, p010]',
                     required=False)
 args = parser.parse_args()
 
