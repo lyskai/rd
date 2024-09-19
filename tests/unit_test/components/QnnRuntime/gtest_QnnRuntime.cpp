@@ -573,7 +573,6 @@ TEST( QnnRuntime, CreateModelFromSo )
 
     qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_CPU;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
-    std::string modelPath = std::string( qnnConfig.modelPath );
 
     // invalid path
     qnnConfig.modelPath = "invalid.so";
