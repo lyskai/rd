@@ -202,7 +202,14 @@ int main( int argc, char *argv[] )
         // wait for signal
         std::mutex m;
         std::unique_lock<std::mutex> lock( m );
-        CV.wait( lock );
+        if ( 0 == timeS )
+        { /* run forever until stop signal */
+            CV.wait( lock );
+        }
+        else
+        {
+            CV.wait_for( lock, std::chrono::seconds( timeS ) );
+        }
     }
 
     for ( int i = (int) samples.size() - 1; i >= 0; i-- )

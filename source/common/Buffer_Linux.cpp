@@ -183,7 +183,7 @@ RideHalError_e RideHal_DmaImport( void **pData, uint64_t *pDmaHandle, uint64_t p
     int newFd = -1;
     void *pAddr = nullptr;
 
-    if ( ( nullptr == pData ) || ( fd < 0 ) )
+    if ( ( nullptr == pData ) || ( nullptr == pDmaHandle ) || ( fd < 0 ) )
     {
         RIDEHAL_LOG_ERROR( "DmaImport with invalid pData or dmaHandle" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;

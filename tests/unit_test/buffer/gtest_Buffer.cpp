@@ -1,15 +1,15 @@
 // Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 // All rights reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
-
-
-#include "gtest/gtest.h"
-#include <stdio.h>
-
 #include "ridehal/common/BufferManager.hpp"
 #include "ridehal/common/SharedBuffer.hpp"
+#include "gtest/gtest.h"
+#include <chrono>
+#include <stdio.h>
+#include <thread>
 
 using namespace ridehal::common;
+using namespace std::chrono_literals;
 
 TEST( Buffer, SANITY_ImageAllocateByWHF )
 {
@@ -708,6 +708,19 @@ TEST( Buffer, L2_Image )
         ret = sharedBuffer.Free();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
+
+    {
+        RideHal_SharedBuffer_t sharedBuffer;
+        auto ret = sharedBuffer.Allocate( 1920, 2160, RIDEHAL_IMAGE_FORMAT_UYVY );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        auto pid = sharedBuffer.buffer.pid;
+        sharedBuffer.buffer.pid = pid + 100;
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
+        sharedBuffer.buffer.pid = pid;
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
 }
 
 TEST( Buffer, L2_Tensor )
@@ -1018,6 +1031,130 @@ TEST( Buffer, L2_Image2Tensor )
         ret = sharedBuffer.Free();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
+}
+
+TEST( Buffer, SanityImport )
+{
+    RideHal_SharedBuffer_t sharedBuffer;
+    uint32_t *pData;
+    RideHalError_e ret;
+    pid_t pid;
+
+    ret = sharedBuffer.Allocate( 1920, 1024, RIDEHAL_IMAGE_FORMAT_P010 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    pData = (uint32_t *) sharedBuffer.data();
+    pData[0] = 1234;
+
+    pid = fork();
+    if ( pid == 0 )
+    { /* child process */
+        RideHal_SharedBuffer_t importedBuffer;
+        uint32_t *pImportedData;
+        ret = importedBuffer.Import( &sharedBuffer );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        pImportedData = (uint32_t *) importedBuffer.data();
+        ASSERT_EQ( 1234, pImportedData[0] );
+        pImportedData[0] = 5678;
+        ret = importedBuffer.UnImport();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        printf( "This is child process %" PRIi32 "\n", getpid() );
+    }
+    else
+    {
+
+        std::this_thread::sleep_for( 1000ms );
+        printf( "This is parent process %" PRIi32 "\n", getpid() );
+        ASSERT_EQ( 5678, pData[0] );
+        ret = sharedBuffer.Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+}
+
+TEST( Buffer, L2_Import )
+{
+    RideHal_SharedBuffer_t sharedBuffer;
+    RideHal_SharedBuffer_t importedBuffer;
+    RideHalError_e ret;
+
+    void *pData = nullptr;
+    uint64_t dmaHandle = 0;
+
+    ret = importedBuffer.Import( (RideHal_SharedBuffer_t *) nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = sharedBuffer.Allocate( 1920, 1024, RIDEHAL_IMAGE_FORMAT_UYVY );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    dmaHandle = sharedBuffer.buffer.dmaHandle;
+    sharedBuffer.buffer.dmaHandle = 0;
+    ret = importedBuffer.Import( &sharedBuffer );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    sharedBuffer.buffer.dmaHandle = dmaHandle;
+
+    auto size = sharedBuffer.buffer.size;
+    sharedBuffer.buffer.size = 0;
+    ret = importedBuffer.Import( &sharedBuffer );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    sharedBuffer.buffer.size = size;
+
+    ret = importedBuffer.Import( &sharedBuffer );
+    ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
+
+    ret = importedBuffer.UnImport();
+    ASSERT_EQ( RIDEHAL_ERROR_INVALID_BUF, ret );
+
+    ret = sharedBuffer.UnImport();
+    ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
+
+    ret = RideHal_DmaImport( nullptr, &dmaHandle, sharedBuffer.buffer.pid,
+                             sharedBuffer.buffer.dmaHandle, sharedBuffer.buffer.size,
+                             sharedBuffer.buffer.flags, sharedBuffer.buffer.usage );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RideHal_DmaImport( &pData, nullptr, sharedBuffer.buffer.pid,
+                             sharedBuffer.buffer.dmaHandle, sharedBuffer.buffer.size,
+                             sharedBuffer.buffer.flags, sharedBuffer.buffer.usage );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+#if defined( __QNXNTO__ )
+    ret = RideHal_DmaImport( &pData, &dmaHandle, sharedBuffer.buffer.pid, 0,
+                             sharedBuffer.buffer.size, sharedBuffer.buffer.flags,
+                             sharedBuffer.buffer.usage );
+#else
+    ret = RideHal_DmaImport( &pData, &dmaHandle, sharedBuffer.buffer.pid, (uint64_t) -1,
+                             sharedBuffer.buffer.size, sharedBuffer.buffer.flags,
+                             sharedBuffer.buffer.usage );
+#endif
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RideHal_DmaImport( &pData, &dmaHandle, sharedBuffer.buffer.pid,
+                             sharedBuffer.buffer.dmaHandle, sharedBuffer.buffer.size,
+                             sharedBuffer.buffer.flags, RIDEHAL_BUFFER_USAGE_MAX );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RideHal_DmaImport( &pData, &dmaHandle, sharedBuffer.buffer.pid,
+                             sharedBuffer.buffer.dmaHandle, sharedBuffer.buffer.size,
+                             sharedBuffer.buffer.flags, (RideHal_BufferUsage_e) -1 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RideHal_DmaImport( &pData, &dmaHandle, sharedBuffer.buffer.pid,
+                             sharedBuffer.buffer.dmaHandle, sharedBuffer.buffer.size + 4096,
+                             sharedBuffer.buffer.flags, sharedBuffer.buffer.usage );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    ret = RideHal_DmaImport( &pData, &dmaHandle, sharedBuffer.buffer.pid, 0x1eadbeef,
+                             sharedBuffer.buffer.size, sharedBuffer.buffer.flags,
+                             sharedBuffer.buffer.usage );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = RideHal_DmaUnImport( nullptr, 0, 0 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = RideHal_DmaUnImport( (void *) 0x1234, 0x1eadbeef, 1024 );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 }
 
 #ifndef GTEST_RIDEHAL
