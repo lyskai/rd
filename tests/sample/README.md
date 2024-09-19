@@ -55,6 +55,8 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, VideoDecoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex, SharedRing, FpsAdapter] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the previous attribute name |
+| -d        | false    |   -       | Direct the RideHal log to stdout |
+| -T        | false    | int       | Specify the time in seconds that the RideHalSampleApp runs, if not specified or value 0, it means that the RideHalSampleApp will run forever until stop signal(Ctrl + C).  |
 
 ## 2. RideHal Samples
 

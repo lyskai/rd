@@ -88,7 +88,7 @@ typedef struct
 
 int Usage( const char *program, int error )
 {
-    printf( "Usage: %s -n name -t type -k key -v value [-h]\n"
+    printf( "Usage: %s -n name -t type -k key -v value [-d] [-T run_time_seconds] [-h]\n"
             "examples:\n"
             "%s -n CAM0 -t camera -k input_id -v 0 -k width -v 1920 -k height -v 1024 \\\n"
             "    -k topic -v /sensor/camera/CAM0/raw \\\n"
@@ -102,6 +102,7 @@ int Usage( const char *program, int error )
 int main( int argc, char *argv[] )
 {
     RideHalError_e ret;
+    int timeS = 0;
     std::vector<SampleIF *> samples;
 
     signal( SIGINT, SignalHandler );
@@ -111,7 +112,7 @@ int main( int argc, char *argv[] )
     PipelineConfig_t cameraConfig;
     std::string key;
     int opt;
-    while ( ( opt = getopt( argc, argv, "dn:t:k:v:h" ) ) != -1 )
+    while ( ( opt = getopt( argc, argv, "dn:t:k:v:hT:" ) ) != -1 )
     {
         switch ( opt )
         {
@@ -144,6 +145,9 @@ int main( int argc, char *argv[] )
                 break;
             case 'h':
                 return Usage( argv[0], 0 );
+                break;
+            case 'T':
+                timeS = atoi( optarg );
                 break;
             default:
                 return Usage( argv[0], -1 );
