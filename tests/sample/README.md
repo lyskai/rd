@@ -440,11 +440,12 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| input_width   | false    | int       | 1920    | The input image width   |
-| input_height  | false    | int       | 1024    | The input image height  |
+| batch_size    | false    | int       | 1       | The CL2DFlex input batch size |
+| input_widthX  | false    | int       | 1920    | The input X image width |
+| input_heightX | false    | int       | 1024    | The input X image height  |
 | output_width  | false    | int       | 1920    | The output image width  |
 | output_height | false    | int       | 1024    | The output image height |
-| input_format  | false    | string    | nv12    | The input image format, options from [nv12, uyvy]|
+| input_formatX | false    | string    | nv12    | The input X image format, options from [nv12, uyvy]|
 | output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | cache         | false    | bool      | true    | use cached memory or not for the image memory |
@@ -455,9 +456,9 @@ The command line template example:
 
 ```sh
   -n CL2D -t CL2DFlex \
-    -k input_width -v 1920 -k input_height -v 1024 \
+    -k input_width0 -v 1920 -k input_height0 -v 1024 \
     -k output_width -v 1920 -k output_height -v 1024 \
-    -k input_format -v nv12 -k output_format -v rgb \
+    -k input_format0 -v nv12 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM0/raw \
     -k output_topic -v /sensor/camera/CAM0/cl2d \
 ```

@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleCL2DFlex.hpp"
 
 
@@ -19,20 +18,6 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    m_config.inputWidth = Get( config, "input_width", 1920 );
-    if ( 0 == m_config.inputWidth )
-    {
-        RIDEHAL_ERROR( "invalid input_width\n" );
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-    }
-
-    m_config.inputHeight = Get( config, "input_height", 1024 );
-    if ( 0 == m_config.inputHeight )
-    {
-        RIDEHAL_ERROR( "invalid input_height\n" );
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-    }
-
     m_config.outputWidth = Get( config, "output_width", 1920 );
     if ( 0 == m_config.outputWidth )
     {
@@ -47,13 +32,6 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.inputFormat = Get( config, "input_format", RIDEHAL_IMAGE_FORMAT_NV12 );
-    if ( RIDEHAL_IMAGE_FORMAT_MAX == m_config.inputFormat )
-    {
-        RIDEHAL_ERROR( "invalid input_format\n" );
-        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-    }
-
     m_config.outputFormat = Get( config, "output_format", RIDEHAL_IMAGE_FORMAT_RGB888 );
     if ( RIDEHAL_IMAGE_FORMAT_MAX == m_config.outputFormat )
     {
@@ -61,10 +39,37 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_inputWidth = m_config.inputWidth;
-    m_inputHeight = m_config.inputHeight;
-    m_inputFormat = m_config.inputFormat;
-    m_outputFormat = m_config.outputFormat;
+    m_config.numOfInputs = Get( config, "batch_size", 1 );
+    if ( 0 == m_config.numOfInputs )
+    {
+        RIDEHAL_ERROR( "invalid batch_size\n" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
+    for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
+    {
+        m_config.inputWidths[i] = Get( config, "input_width" + std::to_string( i ), 1920 );
+        if ( 0 == m_config.inputWidths[i] )
+        {
+            RIDEHAL_ERROR( "invalid input_width%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_config.inputHeights[i] = Get( config, "input_height" + std::to_string( i ), 1024 );
+        if ( 0 == m_config.inputHeights[i] )
+        {
+            RIDEHAL_ERROR( "invalid input_height%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_config.inputFormats[i] =
+                Get( config, "input_format" + std::to_string( i ), RIDEHAL_IMAGE_FORMAT_NV12 );
+        if ( RIDEHAL_IMAGE_FORMAT_MAX == m_config.inputFormats[i] )
+        {
+            RIDEHAL_ERROR( "invalid input_format%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+    }
 
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
@@ -117,7 +122,7 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
         {
             RideHal_ImageProps_t imgProp;
             imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
-            imgProp.batchSize = 1;
+            imgProp.batchSize = m_config.numOfInputs;
             imgProp.width = m_config.outputWidth;
             imgProp.height = m_config.outputHeight;
             imgProp.stride[0] = m_config.outputWidth * 3;
@@ -194,7 +199,7 @@ void SampleCL2DFlex::ThreadMain()
 
                 PROFILER_BEGIN();
                 TRACE_BEGIN( frames.FrameId( 0 ) );
-                ret = m_CL2DFlex.Execute( inputs.data(), &buffer->sharedBuffer );
+                ret = m_CL2DFlex.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_END();
