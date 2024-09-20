@@ -89,8 +89,8 @@ static float fastPow( float p )
     {
         uint32_t i;
         float f;
-    } v = { (uint32_t) ( ( 1 << 23 ) * ( clipp + 121.2740575f + 27.7280233f / ( 4.84252568f - z ) -
-                                         1.49012907f * z ) ) };
+    } v = { ( uint32_t )( ( 1 << 23 ) * ( clipp + 121.2740575f + 27.7280233f / ( 4.84252568f - z ) -
+                                          1.49012907f * z ) ) };
 
     return v.f;
 }
@@ -220,10 +220,18 @@ RideHalError_e SamplePostProcBevdet::Init( std::string name, SampleConfig_t &con
             }
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                ret = m_OpenclSrvObj.LoadFromSource( s_pSourceBboxDet, "BboxDet" );
+                ret = m_OpenclSrvObj.LoadFromSource( s_pSourceBboxDet );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "Failed to load kernel source code" );
+                }
+            }
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                ret = m_OpenclSrvObj.CreateKernel( &m_kernel, "BboxDet" );
+                if ( RIDEHAL_ERROR_NONE != ret )
+                {
+                    RIDEHAL_ERROR( "Failed to create kernel" );
                 }
             }
             if ( RIDEHAL_ERROR_NONE == ret )
@@ -317,43 +325,42 @@ RideHalError_e SamplePostProcBevdet::RegisterInputBuffers( DataFrames_t &tensors
     m_velOffset = tensors.QuantOffset( m_indexs[5] );
 
     // Create hm data buffer
-    ret = m_OpenclSrvObj.RegBuf( hm.data(), hm.size, hm.buffer.dmaHandle, &m_clInputHMBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( hm.buffer ), &m_clInputHMBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create hm data buffer" );
     }
 
     // Create reg data buffer
-    ret = m_OpenclSrvObj.RegBuf( reg.data(), reg.size, reg.buffer.dmaHandle, &m_clInputRegBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( reg.buffer ), &m_clInputRegBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create reg data buffer" );
     }
 
     // Create height data buffer
-    ret = m_OpenclSrvObj.RegBuf( height.data(), height.size, height.buffer.dmaHandle,
-                                 &m_clInputHeightBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( height.buffer ), &m_clInputHeightBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create height data buffer" );
     }
 
     // Create dim data buffer
-    ret = m_OpenclSrvObj.RegBuf( dim.data(), dim.size, dim.buffer.dmaHandle, &m_clInputDimBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( dim.buffer ), &m_clInputDimBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create dim data buffer" );
     }
 
     // Create rot data buffer
-    ret = m_OpenclSrvObj.RegBuf( rot.data(), rot.size, rot.buffer.dmaHandle, &m_clInputRotBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( rot.buffer ), &m_clInputRotBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create rot data buffer" );
     }
 
     // Create vel data buffer
-    ret = m_OpenclSrvObj.RegBuf( vel.data(), vel.size, vel.buffer.dmaHandle, &m_clInputVelBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( vel.buffer ), &m_clInputVelBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create vel data buffer" );
@@ -374,8 +381,7 @@ RideHalError_e SamplePostProcBevdet::RegisterOutputBuffers()
     // create output classId data buffer
     ret = m_outputClsIdBuf.Allocate( outputClsIdBufSize );
     bufHandle = m_outputClsIdBuf.buffer.dmaHandle;
-    ret = m_OpenclSrvObj.RegBuf( m_outputClsIdBuf.data(), outputClsIdBufSize, bufHandle,
-                                 &m_clOutputClsIdBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( m_outputClsIdBuf.buffer ), &m_clOutputClsIdBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create output classId data buffer" );
@@ -384,8 +390,7 @@ RideHalError_e SamplePostProcBevdet::RegisterOutputBuffers()
     // create output detObj data buffer
     ret = m_outputDetObjBuf.Allocate( outputDetObjBufSize );
     bufHandle = m_outputDetObjBuf.buffer.dmaHandle;
-    ret = m_OpenclSrvObj.RegBuf( m_outputDetObjBuf.data(), outputDetObjBufSize, bufHandle,
-                                 &m_clOutputDetObjBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( m_outputDetObjBuf.buffer ), &m_clOutputDetObjBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create output degObj data buffer" );
@@ -518,7 +523,7 @@ RideHalError_e SamplePostProcBevdet::PostProcCL( DataFrames_t &tensors )
     float *pdetObjs = (float *) m_outputDetObjBuf.data();
     *( pdetClsIds + MAX_OBJ_NUM ) = 0;
 
-    ret = m_OpenclSrvObj.Execute( m_openclArgs, numArgs, &openclWorkParams );
+    ret = m_OpenclSrvObj.Execute( &m_kernel, m_openclArgs, numArgs, &openclWorkParams );
 
     int objNum = *( pdetClsIds + MAX_OBJ_NUM );
     if ( RIDEHAL_ERROR_NONE != ret )
@@ -707,4 +712,3 @@ REGISTER_SAMPLE( PostProcBevdet, SamplePostProcBevdet );
 
 }   // namespace sample
 }   // namespace ridehal
-

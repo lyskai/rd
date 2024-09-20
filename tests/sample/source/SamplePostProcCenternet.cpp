@@ -58,12 +58,12 @@ static const char *s_pSourceBboxDet = KernelCode( __kernel void BboxDet(
             uint reg_idx = ( y * width + x );
             float2 xyReg = convert_float2( vload2( reg_idx, reg ) );
             float2 whReg = convert_float2( vload2( reg_idx, wh ) );
-            float2 wh2 = (float2) ( width, height );
-            xyReg = ( xyReg + regOffset ) * regScale + (float2) ( x, y );
+            float2 wh2 = ( float2 )( width, height );
+            xyReg = ( xyReg + regOffset ) * regScale + ( float2 )( x, y );
             whReg = ( whReg + whOffset ) * whScale * 0.5f;
 
-            float4 imgWH4 = (float4) ( imgWidth, imgHeight, imgWidth, imgHeight );
-            float4 roiXY4 = (float4) ( roiX, roiY, roiX, roiY );
+            float4 imgWH4 = ( float4 )( imgWidth, imgHeight, imgWidth, imgHeight );
+            float4 roiXY4 = ( float4 )( roiX, roiY, roiX, roiY );
 
             coords.s01 = ( xyReg - whReg ) / wh2;
             coords.s23 = ( xyReg + whReg ) / wh2;
@@ -93,8 +93,8 @@ static float fastPow( float p )
     {
         uint32_t i;
         float f;
-    } v = { (uint32_t) ( ( 1 << 23 ) * ( clipp + 121.2740575f + 27.7280233f / ( 4.84252568f - z ) -
-                                         1.49012907f * z ) ) };
+    } v = { ( uint32_t )( ( 1 << 23 ) * ( clipp + 121.2740575f + 27.7280233f / ( 4.84252568f - z ) -
+                                          1.49012907f * z ) ) };
 
     return v.f;
 }
@@ -180,10 +180,18 @@ RideHalError_e SamplePostProcCenternet::Init( std::string name, SampleConfig_t &
             }
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                ret = m_OpenclSrvObj.LoadFromSource( s_pSourceBboxDet, "BboxDet" );
+                ret = m_OpenclSrvObj.LoadFromSource( s_pSourceBboxDet );
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "Failed to load kernel source code" );
+                }
+            }
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                ret = m_OpenclSrvObj.CreateKernel( &m_kernel, "BboxDet" );
+                if ( RIDEHAL_ERROR_NONE != ret )
+                {
+                    RIDEHAL_ERROR( "Failed to create kernel" );
                 }
             }
             if ( RIDEHAL_ERROR_NONE == ret )
@@ -269,21 +277,21 @@ RideHalError_e SamplePostProcCenternet::RegisterInputBuffers( DataFrames_t &tens
     m_classNum = hm.tensorProps.dims[3];
 
     // Create hm data buffer
-    ret = m_OpenclSrvObj.RegBuf( hm.data(), hm.size, hm.buffer.dmaHandle, &m_clInputHMBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( hm.buffer ), &m_clInputHMBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create hm data buffer" );
     }
 
     // Create wh data buffer
-    ret = m_OpenclSrvObj.RegBuf( wh.data(), wh.size, wh.buffer.dmaHandle, &m_clInputWHBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( wh.buffer ), &m_clInputWHBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create wh data buffer" );
     }
 
     // Create reg data buffer
-    ret = m_OpenclSrvObj.RegBuf( reg.data(), reg.size, reg.buffer.dmaHandle, &m_clInputRegBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( reg.buffer ), &m_clInputRegBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create reg data buffer" );
@@ -305,8 +313,7 @@ RideHalError_e SamplePostProcCenternet::RegisterOutputBuffers()
     // create output classId data buffer
     ret = m_outputClsIdBuf.Allocate( outputClsIdBufSize );
     bufHandle = m_outputClsIdBuf.buffer.dmaHandle;
-    ret = m_OpenclSrvObj.RegBuf( m_outputClsIdBuf.data(), outputClsIdBufSize, bufHandle,
-                                 &m_clOutputClsIdBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( m_outputClsIdBuf.buffer ), &m_clOutputClsIdBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create output classId data buffer" );
@@ -315,8 +322,7 @@ RideHalError_e SamplePostProcCenternet::RegisterOutputBuffers()
     // create output classId prob buffer
     ret = m_outputProbBuf.Allocate( outputProbBufSize );
     bufHandle = m_outputProbBuf.buffer.dmaHandle;
-    ret = m_OpenclSrvObj.RegBuf( m_outputProbBuf.data(), outputProbBufSize, bufHandle,
-                                 &m_clOutputProbBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( m_outputProbBuf.buffer ), &m_clOutputProbBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create output prob data buffer" );
@@ -325,8 +331,7 @@ RideHalError_e SamplePostProcCenternet::RegisterOutputBuffers()
     // create output coords data buffer
     ret = m_outputCoordsBuf.Allocate( outputCoordsBufSize );
     bufHandle = m_outputCoordsBuf.buffer.dmaHandle;
-    ret = m_OpenclSrvObj.RegBuf( m_outputCoordsBuf.data(), outputCoordsBufSize, bufHandle,
-                                 &m_clOutputCoordsBuf );
+    ret = m_OpenclSrvObj.RegBuf( &( m_outputCoordsBuf.buffer ), &m_clOutputCoordsBuf );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to create output coords data buffer" );
@@ -517,7 +522,7 @@ RideHalError_e SamplePostProcCenternet::PostProcCL( DataFrames_t &tensors )
     uint32_t *pdetClsIds = (uint32_t *) m_outputClsIdBuf.data();
     *( pdetClsIds + MAX_OBJ_NUM ) = 0;
 
-    ret = m_OpenclSrvObj.Execute( m_openclArgs, numArgs, &openclWorkParams );
+    ret = m_OpenclSrvObj.Execute( &m_kernel, m_openclArgs, numArgs, &openclWorkParams );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to execute BboxDet kernel" );
@@ -634,4 +639,3 @@ REGISTER_SAMPLE( PostProcCenternet, SamplePostProcCenternet );
 
 }   // namespace sample
 }   // namespace ridehal
-

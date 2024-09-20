@@ -46,17 +46,12 @@ class OpenclSrv
 {
 public:
     RideHalError_e Init( const char *pName, Logger_Level_e level );
-    RideHalError_e LoadFromSource( const char *pSourceFile, const char *pKernelName );
     RideHalError_e LoadFromSource( const char *pSourceFile );
     RideHalError_e LoadFromBinary( const unsigned char *pBinaryFile );
     RideHalError_e CreateKernel( cl_kernel *pKernel, const char *pKernelName );
     RideHalError_e Deinit();
-    RideHalError_e RegBuf( void *pBufferHost, size_t size, uint64_t handle, cl_mem *pBufferCL );
     RideHalError_e RegBuf( const RideHal_Buffer_t *pBuffer, cl_mem *pBufferCL );
-    RideHalError_e DeregBuf( void *pBufferHost );
     RideHalError_e DeregBuf( const RideHal_Buffer_t *pBuffer );
-    RideHalError_e Execute( const OpenclIfcae_Arg_t *pArgs, size_t numOfArgs,
-                            const OpenclIface_WorkParams_t *pWorkParam );
     RideHalError_e Execute( cl_kernel *pKernel, const OpenclIfcae_Arg_t *pArgs, size_t numOfArgs,
                             const OpenclIface_WorkParams_t *pWorkParam );
 
@@ -66,7 +61,6 @@ private:
     cl_device_id m_deviceID;
     cl_command_queue m_commandQueue;
     cl_context m_context;
-    cl_kernel m_kernel;
     cl_program m_program;
     std::map<void *, OpenclIface_MemInfo_t> m_memMap;
     std::map<std::string, cl_kernel> m_kernelMap;

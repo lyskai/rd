@@ -8,7 +8,7 @@
 
 #define KernelCode( ... ) #__VA_ARGS__
 
-static const char *s_pSourceClusterPoints = KernelCode(
+static const char *s_pSourceVoxelization = KernelCode(
 
         __kernel void ClusterPointsFromXYZR(
                 __global const float *pInPts, __global float *pOutPlrs, __global float *pOutFeature,
@@ -127,10 +127,6 @@ static const char *s_pSourceClusterPoints = KernelCode(
                 }
             }
         }
-
-);
-
-static const char *s_pSourceFeatureGather = KernelCode(
 
         __kernel void FeatureGatherFromXYZR(
                 __global float *pOutPlrs, __global float *pOutFeature, __global int *numOfPts,

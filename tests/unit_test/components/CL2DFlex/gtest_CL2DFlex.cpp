@@ -625,32 +625,35 @@ void CoverageTest()
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     OpenclSrv OpenclSrvObj;
-
     ret = OpenclSrvObj.Init( pName, LOGGER_LEVEL_ERROR );   // success init OpenclSrv
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    ret = OpenclSrvObj.LoadFromSource( "", "" );   // create program with null source
+    ret = OpenclSrvObj.LoadFromSource( "" );   // create program with null source
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = OpenclSrvObj.LoadFromSource( s_pSourceCL2DFlex,
-                                       "" );   // create program with null kernel
+    cl_kernel kernel;
+    ret = OpenclSrvObj.CreateKernel( &kernel,
+                                     "" );   // create program with null kernel
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     ret = OpenclSrvObj.LoadFromBinary(
             (const unsigned char *) "" );   // create program with null binary
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
-    ret = OpenclSrvObj.RegBuf( nullptr, 0, 0, nullptr );   // register with null host pointer
+    ret = OpenclSrvObj.RegBuf( (RideHal_Buffer_t *) nullptr,
+                               nullptr );   // register with null host buffer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
-    ret = OpenclSrvObj.DeregBuf( (void *) nullptr );   // deregister with null pointer
+    ret = OpenclSrvObj.DeregBuf(
+            (RideHal_Buffer_t *) nullptr );   // deregister with null null host buffer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     OpenclIfcae_Arg_t OpenclArg;
     OpenclArg.pArg = nullptr;
     OpenclArg.argSize = 0;
     OpenclIface_WorkParams_t OpenclWorkParams;
-    ret = OpenclSrvObj.Execute( &OpenclArg, 1, &OpenclWorkParams );   // execute with null args
+    ret = OpenclSrvObj.Execute( &kernel, &OpenclArg, 1,
+                                &OpenclWorkParams );   // execute with null args
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     int arg = 1;
@@ -660,15 +663,16 @@ void CoverageTest()
     OpenclWorkParams.pGlobalWorkSize = nullptr;
     OpenclWorkParams.pGlobalWorkOffset = nullptr;
     OpenclWorkParams.pLocalWorkSize = nullptr;
-    ret = OpenclSrvObj.Execute( &OpenclArg, 1,
+    ret = OpenclSrvObj.Execute( &kernel, &OpenclArg, 1,
                                 &OpenclWorkParams );   // execute with null work params
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     ret = OpenclSrvObj.Deinit();   // success deinit
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+
     cl_mem *clMem;
-    ret = OpenclSrvObj.RegBuf( (void *) &input, 1, 0, clMem );   // register without init
+    ret = OpenclSrvObj.RegBuf( &( input.buffer ), clMem );   // register without init
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     return;

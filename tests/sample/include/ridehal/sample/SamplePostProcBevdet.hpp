@@ -126,6 +126,7 @@ private:
     cl_mem m_clOutputDetObjBuf;
 
     OpenclSrv m_OpenclSrvObj;
+    cl_kernel m_kernel;
     OpenclIfcae_Arg_t m_openclArgs[30];
 
     DataSubscriber<DataFrames_t> m_sub;
@@ -136,4 +137,3 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDEHAL_SAMPLE_POST_PROC_BEVDET_HPP_
-

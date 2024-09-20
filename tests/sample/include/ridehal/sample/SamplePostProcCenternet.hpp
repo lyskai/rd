@@ -99,6 +99,7 @@ private:
     cl_mem m_clOutputCoordsBuf;
 
     OpenclSrv m_OpenclSrvObj;
+    cl_kernel m_kernel;
     OpenclIfcae_Arg_t m_openclArgs[22];
 
     DataSubscriber<DataFrames_t> m_sub;
@@ -109,4 +110,3 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDEHAL_SAMPLE_POST_PROC_CENTERNET_HPP_
-

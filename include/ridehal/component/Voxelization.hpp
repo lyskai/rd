@@ -149,8 +149,9 @@ public:
 private:
     Voxelization_Config_t m_config;
     FadasPlrPreProc m_plrPre;
-    OpenclSrv m_OpenclSrvObj1;
-    OpenclSrv m_OpenclSrvObj2;
+    OpenclSrv m_OpenclSrvObj;
+    cl_kernel m_kernel1;                   /*OpenCL kernel for ClusterPoints*/
+    cl_kernel m_kernel2;                   /*OpenCL kernel for FeatureGather*/
     RideHal_SharedBuffer_t m_numOfPts;     /*internal buffer used by OpenCL kernel*/
     RideHal_SharedBuffer_t m_coorToPlrIdx; /*internal buffer used by OpenCL kernel*/
 

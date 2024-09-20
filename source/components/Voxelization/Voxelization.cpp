@@ -21,8 +21,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     bool bIFInitOK = false;
     bool bFadasInitOK = false;
-    bool bOpencl1InitOK = false;
-    bool bOpencl2InitOK = false;
+    bool bOpenclInitOK = false;
     bool bcoorAllocOK = false;
 
     ret = ComponentIF::Init( pName, level );
@@ -40,7 +39,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
     {
         if ( RIDEHAL_PROCESSOR_GPU == pConfig->processor )
         {
-            ret = m_OpenclSrvObj1.Init( pName, level );
+            ret = m_OpenclSrvObj.Init( pName, level );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Init OpenclSrvObj1 failed!" );
@@ -48,37 +47,13 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
             }
             else
             {
-                if ( ( VOXELIZATION_INPUT_XYZR == pConfig->inputMode ) &&
-                     ( 4 == pConfig->numInFeatureDim ) )
-                {
-                    ret = m_OpenclSrvObj1.LoadFromSource( s_pSourceClusterPoints,
-                                                          "ClusterPointsFromXYZR" );
-                }
-                else if ( ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode ) &&
-                          ( 5 == pConfig->numInFeatureDim ) )
-                {
-                    ret = m_OpenclSrvObj1.LoadFromSource( s_pSourceClusterPoints,
-                                                          "ClusterPointsFromXYZRT" );
-                }
-                else
-                {
-                    RIDEHAL_ERROR( "GPU voxelization mode is invalid!" );
-                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                }
+                bOpenclInitOK = true;
+                ret = m_OpenclSrvObj.LoadFromSource( s_pSourceVoxelization );
             }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Load kernel from source for ClusterPoints failed!" );
-                ret = RIDEHAL_ERROR_FAIL;
-            }
-            else
-            {
-                bOpencl1InitOK = true;
-                ret = m_OpenclSrvObj2.Init( pName, level );
-            }
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Init OpenclSrvObj2 failed!" );
+                RIDEHAL_ERROR( "Load kernel from source s_pSourceVoxelization failed!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             else
@@ -86,14 +61,12 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
                 if ( ( VOXELIZATION_INPUT_XYZR == pConfig->inputMode ) &&
                      ( 4 == pConfig->numInFeatureDim ) )
                 {
-                    ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather,
-                                                          "FeatureGatherFromXYZR" );
+                    ret = m_OpenclSrvObj.CreateKernel( &m_kernel1, "ClusterPointsFromXYZR" );
                 }
                 else if ( ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode ) &&
                           ( 5 == pConfig->numInFeatureDim ) )
                 {
-                    ret = m_OpenclSrvObj2.LoadFromSource( s_pSourceFeatureGather,
-                                                          "FeatureGatherFromXYZRT" );
+                    ret = m_OpenclSrvObj.CreateKernel( &m_kernel1, "ClusterPointsFromXYZRT" );
                 }
                 else
                 {
@@ -101,14 +74,38 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
                     ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 }
             }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
-                RIDEHAL_ERROR( "Load kernel from source for FeatureGather failed!" );
+                RIDEHAL_ERROR( "Create kernel1 for ClusterPoints failed!" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             else
             {
-                bOpencl2InitOK = true;
+                if ( ( VOXELIZATION_INPUT_XYZR == pConfig->inputMode ) &&
+                     ( 4 == pConfig->numInFeatureDim ) )
+                {
+                    ret = m_OpenclSrvObj.CreateKernel( &m_kernel2, "FeatureGatherFromXYZR" );
+                }
+                else if ( ( VOXELIZATION_INPUT_XYZRT == pConfig->inputMode ) &&
+                          ( 5 == pConfig->numInFeatureDim ) )
+                {
+                    ret = m_OpenclSrvObj.CreateKernel( &m_kernel2, "FeatureGatherFromXYZRT" );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "GPU voxelization mode is invalid!" );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+            }
+
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Create kernel2 for FeatureGather failed!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
                 size_t gridXSize =
                         ceil( ( pConfig->maxXRange - pConfig->minXRange ) / pConfig->pillarXSize );
                 size_t gridYSize =
@@ -120,6 +117,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
                 };
                 ret = m_coorToPlrIdx.Allocate( &coorToPlrIdxProp );
             }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to allocate coorToPlrIdx buffer!" );
@@ -151,6 +149,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
             {
                 ret = m_plrPre.Init( pConfig->processor, pName, level );
             }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to init FadasPlrPre!" );
@@ -165,6 +164,7 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
                         pConfig->maxNumInPts, pConfig->numInFeatureDim, pConfig->maxNumPlrs,
                         pConfig->maxNumPtsPerPlr, pConfig->numOutFeatureDim );
             }
+
             if ( RIDEHAL_ERROR_NONE == ret )
             {
                 ret = m_plrPre.CreatePreProc();
@@ -180,13 +180,9 @@ RideHalError_e Voxelization::Init( const char *pName, const Voxelization_Config_
         {
             (void) m_plrPre.Deinit();
         }
-        if ( bOpencl1InitOK )
+        if ( bOpenclInitOK )
         {
-            (void) m_OpenclSrvObj1.Deinit();
-        }
-        if ( bOpencl2InitOK )
-        {
-            (void) m_OpenclSrvObj2.Deinit();
+            (void) m_OpenclSrvObj.Deinit();
         }
         if ( bcoorAllocOK )
         {
@@ -254,17 +250,10 @@ RideHalError_e Voxelization::Deinit()
         RideHalError_e ret2;
         if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
         {
-            ret2 = m_OpenclSrvObj1.Deinit();
+            ret2 = m_OpenclSrvObj.Deinit();
             if ( RIDEHAL_ERROR_NONE != ret2 )
             {
-                RIDEHAL_ERROR( "Release OpenclSrvObj1 resources failed!" );
-                ret = ret2;
-            }
-
-            ret2 = m_OpenclSrvObj2.Deinit();
-            if ( RIDEHAL_ERROR_NONE != ret2 )
-            {
-                RIDEHAL_ERROR( "Release OpenclSrvObj2 resources failed!" );
+                RIDEHAL_ERROR( "Release OpenclSrvObj resources failed!" );
                 ret = ret2;
             }
 
@@ -336,8 +325,7 @@ RideHalError_e Voxelization::RegisterBuffers( const RideHal_SharedBuffer_t *pBuf
                 if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
                 {
                     cl_mem bufferCL;
-                    ret = m_OpenclSrvObj1.RegBuf( pBuffers[i].data(), pBuffers[i].size,
-                                                  pBuffers[i].buffer.dmaHandle, &bufferCL );
+                    ret = m_OpenclSrvObj.RegBuf( &( pBuffers[i].buffer ), &bufferCL );
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Failed to register buffer[%d] for GPU!", i );
@@ -394,7 +382,7 @@ RideHalError_e Voxelization::DeRegisterBuffers( const RideHal_SharedBuffer_t *pB
             {
                 if ( RIDEHAL_PROCESSOR_GPU == m_config.processor )
                 {
-                    ret = m_OpenclSrvObj1.DeregBuf( pBuffers[i].data() );
+                    ret = m_OpenclSrvObj.DeregBuf( &( pBuffers[i].buffer ) );
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
                         RIDEHAL_ERROR( "Failed to deregister buffer[%d] for GPU!", i );
@@ -430,8 +418,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
     bool bRegOK = true;
 
     cl_mem bufferSrc;
-    ret = m_OpenclSrvObj1.RegBuf( pInPts->data(), pInPts->size, pInPts->buffer.dmaHandle,
-                                  &bufferSrc );
+    ret = m_OpenclSrvObj.RegBuf( &( pInPts->buffer ), &bufferSrc );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register input points buffer!" );
@@ -439,8 +426,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
     }
 
     cl_mem bufferDst1;
-    ret = m_OpenclSrvObj1.RegBuf( pOutPlrs->data(), pOutPlrs->size, pOutPlrs->buffer.dmaHandle,
-                                  &bufferDst1 );
+    ret = m_OpenclSrvObj.RegBuf( &( pOutPlrs->buffer ), &bufferDst1 );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register output pillars buffer!" );
@@ -448,8 +434,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
     }
 
     cl_mem bufferDst2;
-    ret = m_OpenclSrvObj1.RegBuf( pOutFeature->data(), pOutFeature->size,
-                                  pOutFeature->buffer.dmaHandle, &bufferDst2 );
+    ret = m_OpenclSrvObj.RegBuf( &( pOutFeature->buffer ), &bufferDst2 );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register output features buffer!" );
@@ -459,8 +444,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
     /* initialize points number in pillar, pillar number to 0 */
     (void) memset( m_numOfPts.data(), 0, m_numOfPts.size );
     cl_mem bufferNumOfPts;
-    ret = m_OpenclSrvObj1.RegBuf( m_numOfPts.data(), m_numOfPts.size, m_numOfPts.buffer.dmaHandle,
-                                  &bufferNumOfPts );
+    ret = m_OpenclSrvObj.RegBuf( &( m_numOfPts.buffer ), &bufferNumOfPts );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register numOfPts buffer!" );
@@ -472,8 +456,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
     /* initialize pillar coordinate to -1 */
     (void) memset( m_coorToPlrIdx.data(), -1, m_coorToPlrIdx.size );
     cl_mem bufferCoorToPlr;
-    ret = m_OpenclSrvObj1.RegBuf( m_coorToPlrIdx.data(), m_coorToPlrIdx.size,
-                                  m_coorToPlrIdx.buffer.dmaHandle, &bufferCoorToPlr );
+    ret = m_OpenclSrvObj.RegBuf( &( m_coorToPlrIdx.buffer ), &bufferCoorToPlr );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
         RIDEHAL_ERROR( "Failed to register coorToPlrIdx buffer!" );
@@ -533,7 +516,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
         /*set local work size to NULL, device would choose optimal size automatically*/
         OpenclWorkParams1.pLocalWorkSize = NULL;
 
-        ret = m_OpenclSrvObj1.Execute( OpenclArgs1, numOfArgs1, &OpenclWorkParams1 );
+        ret = m_OpenclSrvObj.Execute( &m_kernel1, OpenclArgs1, numOfArgs1, &OpenclWorkParams1 );
         if ( RIDEHAL_ERROR_NONE != ret )
         {
             RIDEHAL_ERROR( "Failed to execute ClusterPoints OpenCL kernel!" );
@@ -580,7 +563,7 @@ RideHalError_e Voxelization::ExecuteCL( const RideHal_SharedBuffer_t *pInPts,
             /*set local work size to NULL, device would choose optimal size automatically*/
             OpenclWorkParams2.pLocalWorkSize = NULL;
 
-            ret = m_OpenclSrvObj2.Execute( OpenclArgs2, numOfArgs2, &OpenclWorkParams2 );
+            ret = m_OpenclSrvObj.Execute( &m_kernel2, OpenclArgs2, numOfArgs2, &OpenclWorkParams2 );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to execute FeatureGather OpenCL kernel!" );
