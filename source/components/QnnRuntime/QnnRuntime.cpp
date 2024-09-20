@@ -709,7 +709,7 @@ RideHalError_e QnnRuntime::GetInputInfo()
             m_pInputTensor[i].properties = tensorProp;
 
             RIDEHAL_INFO( "input %s: shape = %s, scale=%f, offset=%d, type=%x\n",
-                          m_pInputTensor[i].pName, ss.str(), m_pInputTensor[i].quantScale,
+                          m_pInputTensor[i].pName, ss.str().c_str(), m_pInputTensor[i].quantScale,
                           m_pInputTensor[i].quantOffset, dataType );
         }
     }
@@ -802,7 +802,7 @@ RideHalError_e QnnRuntime::GetOutputInfo()
             m_pOutputTensor[i].properties = tensorProp;
 
             RIDEHAL_INFO( "output %s: shape = %s, scale=%f, offset=%d, type=%x\n",
-                          m_pOutputTensor[i].pName, ss.str(), m_pOutputTensor[i].quantScale,
+                          m_pOutputTensor[i].pName, ss.str().c_str(), m_pOutputTensor[i].quantScale,
                           m_pOutputTensor[i].quantOffset, dataType );
         }
     }
