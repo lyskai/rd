@@ -35,7 +35,7 @@ if not os.path.exists( args.input ) or not os.path.isdir( args.input ):
 
 inputDir = args.input
 
-tcRootDirName = "qos222"
+tcRootDirName = "qnx"
 sdpString     = args.version
 sdpVersion    = "7.1"
 
@@ -123,7 +123,7 @@ def generate_env_file( envFilePath, sdpVersion ):
         textFile.write( '''#/bin/bash
 #
 
-QNX_HOME=/opt/qos222
+QNX_HOME=/opt/qnx
 
 export QNX_CONFIGURATION_EXCLUSIVE=$QNX_HOME
 export QNX_HOST=$QNX_HOME/host/linux/x86_64

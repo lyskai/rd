@@ -2,10 +2,10 @@
   "toolchain": 
   [
     {
-      "name": "qos222",
+      "name": "qnx-hqx",
       "version": 
       [
-	"es12"
+	"es7"
       ]
     },
 
@@ -21,7 +21,7 @@
       "name": "ubuntu",
       "version": 
       [
-        "es15"
+        "es17"
       ]
     }
   ],

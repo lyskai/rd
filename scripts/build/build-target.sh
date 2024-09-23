@@ -30,7 +30,7 @@ sh $topdir/scripts/build/toolchain/get-3rd-party.sh
 # Get RideHal Toolchain path
 export RIDEHAL_TOOLCHAIN_PATH=/opt/toolchain
 
-setup_env_qos222() {
+setup_env_qnx() {
     if [[ -v BSP_ROOT ]]; then
         echo build with QNX CRM
         echo BSP_ROOT: $BSP_ROOT
@@ -47,18 +47,18 @@ setup_env_qos222() {
         export RANLIB=aarch64-unknown-nto-qnx7.1.0-ranlib
         export STRIP=aarch64-unknown-nto-qnx7.1.0-strip
 
-        export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-qos222.cmake
+        export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-qnx.cmake
         export TOOLCHAIN_SYSROOT=$BSP_ROOT/install/aarch64le
     else
-        if [ ! -d /opt/qos222 ]; then
-            if [ ! -d $RIDEHAL_TOOLCHAIN_PATH/qos222 ];then
-                echo "qos222 toolchain not found under $RIDEHAL_TOOLCHAIN_PATH path"
+        if [ ! -d /opt/qnx ]; then
+            if [ ! -d $RIDEHAL_TOOLCHAIN_PATH/qnx ];then
+                echo "qnx toolchain not found under $RIDEHAL_TOOLCHAIN_PATH path"
                 exit -1
             else
-                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qos222 /opt/qos222
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnx /opt/qnx
             fi
         fi
-        source /opt/qos222/env.sh
+        source /opt/qnx/env.sh
 
         if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
             if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
@@ -71,7 +71,7 @@ setup_env_qos222() {
         source /opt/qnn_sdk/bin/envsetup.sh
     fi
 
-    sh $homedir/toolchain/build-3rd-party-aarch64-qos222.sh $workdir $destdir
+    sh $homedir/toolchain/build-3rd-party-aarch64-qnx.sh $workdir $destdir
 }
 
 setup_env_linux() {
@@ -138,6 +138,10 @@ setup_env_ubuntu() {
             fi
         fi
         export UBUNTU_SDK_ROOT=/opt/ubuntu
+        if [ ! -d $UBUNTU_SDK_ROOT/sysroots/aarch64-oe-linux/usr/include ]; then
+            cd $UBUNTU_SDK_ROOT
+            echo y | sh ./oecore-x86_64-aarch64-sa8775-ubuntu-toolchain-nodistro.0.sh -d .
+        fi
         if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
             source $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh
         fi
@@ -186,8 +190,8 @@ setup_env_ubuntu() {
 
 ## Run tests on x86 builds
 case $target in
-aarch64-qos222)
-    setup_env_qos222
+aarch64-qnx)
+    setup_env_qnx
     ;;
 aarch64-linux)
     setup_env_linux
@@ -255,7 +259,7 @@ $homedir/bundle-runtime.py --sysroot "$TOOLCHAIN_SYSROOT" \
 if [ -f $QNN_SDK_ROOT/lib/aarch64-qnx/libQnnHtp.so ];  then
 # Install QNN Runtime dependencies
 case $target in
-aarch64-qos222)
+aarch64-qnx)
     cp -vf $QNN_SDK_ROOT/bin/aarch64-qnx/* $destdir/opt/ridehal/bin
     cp -vf $QNN_SDK_ROOT/lib/aarch64-qnx/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
@@ -276,8 +280,8 @@ aarch64-ubuntu)
 esac
 fi
 
-if [ -f LiberationSans-Regular.ttf ]; then
-    cp LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
+if [ -f /opt/toolchain/LiberationSans-Regular.ttf ]; then
+    cp /opt/toolchain/LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
 else
     wget https://dl.dafont.com/dl/?f=liberation_sans -O liberation_sans.zip
     unzip liberation_sans.zip
@@ -292,11 +296,26 @@ if [ -d $QNN_SDK_ROOT/model ]; then
 fi
 
 # Add fadas libs
-if [ -d /opt/fadaslib ]; then
-    cp /opt/fadaslib/libfadas.so $destdir/opt/ridehal/lib
-    cp /opt/fadaslib/libfadasGpu.so $destdir/opt/ridehal/lib
-    cp /opt/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
-fi
+case $target in
+aarch64-qnx)
+    if [ -d /opt/toolchain/fadaslib/qnx ]; then
+        cp /opt/toolchain/fadaslib/qnx/* $destdir/opt/ridehal/lib
+        cp /opt/toolchain/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
+    fi
+    ;;
+aarch64-linux)
+    if [ -d /opt/toolchain/fadaslib/linux ]; then
+        cp /opt/toolchain/fadaslib/linux/* $destdir/opt/ridehal/lib
+        cp /opt/toolchain/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
+    fi
+    ;;
+aarch64-ubuntu)
+    if [ -d /opt/toolchain/fadaslib/ubuntu ]; then
+        cp /opt/toolchain/fadaslib/ubuntu/* $destdir/opt/ridehal/lib
+        cp /opt/toolchain/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
+    fi
+    ;;
+esac
 
 # Create run-time package
 echo "Generating $pkgname"
@@ -304,4 +323,5 @@ tar -C $topdir --xform="s/run/pkg/" --exclude="*.a" \
     --exclude="*.la" --exclude="include" --exclude="share" \
     --exclude="cmake" \
     --use-compress-program=pigz -cf $pkgname run-$target
+
 

@@ -67,10 +67,10 @@
 
   Rerun this container, switch to `/opt/sdk/ridehal` path, then use the scripts to build ridehal package:
 
-    - QOS222:
+    - QNX:
 
       ```sh
-      ./scripts/build/build-target.sh aarch64-qos222 .
+      ./scripts/build/build-target.sh aarch64-qnx .
       ```
 
     - HGY Linux:
@@ -97,7 +97,7 @@ source /path/to/QNN_SDK/bin/envsetup.sh
 # for example:  source ~/qnn-release/qaisw-v2.16.0.231027072756_64280-auto/bin/envsetup.sh
 
 cd /path/to/ridehal
-./scripts/build/build-target.sh aarch64-qos222 .
+./scripts/build/build-target.sh aarch64-qnx .
 # the ridehal-aarch64-qos222.tar.gz is the build out package for QNX
 ```
 
