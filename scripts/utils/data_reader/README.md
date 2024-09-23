@@ -25,7 +25,7 @@ optional arguments:
   -r RESOLUTION, --resolution RESOLUTION
                         The resolution of camera
   -f FORMAT, --format FORMAT
-                        The color format of camera, [uyvy, nv12, nv21, rgb]
+                        The color format of camera, [uyvy, nv12, nv21, rgb, p010]
 ```
 
 ## examples commands

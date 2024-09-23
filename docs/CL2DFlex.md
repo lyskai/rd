@@ -14,11 +14,11 @@ The RideHal CL2DFlex component is based on OpenCL library, it provides user-frie
 
 # 3. CL2DFlex APIs 
 - [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L64)
-- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L75)  
-- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L81) 
-- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L93) 
+- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L75)
+- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L81)
+- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L93)
 - [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L100)
-- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L110)  
+- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L110)
 - [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L119)
 
 # 4. Typical use case
