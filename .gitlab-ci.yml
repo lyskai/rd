@@ -21,12 +21,12 @@ start:
       when: always
   timeout: 1h
 
-build ridehal:
+build ridehal qnx:
   stage: build
   script:
-    - echo "Start building ridehal"
+    - echo "Start building ridehal for QNX"
     - python3 /data/scripts/gitlab-ci/get_build_config.py
-    - sh /data/scripts/gitlab-ci/build_package.sh
+    - sh /data/scripts/gitlab-ci/build_package_qnx.sh
   tags:
     - ridehal-dev
   rules:
@@ -34,6 +34,52 @@ build ridehal:
       when: on_success
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
+  timeout: 1h
+
+build ridehal linux:
+  stage: build
+  script:
+    - echo "Start building ridehal for HGY Linux"
+    - python3 /data/scripts/gitlab-ci/get_build_config.py
+    - sh /data/scripts/gitlab-ci/build_package_linux.sh
+  tags:
+    - ridehal-dev
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  timeout: 1h
+
+build ridehal ubuntu:
+  stage: build
+  script:
+    - echo "Start building ridehal for HGY Ubuntu"
+    - python3 /data/scripts/gitlab-ci/get_build_config.py
+    - sh /data/scripts/gitlab-ci/build_package_ubuntu.sh
+  tags:
+    - ridehal-dev
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  timeout: 1h
+
+run gtest for qnx:
+  stage: test
+  script:
+    - echo "Start running gtest for qnx"
+    - sh /data/scripts/gitlab-ci/run_gtest_host_qnx.sh
+    - python3 /data/scripts/gitlab-ci/parse_gtest_output_qnx.py
+  tags:
+    - ridehal-dev
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  allow_failure: true
   timeout: 1h
 
 run gtest for linux:
@@ -58,22 +104,6 @@ run gtest for ubuntu:
     - echo "Start running gtest for ubuntu"
     - sh /data/scripts/gitlab-ci/run_gtest_host_ubuntu.sh
     - python3 /data/scripts/gitlab-ci/parse_gtest_output_ubuntu.py
-  tags:
-    - ridehal-dev
-  rules:
-    - if: '$CI_COMMIT_TAG == "master"'
-      when: on_success
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      when: on_success
-  allow_failure: true
-  timeout: 1h
-
-run gtest for qos222:
-  stage: test
-  script:
-    - echo "Start running gtest for qos222"
-    - sh /data/scripts/gitlab-ci/run_gtest_host_qos222.sh
-    - python3 /data/scripts/gitlab-ci/parse_gtest_output_qos222.py
   tags:
     - ridehal-dev
   rules:
@@ -148,3 +178,4 @@ generate packages:
       when: manual
   allow_failure: true
   timeout: 1h
+
