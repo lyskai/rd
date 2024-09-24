@@ -411,7 +411,7 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig, 
                                       &frameDropConfig, sizeof( frameDropConfig ) );
             if ( QCARCAM_RET_OK != status )
             {
-                RIDEHAL_ERROR( "QCARCAM_PARAM_FRAME_RATE failed ret %d", ret );
+                RIDEHAL_ERROR( "QCARCAM_PARAM_FRAME_RATE failed ret %d", status );
                 ret = RIDEHAL_ERROR_FAIL;
                 m_state = RIDEHAL_COMPONENT_STATE_ERROR;
             }
