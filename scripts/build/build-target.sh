@@ -283,8 +283,10 @@ fi
 if [ -f /opt/toolchain/LiberationSans-Regular.ttf ]; then
     cp /opt/toolchain/LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
 else
-    wget https://dl.dafont.com/dl/?f=liberation_sans -O liberation_sans.zip
-    unzip liberation_sans.zip
+    if [ ! -f LiberationSans-Regular.ttf ]; then
+        wget https://dl.dafont.com/dl/?f=liberation_sans -O liberation_sans.zip
+        unzip liberation_sans.zip
+    fi
     cp LiberationSans-Regular.ttf $destdir/opt/ridehal/lib/runtime
 fi
 
