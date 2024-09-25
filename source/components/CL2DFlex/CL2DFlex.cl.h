@@ -14,15 +14,16 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                                        1.5959997177f };
 
         __kernel void ConvertNV12ToRGB( __global const uchar *srcPtr, int srcOffset,
-                                        __global uchar *dstPtr, int dstOffset, int rows, int cols,
-                                        int inputStride0, int inputPlane0Size, int inputStride1,
-                                        int outputStride ) {
+                                        __global uchar *dstPtr, int dstOffset, int inputStride0,
+                                        int inputPlane0Size, int inputStride1, int outputStride,
+                                        int roiX, int roiY ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global const uchar *ySrc =
-                    srcPtr + srcOffset + mad24( y << 1, inputStride0, ( x << 1 ) );
-            __global const uchar *uSrc =
-                    srcPtr + srcOffset + inputPlane0Size + mad24( y, inputStride1, ( x << 1 ) );
+                    srcPtr + srcOffset +
+                    mad24( ( y + roiY ) << 1, inputStride0, ( ( x + roiX ) << 1 ) );
+            __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size +
+                                         mad24( ( y + roiY ), inputStride1, ( ( x + roiX ) << 1 ) );
             __global uchar *dst1 = dstPtr + dstOffset + mad24( y << 1, outputStride, x * 6 );
             __global uchar *dst2 = dst1 + outputStride;
             float Y1 = max( 0, ySrc[0] - 16 );
@@ -46,11 +47,12 @@ static const char *s_pSourceCL2DFlex = KernelCode(
         }
 
         __kernel void ConvertUYVYToRGB( __global const uchar *srcPtr, int srcOffset,
-                                        __global uchar *dstPtr, int dstOffset, int rows, int cols,
-                                        int inputStride, int outputStride ) {
+                                        __global uchar *dstPtr, int dstOffset, int inputStride,
+                                        int outputStride, int roiX, int roiY ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
-            __global const uchar *uSrc = srcPtr + srcOffset + mad24( y, inputStride, x * 4 );
+            __global const uchar *uSrc =
+                    srcPtr + srcOffset + mad24( ( y + roiY ), inputStride, ( x + roiX ) * 4 );
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 6 );
             float U = uSrc[0] - 128;
             float Y1 = max( 0, uSrc[1] - 16 );
@@ -65,12 +67,13 @@ static const char *s_pSourceCL2DFlex = KernelCode(
         }
 
         __kernel void ConvertUYVYToNV12( __global const uchar *srcPtr, int srcOffset,
-                                         __global uchar *dstPtr, int dstOffset, int rows, int cols,
-                                         int inputStride, int outputStride0, int outputPlane0Size,
-                                         int outputStride1 ) {
+                                         __global uchar *dstPtr, int dstOffset, int inputStride,
+                                         int outputStride0, int outputPlane0Size, int outputStride1,
+                                         int roiX, int roiY ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
-            __global const uchar *src = srcPtr + srcOffset + mad24( y << 1, inputStride, x * 4 );
+            __global const uchar *src =
+                    srcPtr + srcOffset + mad24( ( y + roiY ) << 1, inputStride, ( x + roiX ) * 4 );
             __global uchar *dst1 = dstPtr + dstOffset + mad24( y << 1, outputStride0, x << 1 );
             __global uchar *dst2 =
                     dstPtr + dstOffset + outputPlane0Size + mad24( y, outputStride1, x << 1 );
@@ -86,17 +89,18 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             dst2[1] = convert_uchar_sat( ( V1 + V2 ) / 2.0f );
         }
 
-        __kernel void ResizeNV12ToRGB(
-                __global const uchar *srcPtr, int srcOffset, __global uchar *dstPtr, int dstOffset,
-                int inputHeight, int inputWidth, int outputHeight, int outputWidth,
-                int inputStride0, int inputPlane0Size, int inputStride1, int outputStride ) {
+        __kernel void ResizeNV12ToRGB( __global const uchar *srcPtr, int srcOffset,
+                                       __global uchar *dstPtr, int dstOffset, int inputHeight,
+                                       int inputWidth, int resizeHeight, int resizeWidth,
+                                       int inputStride0, int inputPlane0Size, int inputStride1,
+                                       int outputStride, int roiX, int roiY ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global const uchar *ySrc = srcPtr + srcOffset;
             __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size;
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
-            int xIn = round( (float) x / (float) outputWidth * (float) inputWidth );
-            int yIn = round( (float) y / (float) outputHeight * (float) inputHeight );
+            int xIn = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
+            int yIn = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
             int yPtr = mad24( yIn, inputStride0, xIn );
             float Y = max( 0, ySrc[yPtr] - 16 );
             int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
@@ -109,14 +113,14 @@ static const char *s_pSourceCL2DFlex = KernelCode(
 
         __kernel void ResizeUYVYToRGB( __global const uchar *srcPtr, int srcOffset,
                                        __global uchar *dstPtr, int dstOffset, int inputHeight,
-                                       int inputWidth, int outputHeight, int outputWidth,
-                                       int inputStride, int outputStride ) {
+                                       int inputWidth, int resizeHeight, int resizeWidth,
+                                       int inputStride, int outputStride, int roiX, int roiY ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global const uchar *src = srcPtr + srcOffset;
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
-            int xIn = round( (float) x / (float) outputWidth * (float) inputWidth );
-            int yIn = round( (float) y / (float) outputHeight * (float) inputHeight );
+            int xIn = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
+            int yIn = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
             int yPtr = mad24( yIn, inputStride, xIn << 1 ) + 1;
             float Y = max( 0, src[yPtr] - 16 );
             int uPtr = mad24( yIn, inputStride, ( xIn / 2 ) * 4 );
@@ -129,13 +133,14 @@ static const char *s_pSourceCL2DFlex = KernelCode(
 
         __kernel void ResizeUYVYToNV12(
                 __global const uchar *srcPtr, int srcOffset, __global uchar *dstPtr, int dstOffset,
-                int inputHeight, int inputWidth, int outputHeight, int outputWidth, int inputStride,
-                int outputStride0, int outputPlane0Size, int outputStride1 ) {
+                int inputHeight, int inputWidth, int resizeHeight, int resizeWidth, int inputStride,
+                int outputStride0, int outputPlane0Size, int outputStride1, int roiX, int roiY,
+                int outputHeight, int outputWidth ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global uchar *ydst = dstPtr + dstOffset + mad24( y, outputStride0, x );
-            int xIn1 = round( (float) x / (float) outputWidth * (float) inputWidth );
-            int yIn1 = round( (float) y / (float) outputHeight * (float) inputHeight );
+            int xIn1 = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
+            int yIn1 = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
             int yPtr = mad24( yIn1, inputStride, xIn1 << 1 ) + 1;
             ydst[0] = srcPtr[yPtr + srcOffset];
             if ( x < outputWidth / 2 )
@@ -144,9 +149,9 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                 {
                     __global uchar *udst = dstPtr + dstOffset + outputPlane0Size +
                                            mad24( y, outputStride1, x << 1 );
-                    int xIn2 =
-                            round( (float) ( x << 1 ) / (float) outputWidth * (float) inputWidth );
-                    int yIn2 = round( (float) ( y << 1 ) / (float) outputHeight *
+                    int xIn2 = round( (float) ( ( x + roiX / 2 ) << 1 ) / (float) resizeWidth *
+                                      (float) inputWidth );
+                    int yIn2 = round( (float) ( ( y + roiY / 2 ) << 1 ) / (float) resizeHeight *
                                       (float) inputHeight );
                     int uPtr = mad24( yIn2, inputStride, ( xIn2 / 2 ) * 4 );
                     udst[0] = srcPtr[uPtr + srcOffset];

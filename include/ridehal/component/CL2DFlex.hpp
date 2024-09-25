@@ -26,18 +26,30 @@ namespace component
 ** Typedefs
 =================================================================================================*/
 
+/** @brief CL2DFlex input images ROI configuration */
+typedef struct
+{
+    uint32_t x;      /**<ROI beginnning x coordinate*/
+    uint32_t y;      /**<ROI beginnning y coordinate*/
+    uint32_t width;  /**<ROI width, x+width must be smaller than
+                        input width*/
+    uint32_t height; /**<ROI height, y+height must be smaller
+                        than input height*/
+} CL2DFlex_ROIConfig_t;
+
 /** @brief CL2DFlex component configuration */
 typedef struct
 {
-    uint32_t numOfInputs;                    /**<number of input images*/
-    size_t inputWidths[RIDEHAL_MAX_INPUTS];  /**<input image width for each batch, an integer
-                                                multiple of 2*/
-    size_t inputHeights[RIDEHAL_MAX_INPUTS]; /**<input image height for each batch, an integer
-                                                multiple of 2*/
-    size_t outputWidth;                      /**<output image width*/
-    size_t outputHeight;                     /**<output image height*/
-    RideHal_ImageFormat_e inputFormats[RIDEHAL_MAX_INPUTS]; /**<input image format for each batch,*/
+    uint32_t numOfInputs;                      /**<number of input images*/
+    uint32_t inputWidths[RIDEHAL_MAX_INPUTS];  /**<input image width for each batch, must be an
+                                                integer   multiple of 2*/
+    uint32_t inputHeights[RIDEHAL_MAX_INPUTS]; /**<input image height for each batch, must be an
+                                                integer  multiple of 2*/
+    uint32_t outputWidth;                      /**<output image width*/
+    uint32_t outputHeight;                     /**<output image height*/
+    RideHal_ImageFormat_e inputFormats[RIDEHAL_MAX_INPUTS]; /**<input image format for each batch*/
     RideHal_ImageFormat_e outputFormat;                     /**<output image format*/
+    CL2DFlex_ROIConfig_t ROIs[RIDEHAL_MAX_INPUTS];          /**<ROI configurations for each batch*/
 } CL2DFlex_Config_t;
 
 class CL2DFlex : public ComponentIF
@@ -124,28 +136,28 @@ private:
     cl_kernel m_kernel[RIDEHAL_MAX_INPUTS];
 
 private:
-    RideHalError_e ConvertFromNV12ToRGB( cl_kernel *pKernel, cl_mem bufferSrc, uint32_t srcOffset,
-                                         cl_mem bufferDst, uint32_t dstOffset,
+    RideHalError_e ConvertFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                         uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                          const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ConvertFromUYVYToRGB( cl_kernel *pKernel, cl_mem bufferSrc, uint32_t srcOffset,
-                                         cl_mem bufferDst, uint32_t dstOffset,
+    RideHalError_e ConvertFromUYVYToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                         uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                          const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ConvertFromUYVYToNV12( cl_kernel *pKernel, cl_mem bufferSrc, uint32_t srcOffset,
-                                          cl_mem bufferDst, uint32_t dstOffset,
+    RideHalError_e ConvertFromUYVYToNV12( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                          uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                           const RideHal_SharedBuffer_t *pInput,
                                           const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromNV12ToRGB( cl_kernel *pKernel, cl_mem bufferSrc, uint32_t srcOffset,
-                                        cl_mem bufferDst, uint32_t dstOffset,
+    RideHalError_e ResizeFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                        uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                         const RideHal_SharedBuffer_t *pInput,
                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromUYVYToRGB( cl_kernel *pKernel, cl_mem bufferSrc, uint32_t srcOffset,
-                                        cl_mem bufferDst, uint32_t dstOffset,
+    RideHalError_e ResizeFromUYVYToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                        uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                         const RideHal_SharedBuffer_t *pInput,
                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromUYVYToNV12( cl_kernel *pKernel, cl_mem bufferSrc, uint32_t srcOffset,
-                                         cl_mem bufferDst, uint32_t dstOffset,
+    RideHalError_e ResizeFromUYVYToNV12( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                         uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                          const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
 

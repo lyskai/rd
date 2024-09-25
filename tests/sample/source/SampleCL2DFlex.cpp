@@ -69,6 +69,36 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
             RIDEHAL_ERROR( "invalid input_format%u\n", i );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
+
+        m_config.ROIs[i].x = Get( config, "roi_x" + std::to_string( i ), 0 );
+        if ( m_config.ROIs[i].x >= m_config.inputWidths[i] )
+        {
+            RIDEHAL_ERROR( "invalid roi_x%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_config.ROIs[i].y = Get( config, "roi_y" + std::to_string( i ), 0 );
+        if ( m_config.ROIs[i].y >= m_config.inputHeights[i] )
+        {
+            RIDEHAL_ERROR( "invalid roi_y%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_config.ROIs[i].width =
+                Get( config, "roi_width" + std::to_string( i ), m_config.inputWidths[i] );
+        if ( 0 == m_config.ROIs[i].width )
+        {
+            RIDEHAL_ERROR( "invalid roi_width%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_config.ROIs[i].height =
+                Get( config, "roi_height" + std::to_string( i ), m_config.inputHeights[i] );
+        if ( 0 == m_config.ROIs[i].height )
+        {
+            RIDEHAL_ERROR( "invalid roi_height%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
     }
 
     m_poolSize = Get( config, "pool_size", 4 );

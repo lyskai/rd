@@ -10,32 +10,38 @@
 The RideHal CL2DFlex component is based on OpenCL library, it provides user-friendly APIs and visible CL kernels to do color conversion and resize on single image input. Currently support color conversion and resize of multiple image inputs to single output. The supported color conversion pipelines are NV12 to RGB, UYVY to RGB, UYVY to NV12.
 
 # 2. CL2DFlex Data Structures
-- [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L41)
+- [CL2DFlex_ROIConfig_t](../include/ridehal/component/CL2DFlex.hpp#L38)
+- [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L53)
 
 # 3. CL2DFlex APIs 
-- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L64)
-- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L75)
-- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L81)
-- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L93)
-- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L100)
-- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L110)
-- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L119)
+- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L76)
+- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L87)  
+- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L93) 
+- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L105) 
+- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L112)
+- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L122)  
+- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L131)
 
 # 4. Typical use case
 
 ## 4.1 Set configurations
 
-Ridehal CL2DFlex component can do image color conversion and resize. Take a NV12 to RGB resize pipeline as example, the configuration parameters can be set as:
+Ridehal CL2DFlex component can do image color conversion, resize and ROI scaling for input images. Take a NV12 to RGB resize pipeline as example, the configuration parameters can be set as:
 ```c++
     CL2DFlex_Config_t CL2DFlexConfig;
     CL2DFlexConfig.numOfInputs = 1;
-    CL2DFlexConfig.inputWidths[0] = 1920;
-    CL2DFlexConfig.inputHeights[0] = 1024;
-    CL2DFlexConfig.inputFormats[0] = RIDEHAL_IMAGE_FORMAT_NV12;
-    CL2DFlexConfig.outputWidth = 1152;
-    CL2DFlexConfig.outputHeight = 800;
+    CL2DFlexConfig.inputWidths[i] = 128;
+    CL2DFlexConfig.inputHeights[i] = 128;
+    CL2DFlexConfig.inputFormats[i] = RIDEHAL_IMAGE_FORMAT_NV12;
+    CL2DFlexConfig.ROIs[i].x = 64;
+    CL2DFlexConfig.ROIs[i].y = 64;
+    CL2DFlexConfig.ROIs[i].width = 64;
+    CL2DFlexConfig.ROIs[i].height = 64;
+    CL2DFlexConfig.outputWidth = 64;
+    CL2DFlexConfig.outputHeight = 64;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 ```
+Note that the ROI.width+ROI.x must not be larger than inputWidth and the ROI.height+ROI.y must not be larger than inputHeight.
 
 ## 4.2 API Call flow
 

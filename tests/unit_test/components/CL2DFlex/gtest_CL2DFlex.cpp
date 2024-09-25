@@ -34,6 +34,10 @@ void AccuracyTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e 
         CL2DFlexConfig.inputWidths[i] = inputWidthTest;
         CL2DFlexConfig.inputHeights[i] = inputHeightTest;
         CL2DFlexConfig.inputFormats[i] = inputFormatTest;
+        CL2DFlexConfig.ROIs[i].x = 0;
+        CL2DFlexConfig.ROIs[i].y = 0;
+        CL2DFlexConfig.ROIs[i].width = inputWidthTest;
+        CL2DFlexConfig.ROIs[i].height = inputHeightTest;
     }
     CL2DFlexConfig.outputWidth = outputWidthTest;
     CL2DFlexConfig.outputHeight = outputHeightTest;
@@ -247,6 +251,10 @@ void PerformanceTest( RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat
         CL2DFlexConfig.inputWidths[i] = inputWidthTest;
         CL2DFlexConfig.inputHeights[i] = inputHeightTest;
         CL2DFlexConfig.inputFormats[i] = inputFormatTest;
+        CL2DFlexConfig.ROIs[i].x = 0;
+        CL2DFlexConfig.ROIs[i].y = 0;
+        CL2DFlexConfig.ROIs[i].width = inputWidthTest;
+        CL2DFlexConfig.ROIs[i].height = inputHeightTest;
     }
     CL2DFlexConfig.outputWidth = outputWidthTest;
     CL2DFlexConfig.outputHeight = outputHeightTest;
@@ -365,9 +373,13 @@ void SanityTest()
         CL2DFlexConfig.inputWidths[i] = 128;
         CL2DFlexConfig.inputHeights[i] = 128;
         CL2DFlexConfig.inputFormats[i] = RIDEHAL_IMAGE_FORMAT_NV12;
+        CL2DFlexConfig.ROIs[i].x = 64;
+        CL2DFlexConfig.ROIs[i].y = 64;
+        CL2DFlexConfig.ROIs[i].width = 64;
+        CL2DFlexConfig.ROIs[i].height = 64;
     }
-    CL2DFlexConfig.outputWidth = 128;
-    CL2DFlexConfig.outputHeight = 128;
+    CL2DFlexConfig.outputWidth = 64;
+    CL2DFlexConfig.outputHeight = 64;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
 
     RideHal_SharedBuffer_t inputs[CL2DFlexConfig.numOfInputs];
@@ -482,6 +494,10 @@ void CoverageTest()
     CL2DFlexConfig.outputWidth = 128;
     CL2DFlexConfig.outputHeight = 128;
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+    CL2DFlexConfig.ROIs[0].x = 0;
+    CL2DFlexConfig.ROIs[0].y = 0;
+    CL2DFlexConfig.ROIs[0].width = 128;
+    CL2DFlexConfig.ROIs[0].height = 128;
     RideHal_SharedBuffer_t input;
     RideHal_SharedBuffer_t output;
 
@@ -534,6 +550,16 @@ void CoverageTest()
     ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong output format
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     CL2DFlexConfig.outputFormat = RIDEHAL_IMAGE_FORMAT_RGB888;
+
+    CL2DFlexConfig.ROIs[0].x = 1;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong roi.x
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.ROIs[0].x = 0;
+
+    CL2DFlexConfig.ROIs[0].y = 1;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // wrong roi.y
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.ROIs[0].y = 0;
 
     ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig,
                             LOGGER_LEVEL_MAX );   // success init with invalid logger level
@@ -723,6 +749,10 @@ TEST( CL2DFlex, PerformanceTest )
     PerformanceTest( RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024,
                      100 );
     PerformanceTest( RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800,
+                     100 );
+    PerformanceTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024,
+                     100 );
+    PerformanceTest( RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800,
                      100 );
 }
 
