@@ -410,7 +410,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
                     {
                         VideoEncoder_InputInfo_t inputInfo;
                         inputInfo.sharedBuffer = m_pInputList[i];
-                        inputInfo.useFlag = false;
+                        inputInfo.bUseFlag = false;
                         m_inputMap[m_pInputList[i].buffer.dmaHandle] = inputInfo;
                     }
                 }
@@ -460,7 +460,7 @@ RideHalError_e VideoEncoder::Init( const char *pName, const VideoEncoder_Config_
                     {
                         VideoEncoder_OutputInfo_t outputInfo;
                         outputInfo.sharedBuffer = m_pOutputList[i];
-                        outputInfo.useFlag = false;
+                        outputInfo.bUseFlag = false;
                         m_outputMap[m_pOutputList[i].buffer.dmaHandle] = outputInfo;
                     }
                 }
@@ -571,7 +571,6 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
     const RideHal_SharedBuffer_t *inputBuffer = nullptr;
     uint64_t handle = MAX_UINT64;
     vidc_frame_data_type frameData;
-    vidc_buffer_info_type bufferInfo;
 
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
@@ -589,25 +588,24 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         inputBuffer = &pInput->sharedBuffer;
-        bufferInfo.buf_addr = (uint8_t *) inputBuffer->data();
         ret = ValidateBuffer( inputBuffer, VIDC_BUFFER_INPUT );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         handle = inputBuffer->buffer.dmaHandle;
-        bufferInfo.buf_size = inputBuffer->size;
 
         RIDEHAL_DEBUG( "enc-input-start: bufHandle 0x%x markData %" PRIu64 " tsNs %" PRIu64
-                       " addr 0x%x buf_size %" PRIu32,
-                       handle, pInput->appMarkData, pInput->timestampNs, bufferInfo.buf_addr,
-                       bufferInfo.buf_size );
+                       " addr 0x%x alloc_len %" PRIu32 " data_len %" PRIu32,
+                       handle, pInput->appMarkData, pInput->timestampNs,
+                       (uint8_t *) inputBuffer->data(), inputBuffer->buffer.size,
+                       inputBuffer->size );
 
         (void) memset( &frameData, 0, sizeof( vidc_frame_data_type ) );
         frameData.frm_clnt_data = handle;
         frameData.buf_type = VIDC_BUFFER_INPUT;
-        frameData.frame_addr = bufferInfo.buf_addr;
-        frameData.alloc_len = bufferInfo.buf_size;
+        frameData.frame_addr = (uint8_t *) inputBuffer->data();
+        frameData.alloc_len = inputBuffer->buffer.size;
 #if defined( __QNXNTO__ )
         frameData.frame_handle = (pmem_handle_t) inputBuffer->buffer.dmaHandle;
 #else
@@ -638,9 +636,9 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
             if ( m_inputMap.end() != m_inputMap.find( handle ) )
             {
                 RIDEHAL_DEBUG( "find handle 0x%x", handle );
-                if ( false == m_inputMap[handle].useFlag )
+                if ( false == m_inputMap[handle].bUseFlag )
                 {
-                    m_inputMap[handle].useFlag = true;
+                    m_inputMap[handle].bUseFlag = true;
                     m_inputMap[handle].timestampNs = pInput->timestampNs;
                     m_inputMap[handle].appMarkData = pInput->appMarkData;
                 }
@@ -652,7 +650,7 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
             }
             else if ( m_inputMap.size() < m_numInputBufferReq )
             {
-                m_inputMap[handle].useFlag = true;
+                m_inputMap[handle].bUseFlag = true;
                 m_inputMap[handle].timestampNs = pInput->timestampNs;
                 m_inputMap[handle].appMarkData = pInput->appMarkData;
                 m_inputMap[handle].sharedBuffer = pInput->sharedBuffer;
@@ -666,10 +664,10 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
         else
         {
             if ( ( m_inputMap.end() != m_inputMap.find( handle ) ) &&
-                 ( false == m_inputMap[handle].useFlag ) )
+                 ( false == m_inputMap[handle].bUseFlag ) )
             {
                 RIDEHAL_DEBUG( "find handle 0x%x", handle );
-                m_inputMap[handle].useFlag = true;
+                m_inputMap[handle].bUseFlag = true;
                 m_inputMap[handle].timestampNs = pInput->timestampNs;
                 m_inputMap[handle].appMarkData = pInput->appMarkData;
             }
@@ -688,7 +686,7 @@ RideHalError_e VideoEncoder::SubmitInputFrame( const VideoEncoder_InputFrame_t *
         if ( VIDC_ERR_NONE != rc )
         {
             RIDEHAL_ERROR( "SubmitInputFrame VIDC_IOCTL_EMPTY_INPUT_BUFFER failed! rc=0x%x", rc );
-            m_inputMap[handle].useFlag = false;
+            m_inputMap[handle].bUseFlag = false;
             ret = RIDEHAL_ERROR_FAIL;
         }
         else
@@ -737,9 +735,9 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
             if ( m_outputMap.end() != m_outputMap.find( handle ) )
             {
                 RIDEHAL_DEBUG( "find handle 0x%x", handle );
-                if ( false == m_outputMap[handle].useFlag )
+                if ( false == m_outputMap[handle].bUseFlag )
                 {
-                    m_outputMap[handle].useFlag = true;
+                    m_outputMap[handle].bUseFlag = true;
                 }
                 else
                 {
@@ -750,7 +748,7 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
             else if ( m_outputMap.size() < m_numOutputBufferReq )
             {
                 m_outputMap[handle].sharedBuffer = *outputBuffer;
-                m_outputMap[handle].useFlag = true;
+                m_outputMap[handle].bUseFlag = true;
             }
             else
             {
@@ -761,10 +759,10 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
         else
         {
             if ( ( m_outputMap.end() != m_outputMap.find( handle ) ) &&
-                 ( false == m_outputMap[handle].useFlag ) )
+                 ( false == m_outputMap[handle].bUseFlag ) )
             {
                 RIDEHAL_DEBUG( "find handle 0x%x", handle );
-                m_outputMap[handle].useFlag = true;
+                m_outputMap[handle].bUseFlag = true;
             }
             else
             {
@@ -798,7 +796,7 @@ RideHalError_e VideoEncoder::SubmitOutputFrame( const VideoEncoder_OutputFrame_t
         if ( VIDC_ERR_NONE != rc )
         {
             RIDEHAL_ERROR( "SubmitOutputFrame FillBuffer 0x%x failed rc 0x%x", handle, rc );
-            m_outputMap[handle].useFlag = false;
+            m_outputMap[handle].bUseFlag = false;
             ret = RIDEHAL_ERROR_FAIL;
         }
         else
@@ -1224,7 +1222,7 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
                     std::unique_lock<std::mutex> lck( m_inLock );
                     if ( m_inputMap.end() != m_inputMap.find( pFrameData->frm_clnt_data ) )
                     {
-                        m_inputMap[pFrameData->frm_clnt_data].useFlag = false;
+                        m_inputMap[pFrameData->frm_clnt_data].bUseFlag = false;
                         pInputInfo = &m_inputMap[pFrameData->frm_clnt_data];
                     }
                 }
@@ -1260,7 +1258,7 @@ int VideoEncoder::DeviceCallback( uint8_t *msg, uint32_t length )
                     std::unique_lock<std::mutex> lck( m_outLock );
                     if ( m_outputMap.end() != m_outputMap.find( pFrameData->frm_clnt_data ) )
                     {
-                        m_outputMap[pFrameData->frm_clnt_data].useFlag = false;
+                        m_outputMap[pFrameData->frm_clnt_data].bUseFlag = false;
                         pOutputInfo = &m_outputMap[pFrameData->frm_clnt_data];
                     }
                 }

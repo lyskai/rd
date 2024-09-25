@@ -305,13 +305,13 @@ private:
         RideHal_SharedBuffer_t sharedBuffer;
         uint64_t timestampNs;
         uint64_t appMarkData;
-        bool useFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
+        bool bUseFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
     } VideoEncoder_InputInfo_t;
 
     typedef struct
     {
         RideHal_SharedBuffer_t sharedBuffer;
-        bool useFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
+        bool bUseFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
     } VideoEncoder_OutputInfo_t;
 
     std::mutex m_inLock;

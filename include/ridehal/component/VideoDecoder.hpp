@@ -186,6 +186,16 @@ private:
         VIDEO_CODEC_BUF_TYPE_UNUSED = 0xf0000000
     } VideoCodec_BufType;
 
+    /** The VideoDecoder Driver Callback Message */
+    typedef enum
+    {
+        COMMAND_NONE,        /**< none command received */
+        COMMAND_DRAIN,       /**< drain input buffers */
+        COMMAND_INPUT_STOP,  /**< stop input executing */
+        COMMAND_OUTPUT_STOP, /**< stop output executing */
+        COMMAND_LAST_FLAG,   /**< last flag event received */
+    } CommandType;
+
     static int DeviceCallback( uint8_t *msg, uint32_t length, void *cdata );
     int DeviceCbHandler( uint8_t *msg, uint32_t length );
 
@@ -211,14 +221,17 @@ private:
                                    VideoCodec_BufType bufferType );
     RideHalError_e InitDriver();
     RideHalError_e InitFromConfig( const char *name, const VideoDecoder_Config_t *cfg );
+    RideHalError_e WaitForCmdCompleted( CommandType expectedCmd, int32_t timeout );
 
     VideoDecoder_InFrameCallback_t m_inputDoneCb = nullptr;
     VideoDecoder_OutFrameCallback_t m_outputDoneCb = nullptr;
     VideoDecoder_EventCallback_t m_eventCb = nullptr;
     void *m_pAppPriv = nullptr;
 
-    void *m_vidcDecoderContext = nullptr;
+    void *m_pVidcDecoderContext = nullptr;
     VideoCodec_Ioctl_Callback_t m_ioctlCb = { 0 };
+    CommandType m_cmdCompleted = COMMAND_NONE;
+    bool m_bCmdDrainReceived = false;
 
     std::string m_Name;
     uint32_t m_width = 0;
@@ -245,13 +258,13 @@ private:
         RideHal_SharedBuffer_t sharedBuffer;
         uint64_t timestampNs;
         uint64_t appMarkData;
-        bool useFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
+        bool bUseFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
     } VideoDecoder_InputInfo_t;
 
     typedef struct
     {
         RideHal_SharedBuffer_t sharedBuffer;
-        bool useFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
+        bool bUseFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
     } VideoDecoder_OutputInfo_t;
 
     std::mutex m_inLock;
