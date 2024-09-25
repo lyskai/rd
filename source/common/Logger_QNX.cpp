@@ -10,7 +10,7 @@
 
 
 #ifndef RIDEHAL_LOG_MSG_MAX_LEN
-#define RIDEHAL_LOG_MSG_MAX_LEN 256
+#define RIDEHAL_LOG_MSG_MAX_LEN 288
 #endif
 
 namespace ridehal
@@ -56,7 +56,8 @@ void Logger::DefaultLog( Logger_Handle_t hHandle, Logger_Level_e level, const ch
     else
     {
         (void) fprintf( stderr, "message too long: " );
-        (void) fprintf( stderr, msg );
+        (void) vfprintf( stderr, pFormat, args );
+        (void) fprintf( stderr, "\n" );
     }
 }
 

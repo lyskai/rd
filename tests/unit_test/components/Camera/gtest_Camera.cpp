@@ -88,7 +88,7 @@ static uint32_t GetIspUserCase( uint32_t inputId )
     char *envValue = getenv( envName.c_str() );
     if ( nullptr == envValue )
     {
-        printf( "no env %s\n", envName.c_str() );
+        RIDEHAL_LOG_DEBUG( "no env %s\n", envName.c_str() );
         envName = "RIDEHAL_CAM_ISP_USE_CASE";
         envValue = getenv( envName.c_str() );
     }
@@ -96,14 +96,14 @@ static uint32_t GetIspUserCase( uint32_t inputId )
     if ( nullptr != envValue )
     {
         ispCase = (uint32_t) std::stoi( envValue );
-        printf( "set ISP_USE_CASE from %s=%s\n", envName.c_str(), envValue );
+        RIDEHAL_LOG_DEBUG( "set ISP_USE_CASE from %s=%s\n", envName.c_str(), envValue );
     }
     else
     {
-        printf( "no env %s\n", envName.c_str() );
+        RIDEHAL_LOG_DEBUG( "no env %s\n", envName.c_str() );
     }
 
-    printf( "set ISP_USE_CASE %u for camera input_id %u\n", ispCase, inputId );
+    RIDEHAL_LOG_DEBUG( "set ISP_USE_CASE %u for camera input_id %u\n", ispCase, inputId );
 
     return ispCase;
 }
@@ -591,7 +591,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack,
+                                         (void *) pCamera );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
         ret = pCamera->Start();
@@ -633,7 +634,8 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack,
+                                         (void *) pCamera );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
         CameraFrame_t Frame;
@@ -669,7 +671,7 @@ TEST( Camera, Coverage_QcarCam )
         camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
 
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
-        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
         (void) pCamera->Deinit();
         delete pCamera;
@@ -798,6 +800,35 @@ TEST( Camera, Coverage_QcarCam )
         delete pCamera;
         delete pCamera1;
     }
+
+    /* Negative - invalid number of streams */
+    {
+        RideHalError_e ret;
+        Camera *pCamera = new Camera;
+
+        CameraInputs_t camInputs;
+
+        ret = pCamera->GetInputsInfo( &camInputs );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[0];
+
+        Camera_Config_t camConfig = { 0 };
+        camConfig.bAllocator = true;
+        camConfig.bRequestMode = false;
+        camConfig.inputId = camInputs.pCameraInputs[0].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.numStream = 0;
+        camConfig.opMode = QCARCAM_OPMODE_OFFLINE_ISP;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        camConfig.numStream = 128;
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        delete pCamera;
+    }
 }
 
 TEST( Camera, MultiStreamSameId_QcarCam )
@@ -838,8 +869,7 @@ TEST( Camera, MultiStreamSameId_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack,
-                                         (void *) pCamera );
+        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
         ret = pCamera->Start();
@@ -853,6 +883,45 @@ TEST( Camera, MultiStreamSameId_QcarCam )
 
         ret = pCamera->Deinit();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    delete pCamera;
+}
+
+TEST( Camera, DropPattern_QcarCam )
+{
+    RideHalError_e ret;
+    Camera *pCamera = new Camera;
+    CameraInputs_t camInputs;
+
+    ret = pCamera->GetInputsInfo( &camInputs );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    for ( uint32_t i = 0; i < camInputs.numInputs; i++ )
+    {
+        QCarCamInputModes_t *pCamInputModes = &camInputs.pCamInputModes[i];
+        printf( "testing camera input_id %u, resolution %ux%u\n",
+                camInputs.pCameraInputs[i].inputId, pCamInputModes->pModes[0].sources[0].width,
+                pCamInputModes->pModes[0].sources[0].height );
+        char componentName[20] = "Camera";
+        Camera_Config_t camConfig = { 0 };
+        camConfig.bAllocator = true;
+        camConfig.bRequestMode = false;
+        camConfig.inputId = camInputs.pCameraInputs[i].inputId;
+        camConfig.ispUserCase = GetIspUserCase( camConfig.inputId );
+        camConfig.opMode = QCARCAM_OPMODE_ISP;
+        camConfig.numStream = 1;
+        camConfig.streamConfig[0].width = pCamInputModes->pModes[0].sources[0].width;
+        camConfig.streamConfig[0].height = pCamInputModes->pModes[0].sources[0].height;
+        camConfig.streamConfig[0].bufCnt = BUFFFER_COUNT;
+        camConfig.streamConfig[0].streamId = 0;
+        camConfig.streamConfig[0].format = RIDEHAL_IMAGE_FORMAT_NV12;
+        camConfig.camFrameDropPat = 0b100; /* reduce to 10 FPS */
+
+        /* 2024-9-25: till now this feature is not supported by qcarcam, so init will fail */
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+        break; /* just do this for the first camera */
     }
 
     delete pCamera;

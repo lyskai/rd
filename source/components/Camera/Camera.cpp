@@ -221,7 +221,8 @@ Camera::~Camera()
     }
 }
 
-RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig, Logger_Level_e level )
+RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
+                             Logger_Level_e level )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     QCarCamRet_e status = QCARCAM_RET_OK;
@@ -258,14 +259,9 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig, 
             RIDEHAL_ERROR( "ComponentIF::Init failed" );
             m_state = RIDEHAL_COMPONENT_STATE_ERROR;
         }
-        else if ( RIDEHAL_COMPONENT_STATE_INITIAL == m_state )
-        {
-            m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
-        }
         else
         {
-            RIDEHAL_ERROR( "Camera not in initial state: %d", m_state );
-            ret = RIDEHAL_ERROR_BAD_STATE;
+            m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
         }
     }
 
