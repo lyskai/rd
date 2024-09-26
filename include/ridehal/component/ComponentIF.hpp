@@ -17,7 +17,7 @@ using namespace ridehal::common;
 /** @brief The RideHal Version */
 #define RIDEHAL_VERSION_MAJOR 1
 #define RIDEHAL_VERSION_MINOR 3
-#define RIDEHAL_VERSION_PATCH 1
+#define RIDEHAL_VERSION_PATCH 2
 
 namespace ridehal
 {
