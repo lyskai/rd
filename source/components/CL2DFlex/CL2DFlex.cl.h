@@ -19,31 +19,50 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                                         int roiX, int roiY ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
-            __global const uchar *ySrc =
-                    srcPtr + srcOffset +
-                    mad24( ( y + roiY ) << 1, inputStride0, ( ( x + roiX ) << 1 ) );
-            __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size +
-                                         mad24( ( y + roiY ), inputStride1, ( ( x + roiX ) << 1 ) );
-            __global uchar *dst1 = dstPtr + dstOffset + mad24( y << 1, outputStride, x * 6 );
-            __global uchar *dst2 = dst1 + outputStride;
-            float Y1 = max( 0, ySrc[0] - 16 );
-            float Y2 = max( 0, ySrc[1] - 16 );
-            float Y3 = max( 0, ySrc[inputStride0] - 16 );
-            float Y4 = max( 0, ySrc[inputStride0 + 1] - 16 );
-            float U = uSrc[0] - 128;
-            float V = uSrc[1] - 128;
-            dst1[0] = convert_uchar_sat( coeffs[0] * Y1 + coeffs[4] * V + 0.5f );
-            dst1[1] = convert_uchar_sat( coeffs[0] * Y1 + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst1[2] = convert_uchar_sat( coeffs[0] * Y1 + coeffs[1] * U + 0.5f );
-            dst1[3] = convert_uchar_sat( coeffs[0] * Y2 + coeffs[4] * V + 0.5f );
-            dst1[4] = convert_uchar_sat( coeffs[0] * Y2 + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst1[5] = convert_uchar_sat( coeffs[0] * Y2 + coeffs[1] * U + 0.5f );
-            dst2[0] = convert_uchar_sat( coeffs[0] * Y3 + coeffs[4] * V + 0.5f );
-            dst2[1] = convert_uchar_sat( coeffs[0] * Y3 + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst2[2] = convert_uchar_sat( coeffs[0] * Y3 + coeffs[1] * U + 0.5f );
-            dst2[3] = convert_uchar_sat( coeffs[0] * Y4 + coeffs[4] * V + 0.5f );
-            dst2[4] = convert_uchar_sat( coeffs[0] * Y4 + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst2[5] = convert_uchar_sat( coeffs[0] * Y4 + coeffs[1] * U + 0.5f );
+
+            int yOffset =
+                    srcOffset + mad24( ( y + roiY ) << 1, inputStride0, ( ( x + roiX ) << 1 ) );
+            int uOffset = srcOffset + inputPlane0Size +
+                          mad24( ( y + roiY ), inputStride1, ( ( x + roiX ) << 1 ) );
+            int dstOffset1 = dstOffset + mad24( y << 1, outputStride, x * 6 );
+            int dstOffset2 = dstOffset1 + outputStride;
+
+            float4 YSrcVals, Yvec4;
+            float4 U4, V4, UV4, YU, YV, YUV;
+            uchar4 dst1Val4, dst2Val4, uYU, uYV, uYUV;
+            uchar2 dst1Val2, dst2Val2;
+
+            YSrcVals.s01 = convert_float2( vload2( 0, srcPtr + yOffset ) );
+            YSrcVals.s23 = convert_float2( vload2( 0, srcPtr + yOffset + inputStride0 ) );
+            YSrcVals -= 16.0f;
+            Yvec4 = max( 0, YSrcVals );
+            Yvec4 *= 1.163999557f;
+
+            float2 UV = convert_float2( vload2( 0, srcPtr + uOffset ) );
+            UV -= 128.0f;
+
+            U4 = (float4) ( UV.s0, UV.s0, UV.s0, UV.s0 );
+            V4 = (float4) ( UV.s1, UV.s1, UV.s1, UV.s1 );
+            UV4 = -0.390999794f * U4 - 0.812999725f * V4 + 0.5f;
+            U4 = 2.017999649f * U4 + 0.5f;
+            V4 = 1.5959997177f * V4 + 0.5f;
+
+            YUV = Yvec4 + UV4;
+            YU = Yvec4 + U4;
+            YV = Yvec4 + V4;
+
+            uYU = convert_uchar4_sat( YU );
+            uYV = convert_uchar4_sat( YV );
+            uYUV = convert_uchar4_sat( YUV );
+            dst1Val4 = (uchar4) ( uYV.s0, uYUV.s0, uYU.s0, uYV.s1 );
+            dst1Val2 = (uchar2) ( uYUV.s1, uYU.s1 );
+            dst2Val4 = (uchar4) ( uYV.s2, uYUV.s2, uYU.s2, uYV.s3 );
+            dst2Val2 = (uchar2) ( YUV.s3, YU.s3 );
+
+            vstore4( dst1Val4, 0, dstPtr + dstOffset1 );
+            vstore2( dst1Val2, 2, dstPtr + dstOffset1 );
+            vstore4( dst2Val4, 0, dstPtr + dstOffset2 );
+            vstore2( dst2Val2, 2, dstPtr + dstOffset2 );
         }
 
         __kernel void ConvertUYVYToRGB( __global const uchar *srcPtr, int srcOffset,
