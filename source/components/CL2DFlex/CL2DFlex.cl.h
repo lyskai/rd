@@ -158,6 +158,66 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                     udst[1] = srcPtr[uPtr + srcOffset + 2];
                 }
             }
+        }
+
+        __kernel void LetterboxNV12ToRGB(
+                __global const uchar *srcPtr, int srcOffset, __global uchar *dstPtr, int dstOffset,
+                int inputHeight, int inputWidth, int resizeHeight, int resizeWidth,
+                int inputStride0, int inputPlane0Size, int inputStride1, int outputStride, int roiX,
+                int roiY, float inputRatio, float outputRatio ) {
+            int x = get_global_id( 0 );
+            int y = get_global_id( 1 );
+            __global const uchar *ySrc = srcPtr + srcOffset;
+            __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size;
+            __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
+            if ( inputRatio < outputRatio )
+            {
+                if ( y < ( resizeWidth * inputRatio ) )
+                {
+                    int xIn = round( (float) x / (float) resizeWidth * (float) inputWidth ) + roiX;
+                    int yIn = round( (float) y / (float) resizeWidth * (float) inputWidth ) + roiY;
+                    int yPtr = mad24( yIn, inputStride0, xIn );
+                    float Y = max( 0, ySrc[yPtr] - 16 );
+                    int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
+                    float U = uSrc[uPtr] - 128;
+                    float V = uSrc[uPtr + 1] - 128;
+                    dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
+                    dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V +
+                                                0.5f );
+                    dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+                }
+                else
+                {
+                    dst[0] = 0;
+                    dst[1] = 0;
+                    dst[2] = 0;
+                }
+            }
+            else
+            {
+                if ( x < ( resizeHeight / inputRatio ) )
+                {
+                    int xIn =
+                            round( (float) x / (float) resizeHeight * (float) inputHeight ) + roiX;
+                    int yIn =
+                            round( (float) y / (float) resizeHeight * (float) inputHeight ) + roiY;
+                    int yPtr = mad24( yIn, inputStride0, xIn );
+                    float Y = max( 0, ySrc[yPtr] - 16 );
+                    int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
+                    float U = uSrc[uPtr] - 128;
+                    float V = uSrc[uPtr + 1] - 128;
+                    dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
+                    dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V +
+                                                0.5f );
+                    dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+                }
+                else
+                {
+                    dst[0] = 0;
+                    dst[1] = 0;
+                    dst[2] = 0;
+                }
+            }
         } );
 
 #endif   // RIDEHAL_CL2DFLEX_CLH

@@ -11,6 +11,42 @@ namespace ridehal
 namespace sample
 {
 
+CL2DFlex_Work_Mode_e SampleCL2DFlex::GetMode( SampleConfig_t &config, std::string key,
+                                              CL2DFlex_Work_Mode_e defaultV )
+{
+    CL2DFlex_Work_Mode_e ret = defaultV;
+
+    auto it = config.find( key );
+    if ( it != config.end() )
+    {
+        std::string mode = it->second;
+        if ( "convert" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_CONVERT;
+        }
+        else if ( "resize_nearest" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_RESIZE_NEAREST;
+        }
+        else if ( "resize_bilinear" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_RESIZE_BILINEAR;
+        }
+        else if ( "letterbox_nearest" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST;
+        }
+        else
+        {
+            ret = CL2DFLEX_WORK_MODE_MAX;
+        }
+    }
+
+    RIDEHAL_DEBUG( "Get config %s = %d\n", key.c_str(), ret );
+
+    return ret;
+}
+
 SampleCL2DFlex::SampleCL2DFlex() {}
 SampleCL2DFlex::~SampleCL2DFlex() {}
 
@@ -67,6 +103,14 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         if ( RIDEHAL_IMAGE_FORMAT_MAX == m_config.inputFormats[i] )
         {
             RIDEHAL_ERROR( "invalid input_format%u\n", i );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        m_config.workModes[i] = GetMode( config, "work_mode" + std::to_string( i ),
+                                         CL2DFLEX_WORK_MODE_RESIZE_NEAREST );
+        if ( CL2DFLEX_WORK_MODE_MAX == m_config.workModes[i] )
+        {
+            RIDEHAL_ERROR( "invalid work_mode%u\n", i );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
 

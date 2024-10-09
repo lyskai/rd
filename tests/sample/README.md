@@ -445,12 +445,11 @@ The command line template example:
 | input_heightX | false    | int       | 1024    | The input X image height  |
 | output_width  | false    | int       | 1920    | The output image width  |
 | output_height | false    | int       | 1024    | The output image height |
-| input_formatX | false    | string    | nv12    | The input X image format, options from [nv12, uyvy]|
+| work_modeX    | false    | string    | resize_nearest    | The input X work mode, options from [convert, resize_nearest, letterbox_nearest]|
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |
 | roi_yX        | false    | int       | 0       | The ROI top y for input X |
 | roi_widthX    | false    | int       | =input_widthX  | The ROI width for input X |
 | roi_heightX   | false    | int       | =input_heightX | The ROI height for input X |
-| output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | cache         | false    | bool      | true    | use cached memory or not for the image memory |
 | input_topic   | true     | string    | -       | the input topic name |
@@ -461,6 +460,7 @@ The command line template example:
 ```sh
   -n CL2D -t CL2DFlex \
     -k input_width0 -v 1920 -k input_height0 -v 1024 -k input_format0 -v nv12 \
+    -k batch_size -v 1 -k work_mode0 -v letterbox_nearest \
     -k roi_x0 -v 960 -k roi_y0 -v 512 -k roi_width0 -v 960 -k roi_height0 -v 512 \
     -k output_width -v 960 -k output_height -v 512 -k output_format -v rgb \
     -k input_topic -v /sensor/camera/CAM0/raw \

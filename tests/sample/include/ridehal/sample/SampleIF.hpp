@@ -110,7 +110,6 @@ protected:
                                  RideHal_ProcessorType_e defaultV );
     bool Get( SampleConfig_t &config, std::string key, bool defaultV );
 
-
 protected:
     std::string m_name;
     Profiler m_profiler;

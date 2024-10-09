@@ -23,6 +23,9 @@ namespace sample
 class SampleCL2DFlex : public SampleIF
 {
 public:
+    CL2DFlex_Work_Mode_e GetMode( SampleConfig_t &config, std::string key,
+                                  CL2DFlex_Work_Mode_e defaultV );
+
     SampleCL2DFlex();
     ~SampleCL2DFlex();
 

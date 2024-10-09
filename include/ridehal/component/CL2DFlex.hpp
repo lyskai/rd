@@ -26,6 +26,43 @@ namespace component
 ** Typedefs
 =================================================================================================*/
 
+/** @brief CL2DFlex valid pipelines */
+typedef enum
+{
+    CL2DFLEX_PIPELINE_CONVERT_NV12_TO_RGB,  /**<color convert only from nv12 to rgb, roi.width
+                                               should be equal to output width and roi.height should
+                                               be equal to output height*/
+    CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_RGB,  /**<color convert only from uyvy to rgb, roi.width
+                                                should be equal to output width and roi.height should
+                                                be equal to output height*/
+    CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12, /**<color convert only from uyvy to nv12, roi.width
+                                               should be equal to output width and roi.height should
+                                               be equal to output height*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB,    /**<color convert and resize use nearest point
+                                                        from nv12 to rgb*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB,    /**<color convert and resize use nearest point
+                                                        from uyvy to rgb*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12,   /**<color convert and resize use nearest point
+                                                        from uyvy to nv12*/
+    CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB, /**<color convert and letterbox with fixed
+                                                        height/width ratio use nearest point from
+                                                        nv12 to rgb, padding 0 to the redundant
+                                                        bottom or right edge*/
+    CL2DFLEX_PIPELINE_MAX
+} CL2DFlex_Pipeline_e;
+
+/** @brief CL2DFlex valid work modes */
+typedef enum
+{
+    CL2DFLEX_WORK_MODE_CONVERT, /**<color convert only, roi.width should be equal to output width
+                                  and roi.height should be equal to output height*/
+    CL2DFLEX_WORK_MODE_RESIZE_NEAREST,    /**<color convert and resize use nearest point*/
+    CL2DFLEX_WORK_MODE_RESIZE_BILINEAR,   /**<color convert and resize use bilinear interpolation*/
+    CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST, /**<color convert and letterbox with fixed height/width
+                                            ratio use nearest point*/
+    CL2DFLEX_WORK_MODE_MAX
+} CL2DFlex_Work_Mode_e;
+
 /** @brief CL2DFlex input images ROI configuration */
 typedef struct
 {
@@ -40,16 +77,17 @@ typedef struct
 /** @brief CL2DFlex component configuration */
 typedef struct
 {
-    uint32_t numOfInputs;                      /**<number of input images*/
-    uint32_t inputWidths[RIDEHAL_MAX_INPUTS];  /**<input image width for each batch, must be an
-                                                integer   multiple of 2*/
-    uint32_t inputHeights[RIDEHAL_MAX_INPUTS]; /**<input image height for each batch, must be an
-                                                integer  multiple of 2*/
-    uint32_t outputWidth;                      /**<output image width*/
-    uint32_t outputHeight;                     /**<output image height*/
+    uint32_t numOfInputs;                                   /**<number of input images*/
+    CL2DFlex_Work_Mode_e workModes[RIDEHAL_MAX_INPUTS];     /**<work mode for each input*/
     RideHal_ImageFormat_e inputFormats[RIDEHAL_MAX_INPUTS]; /**<input image format for each batch*/
-    RideHal_ImageFormat_e outputFormat;                     /**<output image format*/
-    CL2DFlex_ROIConfig_t ROIs[RIDEHAL_MAX_INPUTS];          /**<ROI configurations for each batch*/
+    uint32_t inputWidths[RIDEHAL_MAX_INPUTS];      /**<input image width for each batch, must be
+                                                    an integer   multiple of 2*/
+    uint32_t inputHeights[RIDEHAL_MAX_INPUTS];     /**<input image height for each batch, must be an
+                                                    integer  multiple of 2*/
+    RideHal_ImageFormat_e outputFormat;            /**<output image format*/
+    uint32_t outputWidth;                          /**<output image width*/
+    uint32_t outputHeight;                         /**<output image height*/
+    CL2DFlex_ROIConfig_t ROIs[RIDEHAL_MAX_INPUTS]; /**<ROI configurations for each batch*/
 } CL2DFlex_Config_t;
 
 class CL2DFlex : public ComponentIF
@@ -93,7 +131,7 @@ public:
     RideHalError_e Start();
 
     /**
-     * @brief Execute the CL2DFlex pipeline
+     * @brief Execute the CL2DFlex pipeline normally
      * @param[in] pInputs the input shared buffers
      * @param[in] numInputs the number of input shared buffers
      * @param[out] pOutput the output shared buffer
@@ -102,8 +140,23 @@ public:
      * multiple image inputs to single output. The supported color conversion pipelines are NV12 to
      * RGB, UYVY to RGB, UYVY to NV12.
      */
-    RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
+    RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, const uint32_t numInputs,
                             const RideHal_SharedBuffer_t *pOutput );
+
+    /**
+     * @brief Execute the CL2DFlex pipeline with ROI parameters
+     * @param[in] pInput the input shared buffer
+     * @param[out] pOutput the output shared buffer
+     * @param[in] pROIs the ROI configurations for each execution
+     * @param[in] numROIs the number of ROI configuration parameters, also equal to the batch number
+     * of output buffer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Execute the CL2DFlex pipeline with ROI parameters, one input buffer to one output
+     * buffer with multiple batches, used for cases such as traffic light detection.
+     */
+    RideHalError_e ExecuteWithROI( const RideHal_SharedBuffer_t *pInput,
+                                   const RideHal_SharedBuffer_t *pOutput,
+                                   const CL2DFlex_ROIConfig_t *pROIs, const uint32_t numROIs );
 
     /**
      * @brief Stop the CL2DFlex pipeline, empty for now
@@ -134,6 +187,7 @@ private:
     CL2DFlex_Config_t m_config;
     OpenclSrv m_OpenclSrvObj;
     cl_kernel m_kernel[RIDEHAL_MAX_INPUTS];
+    CL2DFlex_Pipeline_e m_pipelines[RIDEHAL_MAX_INPUTS]; /**<input image format for each batch*/
 
 private:
     RideHalError_e ConvertFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
@@ -160,6 +214,10 @@ private:
                                          uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                          const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                           uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
+                                           const RideHal_SharedBuffer_t *pInput,
+                                           const RideHal_SharedBuffer_t *pOutput );
 
 };   // class CL2DFlex
 
