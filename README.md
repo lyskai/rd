@@ -17,7 +17,7 @@ Below is a summary information of the current implemented components.
 | [VideoEncoder](./docs/videoencoder.md) | YES| YES | vidc | VPU | H264, H265 |
 | VideoDecoder | YES| YES | vidc | VPU | H264, H265 |
 | [Voxelization](./docs/Voxelization.md) | YES| YES | FastADAS, OpenCL| CPU, HTP0, HTP1, GPU | create pilliar |
-| [PostCenterPoint](./docs/PostCenterPoint.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | extract boundbing boxes |
+| [PostCenterPoint](./docs/PostCenterPoint.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | extract bounding boxes |
 | [CL2DFlex](./docs/CL2DFlex.md) | YES| Yes| OpenCL | GPU | Color Conversion, Resize |
 | [GL2DFlex](./docs/GL2DFlex.md) | NO | YES| OpenGL | GPU | Color Conversion, ROI Crop, Resize |
 
