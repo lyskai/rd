@@ -189,7 +189,7 @@ The command line template example:
 | batch_size    | false    | int       | 1       | The Remap input batch size |
 | input_widthX  | false    | int       | 1920    | The input X image width |
 | input_heightX | false    | int       | 1024    | The input X image height |
-| input_formatX | false    | string    | uyvy    | The input X image format, options from [uyvy, nv12]|
+| input_formatX | false    | string    | uyvy    | The input X image format, options from [uyvy, nv12, nv12_ubwc]|
 | map_widthX    | false    | int       | =output_width  | The map width for input X |
 | map_heightX   | false    | int       | =output_height | The map height for input X |
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |

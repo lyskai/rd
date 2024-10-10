@@ -544,6 +544,11 @@ void SuccessTest( uint32_t batchTest, RideHal_ProcessorType_e processorTest,
                 inputSize[inputId] = RemapConfig.inputConfigs[inputId].inputWidth *
                                      RemapConfig.inputConfigs[inputId].inputHeight * 1.5;
             }
+            else if ( RemapConfig.inputConfigs[inputId].inputFormat ==
+                      RIDEHAL_IMAGE_FORMAT_NV12_UBWC )
+            {
+                inputSize[inputId] = inputs[inputId].size;
+            }
         }
 
         printf( "inputData is: \n" );
@@ -938,7 +943,7 @@ TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU 
     SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  1920, 1024, 1152, 800, false, false, false, true );
     printf( "CPU general performance test\n" );
-    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
                  1920, 1024, 1152, 800, false, false, false, true );
 #if defined( __QNXNTO__ )
     printf( "GPU general performance test\n" );
@@ -979,12 +984,12 @@ TEST( Remap, CPUSuccessPipeline2Test )   // general success test on CPU for UYVY
 }
 
 #if defined( __QNXNTO__ )                // nv12 input format on CPU is not supported in HGY
-TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12/UYVY to BGR, with
+TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12/UYVY to RGB, with
                                          // and without undistortion
 {
-    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, false, false );
-    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, true, false, false, false );
 }
 
@@ -1080,6 +1085,12 @@ TEST( Remap, GPUSuccessPipeline4Test )   // general success test on GPU for NV12
                  512, 512, 256, 256, false, true, false, false );
     SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, true, true, false, false );
+}
+
+TEST( Remap, GPUSuccessPipeline5Test )   // general success test on GPU for NV12 UBWC to BGR
+{
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12_UBWC,
+                 RIDEHAL_IMAGE_FORMAT_BGR888, 1920, 1536, 1024, 768, false, false, false, false );
 }
 #endif
 

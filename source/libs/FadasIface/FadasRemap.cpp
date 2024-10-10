@@ -9,7 +9,10 @@
  * build merged to mainline*/
 #define FADAS_REMAP_PIPELINE_Y8UV8_TO_BGR888_RH ( (FadasRemapPipeline_e) 12 )
 #define FADAS_REMAP_PIPELINE_UYVY_TO_BGR888_RH ( (FadasRemapPipeline_e) 16 )
-#define FADAS_REMAP_PIPELINE_MAX_RH ( (FadasRemapPipeline_e) 17 )
+#define FADAS_REMAP_PIPELINE_UBWC_NV12_TO_BGR888_RH ( (FadasRemapPipeline_e) 17 )
+#define FADAS_REMAP_PIPELINE_MAX_RH ( (FadasRemapPipeline_e) 19 )
+#define FADAS_IMAGE_FORMAT_BGR888_RH ( (FadasImageFormat_e) 14 )
+#define FADAS_IMAGE_FORMAT_UBWC_NV12_RH ( (FadasImageFormat_e) 15 )
 
 namespace ridehal
 {
@@ -118,6 +121,13 @@ FadasRemapPipeline_e FadasRemap::RemapGetPipelineCPU( RideHal_ImageFormat_e inpu
     {
 
         pipeline = FADAS_REMAP_PIPELINE_Y8UV8_TO_BGR888_RH;
+    }
+    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == inputFormat ) &&
+              ( RIDEHAL_IMAGE_FORMAT_BGR888 == outputFormat ) &&
+              ( false == bEnableNormalize ) )   // NV12 UBWC to BGR pipeline
+    {
+
+        pipeline = FADAS_REMAP_PIPELINE_UBWC_NV12_TO_BGR888_RH;
     }
     else
     {
@@ -337,7 +347,8 @@ RideHalError_e FadasRemap::CreateRemapWorker( uint32_t inputId, RideHal_ImageFor
 
     if ( ( RIDEHAL_IMAGE_FORMAT_UYVY != m_inputFormats[inputId] ) &&
          ( RIDEHAL_IMAGE_FORMAT_RGB888 != m_inputFormats[inputId] ) &&
-         ( RIDEHAL_IMAGE_FORMAT_NV12 != m_inputFormats[inputId] ) )
+         ( RIDEHAL_IMAGE_FORMAT_NV12 != m_inputFormats[inputId] ) &&
+         ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC != m_inputFormats[inputId] ) )
     {
         RIDEHAL_ERROR( "Invalid input format for inputId = %d ", inputId );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -461,6 +472,15 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                 srcImg.props.format = FADAS_IMAGE_FORMAT_Y8UV8;
                 srcImg.plane[1] = pSrc + inputs[inputId].imgProps.planeBufSize[0];
             }
+            else if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == m_inputFormats[inputId] )
+            {
+                srcImg.props.format = FADAS_IMAGE_FORMAT_UBWC_NV12_RH;
+                srcImg.props.numPlanes = 1;
+                srcImg.props.stride[0] = inputs[inputId].size / inputs[inputId].imgProps.height;
+                srcImg.props.stride[1] = 0;
+                srcImg.props.stride[2] = 0;
+                srcImg.props.stride[3] = 0;
+            }
             else
             {
                 RIDEHAL_ERROR( "Invalid input format for inputId = %d!", inputId );
@@ -472,7 +492,19 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             FadasImage_t rgbImg;
             rgbImg.props.width = output->imgProps.width;
             rgbImg.props.height = output->imgProps.height;
-            rgbImg.props.format = FADAS_IMAGE_FORMAT_RGB888;
+            if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_outputFormat )
+            {
+                rgbImg.props.format = FADAS_IMAGE_FORMAT_RGB888;
+            }
+            else if ( RIDEHAL_IMAGE_FORMAT_BGR888 == m_outputFormat )
+            {
+                rgbImg.props.format = FADAS_IMAGE_FORMAT_BGR888_RH;
+            }
+            else
+            {
+                RIDEHAL_ERROR( "Invalid output format!" );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
             rgbImg.props.numPlanes = output->imgProps.numPlanes;
             for ( int i = 0; i < output->imgProps.numPlanes; i++ )
             {
