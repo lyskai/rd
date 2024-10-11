@@ -442,9 +442,11 @@ The command line template example:
 |---------------|----------|-----------|---------|----------|
 | batch_size    | false    | int       | 1       | The CL2DFlex input batch size |
 | input_widthX  | false    | int       | 1920    | The input X image width |
-| input_heightX | false    | int       | 1024    | The input X image height  |
+| input_heightX | false    | int       | 1024    | The input X image height|
+| input_formatX | false    | string    | nv12    | The input X image format, options from [uyvy, nv12, rgb]|
 | output_width  | false    | int       | 1920    | The output image width  |
 | output_height | false    | int       | 1024    | The output image height |
+| output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
 | work_modeX    | false    | string    | resize_nearest    | The input X work mode, options from [convert, resize_nearest, letterbox_nearest]|
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |
 | roi_yX        | false    | int       | 0       | The ROI top y for input X |

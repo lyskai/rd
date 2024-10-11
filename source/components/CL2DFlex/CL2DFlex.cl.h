@@ -41,8 +41,8 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             float2 UV = convert_float2( vload2( 0, srcPtr + uOffset ) );
             UV -= 128.0f;
 
-            U4 = (float4) ( UV.s0, UV.s0, UV.s0, UV.s0 );
-            V4 = (float4) ( UV.s1, UV.s1, UV.s1, UV.s1 );
+            U4 = ( float4 )( UV.s0, UV.s0, UV.s0, UV.s0 );
+            V4 = ( float4 )( UV.s1, UV.s1, UV.s1, UV.s1 );
             UV4 = -0.390999794f * U4 - 0.812999725f * V4 + 0.5f;
             U4 = 2.017999649f * U4 + 0.5f;
             V4 = 1.5959997177f * V4 + 0.5f;
@@ -54,10 +54,10 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             uYU = convert_uchar4_sat( YU );
             uYV = convert_uchar4_sat( YV );
             uYUV = convert_uchar4_sat( YUV );
-            dst1Val4 = (uchar4) ( uYV.s0, uYUV.s0, uYU.s0, uYV.s1 );
-            dst1Val2 = (uchar2) ( uYUV.s1, uYU.s1 );
-            dst2Val4 = (uchar4) ( uYV.s2, uYUV.s2, uYU.s2, uYV.s3 );
-            dst2Val2 = (uchar2) ( YUV.s3, YU.s3 );
+            dst1Val4 = ( uchar4 )( uYV.s0, uYUV.s0, uYU.s0, uYV.s1 );
+            dst1Val2 = ( uchar2 )( uYUV.s1, uYU.s1 );
+            dst2Val4 = ( uchar4 )( uYV.s2, uYUV.s2, uYU.s2, uYV.s3 );
+            dst2Val2 = ( uchar2 )( YUV.s3, YU.s3 );
 
             vstore4( dst1Val4, 0, dstPtr + dstOffset1 );
             vstore2( dst1Val2, 2, dstPtr + dstOffset1 );
@@ -177,6 +177,21 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                     udst[1] = srcPtr[uPtr + srcOffset + 2];
                 }
             }
+        }
+
+        __kernel void ResizeRGBToRGB( __global const uchar *srcPtr, int srcOffset,
+                                      __global uchar *dstPtr, int dstOffset, int inputHeight,
+                                      int inputWidth, int resizeHeight, int resizeWidth,
+                                      int inputStride, int outputStride, int roiX, int roiY ) {
+            int x = get_global_id( 0 );
+            int y = get_global_id( 1 );
+            __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
+            int xIn = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
+            int yIn = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
+            int ptr = mad24( yIn, inputStride, xIn * 3 );
+            dst[0] = srcPtr[srcOffset + ptr + 0];
+            dst[1] = srcPtr[srcOffset + ptr + 1];
+            dst[2] = srcPtr[srcOffset + ptr + 2];
         }
 
         __kernel void LetterboxNV12ToRGB(

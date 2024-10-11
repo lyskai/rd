@@ -44,6 +44,7 @@ typedef enum
                                                         from uyvy to rgb*/
     CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12,   /**<color convert and resize use nearest point
                                                         from uyvy to nv12*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB,     /**<resize use nearest point from rgb to rgb*/
     CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB, /**<color convert and letterbox with fixed
                                                         height/width ratio use nearest point from
                                                         nv12 to rgb, padding 0 to the redundant
@@ -214,6 +215,10 @@ private:
                                          uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                          const RideHal_SharedBuffer_t *pInput,
                                          const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e ResizeFromRGBToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
+                                       uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
+                                       const RideHal_SharedBuffer_t *pInput,
+                                       const RideHal_SharedBuffer_t *pOutput );
     RideHalError_e LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
                                            uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                            const RideHal_SharedBuffer_t *pInput,
