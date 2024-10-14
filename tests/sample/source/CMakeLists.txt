@@ -23,6 +23,8 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleDataOnline.cpp
     SampleSharedRing.cpp
     SampleFpsAdapter.cpp
+    SampleOpticalFlow.cpp
+    SampleOpticalFlowViz.cpp
     SysTrace.cpp
 )
 

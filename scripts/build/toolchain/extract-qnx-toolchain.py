@@ -327,7 +327,8 @@ libList = libListVidc + libListFastCV + libListC2d + libListPmem + libListQgptp 
         "libadreno_utils.so", "libESXGLESv2_Adreno.so", "libglnext-llvm.so", "libESXEGL_Adreno.so",
         "libsysprofiler.so", "libQProfilerInterface.so", "libfdt_utils.so", "libtzbsplib.so", "libtzbsplib.so.1",
         "libsmmu_clientS.a", "libfastcvopt.a", "libfastcvoptS.a",
-        "liblibstd.so", "libmmap_peer.so", "libxml_config.so", "libOpenCL_Adreno.so"
+        "liblibstd.so", "libmmap_peer.so", "libxml_config.so", "libOpenCL_Adreno.so",
+        "libicb_client.so", "libnpa_client.so",
     ] + libListRSM
 
 targetLibDirs = [

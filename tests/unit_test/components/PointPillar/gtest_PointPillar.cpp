@@ -430,7 +430,6 @@ void SANITY_PostCenterPoint( RideHal_ProcessorType_e processor, PostCenterPoint_
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
-extern int PtPlr_PostProc( void );
 TEST( FadasPlr, SANITY_PostCenterPointCPU )
 {
     SANITY_PostCenterPoint( RIDEHAL_PROCESSOR_CPU, plrPostConfig0, "data/test/plr/CFG0/000008.bin",

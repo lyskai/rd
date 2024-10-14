@@ -26,7 +26,7 @@ endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
     list( APPEND COMMON_SOURCES Buffer_Linux.cpp Logger_Linux.cpp )    
-    list( APPEND TARGET_LIBRARIES kiumd apdf aosal pthread dl )
+    list( APPEND TARGET_LIBRARIES kiumd apdf aosal pthread dl systemd )
     list( APPEND HEADERS_DIR ${CMAKE_SYSROOT}/usr/include/WF )
     list( APPEND HEADERS_DIR ${CMAKE_SYSROOT}/usr/include/linux-ark )
 endif()

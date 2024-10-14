@@ -19,6 +19,7 @@ set( TARGET_LIBRARIES
     RideHalVoxelization
     RideHalPostCenterPoint
     RideHalCL2DFlex
+    RideHalOpticalFlow
 )
 
 if( NOT TARGET RideHalQnnRuntime )
