@@ -20,7 +20,7 @@ using namespace ridehal::test::utils;
 void ROITest( uint32_t numberTest, CL2DFlex_ROIConfig_t *pROITest, CL2DFlex_Work_Mode_e modeTest,
               RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e outputFormatTest,
               uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t outputWidthTest,
-              uint32_t outputHeightTest, uint32_t times )
+              uint32_t outputHeightTest, uint32_t times, bool checkAccuracy )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -40,6 +40,7 @@ void ROITest( uint32_t numberTest, CL2DFlex_ROIConfig_t *pROITest, CL2DFlex_Work
     CL2DFlexConfig.outputWidth = outputWidthTest;
     CL2DFlexConfig.outputHeight = outputHeightTest;
     CL2DFlexConfig.outputFormat = outputFormatTest;
+    CL2DFlexConfig.letterboxPaddingValue = 0;
 
     RideHal_ImageProps_t imgProp1;
     imgProp1.batchSize = 1;
@@ -76,7 +77,7 @@ void ROITest( uint32_t numberTest, CL2DFlex_ROIConfig_t *pROITest, CL2DFlex_Work
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( ( inputWidthTest == 1920 ) && ( inputHeightTest == 1024 ) &&
-         ( inputFormatTest == RIDEHAL_IMAGE_FORMAT_NV12 ) )
+         ( inputFormatTest == RIDEHAL_IMAGE_FORMAT_NV12 ) && ( true == checkAccuracy ) )
     {
         std::string pathTest = "./data/test/CL2DFlex/0.nv12";
         FILE *file1 = nullptr;
@@ -158,7 +159,7 @@ void ROITest( uint32_t numberTest, CL2DFlex_ROIConfig_t *pROITest, CL2DFlex_Work
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     if ( ( inputWidthTest == 1920 ) && ( inputHeightTest == 1024 ) &&
-         ( inputFormatTest == RIDEHAL_IMAGE_FORMAT_NV12 ) )
+         ( inputFormatTest == RIDEHAL_IMAGE_FORMAT_NV12 ) && ( true == checkAccuracy ) )
     {
         uint32_t sizeOne = output.size / output.imgProps.batchSize;
         for ( uint32_t i = 0; i < output.imgProps.batchSize; i++ )
@@ -963,6 +964,7 @@ TEST( CL2DFlex, ResizeAccuracyTest )
     // md5 of golden4.rgb is 9382129ca960b8ff22e3c135e3eb12b7
     // md5 of golden5.rgb is 520d1039f96107ef4db669e9644250fd
     // md5 of golden6.nv12 is 91cdd0def0f40ce3c0fec070c2bccd01
+    // md5 of golden7.rgb is a906c3bc49c7b91ec25d6474311d8031
     AccuracyTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
                   RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800, "./data/test/CL2DFlex/0.nv12",
                   "./data/test/CL2DFlex/golden4.rgb", false );
@@ -975,6 +977,9 @@ TEST( CL2DFlex, ResizeAccuracyTest )
     AccuracyTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_RGB888,
                   RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800,
                   "./data/test/CL2DFlex/golden1.rgb", "./data/test/CL2DFlex/golden4.rgb", false );
+    AccuracyTest( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
+                  RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800, "./data/test/CL2DFlex/0.nv12",
+                  "./data/test/CL2DFlex/golden7.rgb", false );
 }
 
 TEST( CL2DFlex, PerformanceTest )
@@ -985,6 +990,9 @@ TEST( CL2DFlex, PerformanceTest )
     printf( "performance test of resize nv12 to rgb\n" );
     PerformanceTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
                      RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024, 1152, 800, 100 );
+    printf( "performance test of letterbox resize nv12 to rgb\n" );
+    PerformanceTest( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
+                     RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024, 1152, 800, 100 );
     printf( "performance test of convert uyvy to rgb\n" );
     PerformanceTest( CL2DFLEX_WORK_MODE_CONVERT, RIDEHAL_IMAGE_FORMAT_UYVY,
                      RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024, 1920, 1024, 100 );
@@ -993,9 +1001,9 @@ TEST( CL2DFlex, PerformanceTest )
                      RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024, 1152, 800, 100 );
 }
 
-TEST( CL2DFlex, ROITest )
+TEST( CL2DFlex, MultipleROITest )
 {
-    printf( "ROI test of letterbox nv12 to rgb\n" );
+    printf( "Multiple ROI crop test of letterbox nv12 to rgb\n" );
     uint32_t numberTest = 100;
     CL2DFlex_ROIConfig_t roiTest[numberTest];
     for ( int i = 0; i < numberTest; i++ )
@@ -1014,8 +1022,8 @@ TEST( CL2DFlex, ROITest )
         }
     }
 
-    ROITest( numberTest, roiTest, CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
-             RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 64, 64, 10 );
+    ROITest( numberTest, roiTest, CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE,
+             RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 64, 64, 10, true );
 }
 
 #ifndef GTEST_RIDEHAL

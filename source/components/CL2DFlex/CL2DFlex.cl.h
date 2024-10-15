@@ -198,7 +198,7 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                 __global const uchar *srcPtr, int srcOffset, __global uchar *dstPtr, int dstOffset,
                 int inputHeight, int inputWidth, int resizeHeight, int resizeWidth,
                 int inputStride0, int inputPlane0Size, int inputStride1, int outputStride, int roiX,
-                int roiY, float inputRatio, float outputRatio ) {
+                int roiY, float inputRatio, float outputRatio, int paddingValue ) {
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global const uchar *ySrc = srcPtr + srcOffset;
@@ -222,9 +222,9 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                 }
                 else
                 {
-                    dst[0] = 0;
-                    dst[1] = 0;
-                    dst[2] = 0;
+                    dst[0] = ( paddingValue >> 16 ) & 0xFF; /* R */
+                    dst[1] = ( paddingValue >> 8 ) & 0xFF;  /* G */
+                    dst[2] = (paddingValue) &0xFF;          /* B */
                 }
             }
             else
@@ -247,9 +247,76 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                 }
                 else
                 {
-                    dst[0] = 0;
-                    dst[1] = 0;
-                    dst[2] = 0;
+                    dst[0] = ( paddingValue >> 16 ) & 0xFF; /* R */
+                    dst[1] = ( paddingValue >> 8 ) & 0xFF;  /* G */
+                    dst[2] = (paddingValue) &0xFF;          /* B */
+                }
+            }
+        }
+
+        __kernel void LetterboxNV12ToRGBMultiple(
+                __global const uchar *srcPtr, int srcOffset, __global uchar *dstPtr, int dstOffset,
+                __global const int *roiPtr, int resizeHeight, int resizeWidth, int inputStride0,
+                int inputPlane0Size, int inputStride1, int outputStride, int paddingValue ) {
+            int i = get_global_id( 0 );
+            int x = get_global_id( 1 );
+            int y = get_global_id( 2 );
+            __global const uchar *ySrc = srcPtr + srcOffset;
+            __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size;
+            __global uchar *dst = dstPtr + dstOffset + i * resizeHeight * outputStride +
+                                  mad24( y, outputStride, x * 3 );
+            int roiX = roiPtr[i * 4 + 0];
+            int roiY = roiPtr[i * 4 + 1];
+            int inputWidth = roiPtr[i * 4 + 2];
+            int inputHeight = roiPtr[i * 4 + 3];
+            float inputRatio = (float) inputHeight / (float) inputWidth;
+            float outputRatio = (float) resizeHeight / (float) resizeWidth;
+            if ( inputRatio < outputRatio )
+            {
+                if ( y < ( resizeWidth * inputRatio ) )
+                {
+                    int xIn = round( (float) x / (float) resizeWidth * (float) inputWidth ) + roiX;
+                    int yIn = round( (float) y / (float) resizeWidth * (float) inputWidth ) + roiY;
+                    int yPtr = mad24( yIn, inputStride0, xIn );
+                    float Y = max( 0, ySrc[yPtr] - 16 );
+                    int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
+                    float U = uSrc[uPtr] - 128;
+                    float V = uSrc[uPtr + 1] - 128;
+                    dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
+                    dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V +
+                                                0.5f );
+                    dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+                }
+                else
+                {
+                    dst[0] = ( paddingValue >> 16 ) & 0xFF; /* R */
+                    dst[1] = ( paddingValue >> 8 ) & 0xFF;  /* G */
+                    dst[2] = (paddingValue) &0xFF;          /* B */
+                }
+            }
+            else
+            {
+                if ( x < ( resizeHeight / inputRatio ) )
+                {
+                    int xIn =
+                            round( (float) x / (float) resizeHeight * (float) inputHeight ) + roiX;
+                    int yIn =
+                            round( (float) y / (float) resizeHeight * (float) inputHeight ) + roiY;
+                    int yPtr = mad24( yIn, inputStride0, xIn );
+                    float Y = max( 0, ySrc[yPtr] - 16 );
+                    int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
+                    float U = uSrc[uPtr] - 128;
+                    float V = uSrc[uPtr + 1] - 128;
+                    dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
+                    dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V +
+                                                0.5f );
+                    dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+                }
+                else
+                {
+                    dst[0] = ( paddingValue >> 16 ) & 0xFF; /* R */
+                    dst[1] = ( paddingValue >> 8 ) & 0xFF;  /* G */
+                    dst[2] = (paddingValue) &0xFF;          /* B */
                 }
             }
         } );

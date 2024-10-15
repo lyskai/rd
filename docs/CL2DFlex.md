@@ -10,20 +10,20 @@
 The RideHal CL2DFlex component is based on OpenCL library, it provides user-friendly APIs and visible CL kernels to do color conversion and resize on single image input. Currently support color conversion and resize of multiple image inputs to single output. The supported color conversion pipelines are NV12 to RGB, UYVY to RGB, UYVY to NV12.
 
 # 2. CL2DFlex Data Structures
-- [CL2DFLEX_PIPELINE_e](../include/ridehal/component/CL2DFlex.hpp#L48)
-- [CL2DFlex_WorkMode_e](../include/ridehal/component/CL2DFlex.hpp#L60)
-- [CL2DFlex_ROIConfig_t](../include/ridehal/component/CL2DFlex.hpp#L71)
-- [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L87)
+- [CL2DFLEX_PIPELINE_e](../include/ridehal/component/CL2DFlex.hpp#L63)
+- [CL2DFlex_WorkMode_e](../include/ridehal/component/CL2DFlex.hpp#L79)
+- [CL2DFlex_ROIConfig_t](../include/ridehal/component/CL2DFlex.hpp#L90)
+- [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L110)
 
 # 3. CL2DFlex APIs 
-- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L110)
-- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L121)
-- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L127)
-- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L143)
-- [CL2DFlex::ExecuteWithROI](../include/ridehal/component/CL2DFlex.hpp#L157)
-- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L165)
-- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L175)
-- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L184)
+- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L133)
+- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L144)
+- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L150)
+- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L162)
+- [CL2DFlex::ExecuteWithROI](../include/ridehal/component/CL2DFlex.hpp#L176)
+- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L184)
+- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L194)
+- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L203)
 
 # 4. Typical use case
 

@@ -185,6 +185,30 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
                                                            "LetterboxNV12ToRGB" );
                     }
 
+                    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormats[inputId] ) &&
+                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
+                              ( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE ==
+                                m_config.workModes[inputId] ) )
+                    {
+                        m_pipelines[inputId] =
+                                CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB_MULTIPLE;
+                        RideHal_TensorProps_t roiProp = {
+                                RIDEHAL_TENSOR_TYPE_INT_32,
+                                { ( uint32_t )( RIDEHAL_CL2DFLEX_ROI_NUMBER_MAX * 4 ), 0 },
+                                1,
+                        };
+                        ret = m_roiBuffer.Allocate( &roiProp );
+                        if ( RIDEHAL_ERROR_NONE != ret )
+                        {
+                            RIDEHAL_ERROR( "Failed to allocate roi buffer!" );
+                        }
+                        else
+                        {
+                            ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId],
+                                                               "LetterboxNV12ToRGBMultiple" );
+                        }
+                    }
+
                     else if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.inputFormats[inputId] ) &&
                               ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
                               ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST == m_config.workModes[inputId] ) )
@@ -239,6 +263,13 @@ RideHalError_e CL2DFlex::Deinit()
     else
     {
         RideHalError_e retVal;
+
+        retVal = m_roiBuffer.Free();
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to deallocate roi buffer!" );
+        }
+
         retVal = m_OpenclSrvObj.Deinit();
         if ( RIDEHAL_ERROR_NONE != retVal )
         {
@@ -670,8 +701,8 @@ RideHalError_e CL2DFlex::LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pK
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    size_t numOfArgs = 16;
-    OpenclIfcae_Arg_t OpenclArgs[16];
+    size_t numOfArgs = 17;
+    OpenclIfcae_Arg_t OpenclArgs[17];
     OpenclArgs[0].pArg = (void *) &bufferSrc;
     OpenclArgs[0].argSize = sizeof( cl_mem );
     OpenclArgs[1].pArg = (void *) &srcOffset;
@@ -708,6 +739,8 @@ RideHalError_e CL2DFlex::LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pK
     OpenclArgs[14].argSize = sizeof( cl_float );
     OpenclArgs[15].pArg = (void *) &( outputRatio );
     OpenclArgs[15].argSize = sizeof( cl_float );
+    OpenclArgs[16].pArg = (void *) &( m_config.letterboxPaddingValue );
+    OpenclArgs[16].argSize = sizeof( cl_int );
 
     OpenclIface_WorkParams_t OpenclWorkParams;
     OpenclWorkParams.workDim = 2;
@@ -724,6 +757,86 @@ RideHalError_e CL2DFlex::LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pK
         RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
         ret = RIDEHAL_ERROR_FAIL;
     }
+
+    return ret;
+}
+
+RideHalError_e CL2DFlex::LetterboxFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
+                                                         cl_mem bufferSrc, uint32_t srcOffset,
+                                                         cl_mem bufferDst, uint32_t dstOffset,
+                                                         const RideHal_SharedBuffer_t *pInput,
+                                                         const RideHal_SharedBuffer_t *pOutput,
+                                                         const CL2DFlex_ROIConfig_t *pROIs )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+
+    for ( int i = 0; i < numROIs; i++ )
+    {
+        ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
+        ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;
+        ( (int *) m_roiBuffer.data() )[i * 4 + 2] = pROIs[i].width;
+        ( (int *) m_roiBuffer.data() )[i * 4 + 3] = pROIs[i].height;
+    }
+
+    cl_mem roiBufferCL;
+    ret = m_OpenclSrvObj.RegBuf( &( m_roiBuffer.buffer ), &roiBufferCL );
+    if ( RIDEHAL_ERROR_NONE != ret )
+    {
+        RIDEHAL_ERROR( "Failed to register roi buffer!" );
+    }
+    else
+    {
+        size_t numOfArgs = 12;
+        OpenclIfcae_Arg_t OpenclArgs[12];
+        OpenclArgs[0].pArg = (void *) &bufferSrc;
+        OpenclArgs[0].argSize = sizeof( cl_mem );
+        OpenclArgs[1].pArg = (void *) &srcOffset;
+        OpenclArgs[1].argSize = sizeof( cl_int );
+        OpenclArgs[2].pArg = (void *) &bufferDst;
+        OpenclArgs[2].argSize = sizeof( cl_mem );
+        OpenclArgs[3].pArg = (void *) &dstOffset;
+        OpenclArgs[3].argSize = sizeof( cl_int );
+        OpenclArgs[4].pArg = (void *) &roiBufferCL;
+        OpenclArgs[4].argSize = sizeof( cl_mem );
+        OpenclArgs[5].pArg = (void *) &( m_config.outputHeight );
+        OpenclArgs[5].argSize = sizeof( cl_int );
+        OpenclArgs[6].pArg = (void *) &( m_config.outputWidth );
+        OpenclArgs[6].argSize = sizeof( cl_int );
+        OpenclArgs[7].pArg = (void *) &( pInput->imgProps.stride[0] );
+        OpenclArgs[7].argSize = sizeof( cl_int );
+        OpenclArgs[8].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
+        OpenclArgs[8].argSize = sizeof( cl_int );
+        OpenclArgs[9].pArg = (void *) &( pInput->imgProps.stride[1] );
+        OpenclArgs[9].argSize = sizeof( cl_int );
+        OpenclArgs[10].pArg = (void *) &( pOutput->imgProps.stride[0] );
+        OpenclArgs[10].argSize = sizeof( cl_int );
+        OpenclArgs[11].pArg = (void *) &( m_config.letterboxPaddingValue );
+        OpenclArgs[11].argSize = sizeof( cl_int );
+
+        OpenclIface_WorkParams_t OpenclWorkParams;
+        OpenclWorkParams.workDim = 3;
+        size_t globalWorkSize[3] = { numROIs, pOutput->imgProps.width, pOutput->imgProps.height };
+        OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
+        size_t globalWorkOffset[3] = { 0, 0, 0 };
+        OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
+        /*set local work size to NULL, device would choose optimal size automatically*/
+        OpenclWorkParams.pLocalWorkSize = NULL;
+
+        ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+
+        ret = m_OpenclSrvObj.DeregBuf( &( m_roiBuffer.buffer ) );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to deregister roi buffer!" );
+        }
+    }
+
 
     return ret;
 }
@@ -998,6 +1111,11 @@ RideHalError_e CL2DFlex::ExecuteWithROI( const RideHal_SharedBuffer_t *pInput,
         RIDEHAL_ERROR( "number of inputs not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
+    else if ( nullptr == pOutput->data() )
+    {
+        RIDEHAL_ERROR( "Output buffer data is null" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
     else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pOutput->type )
     {
         RIDEHAL_ERROR( "Output buffer is not image type!" );
@@ -1066,43 +1184,26 @@ RideHalError_e CL2DFlex::ExecuteWithROI( const RideHal_SharedBuffer_t *pInput,
             }
             else
             {
-                for ( uint32_t inputId = 0; inputId < numROIs; inputId++ )
+                if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    if ( ( m_config.inputWidths[0] <
-                           ( pROIs[inputId].x + pROIs[inputId].width ) ) ||
-                         ( m_config.inputHeights[0] <
-                           ( pROIs[inputId].y + pROIs[inputId].height ) ) ||
-                         ( 0 == pROIs[inputId].width ) || ( 0 == pROIs[inputId].height ) )
+                    if ( CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB_MULTIPLE ==
+                         m_pipelines[0] )
                     {
-                        RIDEHAL_ERROR( "Invalid ROI values for inputId=%d!", inputId );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                        uint32_t srcOffset = pInput->offset;
+                        uint32_t dstOffset = pOutput->offset;
+                        ret = LetterboxFromNV12ToRGBMultiple( numROIs, &m_kernel[0], bufferSrc,
+                                                              srcOffset, bufferDst, dstOffset,
+                                                              pInput, pOutput, pROIs );
                     }
                     else
                     {
-                        m_config.ROIs[0] = pROIs[inputId];
+                        RIDEHAL_ERROR( "Invalid CL2DFlex pipeline!" );
+                        RIDEHAL_ERROR_BAD_ARGUMENTS;
                     }
 
-                    if ( RIDEHAL_ERROR_NONE == ret )
+                    if ( RIDEHAL_ERROR_NONE != ret )
                     {
-                        uint32_t srcOffset = pInput->offset;
-                        uint32_t sizeOne = ( pOutput->size ) / ( pOutput->imgProps.batchSize );
-                        uint32_t dstOffset = pOutput->offset + inputId * sizeOne;
-                        if ( CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB == m_pipelines[0] )
-                        {
-                            ret = LetterboxFromNV12ToRGB( 0, &m_kernel[0], bufferSrc, srcOffset,
-                                                          bufferDst, dstOffset, pInput, pOutput );
-                        }
-                        else
-                        {
-                            RIDEHAL_ERROR( "Invalid CL2DFlex pipeline for inputId=%d!", inputId );
-                            RIDEHAL_ERROR_BAD_ARGUMENTS;
-                        }
-
-                        if ( RIDEHAL_ERROR_NONE != ret )
-                        {
-                            RIDEHAL_ERROR( "Failed to run OpenCL kernel for inputId=%d!", inputId );
-                            break;
-                        }
+                        RIDEHAL_ERROR( "Failed to run OpenCL kernel!" );
                     }
                 }
             }

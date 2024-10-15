@@ -14,6 +14,9 @@
 #include "OpenclIface.hpp"
 #include "ridehal/component/ComponentIF.hpp"
 
+#define RIDEHAL_CL2DFLEX_ROI_NUMBER_MAX                                                            \
+    100 /**<max number of roi parameters for ExecuteWithROI API*/
+
 using namespace ridehal::common;
 using namespace ridehal::libs::OpenclIface;
 
@@ -49,6 +52,13 @@ typedef enum
                                                         height/width ratio use nearest point from
                                                         nv12 to rgb, padding 0 to the redundant
                                                         bottom or right edge*/
+    CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB_MULTIPLE, /**<color convert and letterbox with
+                                                                 fixed height/width ratio use
+                                                                 nearest point from nv12 to rgb,
+                                                                 padding 0 to the redundant bottom
+                                                                 or right edge, execute onmultiple
+                                                                 batches with different ROI
+                                                                 paramters*/
     CL2DFLEX_PIPELINE_MAX
 } CL2DFlex_Pipeline_e;
 
@@ -61,6 +71,10 @@ typedef enum
     CL2DFLEX_WORK_MODE_RESIZE_BILINEAR,   /**<color convert and resize use bilinear interpolation*/
     CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST, /**<color convert and letterbox with fixed height/width
                                             ratio use nearest point*/
+    CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE, /**<color convert and letterbox with fixed
+                                                      height/width ratio use nearest point, execute
+                                                      on multiple batches with different ROI
+                                                      paramters*/
     CL2DFLEX_WORK_MODE_MAX
 } CL2DFlex_Work_Mode_e;
 
@@ -89,6 +103,10 @@ typedef struct
     uint32_t outputWidth;                          /**<output image width*/
     uint32_t outputHeight;                         /**<output image height*/
     CL2DFlex_ROIConfig_t ROIs[RIDEHAL_MAX_INPUTS]; /**<ROI configurations for each batch*/
+    uint32_t letterboxPaddingValue =
+            0; /**<the padding value for letterbox resize with fixed height/width ratio, uint32
+                  value in which the lower 24 bits are composed of three 8 bits values representing
+                  R,G,B respectively, default set to 0 which means all black */
 } CL2DFlex_Config_t;
 
 class CL2DFlex : public ComponentIF
@@ -150,7 +168,7 @@ public:
      * @param[out] pOutput the output shared buffer
      * @param[in] pROIs the ROI configurations for each execution
      * @param[in] numROIs the number of ROI configuration parameters, also equal to the batch number
-     * of output buffer
+     * of output buffer, must be not bigger than RIDEHAL_CL2DFLEX_ROI_NUMBER_MAX
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      * @note Execute the CL2DFlex pipeline with ROI parameters, one input buffer to one output
      * buffer with multiple batches, used for cases such as traffic light detection.
@@ -189,6 +207,8 @@ private:
     OpenclSrv m_OpenclSrvObj;
     cl_kernel m_kernel[RIDEHAL_MAX_INPUTS];
     CL2DFlex_Pipeline_e m_pipelines[RIDEHAL_MAX_INPUTS]; /**<input image format for each batch*/
+    RideHal_SharedBuffer_t
+            m_roiBuffer; /**<internal buffer used to store roi parameters for ExecuteWithROI API*/
 
 private:
     RideHalError_e ConvertFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
@@ -223,6 +243,12 @@ private:
                                            uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
                                            const RideHal_SharedBuffer_t *pInput,
                                            const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e LetterboxFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
+                                                   cl_mem bufferSrc, uint32_t srcOffset,
+                                                   cl_mem bufferDst, uint32_t dstOffset,
+                                                   const RideHal_SharedBuffer_t *pInput,
+                                                   const RideHal_SharedBuffer_t *pOutput,
+                                                   const CL2DFlex_ROIConfig_t *pROIs );
 
 };   // class CL2DFlex
 
