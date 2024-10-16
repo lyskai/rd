@@ -222,7 +222,7 @@ if ! [[ -v ENABLE_GCOV ]] ; then
 export ENABLE_GCOV=OFF
 fi
 
-mkdir -p $workdir && cd $workdir || exit 1
+mkdir -p $workdir && cd $workdir || exit -1
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
     -DCMAKE_INCLUDE_PATH=$TOOLCHAIN_SYSROOT/usr/include \
@@ -231,13 +231,13 @@ cmake \
     -DCMAKE_PREFIX_PATH=$destdir/opt/ridehal \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DENABLE_GCOV=${ENABLE_GCOV} \
-    .. || exit 1
-make -j 16 || exit 1
+    .. || exit -1
+make -j 16 || exit -1
 # Install the RideHal SDK
-make DESTDIR=$destdir install || exit 1
+make DESTDIR=$destdir install || exit -1
 
 # build RideHalSampleApp with the RideHal SDK
-mkdir -p $workdir/sample && cd $workdir/sample || exit 1
+mkdir -p $workdir/sample && cd $workdir/sample || exit -1
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$CMAKE_TOOLCHAIN_FILE \
     -DCMAKE_INCLUDE_PATH=$TOOLCHAIN_SYSROOT/usr/include \
@@ -245,10 +245,10 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=/opt/ridehal \
     -DCMAKE_PREFIX_PATH=$destdir/opt/ridehal \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    ../../tests/sample || exit 1
-make -j 16 || exit 1
+    ../../tests/sample || exit -1
+make -j 16 || exit -1
 # Install the RideHalSampleApp
-make DESTDIR=$destdir install || exit 1
+make DESTDIR=$destdir install || exit -1
 
 # Bundle runtime libraries
 $homedir/bundle-runtime.py --sysroot "$TOOLCHAIN_SYSROOT" \
@@ -325,5 +325,3 @@ tar -C $topdir --xform="s/run/pkg/" --exclude="*.a" \
     --exclude="*.la" --exclude="include" --exclude="share" \
     --exclude="cmake" \
     --use-compress-program=pigz -cf $pkgname run-$target
-
-

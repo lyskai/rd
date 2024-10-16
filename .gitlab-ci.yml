@@ -21,7 +21,7 @@ start:
       when: always
   timeout: 1h
 
-build ridehal qnx:
+build qnx:
   stage: build
   script:
     - echo "Start building ridehal for QNX"
@@ -32,13 +32,11 @@ build ridehal qnx:
   rules:
     - if: '$CI_COMMIT_TAG == "master"'
       when: on_success
-      allow_failure: false
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
-      allow_failure: false
   timeout: 1h
 
-build ridehal linux:
+build linux:
   stage: build
   script:
     - echo "Start building ridehal for HGY Linux"
@@ -49,13 +47,11 @@ build ridehal linux:
   rules:
     - if: '$CI_COMMIT_TAG == "master"'
       when: on_success
-      allow_failure: false
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
-      allow_failure: false
   timeout: 1h
 
-build ridehal ubuntu:
+build ubuntu:
   stage: build
   script:
     - echo "Start building ridehal for HGY Ubuntu"
@@ -66,13 +62,11 @@ build ridehal ubuntu:
   rules:
     - if: '$CI_COMMIT_TAG == "master"'
       when: on_success
-      allow_failure: false
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
-      allow_failure: false
   timeout: 1h
 
-run gtest for qnx:
+gtest-qnx:
   stage: test
   script:
     - echo "Start running gtest for qnx"
@@ -88,7 +82,7 @@ run gtest for qnx:
   allow_failure: true
   timeout: 1h
 
-run gtest for linux:
+gtest-linux:
   stage: test
   script:
     - echo "Start running gtest for linux"
@@ -104,7 +98,7 @@ run gtest for linux:
   allow_failure: true
   timeout: 1h
 
-run gtest for ubuntu:
+gtest-ubuntu:
   stage: test
   script:
     - echo "Start running gtest for ubuntu"
@@ -120,7 +114,7 @@ run gtest for ubuntu:
   allow_failure: true
   timeout: 1h
 
-code static stan:
+static-stan:
   stage: check
   script:
     - echo "Start code static scan"
@@ -141,7 +135,7 @@ code static stan:
   allow_failure: true
   timeout: 1h
 
-code coverage check:
+code-coverage check:
   stage: check
   script:
     - echo "Start code coverage test"
@@ -184,4 +178,3 @@ generate packages:
       when: manual
   allow_failure: true
   timeout: 1h
-
