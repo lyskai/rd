@@ -8,14 +8,6 @@
 	"es7"
       ]
     },
-
-    {
-      "name": "linux",
-      "version": 
-      [
-        "es15"
-      ]
-    },
     
     {
       "name": "ubuntu",
