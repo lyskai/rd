@@ -770,73 +770,85 @@ RideHalError_e CL2DFlex::LetterboxFromNV12ToRGBMultiple( uint32_t numROIs, cl_ke
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-
     for ( int i = 0; i < numROIs; i++ )
     {
-        ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
-        ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;
-        ( (int *) m_roiBuffer.data() )[i * 4 + 2] = pROIs[i].width;
-        ( (int *) m_roiBuffer.data() )[i * 4 + 3] = pROIs[i].height;
-    }
-
-    cl_mem roiBufferCL;
-    ret = m_OpenclSrvObj.RegBuf( &( m_roiBuffer.buffer ), &roiBufferCL );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register roi buffer!" );
-    }
-    else
-    {
-        size_t numOfArgs = 12;
-        OpenclIfcae_Arg_t OpenclArgs[12];
-        OpenclArgs[0].pArg = (void *) &bufferSrc;
-        OpenclArgs[0].argSize = sizeof( cl_mem );
-        OpenclArgs[1].pArg = (void *) &srcOffset;
-        OpenclArgs[1].argSize = sizeof( cl_int );
-        OpenclArgs[2].pArg = (void *) &bufferDst;
-        OpenclArgs[2].argSize = sizeof( cl_mem );
-        OpenclArgs[3].pArg = (void *) &dstOffset;
-        OpenclArgs[3].argSize = sizeof( cl_int );
-        OpenclArgs[4].pArg = (void *) &roiBufferCL;
-        OpenclArgs[4].argSize = sizeof( cl_mem );
-        OpenclArgs[5].pArg = (void *) &( m_config.outputHeight );
-        OpenclArgs[5].argSize = sizeof( cl_int );
-        OpenclArgs[6].pArg = (void *) &( m_config.outputWidth );
-        OpenclArgs[6].argSize = sizeof( cl_int );
-        OpenclArgs[7].pArg = (void *) &( pInput->imgProps.stride[0] );
-        OpenclArgs[7].argSize = sizeof( cl_int );
-        OpenclArgs[8].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
-        OpenclArgs[8].argSize = sizeof( cl_int );
-        OpenclArgs[9].pArg = (void *) &( pInput->imgProps.stride[1] );
-        OpenclArgs[9].argSize = sizeof( cl_int );
-        OpenclArgs[10].pArg = (void *) &( pOutput->imgProps.stride[0] );
-        OpenclArgs[10].argSize = sizeof( cl_int );
-        OpenclArgs[11].pArg = (void *) &( m_config.letterboxPaddingValue );
-        OpenclArgs[11].argSize = sizeof( cl_int );
-
-        OpenclIface_WorkParams_t OpenclWorkParams;
-        OpenclWorkParams.workDim = 3;
-        size_t globalWorkSize[3] = { numROIs, pOutput->imgProps.width, pOutput->imgProps.height };
-        OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-        size_t globalWorkOffset[3] = { 0, 0, 0 };
-        OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-        /*set local work size to NULL, device would choose optimal size automatically*/
-        OpenclWorkParams.pLocalWorkSize = NULL;
-
-        ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-        if ( RIDEHAL_ERROR_NONE != ret )
+        if ( ( ( pROIs[i].x + pROIs[i].width ) < pInput->imgProps.width ) &&
+             ( ( pROIs[i].y + pROIs[i].height ) < pInput->imgProps.height ) )
         {
-            RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-            ret = RIDEHAL_ERROR_FAIL;
+            ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
+            ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;
+            ( (int *) m_roiBuffer.data() )[i * 4 + 2] = pROIs[i].width;
+            ( (int *) m_roiBuffer.data() )[i * 4 + 3] = pROIs[i].height;
         }
-
-        ret = m_OpenclSrvObj.DeregBuf( &( m_roiBuffer.buffer ) );
-        if ( RIDEHAL_ERROR_NONE != ret )
+        else
         {
-            RIDEHAL_ERROR( "Failed to deregister roi buffer!" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Invalid roi parameter for inputId=%d\n!", i );
+            break;
         }
     }
 
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        cl_mem roiBufferCL;
+        ret = m_OpenclSrvObj.RegBuf( &( m_roiBuffer.buffer ), &roiBufferCL );
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to register roi buffer!" );
+        }
+        else
+        {
+            size_t numOfArgs = 12;
+            OpenclIfcae_Arg_t OpenclArgs[12];
+            OpenclArgs[0].pArg = (void *) &bufferSrc;
+            OpenclArgs[0].argSize = sizeof( cl_mem );
+            OpenclArgs[1].pArg = (void *) &srcOffset;
+            OpenclArgs[1].argSize = sizeof( cl_int );
+            OpenclArgs[2].pArg = (void *) &bufferDst;
+            OpenclArgs[2].argSize = sizeof( cl_mem );
+            OpenclArgs[3].pArg = (void *) &dstOffset;
+            OpenclArgs[3].argSize = sizeof( cl_int );
+            OpenclArgs[4].pArg = (void *) &roiBufferCL;
+            OpenclArgs[4].argSize = sizeof( cl_mem );
+            OpenclArgs[5].pArg = (void *) &( m_config.outputHeight );
+            OpenclArgs[5].argSize = sizeof( cl_int );
+            OpenclArgs[6].pArg = (void *) &( m_config.outputWidth );
+            OpenclArgs[6].argSize = sizeof( cl_int );
+            OpenclArgs[7].pArg = (void *) &( pInput->imgProps.stride[0] );
+            OpenclArgs[7].argSize = sizeof( cl_int );
+            OpenclArgs[8].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
+            OpenclArgs[8].argSize = sizeof( cl_int );
+            OpenclArgs[9].pArg = (void *) &( pInput->imgProps.stride[1] );
+            OpenclArgs[9].argSize = sizeof( cl_int );
+            OpenclArgs[10].pArg = (void *) &( pOutput->imgProps.stride[0] );
+            OpenclArgs[10].argSize = sizeof( cl_int );
+            OpenclArgs[11].pArg = (void *) &( m_config.letterboxPaddingValue );
+            OpenclArgs[11].argSize = sizeof( cl_int );
+
+            OpenclIface_WorkParams_t OpenclWorkParams;
+            OpenclWorkParams.workDim = 3;
+            size_t globalWorkSize[3] = { numROIs, pOutput->imgProps.width,
+                                         pOutput->imgProps.height };
+            OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
+            size_t globalWorkOffset[3] = { 0, 0, 0 };
+            OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
+            /*set local work size to NULL, device would choose optimal size automatically*/
+            OpenclWorkParams.pLocalWorkSize = NULL;
+
+            ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+
+            ret = m_OpenclSrvObj.DeregBuf( &( m_roiBuffer.buffer ) );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to deregister roi buffer!" );
+            }
+        }
+    }
 
     return ret;
 }
@@ -1198,7 +1210,7 @@ RideHalError_e CL2DFlex::ExecuteWithROI( const RideHal_SharedBuffer_t *pInput,
                     else
                     {
                         RIDEHAL_ERROR( "Invalid CL2DFlex pipeline!" );
-                        RIDEHAL_ERROR_BAD_ARGUMENTS;
+                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                     }
 
                     if ( RIDEHAL_ERROR_NONE != ret )

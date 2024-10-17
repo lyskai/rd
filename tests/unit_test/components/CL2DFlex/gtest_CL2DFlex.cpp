@@ -794,6 +794,14 @@ void CoverageTest()
                                nullptr );   // null pointer for output buffer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
+    ret = CL2DFlexObj.ExecuteWithROI( nullptr, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // null pointer for input buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = CL2DFlexObj.ExecuteWithROI( &input, nullptr, CL2DFlexConfig.ROIs,
+                                      1 );   // null pointer for output buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
     ret = CL2DFlexObj.Deinit();   // success deinit
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -821,11 +829,17 @@ void CoverageTest()
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong input buffer type
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong input buffer type
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     input.type = RIDEHAL_BUFFER_TYPE_IMAGE;
 
     output.type = RIDEHAL_BUFFER_TYPE_TENSOR;
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong output buffer type
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong output buffer type
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     output.type = RIDEHAL_BUFFER_TYPE_IMAGE;
 
@@ -833,11 +847,17 @@ void CoverageTest()
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong input image format
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong input image format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     input.imgProps.format = RIDEHAL_IMAGE_FORMAT_NV12;
 
     input.imgProps.width = input.imgProps.width + 1;
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong input image width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong input image width
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     input.imgProps.width = input.imgProps.width - 1;
 
@@ -845,11 +865,17 @@ void CoverageTest()
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong input image height
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong input image height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     input.imgProps.height = input.imgProps.height - 1;
 
     output.imgProps.format = RIDEHAL_IMAGE_FORMAT_NV12;
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong output image format
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong output image format
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     output.imgProps.format = RIDEHAL_IMAGE_FORMAT_RGB888;
 
@@ -857,17 +883,50 @@ void CoverageTest()
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong output image width
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong output image width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     output.imgProps.width = output.imgProps.width - 1;
 
     output.imgProps.height = output.imgProps.height + 1;
     ret = CL2DFlexObj.Execute( &input, 1,
                                &output );   // execute with wrong output image height
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong output image height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     output.imgProps.height = output.imgProps.height - 1;
+
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      2 );   // execute with roi number
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong pipeline
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = CL2DFlexObj.RegisterBuffers( &input, 1 );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     ret = CL2DFlexObj.Deinit();   // success deinit with registered buffer
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    CL2DFlexConfig.workModes[0] = CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE;
+    ret = CL2DFlexObj.Init( pName, &CL2DFlexConfig );   // success init
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    CL2DFlexConfig.ROIs[0].height = 128 + 1;
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong roi height
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.ROIs[0].height = 128;
+
+    CL2DFlexConfig.ROIs[0].width = 128 + 1;
+    ret = CL2DFlexObj.ExecuteWithROI( &input, &output, CL2DFlexConfig.ROIs,
+                                      1 );   // execute with wrong roi width
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    CL2DFlexConfig.ROIs[0].width = 128;
+
+    ret = CL2DFlexObj.Deinit();   // success deinit
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = input.Free();
