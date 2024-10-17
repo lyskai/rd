@@ -5,9 +5,6 @@
 
 #include "ridehal/sample/shared_ring/SharedRing.hpp"
 #include "ridehal/sample/shared_ring/SpinLock.hpp"
-#ifndef __QNXNTO__
-#include <bsd/string.h>
-#endif
 
 namespace ridehal
 {
@@ -77,17 +74,17 @@ uint32_t SharedRing_Ring::Size()
 
 void SharedRing_DataFrame::SetName( std::string name )
 {
-    strlcpy( this->name, name.c_str(), SHARED_RING_NAME_MAX );
+    (void) snprintf( this->name, sizeof( this->name ), "%s", name.c_str() );
 }
 
 void SharedRing_Ring::SetName( std::string name )
 {
-    strlcpy( this->name, name.c_str(), SHARED_RING_NAME_MAX );
+    (void) snprintf( this->name, sizeof( this->name ), "%s", name.c_str() );
 }
 
 void SharedRing_Memory::SetName( std::string name )
 {
-    strlcpy( this->name, name.c_str(), SHARED_RING_NAME_MAX );
+    (void) snprintf( this->name, sizeof( this->name ), "%s", name.c_str() );
 }
 
 }   // namespace shared_ring
