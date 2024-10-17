@@ -112,6 +112,8 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | attribute | required | type      | default | comments |
 |-----------|----------|-----------|---------|----------|
 | number    | false    | int       | 1       | The number of camera streams |
+| client_id | false    | int       | 0       | client id, used for multi client usecase, set to 0 by default for single client usecase  |
+| is_primary| false    | int       | false   | Flag to indicate if the session is primary or not when configured the clientId |
 | input_id  | true     | int       | -       | The camera input id |
 | src_id    | true     | int       | 0       | Input source identifier |
 | input_mode | true    | int       | 0       | The input mode id |

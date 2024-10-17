@@ -14,6 +14,7 @@
   - [3.1 Non request buffer mode](#31-Non-request-buffer-mode)
   - [3.2 Request buffer mode](#32-Request-buffer-mode)
   - [3.3 Set external allocated buffers to Camera](#33-Set-external-allocated-buffers-to-Camera)
+  - [3.4 qcarcam multi-client feature](#34-qcarcam-multi-client-feature)
 - [4. References](#4-references)
 
 
@@ -84,23 +85,26 @@ typedef struct
 } CameraStreamConfig_t;
 ```
 
-- [Camera_Config_t](../include/ridehal/component/Camera.hpp#L73)
+- [Camera_Config_t](../include/ridehal/component/Camera.hpp#L76)
 
 ```c
 typedef struct Camera_Config
 {
-    bool bAllocator;          /**< Flag to indicate if component is buffer allocator*/
-    bool bRequestMode;        /**< Flag to set request buffer mode */
-    uint32_t numStream;       /**< Number of camera stream */
-    uint32_t inputId;         /**< Camera input id */
-    uint32_t srcId;           /**< Input source identifier. See #QCarCamInputSrc_t */
+    uint32_t numStream; /**< Number of camera stream */
+    uint32_t inputId;   /**< Camera input id */
+    uint32_t srcId;     /**< Input source identifier. See #QCarCamInputSrc_t */
+    uint32_t clientId; /**< client id, used for multi client usecase, set to 0 by default for single
+                         client usecase */
     uint32_t inputMode;       /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
     uint32_t ispUserCase;     /**< ISP user case defined by qcarcam */
-    uint32_t fps;             /**< Frames per second */
     uint32_t camFrameDropPat; /**< Frame drop patten defined by qcarcam. Set to 0 when frame drop is
                                  not used */
     uint32_t opMode;          /**< Operation mode defined by qcarcam */
     CameraStreamConfig_t streamConfig[MAX_CAMERA_STREAM]; /**< Per stream configuration */
+    bool bAllocator;   /**< Flag to indicate if component is buffer allocator*/
+    bool bRequestMode; /**< Flag to set request buffer mode */
+    bool bPrimary;     /**< Flag to indicate if the session is primary or not when configured the
+                          clientId */
 } Camera_Config_t;
 ```
 
@@ -117,7 +121,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
 ```
 ## 2.2 APIs
 
-- [GetInputsInfo](../include/ridehal/component/Camera.hpp#L96)
+- [GetInputsInfo](../include/ridehal/component/Camera.hpp#L99)
 ```c
     /**
      * @brief get camera inputs info
@@ -129,7 +133,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
 ```
 
-- [Init](../include/ridehal/component/Camera.hpp#L107)
+- [Init](../include/ridehal/component/Camera.hpp#L110)
 ```c
     /**
      * @brief init the Camera object
@@ -144,7 +148,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 ```
 
-- [SetBuffers](../include/ridehal/component/Camera.hpp#L119)
+- [SetBuffers](../include/ridehal/component/Camera.hpp#L122)
 ```c
     /**
      * @brief set a list of shared buffers to camera
@@ -159,7 +163,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                uint32_t streamId );
 ```
 
-- [RegisterCallback](../include/ridehal/component/Camera.hpp#L131)
+- [RegisterCallback](../include/ridehal/component/Camera.hpp#L134)
 ```c
     /**
      * @brief register callbacks to camera
@@ -174,7 +178,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
 ```
 
-- [Start](../include/ridehal/component/Camera.hpp#L139)
+- [Start](../include/ridehal/component/Camera.hpp#L142)
 ```c
     /**
      * @brief Start the Camera object
@@ -184,7 +188,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Start() final;
 ```
 
-- [Pause](../include/ridehal/component/Camera.hpp#L146)
+- [Pause](../include/ridehal/component/Camera.hpp#L149)
 ```c
     /**
      * @brief Pause the Camera object
@@ -194,7 +198,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Pause();
 ```
 
-- [Resume](../include/ridehal/component/Camera.hpp#L163)
+- [Resume](../include/ridehal/component/Camera.hpp#L156)
 ```c
     /**
      * @brief Resume the Camera object
@@ -204,7 +208,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Resume();
 ```
 
-- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L162)
+- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L165)
 ```c
     /**
      * @brief release a camera frame
@@ -216,7 +220,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
 ```
 
-- [RequestFrame](../include/ridehal/component/Camera.hpp#L171)
+- [RequestFrame](../include/ridehal/component/Camera.hpp#L174)
 ```c
     /**
      * @brief request a frame from camera
@@ -228,7 +232,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e RequestFrame( CameraFrame_t *pFrame );
 ```
 
-- [Stop](../include/ridehal/component/Camera.hpp#L178)
+- [Stop](../include/ridehal/component/Camera.hpp#L181)
 ```c
     /**
      * @brief Stop the Camera object
@@ -238,7 +242,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Stop() final;
 ```
 
-- [Deinit](../include/ridehal/component/Camera.hpp#L185)
+- [Deinit](../include/ridehal/component/Camera.hpp#L188)
 ```c
     /**
      * @brief Deinit the Camera object
@@ -303,6 +307,45 @@ pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_ERROR );
 pCamera->SetBuffers( pSharedBuffer, BUFFFER_COUNT, 0 );
 
 ...
+```
+
+## 3.4 qcarcam multi-client feature
+
+The qcarcam supports a multi-client feature, allowing two or more processes to open and stream from the same camera sensor simultaneously. RideHal facilitates this through the configuration options `clientId` and `bPrimary`. Note that if `clientId` is set to 0, it defaults to single-client mode, permitting only one process to open and stream from the camera sensor.
+
+```c
+// this is a demo config for the primary session
+Camera_Config_t camConfig;
+camConfig.clientId = 1;
+camConfig.bPrimary = true;
+camConfig.bRequestMode = true;
+...
+static void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
+{
+    RideHalError_e ret;
+    
+    /* Do something to process the camera frame */
+
+    ret = pCamera->RequestFrame( pFrame ); // Requset new frame from camera
+}
+```
+
+```c
+// this is a demo config for the subscriber(non-primary) session
+Camera_Config_t camConfig;
+camConfig.clientId = 3;
+camConfig.bPrimary = false;
+camConfig.bRequestMode = true;
+...
+static void FrameCallBack( CameraFrame_t *pFrame, void *pPrivData )
+{
+    RideHalError_e ret;
+    
+    /* Do something to process the camera frame */
+
+    // for non-primary session, no need to call any API to release the camera frame.
+    // the application must ensure to use the camera frame in time (1000/frame_rate)*(BUFFER_COUNT-1)
+}
 ```
 
 # 4. References

@@ -58,18 +58,21 @@ typedef struct
 /** @brief camera configuration */
 typedef struct Camera_Config
 {
-    bool bAllocator;          /**< Flag to indicate if component is buffer allocator*/
-    bool bRequestMode;        /**< Flag to set request buffer mode */
-    uint32_t numStream;       /**< Number of camera stream */
-    uint32_t inputId;         /**< Camera input id */
-    uint32_t srcId;           /**< Input source identifier. See #QCarCamInputSrc_t */
+    uint32_t numStream; /**< Number of camera stream */
+    uint32_t inputId;   /**< Camera input id */
+    uint32_t srcId;     /**< Input source identifier. See #QCarCamInputSrc_t */
+    uint32_t clientId; /**< client id, used for multi client usecase, set to 0 by default for single
+                         client usecase */
     uint32_t inputMode;       /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
     uint32_t ispUserCase;     /**< ISP user case defined by qcarcam */
-    uint32_t fps;             /**< Frames per second */
     uint32_t camFrameDropPat; /**< Frame drop patten defined by qcarcam. Set to 0 when frame drop is
                                  not used */
     uint32_t opMode;          /**< Operation mode defined by qcarcam */
     CameraStreamConfig_t streamConfig[MAX_CAMERA_STREAM]; /**< Per stream configuration */
+    bool bAllocator;   /**< Flag to indicate if component is buffer allocator*/
+    bool bRequestMode; /**< Flag to set request buffer mode */
+    bool bPrimary;     /**< Flag to indicate if the session is primary or not when configured the
+                          clientId */
 } Camera_Config_t;
 
 /** Camera Interface */
@@ -187,9 +190,11 @@ public:
 private:
     QCarCamColorFmt_e GetQcarCamFormat( RideHal_ImageFormat_e colorFormat );
 
-    RideHalError_e AllocateBuffer();
+    RideHalError_e AllocateBuffers();
+    RideHalError_e FreeBuffers();
 
-    RideHalError_e FreeBuffer();
+    RideHalError_e ImportBuffers();
+    RideHalError_e UnImportBuffers();
 
     CameraFrame_t *GetFrame( const QCarCamFrameInfo_t *pFrameInfo );
 
@@ -200,11 +205,15 @@ private:
 
     RideHalError_e QueryInputs();
 
+    RideHalError_e ValidateConfig( const Camera_Config_t *pConfig );
+
     bool m_bIsAllocator;
     bool m_bRequestMode;
     uint32_t m_nNumStream;
     uint32_t m_nInputId;
     uint32_t m_nRequestId;
+    uint32_t m_nClientId;
+    bool m_bIsPrimary;
     void *m_pAppPriv = nullptr;
     RideHal_CamEventCallback_t m_EventCallback = nullptr;
     RideHal_CamFrameCallback_t m_FrameCallback = nullptr;

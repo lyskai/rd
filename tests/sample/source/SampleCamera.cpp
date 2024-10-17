@@ -29,7 +29,11 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
         camFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
         camFrame.frameIndex = frameIndex;
         camFrame.streamId = pSharedBuffer->pubHandle >> 32;
-        if ( false == m_camConfig.bRequestMode )
+        if ( ( 0 != m_camConfig.clientId ) && ( false == m_camConfig.bPrimary ) )
+        {
+            /* do nothing for multi-client non-primary session */
+        }
+        else if ( false == m_camConfig.bRequestMode )
         {
             m_camera.ReleaseFrame( &camFrame );
         }
@@ -108,6 +112,9 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
         m_camConfig.bAllocator = true;
         m_camConfig.ispUserCase = Get( config, "isp_use_case", 3 );
 
+        m_camConfig.clientId = Get( config, "client_id", 0u );
+        m_camConfig.bPrimary = Get( config, "is_primary", false );
+
         for ( uint32_t i = 0; i < m_camConfig.numStream; i++ )
         {
             std::string suffix = "";
@@ -158,7 +165,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             }
         }
 
-        m_camConfig.camFrameDropPat = Get( config, "frame_drop_patten", (uint32_t)0 );
+        m_camConfig.camFrameDropPat = Get( config, "frame_drop_patten", (uint32_t) 0 );
 
         m_camConfig.opMode = Get( config, "op_mode", (uint32_t) QCARCAM_OPMODE_OFFLINE_ISP );
 
