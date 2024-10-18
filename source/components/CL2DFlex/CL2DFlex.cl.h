@@ -12,6 +12,9 @@ static const char *s_pSourceCL2DFlex = KernelCode(
 
         __constant float coeffs[5] = { 1.163999557f, 2.017999649f, -0.390999794f, -0.812999725f,
                                        1.5959997177f };
+        __constant float coeffY = 1.163999557f;
+        __constant float4 coeffUV4 =
+                (float4) ( 2.017999649f, -0.812999725f, -0.390999794f, 1.5959997177f );
 
         __kernel void ConvertNV12ToRGB( __global const uchar *srcPtr, int srcOffset,
                                         __global uchar *dstPtr, int dstOffset, int inputStride0,
@@ -27,37 +30,28 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             int dstOffset1 = dstOffset + mad24( y << 1, outputStride, x * 6 );
             int dstOffset2 = dstOffset1 + outputStride;
 
-            float4 YSrcVals, Yvec4;
-            float4 U4, V4, UV4, YU, YV, YUV;
-            uchar4 dst1Val4, dst2Val4, uYU, uYV, uYUV;
+            uchar4 dst1Val4, dst2Val4;
             uchar2 dst1Val2, dst2Val2;
 
-            YSrcVals.s01 = convert_float2( vload2( 0, srcPtr + yOffset ) );
-            YSrcVals.s23 = convert_float2( vload2( 0, srcPtr + yOffset + inputStride0 ) );
-            YSrcVals -= 16.0f;
-            Yvec4 = max( 0, YSrcVals );
-            Yvec4 *= 1.163999557f;
+            float2 Y12 = convert_float2( vload2( 0, srcPtr + yOffset ) ) - 16.0f;
+            float2 Y34 = convert_float2( vload2( 0, srcPtr + yOffset + inputStride0 ) ) - 16.0f;
+            Y12 = max( 0, Y12 ) * coeffY;
+            Y34 = max( 0, Y34 ) * coeffY;
 
-            float2 UV = convert_float2( vload2( 0, srcPtr + uOffset ) );
-            UV -= 128.0f;
+            float2 UV = convert_float2( vload2( 0, srcPtr + uOffset ) ) - 128.0f;
+            float4 UV4 = (float4) ( UV, UV );
+            UV4 = mad( UV4, coeffUV4, 0.5f );
+            UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
 
-            U4 = (float4) ( UV.s0, UV.s0, UV.s0, UV.s0 );
-            V4 = (float4) ( UV.s1, UV.s1, UV.s1, UV.s1 );
-            UV4 = -0.390999794f * U4 - 0.812999725f * V4 + 0.5f;
-            U4 = 2.017999649f * U4 + 0.5f;
-            V4 = 1.5959997177f * V4 + 0.5f;
+            float4 Y1UV = UV4 + Y12.s0;
+            float4 Y2UV = UV4 + Y12.s1;
+            float4 Y3UV = UV4 + Y34.s0;
+            float4 Y4UV = UV4 + Y34.s1;
 
-            YUV = Yvec4 + UV4;
-            YU = Yvec4 + U4;
-            YV = Yvec4 + V4;
-
-            uYU = convert_uchar4_sat( YU );
-            uYV = convert_uchar4_sat( YV );
-            uYUV = convert_uchar4_sat( YUV );
-            dst1Val4 = (uchar4) ( uYV.s0, uYUV.s0, uYU.s0, uYV.s1 );
-            dst1Val2 = (uchar2) ( uYUV.s1, uYU.s1 );
-            dst2Val4 = (uchar4) ( uYV.s2, uYUV.s2, uYU.s2, uYV.s3 );
-            dst2Val2 = (uchar2) ( YUV.s3, YU.s3 );
+            dst1Val4 = convert_uchar4_sat( (float4) ( Y1UV.s3, Y1UV.s1, Y1UV.s0, Y2UV.s3 ) );
+            dst1Val2 = convert_uchar2_sat( (float2) ( Y2UV.s1, Y2UV.s0 ) );
+            dst2Val4 = convert_uchar4_sat( (float4) ( Y3UV.s3, Y3UV.s1, Y3UV.s0, Y4UV.s3 ) );
+            dst2Val2 = convert_uchar2_sat( (float2) ( Y4UV.s1, Y4UV.s0 ) );
 
             vstore4( dst1Val4, 0, dstPtr + dstOffset1 );
             vstore2( dst1Val2, 2, dstPtr + dstOffset1 );
@@ -268,7 +262,6 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             int4 XYWH = vload4( 0, roiPtr + i * 4 );
             float inputRatio = (float) XYWH.s3 * native_recip( (float) XYWH.s2 );
             float outputRatio = (float) resizeHeight * native_recip( (float) resizeWidth );
-            float4 coeff4 = (float4) ( 2.017999649f, -0.812999725f, -0.390999794f, 1.5959997177f );
 
             if ( inputRatio < outputRatio )
             {
@@ -281,11 +274,11 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                                      (float) XYWH.s2 ) +
                               XYWH.s1;
                     int yPtr = mad24( yIn, inputStride0, xIn );
-                    float Y = max( 0, ySrc[yPtr] - 16 ) * 2.017999649f;
+                    float Y = max( 0, ySrc[yPtr] - 16 ) * coeffY;
                     int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
                     float2 UV = convert_float2( vload2( 0, uSrc + uPtr ) ) - 128.0f;
                     float4 UV4 = (float4) ( UV, UV );
-                    UV4 = mad( UV4, coeff4, 0.5f );
+                    UV4 = mad( UV4, coeffUV4, 0.5f );
                     UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
                     UV4 += Y;
                     uchar R = convert_uchar_sat( UV4.s3 );
@@ -314,11 +307,11 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                                      (float) XYWH.s3 ) +
                               XYWH.s1;
                     int yPtr = mad24( yIn, inputStride0, xIn );
-                    float Y = max( 0, ySrc[yPtr] - 16 ) * 2.017999649f;
+                    float Y = max( 0, ySrc[yPtr] - 16 ) * coeffY;
                     int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
                     float2 UV = convert_float2( vload2( 0, uSrc + uPtr ) ) - 128.0f;
                     float4 UV4 = (float4) ( UV, UV );
-                    UV4 = mad( UV4, coeff4, 0.5f );
+                    UV4 = mad( UV4, coeffUV4, 0.5f );
                     UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
                     UV4 += Y;
                     uchar R = convert_uchar_sat( UV4.s3 );
