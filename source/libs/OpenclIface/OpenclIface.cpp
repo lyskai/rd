@@ -134,7 +134,7 @@ RideHalError_e OpenclSrv::LoadFromSource( const char *pSourceFile )
     }
     else
     {
-        retCL = clBuildProgram( m_program, 1, &m_deviceID, NULL, NULL, NULL );
+        retCL = clBuildProgram( m_program, 1, &m_deviceID, "-cl-fast-relaxed-math", NULL, NULL );
         if ( CL_SUCCESS != retCL )
         {
             RIDEHAL_ERROR( "Unable to build program, retCL = %d", retCL );
@@ -393,3 +393,4 @@ RideHalError_e OpenclSrv::Execute( cl_kernel *pKernel, const OpenclIfcae_Arg_t *
 }   // namespace OpenclIface
 }   // namespace libs
 }   // namespace ridehal
+
