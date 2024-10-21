@@ -25,6 +25,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleFpsAdapter.cpp
     SampleOpticalFlow.cpp
     SampleOpticalFlowViz.cpp
+    SampleFrameSync.cpp
     SysTrace.cpp
 )
 

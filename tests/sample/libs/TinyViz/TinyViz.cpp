@@ -399,10 +399,6 @@ bool TinyViz::renderBlack( SDL_Renderer *ren, SDL_Texture *tex, size_t idx )
 bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
 {
     SDL_Rect DestR;
-    DestR.w = m_WindowW / m_WindowRow;
-    DestR.h = m_WindowH / m_WindowCol;
-    DestR.x = ( idx % m_WindowRow ) * DestR.w;
-    DestR.y = ( idx / m_WindowRow ) * DestR.h;
 
     if ( !camInfo.isActive() ) return false;
 
@@ -429,9 +425,50 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
             camInfo.tex = tex;
         }
 
-        SDL_UpdateTexture( tex, nullptr, camInfo.data(), camInfo.stride() );
-
         pts = camInfo.camFrame.timestamp;
+
+        // render frame
+        DestR.w = m_WindowW / m_WindowRow;
+        DestR.h = m_WindowH / m_WindowCol;
+        DestR.x = ( idx % m_WindowRow ) * DestR.w;
+        DestR.y = ( idx / m_WindowRow ) * DestR.h;
+        uint32_t col = 1;
+        if ( 1 == camInfo.batch() )
+        {
+            col = 1;
+        }
+        else if ( camInfo.batch() <= 4 )
+        {
+            col = 2;
+        }
+        else if ( camInfo.batch() <= 9 )
+        {
+            col = 3;
+        }
+        else
+        {
+            col = 4;
+        }
+        for ( uint32_t i = 0; ( i < camInfo.batch() ) && ( i < ( col * col ) ); i++ )
+        {
+            SDL_Rect DestRB;
+            DestRB.w = DestR.w / col;
+            DestRB.h = DestR.h / col;
+            DestRB.x = DestR.x + ( i % col ) * DestRB.w;
+            DestRB.y = DestR.y + ( i / col ) * DestRB.h;
+            SDL_UpdateTexture( tex, nullptr, camInfo.data( i ), camInfo.stride() );
+            SDL_RenderCopy( ren, tex, nullptr, &DestRB );
+        }
+        for ( uint32_t i = camInfo.batch(); i < ( col * col ); i++ )
+        {
+            SDL_Rect DestRB;
+            DestRB.w = DestR.w / col;
+            DestRB.h = DestR.h / col;
+            DestRB.x = DestR.x + ( i % col ) * DestRB.w;
+            DestRB.y = DestR.y + ( i / col ) * DestRB.h;
+            SDL_SetRenderDrawColor( ren, 0x0, 0x0, 0x0, 0xFF );
+            SDL_RenderFillRect( ren, &DestRB );
+        }
     }
 
     if ( camInfo.lastFPSUpdate < pts - NSEC_PER_SEC / 2 )
@@ -440,13 +477,6 @@ bool TinyViz::renderCam( CamInfo &camInfo, SDL_Renderer *ren, size_t idx )
         updateFPS( camInfo );
         camInfo.lastFPSUpdate = pts;
     }
-
-    // render frame
-    DestR.w = m_WindowW / m_WindowRow;
-    DestR.h = m_WindowH / m_WindowCol;
-    DestR.x = ( idx % m_WindowRow ) * DestR.w;
-    DestR.y = ( idx / m_WindowRow ) * DestR.h;
-    SDL_RenderCopy( ren, tex, nullptr, &DestR );
 
     SDL_SetRenderDrawColor( ren, camInfo.color.r, camInfo.color.g, camInfo.color.b,
                             camInfo.color.a );
@@ -530,7 +560,7 @@ void TinyViz::updateFPS( const std::string &camName, std::deque<uint64_t> &queue
     if ( queue.size() > 100 ) queue.pop_front();
 
     RIDEHAL_DEBUG( "Updated %s FPS info. queue size now %zu. timestamp:[%" PRIu64 ", %" PRIu64 "]",
-                   camName, queue.size(), queue[queue.size() - 1], queue[0] );
+                   camName.c_str(), queue.size(), queue[queue.size() - 1], queue[0] );
 }
 
 void TinyViz::updateFPS( CamInfo &camInfo )
@@ -549,8 +579,8 @@ void TinyViz::updateFPS( CamInfo &camInfo )
                                                       static_cast<double>( NSEC_PER_SEC ) );
 
         RIDEHAL_DEBUG( "%s: queue size:%zu, timestamp (%" PRIu64 ", %" PRIu64 "), ",
-                       camInfo.camName, queue.size(), queue.empty() ? 0 : queue[queue.size() - 1],
-                       queue.empty() ? 0 : queue[0] );
+                       camInfo.camName.c_str(), queue.size(),
+                       queue.empty() ? 0 : queue[queue.size() - 1], queue.empty() ? 0 : queue[0] );
     }
 }
 

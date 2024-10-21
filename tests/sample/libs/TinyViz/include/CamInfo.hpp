@@ -40,8 +40,9 @@ public:
     bool isActive() { return inactiveCount < 30; }
     void markRendered() { inactiveCount++; }
 
-    uint8_t *data();
+    uint8_t *data( uint32_t batch = 0 );
     size_t size();
+    uint32_t batch();
     uint32_t width();
     uint32_t height();
     uint32_t stride();

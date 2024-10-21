@@ -40,12 +40,14 @@ bool CamInfo::closeText()
     return true;
 }
 
-uint8_t *CamInfo::data()
+uint8_t *CamInfo::data( uint32_t batch )
 {
     uint8_t *pData = nullptr;
     if ( nullptr != camFrame.buffer )
     {
-        pData = (uint8_t *) camFrame.buffer->sharedBuffer.data();
+        uint32_t sizeOne = camFrame.buffer->sharedBuffer.size /
+                           camFrame.buffer->sharedBuffer.imgProps.batchSize;
+        pData = ( (uint8_t *) camFrame.buffer->sharedBuffer.data() ) + sizeOne * batch;
     }
     return pData;
 }
@@ -58,6 +60,16 @@ size_t CamInfo::size()
         sz = camFrame.buffer->sharedBuffer.size;
     }
     return sz;
+}
+
+uint32_t CamInfo::batch()
+{
+    uint32_t batchSize = 1;
+    if ( nullptr != camFrame.buffer )
+    {
+        batchSize = camFrame.buffer->sharedBuffer.imgProps.batchSize;
+    }
+    return batchSize;
 }
 
 uint32_t CamInfo::width()

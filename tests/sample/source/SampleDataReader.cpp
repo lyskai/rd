@@ -226,7 +226,7 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     file = fopen( path.c_str(), "rb" );
     if ( nullptr == file )
     {
-        RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
+        RIDEHAL_WARN( "Failed to open file %s", path.c_str() );
         ret = RIDEHAL_ERROR_ALREADY;
     }
 

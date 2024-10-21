@@ -20,6 +20,9 @@
     - [2.16 RideHal Shared Ring Sample](#216-ridehal-shared-ring-sample)
     - [2.17 RideHal FpsAdapter Sample](#217-ridehal-fpsadapter-sample)
     - [2.18 RideHal VideoDecoder Sample](#218-ridehal-videodecoder-sample)
+    - [2.19 RideHal OpticalFlow Sample](#219-ridehal-opticalflow-sample)
+    - [2.20 RideHal OpticalFlowViz Sample](#220-ridehal-opticalflowviz-sample)
+    - [2.21 RideHal FrameSync Sample](#221-ridehal-framesync-sample)
   - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
     - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
     - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
@@ -405,7 +408,7 @@ The command line template example:
 | ratio_w      | false    | float | 12.903225806451614 | The ration to transfrom the point cloud position x to image pixel position x |
 | ratio_h      | false    | float | 12.903225806451614 | The ration to transfrom the point cloud position y to image pixel position y |
 | debug      | false    | bool | false | print out the detected 3d bounding box |
-| output_indexs | false | std::vector<uint32_t> | 3,0,1,4,2 | The index of the pointpillar model outputs "heapmap", "center", "center_z", "dim" and "rot" |
+| output_indexs | false | int list | 3,0,1,4,2 | The index of the pointpillar model outputs "heapmap", "center", "center_z", "dim" and "rot" |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
 
@@ -481,9 +484,9 @@ The command line template example:
 | score_threshold  | false     | float    | 0.49       | The score threshold |
 | nms_threshold  | false     | float    | 0.6       | The NMS threshold |
 | out_size_factor  | false     | float    | 8.0       | out size factor |
-| voxel_size  | false     | std::vector<float>    | 0.1, 0.1, 0.2       | voxel size |
-| pointcloud_range  | false     | std::vector<float>    | -51.2, -51.2, -5.0, 51.2, 51.2, 3.0  | point cloud range for axis x,y,z |
-| output_indexs  | false     | std::vector<uint32_t>    | 5,0,1,2,3,4  | bevdet output indexs |
+| voxel_size  | false     | float list    | 0.1, 0.1, 0.2       | voxel size |
+| pointcloud_range  | false     | float list    | -51.2, -51.2, -5.0, 51.2, 51.2, 3.0  | point cloud range for axis x,y,z |
+| output_indexs  | false     | int list    | 5,0,1,2,3,4  | bevdet output indexs |
 | offset_x      | false    | float     | 832.5     | The min_x corresponding pixel position x of the pre-generated lidar image |
 | offset_y      | false    | float     | 0.0     | The min_y corresponding pixel position y of the pre-generated lidar image |
 | ratio_w      | false    | float | 12.75 | The ration to transfrom the point cloud position x to image pixel position x |
@@ -580,6 +583,76 @@ The command line template example:
   -n VDEC1 -t VideoDecoder -k width -v 1920 -k height -v 1024 \
     -k input_topic -v /sensor/camera/CAM0/hevc \
     -k output_topic -v /sensor/camera/CAM0_DEC/raw \
+```
+
+### 2.19 RideHal OpticalFlow Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| eva_mode      | false    | string    | dsp     | the eval filter mode, options from [dsp, cpu, disable] |
+| direction     | false    | string    | forward | the opticalflow direction, options from [forward, backward] |
+| step_size     | false    | int       | 1       | the step size, options from [0, 1, 2] |
+| width         | true     | int       | -       | The input image width |
+| height        | true     | int       | -       | The input image height |
+| format        | false    | string    | nv12    | The input image format, options from [nv12, nv12_ubwc] |
+| pool_size     | false    | int       | 4       | The image memory pool size |
+| fps           | false    | int       | 30      | The frame rate per second |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n OFL0 -t OpticalFlow -k eva_mode -v cpu \
+    -k width -v 1920 -k height -v 1024 -k format -v nv12 \
+    -k fps -v 30 -k step_size -v 0 \
+    -k input_topic -v /sensor/camera/CAM0/raw \
+    -k output_topic -v /sensor/camera/CAM0/mv \
+```
+
+### 2.20 RideHal OpticalFlowViz Sample
+
+The Sample OpticalFlowViz converts the motion vection output from the Sample OpticalFlow to RGB image.
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| processor     | false    | string    | cpu     | The processor type, options from [cpu, gpu] |
+| direction     | false    | string    | forward | the opticalflow direction, options from [forward, backward] |
+| width         | true     | int       | -       | The input image width |
+| height        | true     | int       | -       | The input image height |
+| pool_size     | false    | int       | 4       | The image memory pool size |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n OFLVIZ0 -t OpticalFlowViz \
+    -k width -v 960 -k height -v 512 \
+    -k input_topic -v /sensor/camera/CAM0/mv \
+    -k output_topic -v /sensor/camera/CAM1/raw \
+```
+
+### 2.21 RideHal FrameSync Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| number        | false    | int       | 1       | The number of input topics |
+| mode          | false    | string    | window  | The frame sync mode, options from [window] |
+| window        | false    | int       | 100     | the window time in ms |
+| perms         | false    | int list  | -       | A list of integers to permute the output frame order |
+| input_topicX  | true     | string    | -       | the input topic name for input X |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n FS0 -t FrameSync -k number -v 4 \
+    -k input_topic0 -v /sensor/camera/CAM0/raw \
+    -k input_topic1 -v /sensor/camera/CAM1/raw \
+    -k input_topic2 -v /sensor/camera/CAM2/raw \
+    -k input_topic3 -v /sensor/camera/CAM3/raw \
+    -k output_topic -v /sensor/camera/FS0/raw \
 ```
 
 ## 3. Typical RideHal Sample Application pipelines
