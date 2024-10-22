@@ -101,6 +101,10 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
                     RIDEHAL_ERROR( "Invalid ROI values, (ROI.y + ROI.height) > inputHeight!" );
                     ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 }
+                else
+                {
+                    // empty else block
+                }
             }
         }
 
@@ -388,8 +392,8 @@ RideHalError_e CL2DFlex::ConvertFromNV12ToRGB( uint32_t inputId, cl_kernel *pKer
 
     OpenclIface_WorkParams_t OpenclWorkParams;
     OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { ( pOutput->imgProps.width ) / 2,
-                                 ( pOutput->imgProps.height ) / 2 };
+    size_t globalWorkSize[2] = { ( size_t )( pOutput->imgProps.width ) / 2,
+                                 ( size_t )( pOutput->imgProps.height ) / 2 };
     OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
     size_t globalWorkOffset[2] = { 0, 0 };
     OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
@@ -437,7 +441,8 @@ RideHalError_e CL2DFlex::ConvertFromUYVYToRGB( uint32_t inputId, cl_kernel *pKer
 
     OpenclIface_WorkParams_t OpenclWorkParams;
     OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { ( pOutput->imgProps.width ) / 2, pOutput->imgProps.height };
+    size_t globalWorkSize[2] = { ( size_t )( pOutput->imgProps.width ) / 2,
+                                 pOutput->imgProps.height };
     OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
     size_t globalWorkOffset[2] = { 0, 0 };
     OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
@@ -489,8 +494,8 @@ RideHalError_e CL2DFlex::ConvertFromUYVYToNV12( uint32_t inputId, cl_kernel *pKe
 
     OpenclIface_WorkParams_t OpenclWorkParams;
     OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { ( pOutput->imgProps.width ) / 2,
-                                 ( pOutput->imgProps.height ) / 2 };
+    size_t globalWorkSize[2] = { ( size_t )( pOutput->imgProps.width ) / 2,
+                                 ( size_t )( pOutput->imgProps.height ) / 2 };
     OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
     size_t globalWorkOffset[2] = { 0, 0 };
     OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
@@ -964,125 +969,119 @@ RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, const u
     }
     else
     {
-        if ( RIDEHAL_ERROR_NONE == ret )
+        cl_mem bufferDst;
+        ret = m_OpenclSrvObj.RegBuf( &( pOutput->buffer ), &bufferDst );
+        if ( RIDEHAL_ERROR_NONE != ret )
         {
-            cl_mem bufferDst;
-            ret = m_OpenclSrvObj.RegBuf( &( pOutput->buffer ), &bufferDst );
-            if ( RIDEHAL_ERROR_NONE != ret )
+            RIDEHAL_ERROR( "Failed to register output buffer!" );
+        }
+        else
+        {
+            for ( uint32_t inputId = 0; inputId < numInputs; inputId++ )
             {
-                RIDEHAL_ERROR( "Failed to register output buffer!" );
-            }
-            else
-            {
-                for ( uint32_t inputId = 0; inputId < numInputs; inputId++ )
+                if ( nullptr == pInputs[inputId].data() )
                 {
-                    if ( nullptr == pInputs[inputId].data() )
+                    RIDEHAL_ERROR( "Input buffer data is null for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+                else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pInputs[inputId].type )
+                {
+                    RIDEHAL_ERROR( "Input buffer is not image type for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+                else if ( m_config.inputFormats[inputId] != pInputs[inputId].imgProps.format )
+                {
+                    RIDEHAL_ERROR( "Input image format not match for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+                else if ( m_config.inputWidths[inputId] != pInputs[inputId].imgProps.width )
+                {
+                    RIDEHAL_ERROR( "Input image width not match for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+                else if ( m_config.inputHeights[inputId] != pInputs[inputId].imgProps.height )
+                {
+                    RIDEHAL_ERROR( "Input image height not match for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+                else
+                {
+                    cl_mem bufferSrc;
+                    ret = m_OpenclSrvObj.RegBuf( &( pInputs[inputId].buffer ), &bufferSrc );
+                    if ( RIDEHAL_ERROR_NONE != ret )
                     {
-                        RIDEHAL_ERROR( "Input buffer data is null for inputId=%d!", inputId );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                    }
-                    else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pInputs[inputId].type )
-                    {
-                        RIDEHAL_ERROR( "Input buffer is not image type for inputId=%d!", inputId );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                    }
-                    else if ( m_config.inputFormats[inputId] != pInputs[inputId].imgProps.format )
-                    {
-                        RIDEHAL_ERROR( "Input image format not match for inputId=%d!", inputId );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                    }
-                    else if ( m_config.inputWidths[inputId] != pInputs[inputId].imgProps.width )
-                    {
-                        RIDEHAL_ERROR( "Input image width not match for inputId=%d!", inputId );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                    }
-                    else if ( m_config.inputHeights[inputId] != pInputs[inputId].imgProps.height )
-                    {
-                        RIDEHAL_ERROR( "Input image height not match for inputId=%d!", inputId );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                        RIDEHAL_ERROR( "Failed to register input buffer for inputId=%d!", inputId );
                     }
                     else
                     {
-                        cl_mem bufferSrc;
-                        ret = m_OpenclSrvObj.RegBuf( &( pInputs[inputId].buffer ), &bufferSrc );
-                        if ( RIDEHAL_ERROR_NONE != ret )
+                        uint32_t srcOffset = pInputs[inputId].offset;
+                        uint32_t sizeOne =
+                                ( uint32_t )( pOutput->size ) / ( pOutput->imgProps.batchSize );
+                        uint32_t dstOffset = ( uint32_t )( pOutput->offset ) + inputId * sizeOne;
+                        if ( CL2DFLEX_PIPELINE_CONVERT_NV12_TO_RGB == m_pipelines[inputId] )
                         {
-                            RIDEHAL_ERROR( "Failed to register input buffer for inputId=%d!",
-                                           inputId );
+                            ret = ConvertFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
+                                                        srcOffset, bufferDst, dstOffset,
+                                                        &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB ==
+                                  m_pipelines[inputId] )
+                        {
+                            ret = ResizeFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
+                                                       srcOffset, bufferDst, dstOffset,
+                                                       &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_RGB == m_pipelines[inputId] )
+                        {
+                            ret = ConvertFromUYVYToRGB( inputId, &m_kernel[inputId], bufferSrc,
+                                                        srcOffset, bufferDst, dstOffset,
+                                                        &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB ==
+                                  m_pipelines[inputId] )
+                        {
+                            ret = ResizeFromUYVYToRGB( inputId, &m_kernel[inputId], bufferSrc,
+                                                       srcOffset, bufferDst, dstOffset,
+                                                       &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12 == m_pipelines[inputId] )
+                        {
+                            ret = ConvertFromUYVYToNV12( inputId, &m_kernel[inputId], bufferSrc,
+                                                         srcOffset, bufferDst, dstOffset,
+                                                         &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12 ==
+                                  m_pipelines[inputId] )
+                        {
+                            ret = ResizeFromUYVYToNV12( inputId, &m_kernel[inputId], bufferSrc,
+                                                        srcOffset, bufferDst, dstOffset,
+                                                        &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB ==
+                                  m_pipelines[inputId] )
+                        {
+                            ret = LetterboxFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
+                                                          srcOffset, bufferDst, dstOffset,
+                                                          &pInputs[inputId], pOutput );
+                        }
+                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB ==
+                                  m_pipelines[inputId] )
+                        {
+                            ret = ResizeFromRGBToRGB( inputId, &m_kernel[inputId], bufferSrc,
+                                                      srcOffset, bufferDst, dstOffset,
+                                                      &pInputs[inputId], pOutput );
                         }
                         else
                         {
-                            uint32_t srcOffset = pInputs[inputId].offset;
-                            uint32_t sizeOne = ( pOutput->size ) / ( pOutput->imgProps.batchSize );
-                            uint32_t dstOffset = pOutput->offset + inputId * sizeOne;
-                            if ( CL2DFLEX_PIPELINE_CONVERT_NV12_TO_RGB == m_pipelines[inputId] )
-                            {
-                                ret = ConvertFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                            srcOffset, bufferDst, dstOffset,
-                                                            &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = ResizeFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                           srcOffset, bufferDst, dstOffset,
-                                                           &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_RGB ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = ConvertFromUYVYToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                            srcOffset, bufferDst, dstOffset,
-                                                            &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = ResizeFromUYVYToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                           srcOffset, bufferDst, dstOffset,
-                                                           &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12 ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = ConvertFromUYVYToNV12( inputId, &m_kernel[inputId], bufferSrc,
-                                                             srcOffset, bufferDst, dstOffset,
-                                                             &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12 ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = ResizeFromUYVYToNV12( inputId, &m_kernel[inputId], bufferSrc,
-                                                            srcOffset, bufferDst, dstOffset,
-                                                            &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = LetterboxFromNV12ToRGB(
-                                        inputId, &m_kernel[inputId], bufferSrc, srcOffset,
-                                        bufferDst, dstOffset, &pInputs[inputId], pOutput );
-                            }
-                            else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB ==
-                                      m_pipelines[inputId] )
-                            {
-                                ret = ResizeFromRGBToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                          srcOffset, bufferDst, dstOffset,
-                                                          &pInputs[inputId], pOutput );
-                            }
-                            else
-                            {
-                                RIDEHAL_ERROR( "Invalid CL2DFlex pipeline for inputId=%d!",
-                                               inputId );
-                                RIDEHAL_ERROR_BAD_ARGUMENTS;
-                            }
+                            RIDEHAL_ERROR( "Invalid CL2DFlex pipeline for inputId=%d!", inputId );
+                            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                         }
                     }
-                    if ( RIDEHAL_ERROR_NONE != ret )
-                    {
-                        RIDEHAL_ERROR( "Failed to run OpenCL kernel for inputId=%d!", inputId );
-                        break;
-                    }
+                }
+                if ( RIDEHAL_ERROR_NONE != ret )
+                {
+                    RIDEHAL_ERROR( "Failed to run OpenCL kernel for inputId=%d!", inputId );
+                    break;
                 }
             }
         }

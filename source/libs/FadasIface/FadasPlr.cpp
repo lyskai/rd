@@ -235,9 +235,9 @@ RideHalError_e FadasPlrPreProc::PointPillarRunDSP( const RideHal_SharedBuffer_t 
                                                    const RideHal_SharedBuffer_t *pOutFeature )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-    int fdPts = -1;
-    int fdOutPlrs = -1;
-    int fdOutFeature = -1;
+    int32_t fdPts = -1;
+    int32_t fdOutPlrs = -1;
+    int32_t fdOutFeature = -1;
 
     fdPts = RegBuf( pInPts, FADAS_BUF_TYPE_IN );
     if ( fdPts < 0 )
@@ -272,8 +272,9 @@ RideHalError_e FadasPlrPreProc::PointPillarRunDSP( const RideHal_SharedBuffer_t 
         uint32_t numPts = pInPts->tensorProps.dims[0];
         AEEResult result = FadasIface_PointPillarRun(
                 m_handle64, m_plrHandler.handle64, numPts, fdPts, pInPts->offset,
-                numPts * m_numInFeatureDim * sizeof( float ), fdOutPlrs, pOutPlrs->offset,
-                pOutPlrs->size, fdOutFeature, pOutFeature->offset, pOutFeature->size, &numOutPlrs );
+                ( uint32_t )( numPts * m_numInFeatureDim * (uint32_t) sizeof( float ) ), fdOutPlrs,
+                ( uint32_t )( pOutPlrs->offset ), pOutPlrs->size, fdOutFeature, pOutFeature->offset,
+                pOutFeature->size, &numOutPlrs );
         if ( AEE_SUCCESS != result )
         {
             RIDEHAL_ERROR( "DSP PointPillar Run fail: 0x%x!", result );
@@ -833,7 +834,7 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunDSP(
                 (uint32_t) pBBoxList->offset, (uint32_t) pLabels->offset,
                 (uint32_t) pScores->offset,   (uint32_t) pMetadata->offset };
         uint32_t sizes[PLRPOST_NUM_INPUTS] = {
-                ( uint32_t )( numPtsIn * m_numInFeatureDim * sizeof( float ) ),
+                ( uint32_t )( numPtsIn * m_numInFeatureDim * (uint32_t) sizeof( float ) ),
                 (uint32_t) pHeatmap->size,
                 (uint32_t) pXY->size,
                 (uint32_t) pZ->size,

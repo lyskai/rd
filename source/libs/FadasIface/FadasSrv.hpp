@@ -43,23 +43,23 @@ namespace FadasIface
 #define CDSP1_DOMAIN "&_dom=cdsp1"
 #endif
 
-typedef FadasError_e ( *FuncFadasInitGPU_t )( const char * );
+typedef FadasError_e ( *FuncFadasInitGPU_t )( const char *licenseKey );
 typedef FadasError_e ( *FuncFadasDeInitGPU_t )( void );
-typedef FadasError_e ( *FuncFadasRegBufGPU_t )( FadasBufType_e, const void *, size_t );
-typedef FadasError_e ( *FuncFadasDeregBufGPU_t )( const void * );
-typedef void *( *FuncFadasMemRegBufGPU_t )( void *, uint32_t );
-typedef void *( *FuncFadasMemDeregBufGPU_t )( void * );
+typedef FadasError_e ( *FuncFadasRegBufGPU_t )( FadasBufType_e bufType, const void *buf,
+                                                size_t bufSize );
+typedef FadasError_e ( *FuncFadasDeregBufGPU_t )( const void *buf );
 typedef FadasRemapMap_t *( *FuncFadasRemap_CreateMapFromMapGPU_t )(
-        uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, const float32_t *__restrict,
-        const float32_t *__restrict, FadasRemapPipeline_e, uint8_t, uint32_t );
-typedef FadasRemapMap_t *( *FuncFadasRemap_CreateMapNoUndistortionGPU_t )( uint32_t, uint32_t,
-                                                                           uint32_t, uint32_t,
-                                                                           FadasRemapPipeline_e,
-                                                                           uint8_t );
-typedef FadasError_e ( *FuncFadasRemap_RunGPU_t )( FadasRemapMap_t *, FadasImage_t *,
-                                                   FadasImage_t *, FadasROI_t *, float32_t,
-                                                   FadasNormlzParams_t * );
-typedef FadasError_e ( *FuncFadasRemap_DestroyMapGPU_t )( FadasRemapMap_t * );
+        uint32_t camWidth, uint32_t camHeight, uint32_t mapWidth, uint32_t mapHeight,
+        uint32_t mapStride, const float32_t *__restrict mapX, const float32_t *__restrict mapY,
+        FadasRemapPipeline_e ePipeline, uint8_t borderConst, uint32_t nThreads );
+typedef FadasRemapMap_t *( *FuncFadasRemap_CreateMapNoUndistortionGPU_t )(
+        uint32_t srcWidth, uint32_t srcHeight, uint32_t dstWidth, uint32_t dstHeight,
+        FadasRemapPipeline_e ePipeline, uint8_t borderConst );
+typedef FadasError_e ( *FuncFadasRemap_RunGPU_t )( FadasRemapMap_t *map, FadasImage_t *src,
+                                                   FadasImage_t *dst, FadasROI_t *mapROI,
+                                                   float32_t roiScale,
+                                                   FadasNormlzParams_t *normlz );
+typedef FadasError_e ( *FuncFadasRemap_DestroyMapGPU_t )( FadasRemapMap_t *map );
 
 class FadasSrv
 {
@@ -112,11 +112,9 @@ private:
     static FuncFadasDeInitGPU_t s_FadasDeInitGPU;
     static FuncFadasRegBufGPU_t s_FadasRegBufGPU;
     static FuncFadasDeregBufGPU_t s_FadasDeregBufGPU;
-    static FuncFadasMemRegBufGPU_t s_FadasMemRegBufGPU;
 
 protected:
     static void *s_libGPUHandle;
-    static FuncFadasMemDeregBufGPU_t s_FadasMemDeregBufGPU;
     static FuncFadasRemap_CreateMapFromMapGPU_t s_FadasRemap_CreateMapFromMapGPU;
     static FuncFadasRemap_CreateMapNoUndistortionGPU_t s_FadasRemap_CreateMapNoUndistortionGPU;
     static FuncFadasRemap_RunGPU_t s_FadasRemap_RunGPU;

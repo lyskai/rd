@@ -195,7 +195,7 @@ RideHalError_e OpenclSrv::CreateKernel( cl_kernel *pKernel, const char *pKernelN
         }
         else
         {
-            m_kernelMap[kernelString] = { *pKernel };
+            m_kernelMap[kernelString] = (cl_kernel) *pKernel;
         }
     }
     else
@@ -393,4 +393,3 @@ RideHalError_e OpenclSrv::Execute( cl_kernel *pKernel, const OpenclIfcae_Arg_t *
 }   // namespace OpenclIface
 }   // namespace libs
 }   // namespace ridehal
-
