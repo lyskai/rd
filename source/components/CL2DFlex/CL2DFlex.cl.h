@@ -67,16 +67,23 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             __global const uchar *uSrc =
                     srcPtr + srcOffset + mad24( ( y + roiY ), inputStride, ( x + roiX ) * 4 );
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 6 );
-            float U = uSrc[0] - 128;
-            float Y1 = max( 0, uSrc[1] - 16 );
-            float V = uSrc[2] - 128;
-            float Y2 = max( 0, uSrc[3] - 16 );
-            dst[0] = convert_uchar_sat( coeffs[0] * Y1 + coeffs[4] * V + 0.5f );
-            dst[1] = convert_uchar_sat( coeffs[0] * Y1 + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst[2] = convert_uchar_sat( coeffs[0] * Y1 + coeffs[1] * U + 0.5f );
-            dst[3] = convert_uchar_sat( coeffs[0] * Y2 + coeffs[4] * V + 0.5f );
-            dst[4] = convert_uchar_sat( coeffs[0] * Y2 + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst[5] = convert_uchar_sat( coeffs[0] * Y2 + coeffs[1] * U + 0.5f );
+
+            float4 UYVY = convert_float4( vload4( 0, uSrc ) );
+            float2 UV = (float2) ( UYVY.s0, UYVY.s2 ) - 128.0f;
+            float2 Y1Y2 = (float2) ( UYVY.s1, UYVY.s3 ) - 16.0f;
+            Y1Y2 = max( 0, Y1Y2 ) * coeffY;
+            float4 Y1UV = (float4) ( Y1Y2.s0 );
+            float4 Y2UV = (float4) ( Y1Y2.s1 );
+            float4 UV4 = (float4) ( UV, UV );
+            UV4 = mad( UV4, coeffUV4, 0.5f );
+            UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
+
+            Y1UV += UV4;
+            Y2UV += UV4;
+            uchar4 udst1 = convert_uchar4_sat( (float4) ( Y1UV.s3, Y1UV.s1, Y1UV.s0, Y2UV.s3 ) );
+            uchar2 udst2 = convert_uchar2_sat( (float2) ( Y2UV.s1, Y2UV.s0 ) );
+            vstore4( udst1, 0, dst );
+            vstore2( udst2, 2, dst );
         }
 
         __kernel void ConvertUYVYToNV12( __global const uchar *srcPtr, int srcOffset,
@@ -112,16 +119,21 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             __global const uchar *ySrc = srcPtr + srcOffset;
             __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size;
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
-            int xIn = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
-            int yIn = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
+
+            int xIn = round( (float) ( x + roiX ) * native_recip( (float) resizeWidth ) *
+                             (float) inputWidth );
+            int yIn = round( (float) ( y + roiY ) * native_recip( (float) resizeHeight ) *
+                             (float) inputHeight );
             int yPtr = mad24( yIn, inputStride0, xIn );
-            float Y = max( 0, ySrc[yPtr] - 16 );
             int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
-            float U = uSrc[uPtr] - 128;
-            float V = uSrc[uPtr + 1] - 128;
-            dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
-            dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+            float Y = max( 0, ySrc[yPtr] - 16 ) * coeffY;
+            float2 UV = convert_float2( vload2( 0, uSrc + uPtr ) ) - 128.0f;
+            float4 UV4 = (float4) ( UV, UV );
+            UV4 = mad( UV4, coeffUV4, 0.5f );
+            UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
+            UV4 += Y;
+            uchar3 RGB = convert_uchar3_sat( (float3) ( UV4.s3, UV4.s1, UV4.s0 ) );
+            vstore3( RGB, 0, dst );
         }
 
         __kernel void ResizeUYVYToRGB( __global const uchar *srcPtr, int srcOffset,
@@ -132,16 +144,21 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             int y = get_global_id( 1 );
             __global const uchar *src = srcPtr + srcOffset;
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
-            int xIn = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
-            int yIn = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
+
+            int xIn = round( (float) ( x + roiX ) * native_recip( (float) resizeWidth ) *
+                             (float) inputWidth );
+            int yIn = round( (float) ( y + roiY ) * native_recip( (float) resizeHeight ) *
+                             (float) inputHeight );
             int yPtr = mad24( yIn, inputStride, xIn << 1 ) + 1;
-            float Y = max( 0, src[yPtr] - 16 );
             int uPtr = mad24( yIn, inputStride, ( xIn / 2 ) * 4 );
-            float U = src[uPtr] - 128;
-            float V = src[uPtr + 2] - 128;
-            dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
-            dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V + 0.5f );
-            dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+            float Y = max( 0, src[yPtr] - 16 ) * coeffY;
+            float3 UV3 = convert_float3( vload3( 0, src + uPtr ) ) - 128.0f;
+            float4 UV4 = (float4) ( UV3.s0, UV3.s2, UV3.s0, UV3.s2 );
+            UV4 = mad( UV4, coeffUV4, 0.5f );
+            UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
+            UV4 += Y;
+            uchar3 RGB = convert_uchar3_sat( (float3) ( UV4.s3, UV4.s1, UV4.s0 ) );
+            vstore3( RGB, 0, dst );
         }
 
         __kernel void ResizeUYVYToNV12(
@@ -198,52 +215,63 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             __global const uchar *ySrc = srcPtr + srcOffset;
             __global const uchar *uSrc = srcPtr + srcOffset + inputPlane0Size;
             __global uchar *dst = dstPtr + dstOffset + mad24( y, outputStride, x * 3 );
+            uchar3 RGB;
             if ( inputRatio < outputRatio )
             {
                 if ( y < ( resizeWidth * inputRatio ) )
                 {
-                    int xIn = round( (float) x / (float) resizeWidth * (float) inputWidth ) + roiX;
-                    int yIn = round( (float) y / (float) resizeWidth * (float) inputWidth ) + roiY;
+                    int xIn = round( (float) x * native_recip( (float) resizeWidth ) *
+                                     (float) inputWidth ) +
+                              roiX;
+                    int yIn = round( (float) y * native_recip( (float) resizeWidth ) *
+                                     (float) inputWidth ) +
+                              roiY;
                     int yPtr = mad24( yIn, inputStride0, xIn );
-                    float Y = max( 0, ySrc[yPtr] - 16 );
                     int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
-                    float U = uSrc[uPtr] - 128;
-                    float V = uSrc[uPtr + 1] - 128;
-                    dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
-                    dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V +
-                                                0.5f );
-                    dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+                    float Y = max( 0, ySrc[yPtr] - 16 ) * coeffY;
+                    float2 UV = convert_float2( vload2( 0, uSrc + uPtr ) ) - 128.0f;
+                    float4 UV4 = (float4) ( UV, UV );
+                    UV4 = mad( UV4, coeffUV4, 0.5f );
+                    UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
+                    UV4 += Y;
+                    RGB = convert_uchar3_sat( (float3) ( UV4.s3, UV4.s1, UV4.s0 ) );
+                    vstore3( RGB, 0, dst );
                 }
                 else
                 {
-                    dst[0] = ( paddingValue >> 16 ) & 0xFF; /* R */
-                    dst[1] = ( paddingValue >> 8 ) & 0xFF;  /* G */
-                    dst[2] = ( paddingValue ) & 0xFF;       /* B */
+                    RGB.s0 = ( paddingValue >> 16 ) & 0xFF;
+                    RGB.s1 = ( paddingValue >> 8 ) & 0xFF;
+                    RGB.s2 = ( paddingValue ) & 0xFF;
+                    vstore3( RGB, 0, dst );
                 }
             }
             else
             {
-                if ( x < ( resizeHeight / inputRatio ) )
+                if ( x < ( resizeHeight * native_recip( inputRatio ) ) )
                 {
-                    int xIn =
-                            round( (float) x / (float) resizeHeight * (float) inputHeight ) + roiX;
-                    int yIn =
-                            round( (float) y / (float) resizeHeight * (float) inputHeight ) + roiY;
+                    int xIn = round( (float) x * native_recip( (float) resizeHeight ) *
+                                     (float) inputHeight ) +
+                              roiX;
+                    int yIn = round( (float) y * native_recip( (float) resizeHeight ) *
+                                     (float) inputHeight ) +
+                              roiY;
                     int yPtr = mad24( yIn, inputStride0, xIn );
-                    float Y = max( 0, ySrc[yPtr] - 16 );
                     int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
-                    float U = uSrc[uPtr] - 128;
-                    float V = uSrc[uPtr + 1] - 128;
-                    dst[0] = convert_uchar_sat( coeffs[0] * Y + coeffs[4] * V + 0.5f );
-                    dst[1] = convert_uchar_sat( coeffs[0] * Y + coeffs[2] * U + coeffs[3] * V +
-                                                0.5f );
-                    dst[2] = convert_uchar_sat( coeffs[0] * Y + coeffs[1] * U + 0.5f );
+                    float Y = max( 0, ySrc[yPtr] - 16 ) * coeffY;
+                    float2 UV = convert_float2( vload2( 0, uSrc + uPtr ) ) - 128.0f;
+                    float4 UV4 = (float4) ( UV, UV );
+                    UV4 = mad( UV4, coeffUV4, 0.5f );
+                    UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
+                    UV4 += Y;
+                    RGB = convert_uchar3_sat( (float3) ( UV4.s3, UV4.s1, UV4.s0 ) );
+                    vstore3( RGB, 0, dst );
                 }
                 else
                 {
-                    dst[0] = ( paddingValue >> 16 ) & 0xFF; /* R */
-                    dst[1] = ( paddingValue >> 8 ) & 0xFF;  /* G */
-                    dst[2] = ( paddingValue ) & 0xFF;       /* B */
+                    RGB.s0 = ( paddingValue >> 16 ) & 0xFF;
+                    RGB.s1 = ( paddingValue >> 8 ) & 0xFF;
+                    RGB.s2 = ( paddingValue ) & 0xFF;
+                    vstore3( RGB, 0, dst );
                 }
             }
         }
@@ -262,6 +290,7 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             int4 XYWH = vload4( 0, roiPtr + i * 4 );
             float inputRatio = (float) XYWH.s3 * native_recip( (float) XYWH.s2 );
             float outputRatio = (float) resizeHeight * native_recip( (float) resizeWidth );
+            uchar3 RGB;
 
             if ( inputRatio < outputRatio )
             {
@@ -281,18 +310,14 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                     UV4 = mad( UV4, coeffUV4, 0.5f );
                     UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
                     UV4 += Y;
-                    uchar R = convert_uchar_sat( UV4.s3 );
-                    uchar G = convert_uchar_sat( UV4.s1 );
-                    uchar B = convert_uchar_sat( UV4.s0 );
-                    uchar3 RGB = (uchar3) ( R, G, B );
+                    RGB = convert_uchar3_sat( (float3) ( UV4.s3, UV4.s1, UV4.s0 ) );
                     vstore3( RGB, 0, dst );
                 }
                 else
                 {
-                    uchar R = ( paddingValue >> 16 ) & 0xFF;
-                    uchar G = ( paddingValue >> 8 ) & 0xFF;
-                    uchar B = ( paddingValue ) & 0xFF;
-                    uchar3 RGB = (uchar3) ( R, G, B );
+                    RGB.s0 = ( paddingValue >> 16 ) & 0xFF;
+                    RGB.s1 = ( paddingValue >> 8 ) & 0xFF;
+                    RGB.s2 = ( paddingValue ) & 0xFF;
                     vstore3( RGB, 0, dst );
                 }
             }
@@ -314,18 +339,14 @@ static const char *s_pSourceCL2DFlex = KernelCode(
                     UV4 = mad( UV4, coeffUV4, 0.5f );
                     UV4.s1 = UV4.s1 + UV4.s2 - 0.5f;
                     UV4 += Y;
-                    uchar R = convert_uchar_sat( UV4.s3 );
-                    uchar G = convert_uchar_sat( UV4.s1 );
-                    uchar B = convert_uchar_sat( UV4.s0 );
-                    uchar3 RGB = (uchar3) ( R, G, B );
+                    RGB = convert_uchar3_sat( (float3) ( UV4.s3, UV4.s1, UV4.s0 ) );
                     vstore3( RGB, 0, dst );
                 }
                 else
                 {
-                    uchar R = ( paddingValue >> 16 ) & 0xFF;
-                    uchar G = ( paddingValue >> 8 ) & 0xFF;
-                    uchar B = ( paddingValue ) & 0xFF;
-                    uchar3 RGB = (uchar3) ( R, G, B );
+                    RGB.s0 = ( paddingValue >> 16 ) & 0xFF;
+                    RGB.s1 = ( paddingValue >> 8 ) & 0xFF;
+                    RGB.s2 = ( paddingValue ) & 0xFF;
                     vstore3( RGB, 0, dst );
                 }
             }
