@@ -163,7 +163,22 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                uint32_t streamId );
 ```
 
-- [RegisterCallback](../include/ridehal/component/Camera.hpp#L134)
+- [GetBuffers](../include/ridehal/component/Camera.hpp#L135)
+```c
+    /**
+     * @brief get a list of shared buffers use by the camera
+     *
+     * @param[in] pBuffers Pointer to the buffer list
+     * @param[in] numBuffers Number of buffers in the list
+     * @param[in] streamId Buffer list id
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e GetBuffers( RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
+                               uint32_t streamId );
+```
+
+- [RegisterCallback](../include/ridehal/component/Camera.hpp#L147)
 ```c
     /**
      * @brief register callbacks to camera
@@ -178,7 +193,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
 ```
 
-- [Start](../include/ridehal/component/Camera.hpp#L142)
+- [Start](../include/ridehal/component/Camera.hpp#L155)
 ```c
     /**
      * @brief Start the Camera object
@@ -188,7 +203,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Start() final;
 ```
 
-- [Pause](../include/ridehal/component/Camera.hpp#L149)
+- [Pause](../include/ridehal/component/Camera.hpp#L162)
 ```c
     /**
      * @brief Pause the Camera object
@@ -198,7 +213,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Pause();
 ```
 
-- [Resume](../include/ridehal/component/Camera.hpp#L156)
+- [Resume](../include/ridehal/component/Camera.hpp#L169)
 ```c
     /**
      * @brief Resume the Camera object
@@ -208,7 +223,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Resume();
 ```
 
-- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L165)
+- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L178)
 ```c
     /**
      * @brief release a camera frame
@@ -220,7 +235,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
 ```
 
-- [RequestFrame](../include/ridehal/component/Camera.hpp#L174)
+- [RequestFrame](../include/ridehal/component/Camera.hpp#L187)
 ```c
     /**
      * @brief request a frame from camera
@@ -232,7 +247,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e RequestFrame( CameraFrame_t *pFrame );
 ```
 
-- [Stop](../include/ridehal/component/Camera.hpp#L181)
+- [Stop](../include/ridehal/component/Camera.hpp#L194)
 ```c
     /**
      * @brief Stop the Camera object
@@ -242,7 +257,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Stop() final;
 ```
 
-- [Deinit](../include/ridehal/component/Camera.hpp#L188)
+- [Deinit](../include/ridehal/component/Camera.hpp#L201)
 ```c
     /**
      * @brief Deinit the Camera object

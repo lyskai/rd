@@ -113,13 +113,26 @@ public:
     /**
      * @brief set a list of shared buffers to camera
      *
-     * @param[in] pBuffer Pointer to the buffer list
+     * @param[in] pBuffers Pointer to the buffer list
      * @param[in] numBuffers Number of buffers in the list
      * @param[in] streamId Buffer list id
      *
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32_t numBuffers,
+    RideHalError_e SetBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
+                               uint32_t streamId );
+
+
+    /**
+     * @brief get a list of shared buffers use by the camera
+     *
+     * @param[in] pBuffers Pointer to the buffer list
+     * @param[in] numBuffers Number of buffers in the list
+     * @param[in] streamId Buffer list id
+     *
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e GetBuffers( RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                                uint32_t streamId );
 
     /**

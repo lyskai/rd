@@ -994,6 +994,15 @@ RideHalError_e Camera::AllocateBuffers()
                 {
                     pQcarcamBuf->planes[1].height /= 2;
                 }
+                if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == pCamFrame->sharedBuffer.imgProps.format )
+                {
+                    pQcarcamBuf->planes[0].size = pCamFrame->sharedBuffer.imgProps.planeBufSize[0] +
+                                                  pCamFrame->sharedBuffer.imgProps.planeBufSize[1];
+                    pQcarcamBuf->planes[0].offset = 0;
+                    pQcarcamBuf->planes[1].size = pCamFrame->sharedBuffer.imgProps.planeBufSize[2] +
+                                                  pCamFrame->sharedBuffer.imgProps.planeBufSize[3];
+                    pQcarcamBuf->planes[1].offset = pQcarcamBuf->planes[0].size;
+                }
                 pCamFrame->frameIndex = j;
                 pCamFrame->streamId = m_streamConfig[i].streamId;
                 RIDEHAL_INFO( "register buffer index %u: memHndl: %llu va: %p width: %u, "
@@ -1197,7 +1206,7 @@ RideHalError_e Camera::UnImportBuffers()
     return ret;
 }
 
-RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32_t numBuffers,
+RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
                                    uint32_t streamId )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -1210,9 +1219,9 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32
             RIDEHAL_ERROR( "set buffer is not allowed for multi-client non primary session" );
             ret = RIDEHAL_ERROR_OUT_OF_BOUND;
         }
-        else if ( ( nullptr == pBuffer ) || ( 0 >= numBuffers ) )
+        else if ( ( nullptr == pBuffers ) || ( 0 >= numBuffers ) )
         {
-            RIDEHAL_ERROR( "invalid parameter pBuffer: %p, numBuffers: %u", pBuffer, numBuffers );
+            RIDEHAL_ERROR( "invalid parameter pBuffers: %p, numBuffers: %u", pBuffers, numBuffers );
             ret = RIDEHAL_ERROR_FAIL;
         }
         else
@@ -1241,11 +1250,11 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32
                 m_qcarcamBuffers[index].id = streamId;
                 m_qcarcamBuffers[index].nBuffers = numBuffers;
                 m_qcarcamBuffers[index].pBuffers = m_pQcarcamBuffer[index];
-                m_qcarcamBuffers[index].colorFmt = GetQcarCamFormat( pBuffer[0].imgProps.format );
+                m_qcarcamBuffers[index].colorFmt = GetQcarCamFormat( pBuffers[0].imgProps.format );
 
                 for ( uint32_t i = 0; i < numBuffers; i++ )
                 {
-                    m_pCameraFrames[index][i].sharedBuffer = pBuffer[i];
+                    m_pCameraFrames[index][i].sharedBuffer = pBuffers[i];
 
                     m_pQcarcamBuffer[index][i].numPlanes = 1;
                     m_pQcarcamBuffer[index][i].planes[0].memHndl =
@@ -1294,6 +1303,63 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffer, uint32
     {
         RIDEHAL_ERROR( "Camera not in ready state: %d", m_state );
         ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+
+    return ret;
+}
+
+RideHalError_e Camera::GetBuffers( RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers,
+                                   uint32_t streamId )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    {
+        RIDEHAL_ERROR( "Camera not in ready or running state: %d", m_state );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pBuffers )
+    {
+        RIDEHAL_ERROR( "pBuffers is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        uint32_t index = 0;
+        bool bFound = false;
+
+        for ( index = 0; index < m_nNumStream; index++ )
+        {
+            if ( ( nullptr != m_pCameraFrames[index] ) &&
+                 ( streamId == m_qcarcamBuffers[index].id ) )
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        if ( true == bFound )
+        {
+            if ( numBuffers != m_qcarcamBuffers[index].nBuffers )
+            {
+                RIDEHAL_ERROR( "numBuffers is not equal to %" PRIu32,
+                               m_qcarcamBuffers[index].nBuffers );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else
+            {
+                for ( uint32_t idx = 0; idx < numBuffers; idx++ )
+                {
+                    pBuffers[idx] = m_pCameraFrames[index][idx].sharedBuffer;
+                }
+            }
+        }
+        else
+        {
+            RIDEHAL_ERROR( "can't find buffers for stream: %d", streamId );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
     }
 
     return ret;
