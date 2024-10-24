@@ -20,18 +20,11 @@ void SampleVideoEncoder::InFrameCallback( const VideoEncoder_InputFrame_t *pInpu
     uint64_t frameId = pInputFrame->appMarkData;
 
     RIDEHAL_DEBUG( "InFrameCallback for frameId %" PRIu64, frameId );
+    TRACE_EVENT( SYSTRACE_EVENT_VENC_INPUT_DONE );
 
-    std::lock_guard<std::mutex> l( m_lock );
-    auto it = m_camFrameMap.find( frameId );
-    if ( it != m_camFrameMap.end() )
-    { /* release the input camera frame */
-        TRACE_EVENT( SYSTRACE_EVENT_VENC_INPUT_DONE );
-        m_camFrameMap.erase( frameId );
-    }
-    else
-    {
-        RIDEHAL_ERROR( "InFrameCallback with invalid frameId %" PRIu64, frameId );
-    }
+    std::unique_lock<std::mutex> l( m_lock );
+    m_frameReleaseQueue.push( frameId );
+    m_condVar.notify_one();
 }
 
 void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOutputFrame )
@@ -61,7 +54,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     {
         FrameInfo info;
         {
-            std::lock_guard<std::mutex> l( m_lock );
+            std::unique_lock<std::mutex> l( m_lock );
             info = m_frameInfoQueue.front();
             m_frameInfoQueue.pop();
         }
@@ -232,6 +225,7 @@ RideHalError_e SampleVideoEncoder::Start()
     {
         m_stop = false;
         m_thread = std::thread( &SampleVideoEncoder::ThreadMain, this );
+        m_threadRelease = std::thread( &SampleVideoEncoder::ThreadReleaseMain, this );
     }
 
     return ret;
@@ -259,7 +253,7 @@ void SampleVideoEncoder::ThreadMain()
             inputFrame.pOnTheFlyCmd = nullptr;
 
             {
-                std::lock_guard<std::mutex> l( m_lock );
+                std::unique_lock<std::mutex> l( m_lock );
                 m_camFrameMap[frame.frameId] = frame;
             }
             TRACE_BEGIN( frame.frameId );
@@ -267,14 +261,39 @@ void SampleVideoEncoder::ThreadMain()
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "failed to submit input frameId %" PRIu64, frame.frameId );
-                std::lock_guard<std::mutex> l( m_lock );
+                std::unique_lock<std::mutex> l( m_lock );
                 m_camFrameMap.erase( frame.frameId );
             }
             else
             {
                 FrameInfo info = { frame.frameId, frame.timestamp };
-                std::lock_guard<std::mutex> l( m_lock );
+                std::unique_lock<std::mutex> l( m_lock );
                 m_frameInfoQueue.push( info );
+            }
+        }
+    }
+}
+
+void SampleVideoEncoder::ThreadReleaseMain()
+{
+    while ( false == m_stop )
+    {
+        std::unique_lock<std::mutex> l( m_lock );
+        (void) m_condVar.wait_for( l, std::chrono::milliseconds( 10 ) );
+        if ( false == m_frameReleaseQueue.empty() )
+        {
+            uint64_t frameId;
+            frameId = m_frameReleaseQueue.front();
+            m_frameReleaseQueue.pop();
+            auto it = m_camFrameMap.find( frameId );
+            if ( it != m_camFrameMap.end() )
+            { /* release the input camera frame */
+                RIDEHAL_DEBUG( "release frameId %" PRIu64, frameId );
+                m_camFrameMap.erase( frameId );
+            }
+            else
+            {
+                RIDEHAL_ERROR( "InFrameCallback with invalid frameId %" PRIu64, frameId );
             }
         }
     }
@@ -290,9 +309,16 @@ RideHalError_e SampleVideoEncoder::Stop()
         m_thread.join();
     }
 
+    if ( m_threadRelease.joinable() )
+    {
+        m_threadRelease.join();
+    }
+
     TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_encoder.Stop();
     TRACE_END( SYSTRACE_TASK_STOP );
+
+    m_camFrameMap.clear();
 
     return ret;
 }

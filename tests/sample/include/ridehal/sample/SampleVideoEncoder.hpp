@@ -49,6 +49,7 @@ public:
 private:
     RideHalError_e ParseConfig( SampleConfig_t &config );
     void ThreadMain();
+    void ThreadReleaseMain();
 
 private:
     void InFrameCallback( const VideoEncoder_InputFrame_t *pInputFrame );
@@ -75,6 +76,7 @@ private:
     std::string m_outputTopicName;
 
     std::thread m_thread;
+    std::thread m_threadRelease;
     bool m_stop;
 
     DataSubscriber<DataFrames_t> m_sub;
@@ -83,6 +85,8 @@ private:
     std::mutex m_lock;
     std::map<uint64_t, DataFrame_t> m_camFrameMap;
     std::queue<FrameInfo> m_frameInfoQueue;
+    std::queue<uint64_t> m_frameReleaseQueue;
+    std::condition_variable m_condVar;
 };   // class SampleVideoEncoder
 
 }   // namespace sample
