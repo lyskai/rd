@@ -197,6 +197,29 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
         for ( uint32_t i = 0; i < m_camConfig.numStream; i++ )
         {
             uint32_t streamId = m_camConfig.streamConfig[i].streamId;
+            uint32_t bufCnt = m_camConfig.streamConfig[i].bufCnt;
+            std::vector<RideHal_SharedBuffer_t> buffers;
+            buffers.resize( bufCnt );
+            ret = m_camera.GetBuffers( buffers.data(), bufCnt, streamId );
+            if ( RIDEHAL_ERROR_NONE == ret )
+            {
+                ret = SampleIF::RegisterBuffers( name + "." + std::to_string( streamId ),
+                                                 buffers.data(), bufCnt );
+            }
+
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "failed to register buffers for stream %u", streamId );
+                break;
+            }
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        for ( uint32_t i = 0; i < m_camConfig.numStream; i++ )
+        {
+            uint32_t streamId = m_camConfig.streamConfig[i].streamId;
             std::string topicName = m_topicNameMap[streamId];
             m_pubMap[streamId] = std::make_shared<DataPublisher<DataFrames_t>>();
             ret = m_pubMap[streamId]->Init( name + "." + std::to_string( streamId ), topicName );
@@ -204,6 +227,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             {
                 RIDEHAL_ERROR( "create topic %s for stream %u failed: %d", topicName.c_str(), i,
                                ret );
+                break;
             }
         }
     }

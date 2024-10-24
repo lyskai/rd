@@ -299,7 +299,8 @@ incList = [ srcIncDir + "/amss/core/comdef.h",
             inputDir  + "/qnx_ap/AMSS/multimedia/eva/epl/public/amss/multimedia/eva/eva_dfs.h",
             inputDir  + "/qnx_ap/AMSS/multimedia/video/source/common/drivers/inc/vidc_ioctl.h", 
             inputDir  + "/qnx_ap/AMSS/multimedia/common/source/qnx/aosal/inc/aosal_qnx_utils.h",
-            inputDir  + "/qnx_ap/AMSS/platform/utilities/sysprofiler/sysprofiler.h"
+            inputDir  + "/qnx_ap/AMSS/platform/utilities/sysprofiler/sysprofiler.h",
+            inputDir  + "/qnx_ap/AMSS/inc/c2c.h",
           ]
 
 for inc in incList:
@@ -328,7 +329,7 @@ libList = libListVidc + libListFastCV + libListC2d + libListPmem + libListQgptp 
         "libsysprofiler.so", "libQProfilerInterface.so", "libfdt_utils.so", "libtzbsplib.so", "libtzbsplib.so.1",
         "libsmmu_clientS.a", "libfastcvopt.a", "libfastcvoptS.a",
         "liblibstd.so", "libmmap_peer.so", "libxml_config.so", "libOpenCL_Adreno.so",
-        "libicb_client.so", "libnpa_client.so",
+        "libicb_client.so", "libnpa_client.so", "libc2c.so", "libep_client.so", "librc_client.so",
     ] + libListRSM
 
 targetLibDirs = [

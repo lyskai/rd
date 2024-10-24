@@ -39,12 +39,6 @@ public:
     ~SharedBufferPool();
 
     /**
-     * @brief Get a free shared buffer
-     * @return The shared buffer on success, nullptr on failure
-     */
-    std::shared_ptr<SharedBuffer_t> Get();
-
-    /**
      * @brief Do initialization of the shared memory ping-pong pool
      * @param[in] name the shared memory pool name
      * @param[in] level the logger level
@@ -118,9 +112,31 @@ public:
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
                          RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
+    /**
+     * @brief get shared buffers
+     * @param pBuffers pointer to hold the shared buffers
+     * @param numBuffers number of shared buffers
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e GetBuffers( RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers );
+
+    /**
+     * @brief Get a free shared buffer
+     * @return The shared buffer on success, nullptr on failure
+     */
+    std::shared_ptr<SharedBuffer_t> Get();
+
+    /**
+     * @brief deinitialize the shared memory ping-pong pool
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e Deinit();
+
 private:
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number );
     void Deleter( SharedBuffer_t *ptrToDelete );
+
+    RideHalError_e Register(void);
 
     struct SharedBufferInfo
     {

@@ -2,8 +2,8 @@
 // All rights reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
-
 #include "ridehal/sample/SharedBufferPool.hpp"
+#include "ridehal/sample/SampleIF.hpp"
 
 using namespace ridehal;
 
@@ -81,6 +81,19 @@ void SharedBufferPool::Deleter( SharedBuffer_t *ptrToDelete )
     RIDEHAL_DEBUG( "Marked %s buffer %llu available", m_name.c_str(), ptrToDelete->pubHandle );
 }
 
+RideHalError_e SharedBufferPool::Register( void )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    std::vector<RideHal_SharedBuffer_t> buffers;
+    buffers.resize( m_queue.size() );
+    ret = GetBuffers( buffers.data(), m_queue.size() );
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        ret = SampleIF::RegisterBuffers( m_name, buffers.data(), m_queue.size() );
+    }
+    return ret;
+}
+
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
                                        uint32_t width, uint32_t height,
                                        RideHal_ImageFormat_e format, RideHal_BufferUsage_e usage,
@@ -100,6 +113,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
+        (void) Register();
     }
 
     return ret;
@@ -124,6 +138,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
+        (void) Register();
     }
 
     return ret;
@@ -147,6 +162,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
+        (void) Register();
     }
 
     return ret;
@@ -170,6 +186,67 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         m_bIsInited = true;
+        (void) Register();
+    }
+
+    return ret;
+}
+
+RideHalError_e SharedBufferPool::GetBuffers( RideHal_SharedBuffer_t *pBuffers, uint32_t numBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( false == m_bIsInited )
+    {
+        RIDEHAL_ERROR( "%s pool is not inited", m_name.c_str() );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pBuffers )
+    {
+        RIDEHAL_ERROR( "pBuffers is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( m_queue.size() != (size_t) numBuffers )
+    {
+        RIDEHAL_ERROR( "numBuffers is not equal to %" PRIu64, m_queue.size() );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        for ( uint32_t idx = 0; idx < numBuffers; idx++ )
+        {
+            pBuffers[idx] = m_queue[idx].sharedBuffer.sharedBuffer;
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e SharedBufferPool::Deinit()
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    RideHalError_e ret2;
+
+    if ( false == m_bIsInited )
+    {
+        RIDEHAL_ERROR( "%s pool is not inited", m_name.c_str() );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else
+    {
+        (void) SampleIF::DeRegisterBuffers( m_name );
+        for ( uint32_t idx = 0; idx < m_queue.size(); idx++ )
+        {
+            RideHal_SharedBuffer_t &sharedBuffer = m_queue[idx].sharedBuffer.sharedBuffer;
+            ret2 = sharedBuffer.Free();
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                RIDEHAL_ERROR( "free %u failed: %d", idx, ret2 );
+                ret = ret2;
+            }
+        }
+        m_queue.clear();
+        m_bIsInited = false;
     }
 
     return ret;
@@ -184,6 +261,5 @@ SharedBufferPool::~SharedBufferPool()
         (void) sharedBuffer.Free();
     }
 }
-
 }   // namespace sample
 }   // namespace ridehal

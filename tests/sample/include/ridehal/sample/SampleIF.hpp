@@ -84,6 +84,15 @@ public:
     /// @param createFnc the function to create the sample
     static void RegisterSample( std::string name, Sample_CreateFunction_t createFnc );
 
+    static RideHalError_e RegisterBuffers( std::string name, const RideHal_SharedBuffer_t *pBuffers,
+                                           uint32_t numBuffers );
+
+    static RideHalError_e GetBuffers( std::string name, RideHal_SharedBuffer_t *pBuffers,
+                                      uint32_t numBuffers );
+
+    static RideHalError_e DeRegisterBuffers( std::string name );
+
+
 protected:
     RideHalError_e Init( std::string name );
 
@@ -126,6 +135,9 @@ private:
     RideHal_ProcessorType_e m_processor = RIDEHAL_PROCESSOR_MAX;
 
     static std::mutex s_locks[RIDEHAL_PROCESSOR_MAX];
+
+    static std::mutex s_bufMapLock;
+    static std::map<std::string, std::vector<RideHal_SharedBuffer_t>> s_bufferMaps;
 
 private:
     static std::map<std::string, Sample_CreateFunction_t> s_SampleMap;

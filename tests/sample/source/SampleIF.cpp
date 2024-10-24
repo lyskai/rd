@@ -15,6 +15,9 @@ std::map<std::string, Sample_CreateFunction_t> SampleIF::s_SampleMap;
 
 std::mutex SampleIF::s_locks[RIDEHAL_PROCESSOR_MAX];
 
+std::mutex SampleIF::s_bufMapLock;
+std::map<std::string, std::vector<RideHal_SharedBuffer_t>> SampleIF::s_bufferMaps;
+
 SampleIF *SampleIF::Create( std::string name )
 {
     SampleIF *sample = nullptr;
@@ -552,6 +555,96 @@ bool SampleIF::Get( SampleConfig_t &config, std::string key, bool defaultV )
     }
 
     RIDEHAL_DEBUG( "Get config %s = %d\n", key.c_str(), ret );
+
+    return ret;
+}
+
+RideHalError_e SampleIF::RegisterBuffers( std::string name, const RideHal_SharedBuffer_t *pBuffers,
+                                          uint32_t numBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( nullptr == pBuffers ) || ( 0 >= numBuffers ) )
+    {
+        RIDEHAL_LOG_ERROR( "invalid parameter pBuffers: %p, numBuffers: %u", pBuffers, numBuffers );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+    else
+    {
+        std::lock_guard<std::mutex> guard( s_bufMapLock );
+        auto it = s_bufferMaps.find( name );
+        if ( it == s_bufferMaps.end() )
+        {
+            std::vector<RideHal_SharedBuffer_t> buffers;
+            buffers.resize( numBuffers );
+            memcpy( buffers.data(), pBuffers, numBuffers * sizeof( RideHal_SharedBuffer_t ) );
+            s_bufferMaps[name] = buffers;
+            RIDEHAL_LOG_INFO( "regsiter buffers %s", name.c_str() );
+        }
+        else
+        {
+            RIDEHAL_LOG_ERROR( "buffers %s already in map", name.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e SampleIF::GetBuffers( std::string name, RideHal_SharedBuffer_t *pBuffers,
+                                     uint32_t numBuffers )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( nullptr == pBuffers ) || ( 0 >= numBuffers ) )
+    {
+        RIDEHAL_LOG_ERROR( "invalid parameter pBuffers: %p, numBuffers: %u", pBuffers, numBuffers );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+    else
+    {
+        std::lock_guard<std::mutex> guard( s_bufMapLock );
+        auto it = s_bufferMaps.find( name );
+        if ( it != s_bufferMaps.end() )
+        {
+            std::vector<RideHal_SharedBuffer_t> &buffers = it->second;
+            if ( buffers.size() == (size_t) numBuffers )
+            {
+                memcpy( pBuffers, buffers.data(), numBuffers * sizeof( RideHal_SharedBuffer_t ) );
+            }
+            else
+            {
+                RIDEHAL_LOG_ERROR( "buffers %s number is %" PRIu64, name.c_str(), buffers.size() );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+        }
+        else
+        {
+            RIDEHAL_LOG_ERROR( "buffers %s not found in map", name.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e SampleIF::DeRegisterBuffers( std::string name )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    std::lock_guard<std::mutex> guard( s_bufMapLock );
+    auto it = s_bufferMaps.find( name );
+    if ( it != s_bufferMaps.end() )
+    {
+        (void) s_bufferMaps.erase( it );
+        RIDEHAL_LOG_INFO( "deregsiter buffers %s", name.c_str() );
+    }
+    else
+    {
+        RIDEHAL_LOG_ERROR( "buffers %s not found in map", name.c_str() );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
 
     return ret;
 }
