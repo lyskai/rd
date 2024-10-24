@@ -23,6 +23,7 @@ include_directories( $ENV{QNX_ROOT}_patches/target/qnx7/usr/include/WF )
 include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/graphics/include/private/C2D/ )
 include_directories( $ENV{BSP_ROOT}/AMSS/inc/graphics/include/private/C2D/ )
 add_link_options( "-L$ENV{BSP_ROOT}/install/aarch64le/usr/lib/graphics/qc/" )
+add_link_options( "-L$ENV{BSP_ROOT}/install_remote/aarch64le/lib" )
 
 # vidc
 include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/inc/ )
@@ -33,12 +34,17 @@ include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/qcamera/camera_qcx/cdk_qcx/a
 add_link_options( "-L$ENV{BSP_ROOT}/install/aarch64le/lib/camera_qcx/" )
 
 # fadas
-#include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/fadas/fadas/inc/ )
+include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/fadas/fadas/inc/ )
 include_directories( $ENV{BSP_ROOT}/AMSS/platform/qal/clients/fastrpc_lib/inc )
+include_directories( $ENV{BSP_ROOT}/install_remote/usr/include/amss/multimedia/fadas/ )
 
 # rsm_v2
 include_directories( $ENV{BSP_ROOT}/install/usr/include/amss )
 
 # OpenCL
 include_directories( $ENV{BSP_ROOT}/AMSS/inc/graphics/include/public )
+
+# eva
+include_directories( $ENV{BSP_ROOT}/install/usr/include/amss/multimedia/eva )
+include_directories( $ENV{BSP_ROOT}/install_remote/usr/include/amss/multimedia/eva/ )
 

@@ -46,6 +46,14 @@ set( _ridehal_libs
   ${_ridehal_library_dir}/libFadasIfaceStub.so
   ${_ridehal_library_dir}/libOpenclIface.so )
 
+if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
+    list( APPEND _ridehal_libs
+      qcxclient qcxosal
+      c2d30 OSUser GSLUser
+      fadas
+      evaEpl evaPlatform devioClient )
+endif()
+
 add_library( RideHal INTERFACE IMPORTED )
 target_include_directories( RideHal INTERFACE ${_ridehal_include_dir} )
 target_link_libraries( RideHal INTERFACE ${_ridehal_libs} )

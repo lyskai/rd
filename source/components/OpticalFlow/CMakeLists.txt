@@ -7,7 +7,7 @@ set( OFL_HEADERS
 
 set( OFL_SOURCES OpticalFlow.cpp )
 
-list( APPEND TARGET_LIBRARIES RideHalComponentCommon evaEpl evaPlatform )
+list( APPEND TARGET_LIBRARIES RideHalComponentCommon evaEpl evaPlatform devioClient )
 
 add_library( RideHalOpticalFlow OBJECT ${OFL_SOURCES} )
 
