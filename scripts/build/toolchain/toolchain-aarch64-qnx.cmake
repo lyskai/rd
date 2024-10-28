@@ -16,6 +16,7 @@ include_directories( $ENV{BSP_ROOT}/install/usr/include )
 
 # apdf
 include_directories( $ENV{BSP_ROOT}/install/usr/include/amss/multimedia/apdf/ )
+include_directories( $ENV{BSP_ROOT}/install/usr/include/WF )
 include_directories( $ENV{QNX_ROOT}_patches/target/qnx7/usr/include )
 include_directories( $ENV{QNX_ROOT}_patches/target/qnx7/usr/include/WF )
 
@@ -42,6 +43,7 @@ include_directories( $ENV{BSP_ROOT}/install_remote/usr/include/amss/multimedia/f
 include_directories( $ENV{BSP_ROOT}/install/usr/include/amss )
 
 # OpenCL
+include_directories( $ENV{BSP_ROOT}/AMSS/multimedia/graphics/include/public )
 include_directories( $ENV{BSP_ROOT}/AMSS/inc/graphics/include/public )
 
 # eva

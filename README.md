@@ -20,6 +20,7 @@ Below is a summary information of the current implemented components.
 | [PostCenterPoint](./docs/PostCenterPoint.md) | YES| YES | FastADAS | CPU, HTP0, HTP1 | extract bounding boxes |
 | [CL2DFlex](./docs/CL2DFlex.md) | YES| Yes| OpenCL | GPU | Color Conversion, Resize |
 | [GL2DFlex](./docs/GL2DFlex.md) | NO | YES| OpenGL | GPU | Color Conversion, ROI Crop, Resize |
+| [OpticalFlow](./docs/OpticalFlow.md) | YES | YES| EVA | EVA | Optical flow |
 
 # How to build
 

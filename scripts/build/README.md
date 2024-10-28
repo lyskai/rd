@@ -98,7 +98,7 @@ source /path/to/QNN_SDK/bin/envsetup.sh
 
 cd /path/to/ridehal
 ./scripts/build/build-target.sh aarch64-qnx .
-# the ridehal-aarch64-qos222.tar.gz is the build out package for QNX
+# the ridehal-aarch64-qnx.tar.gz is the build out package for QNX
 ```
 
 ## How to build the RideHal package with Snapdragon_Auto.HGY.4.1.6.0.r1 Linux SDK
