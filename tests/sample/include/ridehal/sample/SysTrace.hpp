@@ -166,7 +166,7 @@ private:
     {
         uint64_t id;
         uint64_t timestamp;
-        SysTrace_ProcessorType_e processor;
+        SysTrace_ProcessorType_e processor = SYSTRACE_PROCESSOR_CPU;
         SysTrace_Category_e cat;
         char name[SYSTRACE_NAME_MAX];
         char ph;

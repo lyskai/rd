@@ -113,6 +113,7 @@ void SysTrace::Event( uint32_t streamId, uint64_t id )
         (void) snprintf( record.name, sizeof( record.name ), "%s_%u", m_name.c_str(), streamId );
         std::lock_guard<std::mutex> l( s_lock );
         record.id = id;
+        record.processor = SYSTRACE_PROCESSOR_CAMERA;
         record.timestamp = Timestamp();
         record.cat = SYSTRACE_EVENT_FRAME_READY;
         record.ph = SYSTRACE_PHASE_COMPLETE;
