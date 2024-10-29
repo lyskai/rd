@@ -130,6 +130,7 @@ private:
     rsm_acquire_cmd_v2 m_acquireCmdV2;
     rsm_acquire_rsp_v2 m_acquireRspV2;
     rsm_handle m_handle = 0;
+    bool m_bRsmDisabled = false;
 #endif
 
     RideHal_ProcessorType_e m_processor = RIDEHAL_PROCESSOR_MAX;

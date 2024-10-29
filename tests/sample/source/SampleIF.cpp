@@ -65,7 +65,16 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
 #if defined( WITH_RSM_V2 )
-    if ( processor <= RIDEHAL_PROCESSOR_HTP1 )
+    const char *envValue = getenv( "RIDEHAL_DISABLE_RSM" );
+    if ( nullptr != envValue )
+    {
+        std::string strEnv = envValue;
+        if ( "YES" == strEnv )
+        {
+            m_bRsmDisabled = true;
+        }
+    }
+    if ( ( processor <= RIDEHAL_PROCESSOR_HTP1 ) && ( false == m_bRsmDisabled ) )
     {
         memset( &m_acquireCmdV2, 0, sizeof( m_acquireCmdV2 ) );
         m_acquireCmdV2.resource = (rsm_resource_group) processor;
@@ -81,6 +90,7 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
         }
         else
         {
+            RIDEHAL_INFO( "rsm init for processor %d", processor );
             m_processor = processor;
         }
     }
@@ -88,6 +98,7 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
 #endif
             if ( processor < RIDEHAL_PROCESSOR_MAX )
     {
+        RIDEHAL_INFO( "global mutex for processor %d", processor );
         m_processor = processor;
     }
     else
@@ -109,7 +120,7 @@ RideHalError_e SampleIF::Lock()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
 #if defined( WITH_RSM_V2 )
-    if ( m_processor <= RIDEHAL_PROCESSOR_HTP1 )
+    if ( ( m_processor <= RIDEHAL_PROCESSOR_HTP1 ) && ( false == m_bRsmDisabled ) )
     {
         int rc = rsm_acquire_v2( m_handle, &m_acquireCmdV2, &m_acquireRspV2 );
         if ( 0 != rc )
@@ -138,7 +149,7 @@ RideHalError_e SampleIF::Unlock()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
 #if defined( WITH_RSM_V2 )
-    if ( m_processor <= RIDEHAL_PROCESSOR_HTP1 )
+    if ( ( m_processor <= RIDEHAL_PROCESSOR_HTP1 ) && ( false == m_bRsmDisabled ) )
     {
         int rc = rsm_release_v2( m_handle, m_acquireRspV2.token );
         if ( 0 != rc )
