@@ -56,9 +56,13 @@ typedef enum
                                                                  fixed height/width ratio use
                                                                  nearest point from nv12 to rgb,
                                                                  padding 0 to the redundant bottom
-                                                                 or right edge, execute onmultiple
+                                                                 or right edge, execute on multiple
                                                                  batches with different ROI
                                                                  paramters*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB_MULTIPLE, /**<color convert and resize use nearest
+                                                              point from nv12 to rgb, execute on
+                                                              multiple batches with different ROI
+                                                              paramters*/
     CL2DFLEX_PIPELINE_MAX
 } CL2DFlex_Pipeline_e;
 
@@ -74,6 +78,9 @@ typedef enum
     CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE, /**<color convert and letterbox with fixed
                                                       height/width ratio use nearest point, execute
                                                       on multiple batches with different ROI
+                                                      paramters*/
+    CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE,    /**<color convert and resize use nearest point,
+                                                      execute on multiple batches with different ROI
                                                       paramters*/
     CL2DFLEX_WORK_MODE_MAX
 } CL2DFlex_Work_Mode_e;
@@ -249,6 +256,12 @@ private:
                                                    const RideHal_SharedBuffer_t *pInput,
                                                    const RideHal_SharedBuffer_t *pOutput,
                                                    const CL2DFlex_ROIConfig_t *pROIs );
+    RideHalError_e ResizeFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
+                                                cl_mem bufferSrc, uint32_t srcOffset,
+                                                cl_mem bufferDst, uint32_t dstOffset,
+                                                const RideHal_SharedBuffer_t *pInput,
+                                                const RideHal_SharedBuffer_t *pOutput,
+                                                const CL2DFlex_ROIConfig_t *pROIs );
 
 };   // class CL2DFlex
 

@@ -1081,7 +1081,12 @@ TEST( CL2DFlex, MultipleROITest )
         }
     }
 
+    printf( "letterbox NV12 to RGB test:\n" );
     ROITest( numberTest, roiTest, CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE,
+             RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 64, 64, 10, true );
+
+    printf( "resize NV12 to RGB test:\n" );
+    ROITest( numberTest, roiTest, CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE,
              RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 64, 64, 10, true );
 }
 
