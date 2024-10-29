@@ -256,7 +256,7 @@ $homedir/bundle-runtime.py --sysroot "$TOOLCHAIN_SYSROOT" \
     --outdir $destdir/opt/ridehal/lib/runtime \
     $(find $destdir -wholename \*/bin/\* -o -name \*.so\*)
 
-if [ -f $QNN_SDK_ROOT/lib/aarch64-qnx/libQnnHtp.so ];  then
+if [[ -v QNN_SDK_ROOT ]] ; then
 # Install QNN Runtime dependencies
 case $target in
 aarch64-qnx)
