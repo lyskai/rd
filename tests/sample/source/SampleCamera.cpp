@@ -44,7 +44,7 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
         delete pSharedBuffer;
     } );
 
-    frame.frameId = m_frameId++;
+    frame.frameId = m_frameId[pFrame->streamId]++;
     frame.buffer = buffer;
     frame.timestamp = pFrame->timestamp;
     frames.Add( frame );
@@ -163,6 +163,8 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
             {
                 m_topicNameMap[m_camConfig.streamConfig[i].streamId] = topicName;
             }
+
+            m_frameId[m_camConfig.streamConfig[i].streamId] = 0;
         }
 
         m_camConfig.camFrameDropPat = Get( config, "frame_drop_patten", (uint32_t) 0 );
