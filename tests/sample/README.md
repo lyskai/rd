@@ -453,11 +453,12 @@ The command line template example:
 | output_width  | false    | int       | 1920    | The output image width  |
 | output_height | false    | int       | 1024    | The output image height |
 | output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
-| work_modeX    | false    | string    | resize_nearest    | The input X work mode, options from [convert, resize_nearest, letterbox_nearest]|
+| work_modeX    | false    | string    | resize_nearest    | The input X work mode, options from [convert, resize_nearest, letterbox_nearest, letterbox_nearest_multiple, resize_nearest_multiple]|
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |
 | roi_yX        | false    | int       | 0       | The ROI top y for input X |
 | roi_widthX    | false    | int       | =input_widthX  | The ROI width for input X |
 | roi_heightX   | false    | int       | =input_heightX | The ROI height for input X |
+| roi_number    | false    | int       | 1       | The roi configurations number used for ExecuteWithROI |
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | cache         | false    | bool      | true    | use cached memory or not for the image memory |
 | input_topic   | true     | string    | -       | the input topic name |

@@ -67,6 +67,9 @@ private:
     DataPublisher<DataFrames_t> m_pub;
 
     CL2DFlex m_CL2DFlex;
+    bool m_executeWithROIs = false;
+    uint32_t m_roiNumber = 1;
+    CL2DFlex_ROIConfig_t m_ROIs[RIDEHAL_MAX_INPUTS];
 };   // class SampleCL2DFlex
 
 }   // namespace sample

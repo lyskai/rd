@@ -859,8 +859,8 @@ RideHalError_e CL2DFlex::LetterboxFromNV12ToRGBMultiple( uint32_t numROIs, cl_ke
 
     for ( int i = 0; i < numROIs; i++ )
     {
-        if ( ( ( pROIs[i].x + pROIs[i].width ) < pInput->imgProps.width ) &&
-             ( ( pROIs[i].y + pROIs[i].height ) < pInput->imgProps.height ) )
+        if ( ( ( pROIs[i].x + pROIs[i].width ) <= pInput->imgProps.width ) &&
+             ( ( pROIs[i].y + pROIs[i].height ) <= pInput->imgProps.height ) )
         {
             ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
             ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;
@@ -951,8 +951,8 @@ RideHalError_e CL2DFlex::ResizeFromNV12ToRGBMultiple( uint32_t numROIs, cl_kerne
 
     for ( int i = 0; i < numROIs; i++ )
     {
-        if ( ( ( pROIs[i].x + pROIs[i].width ) < pInput->imgProps.width ) &&
-             ( ( pROIs[i].y + pROIs[i].height ) < pInput->imgProps.height ) )
+        if ( ( ( pROIs[i].x + pROIs[i].width ) <= pInput->imgProps.width ) &&
+             ( ( pROIs[i].y + pROIs[i].height ) <= pInput->imgProps.height ) )
         {
             ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
             ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;

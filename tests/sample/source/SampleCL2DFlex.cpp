@@ -36,6 +36,14 @@ CL2DFlex_Work_Mode_e SampleCL2DFlex::GetMode( SampleConfig_t &config, std::strin
         {
             ret = CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST;
         }
+        else if ( "letterbox_nearest_multiple" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE;
+        }
+        else if ( "resize_nearest_multiple" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE;
+        }
         else
         {
             ret = CL2DFLEX_WORK_MODE_MAX;
@@ -145,6 +153,53 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         }
     }
 
+    if ( ( 1 == m_config.numOfInputs ) &&
+         ( ( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE == m_config.workModes[0] ) ||
+           ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE == m_config.workModes[0] ) ) )
+    {
+        m_executeWithROIs = true;
+
+        m_roiNumber = Get( config, "roi_number", 1 );
+        if ( 0 == m_roiNumber )
+        {
+            RIDEHAL_ERROR( "invalid roi_number\n" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        for ( uint32_t i = 0; i < m_roiNumber; i++ )
+        {
+            m_ROIs[i].x = Get( config, "roi_x" + std::to_string( i ), 0 );
+            if ( m_ROIs[i].x >= m_config.inputWidths[0] )
+            {
+                RIDEHAL_ERROR( "invalid roi_x%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+
+            m_ROIs[i].y = Get( config, "roi_y" + std::to_string( i ), 0 );
+            if ( m_ROIs[i].y >= m_config.inputHeights[0] )
+            {
+                RIDEHAL_ERROR( "invalid roi_y%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+
+            m_ROIs[i].width =
+                    Get( config, "roi_width" + std::to_string( i ), m_config.inputWidths[0] );
+            if ( 0 == m_ROIs[i].width )
+            {
+                RIDEHAL_ERROR( "invalid roi_width%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+
+            m_ROIs[i].height =
+                    Get( config, "roi_height" + std::to_string( i ), m_config.inputHeights[0] );
+            if ( 0 == m_ROIs[i].height )
+            {
+                RIDEHAL_ERROR( "invalid roi_height%u\n", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+        }
+    }
+
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
     {
@@ -192,18 +247,37 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        RideHal_ImageProps_t imgProp;
+        if ( m_executeWithROIs == true )
+        {
+            imgProp.batchSize = m_roiNumber;
+        }
+        else
+        {
+            imgProp.batchSize = m_config.numOfInputs;
+        }
+        imgProp.width = m_config.outputWidth;
+        imgProp.height = m_config.outputHeight;
         if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat )
         {
-            RideHal_ImageProps_t imgProp;
+            imgProp.numPlanes = 1;
             imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
-            imgProp.batchSize = m_config.numOfInputs;
-            imgProp.width = m_config.outputWidth;
-            imgProp.height = m_config.outputHeight;
             imgProp.stride[0] = m_config.outputWidth * 3;
             imgProp.actualHeight[0] = m_config.outputHeight;
-            imgProp.numPlanes = 1;
             imgProp.planeBufSize[0] = 0;
-
+            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
+                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+        }
+        else if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat )
+        {
+            imgProp.numPlanes = 2;
+            imgProp.format = RIDEHAL_IMAGE_FORMAT_NV12;
+            imgProp.stride[0] = m_config.outputWidth;
+            imgProp.actualHeight[0] = m_config.outputHeight;
+            imgProp.stride[0] = m_config.outputWidth;
+            imgProp.actualHeight[0] = m_config.outputHeight / 2;
+            imgProp.planeBufSize[0] = 0;
+            imgProp.planeBufSize[1] = 0;
             ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
                                     RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
         }
@@ -273,7 +347,15 @@ void SampleCL2DFlex::ThreadMain()
 
                 PROFILER_BEGIN();
                 TRACE_BEGIN( frames.FrameId( 0 ) );
-                ret = m_CL2DFlex.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
+                if ( m_executeWithROIs == true )
+                {
+                    ret = m_CL2DFlex.ExecuteWithROI( inputs.data(), &buffer->sharedBuffer, m_ROIs,
+                                                     m_roiNumber );
+                }
+                else
+                {
+                    ret = m_CL2DFlex.Execute( inputs.data(), inputs.size(), &buffer->sharedBuffer );
+                }
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     PROFILER_END();
