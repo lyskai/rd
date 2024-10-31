@@ -10,6 +10,10 @@
 
 static const char *s_pSourceVoxelization = KernelCode(
 
+        __constant float2 ZEROVEC2 = (float2) ( 0.0f );
+        __constant float4 ZEROVEC4 = (float4) ( 0.0f );
+        __constant float8 ZEROVEC8 = (float8) ( 0.0f );
+
         __kernel void ClusterPointsFromXYZR(
                 __global const float *pInPts, __global float *pOutPlrs, __global float *pOutFeature,
                 __global int *coorToPlrIdx, __global int *numOfPts, const float minXRange,
@@ -19,16 +23,18 @@ static const char *s_pSourceVoxelization = KernelCode(
                 const int gridYSize, const int maxNumPlrs, const int maxNumPtsPerPlr,
                 const int numOutFeatureDim ) {
             int x = get_global_id( 0 );
-            float xPts = pInPts[x * 4 + 0];
-            float yPts = pInPts[x * 4 + 1];
-            float zPts = pInPts[x * 4 + 2];
-            float rPts = pInPts[x * 4 + 3];
-            if ( ( xPts > minXRange ) && ( xPts < maxXRange ) && ( yPts > minYRange ) &&
-                 ( yPts < maxYRange ) && ( zPts > minZRange ) && ( zPts < maxZRange ) )
+
+            float4 xyzr = vload4( x, pInPts );
+            float2 xyMinRange = (float2) ( minXRange, minYRange );
+            int3 point = (int3) ( 0 );
+            float3 plrs = (float3) ( 0.0f );
+            if ( ( xyzr.s0 > minXRange ) && ( xyzr.s0 < maxXRange ) && ( xyzr.s1 > minYRange ) &&
+                 ( xyzr.s1 < maxYRange ) && ( xyzr.s2 > minZRange ) && ( xyzr.s2 < maxZRange ) )
             {
-                int xCoor = floor( ( xPts - minXRange ) / pillarXSize );
-                int yCoor = floor( ( yPts - minYRange ) / pillarYSize );
-                int id = yCoor * gridXSize + xCoor;
+                plrs.s01 = floor( ( xyzr.s01 - xyMinRange ) *
+                                  native_recip( (float2) ( pillarXSize, pillarYSize ) ) );
+                point = convert_int3_sat( plrs );
+                int id = point.s1 * gridXSize + point.s0;
                 int plrIdx = 0;
                 if ( atomic_load( (atomic_int *) &numOfPts[maxNumPlrs] ) < maxNumPlrs )
                 {
@@ -38,9 +44,7 @@ static const char *s_pSourceVoxelization = KernelCode(
                         plrIdx = coorToPlrIdx[id];
                         if ( plrIdx < maxNumPlrs )
                         {
-                            pOutPlrs[plrIdx * 4 + 0] = (float) xCoor;
-                            pOutPlrs[plrIdx * 4 + 1] = (float) yCoor;
-                            pOutPlrs[plrIdx * 4 + 2] = 0.0;
+                            vstore3( plrs, 0, pOutPlrs + plrIdx * 4 );
                         }
                     }
                     else
@@ -58,10 +62,7 @@ static const char *s_pSourceVoxelization = KernelCode(
                             {
                                 int featureID = plrIdx * maxNumPtsPerPlr * numOutFeatureDim +
                                                 numPts * numOutFeatureDim;
-                                pOutFeature[featureID + 0] = xPts;
-                                pOutFeature[featureID + 1] = yPts;
-                                pOutFeature[featureID + 2] = zPts;
-                                pOutFeature[featureID + 3] = rPts;
+                                vstore4( xyzr, 0, pOutFeature + featureID );
                             }
                         }
                     }
@@ -78,17 +79,18 @@ static const char *s_pSourceVoxelization = KernelCode(
                 const int gridYSize, const int maxNumPlrs, const int maxNumPtsPerPlr,
                 const int numOutFeatureDim ) {
             int x = get_global_id( 0 );
-            float xPts = pInPts[x * 5 + 0];
-            float yPts = pInPts[x * 5 + 1];
-            float zPts = pInPts[x * 5 + 2];
-            float rPts = pInPts[x * 5 + 3];
-            float tPts = pInPts[x * 5 + 4];
-            if ( ( xPts > minXRange ) && ( xPts < maxXRange ) && ( yPts > minYRange ) &&
-                 ( yPts < maxYRange ) && ( zPts > minZRange ) && ( zPts < maxZRange ) )
+
+            float4 xyzr = vload4( 0, pInPts + x * 5 );
+            float t = pInPts[x * 5 + 4];
+            float2 xyMinRange = (float2) ( minXRange, minYRange );
+            int2 xyCoor = (int2) ( 0 );
+            if ( ( xyzr.s0 > minXRange ) && ( xyzr.s0 < maxXRange ) && ( xyzr.s1 > minYRange ) &&
+                 ( xyzr.s1 < maxYRange ) && ( xyzr.s2 > minZRange ) && ( xyzr.s2 < maxZRange ) )
             {
-                int xCoor = floor( ( xPts - minXRange ) / pillarXSize );
-                int yCoor = floor( ( yPts - minYRange ) / pillarYSize );
-                int id = yCoor * gridXSize + xCoor;
+                xyCoor = convert_int2_sat(
+                        floor( ( xyzr.s01 - xyMinRange ) *
+                               native_recip( (float2) ( pillarXSize, pillarYSize ) ) ) );
+                int id = xyCoor.s1 * gridXSize + xyCoor.s0;
                 int plrIdx = 0;
                 if ( atomic_load( (atomic_int *) &numOfPts[maxNumPlrs] ) < maxNumPlrs )
                 {
@@ -98,8 +100,7 @@ static const char *s_pSourceVoxelization = KernelCode(
                         plrIdx = coorToPlrIdx[id];
                         if ( plrIdx < maxNumPlrs )
                         {
-                            pOutPlrs[plrIdx * 2 + 0] = xCoor;
-                            pOutPlrs[plrIdx * 2 + 1] = yCoor;
+                            vstore2( xyCoor, plrIdx, pOutPlrs );
                         }
                     }
                     else
@@ -116,11 +117,8 @@ static const char *s_pSourceVoxelization = KernelCode(
                             {
                                 int featureID = plrIdx * maxNumPtsPerPlr * numOutFeatureDim +
                                                 numPts * numOutFeatureDim;
-                                pOutFeature[featureID + 0] = xPts;
-                                pOutFeature[featureID + 1] = yPts;
-                                pOutFeature[featureID + 2] = zPts;
-                                pOutFeature[featureID + 3] = rPts;
-                                pOutFeature[featureID + 4] = tPts;
+                                vstore4( xyzr, 0, pOutFeature + featureID );
+                                pOutFeature[featureID + 4] = t;
                             }
                         }
                     }
@@ -135,59 +133,49 @@ static const char *s_pSourceVoxelization = KernelCode(
                 const int maxNumPlrs, const int maxNumPtsPerPlr, const int numOutFeatureDim,
                 const int numOfPillar ) {
             int x = get_global_id( 0 );
+
             if ( x < numOfPillar )
             {
-                pOutPlrs[x * 4 + 3] = min( pOutPlrs[x * 4 + 3], (float) maxNumPtsPerPlr );
-                int numPts = (int) pOutPlrs[x * 4 + 3];
-                float meanX = 0.0;
-                float meanY = 0.0;
-                float meanZ = 0.0;
+                float4 outPlr4 = vload4( x, pOutPlrs );
+                outPlr4.s3 = min( outPlr4.s3, (float) maxNumPtsPerPlr );
+                int numPts = (int) outPlr4.s3;
+
+                float3 meanXYZ = (float3) ( 0.0f );
+                float3 featXYZ = (float3) ( 0.0f );
+                float3 pillarXYZ = (float3) ( 0.0f );
+                float3 pillarSizeXYZ = (float3) ( pillarXSize, pillarYSize, pillarZSize );
+                float3 minRangeXYZ = (float3) ( minXRange, minYRange, minZRange );
+                float3 outPlrXYZ = outPlr4.s012 + 0.5f;
                 for ( int i = 0; i < numPts; i++ )
                 {
                     int id1 = x * maxNumPtsPerPlr * numOutFeatureDim + i * numOutFeatureDim;
-                    meanX += pOutFeature[id1 + 0];
-                    meanY += pOutFeature[id1 + 1];
-                    meanZ += pOutFeature[id1 + 2];
+                    featXYZ = vload3( 0, pOutFeature + id1 );
+                    meanXYZ += featXYZ;
                 }
-                meanX = meanX / numPts;
-                meanY = meanY / numPts;
-                meanZ = meanZ / numPts;
-                float pillarX = minXRange + pOutPlrs[x * 4 + 0] * pillarXSize + 0.5 * pillarXSize;
-                float pillarY = minYRange + pOutPlrs[x * 4 + 1] * pillarYSize + 0.5 * pillarYSize;
-                float pillarZ = minZRange + pOutPlrs[x * 4 + 2] * pillarZSize + 0.5 * pillarZSize;
+                meanXYZ *= native_recip( outPlr4.s3 );
+                pillarXYZ = mad( pillarSizeXYZ, outPlrXYZ, minRangeXYZ );
+
                 for ( int j = 0; j < maxNumPtsPerPlr; j++ )
                 {
                     int id2 = x * maxNumPtsPerPlr * numOutFeatureDim + j * numOutFeatureDim;
                     if ( j < numPts )
                     {
-                        pOutFeature[id2 + 4] = pOutFeature[id2 + 0] - meanX;
-                        pOutFeature[id2 + 5] = pOutFeature[id2 + 1] - meanY;
-                        pOutFeature[id2 + 6] = pOutFeature[id2 + 2] - meanZ;
-                        pOutFeature[id2 + 7] = pOutFeature[id2 + 0] - pillarX;
-                        pOutFeature[id2 + 8] = pOutFeature[id2 + 1] - pillarY;
-                        pOutFeature[id2 + 9] = pOutFeature[id2 + 2] - pillarZ;
+                        featXYZ = vload3( 0, pOutFeature + id2 );
+                        outPlrXYZ = featXYZ - meanXYZ;
+                        vstore3( outPlrXYZ, 0, pOutFeature + id2 + 4 );
+                        outPlrXYZ = featXYZ - pillarXYZ;
+                        vstore3( outPlrXYZ, 0, pOutFeature + id2 + 7 );
                     }
                     else
                     {
-                        pOutFeature[id2 + 0] = 0.0;
-                        pOutFeature[id2 + 1] = 0.0;
-                        pOutFeature[id2 + 2] = 0.0;
-                        pOutFeature[id2 + 3] = 0.0;
-                        pOutFeature[id2 + 4] = 0.0;
-                        pOutFeature[id2 + 5] = 0.0;
-                        pOutFeature[id2 + 6] = 0.0;
-                        pOutFeature[id2 + 7] = 0.0;
-                        pOutFeature[id2 + 8] = 0.0;
-                        pOutFeature[id2 + 9] = 0.0;
+                        vstore8( ZEROVEC8, 0, pOutFeature + id2 );
+                        vstore2( ZEROVEC2, 0, pOutFeature + id2 + 8 );
                     }
                 }
             }
             else
             {
-                pOutPlrs[x * 4 + 0] = 0.0;
-                pOutPlrs[x * 4 + 1] = 0.0;
-                pOutPlrs[x * 4 + 2] = 0.0;
-                pOutPlrs[x * 4 + 3] = 0.0;
+                vstore4( ZEROVEC4, x, pOutPlrs );
             }
         }
 
@@ -198,58 +186,49 @@ static const char *s_pSourceVoxelization = KernelCode(
                 const int maxNumPlrs, const int maxNumPtsPerPlr, const int numOutFeatureDim,
                 const int numOfPillar ) {
             int x = get_global_id( 0 );
+
             if ( x < numOfPillar )
             {
-                numOfPts[x] = min( numOfPts[x], maxNumPtsPerPlr );
-                int numPts = numOfPts[x];
-                float meanX = 0.0;
-                float meanY = 0.0;
-                float meanZ = 0.0;
+                float3 featXYZ = (float3) ( 0.0f );
+                float3 outFeatXYZ = (float3) ( 0.0f );
+                float2 outFeatRT = (float2) ( 0.0f );
+                float3 meanXYZ = (float3) ( 0.0f );
+                float2 outPillarXY = convert_float2( vload2( 2, pOutPlrs ) );
+                float2 minRangeXY = (float2) ( minXRange, minYRange );
+                float2 pillarSizeXY = (float2) ( pillarXSize, pillarYSize ) + 0.5f;
+                float2 pillarXY = mad( outPillarXY, pillarSizeXY, minRangeXY );
+                int numPts = min( numOfPts[x], maxNumPtsPerPlr );
                 for ( int i = 0; i < numPts; i++ )
                 {
                     int id1 = x * maxNumPtsPerPlr * numOutFeatureDim + i * numOutFeatureDim;
-                    meanX += pOutFeature[id1 + 0];
-                    meanY += pOutFeature[id1 + 1];
-                    meanZ += pOutFeature[id1 + 2];
+                    featXYZ = vload3( 0, pOutFeature + id1 );
+                    meanXYZ += featXYZ;
                 }
-                meanX = meanX / numPts;
-                meanY = meanY / numPts;
-                meanZ = meanZ / numPts;
-                float pillarX = minXRange + pOutPlrs[x * 2 + 0] * pillarXSize + 0.5 * pillarXSize;
-                float pillarY = minYRange + pOutPlrs[x * 2 + 1] * pillarYSize + 0.5 * pillarYSize;
+                meanXYZ *= native_recip( (float) numPts );
+
                 for ( int j = 0; j < maxNumPtsPerPlr; j++ )
                 {
                     int id2 = x * maxNumPtsPerPlr * numOutFeatureDim + j * numOutFeatureDim;
                     if ( j < numPts )
                     {
-                        pOutFeature[id2 + 5] = pOutFeature[id2 + 0] - meanX;
-                        pOutFeature[id2 + 6] = pOutFeature[id2 + 1] - meanY;
-                        pOutFeature[id2 + 7] = pOutFeature[id2 + 2] - meanZ;
-                        pOutFeature[id2 + 8] = pOutFeature[id2 + 0] - pillarX;
-                        pOutFeature[id2 + 9] = pOutFeature[id2 + 1] - pillarY;
+                        featXYZ = vload3( 0, pOutFeature + id2 );
+                        outFeatXYZ = featXYZ - meanXYZ;
+                        outFeatRT = featXYZ.s01 - pillarXY;
+                        vstore3( outFeatXYZ, 0, pOutFeature + id2 + 5 );
+                        vstore2( outFeatRT, 0, pOutFeature + id2 + 8 );
                     }
                     else
                     {
-                        pOutFeature[id2 + 0] = 0.0;
-                        pOutFeature[id2 + 1] = 0.0;
-                        pOutFeature[id2 + 2] = 0.0;
-                        pOutFeature[id2 + 3] = 0.0;
-                        pOutFeature[id2 + 4] = 0.0;
-                        pOutFeature[id2 + 5] = 0.0;
-                        pOutFeature[id2 + 6] = 0.0;
-                        pOutFeature[id2 + 7] = 0.0;
-                        pOutFeature[id2 + 8] = 0.0;
-                        pOutFeature[id2 + 9] = 0.0;
+                        vstore8( ZEROVEC8, 0, pOutFeature + id2 );
+                        vstore2( ZEROVEC2, 0, pOutFeature + id2 + 8 );
                     }
                 }
             }
             else
             {
-                pOutPlrs[x * 2 + 0] = 0;
-                pOutPlrs[x * 2 + 1] = 0;
+                int2 outPlr = convert_int2_sat( ZEROVEC2 );
+                vstore2( outPlr, x, pOutPlrs );
             }
-        }
-
-);
+        } );
 
 #endif   // RIDEHAL_VOXELIZATION_CLH
