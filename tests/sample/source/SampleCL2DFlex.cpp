@@ -258,26 +258,14 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
         }
         imgProp.width = m_config.outputWidth;
         imgProp.height = m_config.outputHeight;
-        if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat )
+        if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) ||
+             ( RIDEHAL_IMAGE_FORMAT_BGR888 == m_config.outputFormat ) )
         {
             imgProp.numPlanes = 1;
-            imgProp.format = RIDEHAL_IMAGE_FORMAT_RGB888;
+            imgProp.format = m_config.outputFormat;
             imgProp.stride[0] = m_config.outputWidth * 3;
             imgProp.actualHeight[0] = m_config.outputHeight;
             imgProp.planeBufSize[0] = 0;
-            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
-                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
-        }
-        else if ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat )
-        {
-            imgProp.numPlanes = 2;
-            imgProp.format = RIDEHAL_IMAGE_FORMAT_NV12;
-            imgProp.stride[0] = m_config.outputWidth;
-            imgProp.actualHeight[0] = m_config.outputHeight;
-            imgProp.stride[0] = m_config.outputWidth;
-            imgProp.actualHeight[0] = m_config.outputHeight / 2;
-            imgProp.planeBufSize[0] = 0;
-            imgProp.planeBufSize[1] = 0;
             ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
                                     RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
         }
