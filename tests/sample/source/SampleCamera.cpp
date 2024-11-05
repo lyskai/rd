@@ -151,6 +151,14 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
             }
 
+            m_camConfig.streamConfig[i].submitRequestPattern =
+                    Get( config, "submit_request_pattern" + suffix, 0 );
+            if ( m_camConfig.streamConfig[i].submitRequestPattern > 10 )
+            {
+                RIDEHAL_ERROR( "invalid submit_request_pattern for stream %u", i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+
             m_camConfig.streamConfig[i].streamId = Get( config, "stream_id" + suffix, i );
 
             std::string topicName = Get( config, "topic" + suffix, "" );

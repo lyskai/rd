@@ -311,9 +311,14 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
     if ( RIDEHAL_ERROR_NONE == ret )
     { /* save configuration parameters */
         m_state = RIDEHAL_COMPONENT_STATE_INITIALIZING;
+        m_maxBufCnt = 0;
         for ( uint32_t i = 0; i < pConfig->numStream; i++ )
         {
             m_streamConfig[i] = pConfig->streamConfig[i];
+            if ( m_streamConfig[i].bufCnt > m_maxBufCnt )
+            {
+                m_maxBufCnt = m_streamConfig[i].bufCnt;
+            }
         }
         m_bIsAllocator = pConfig->bAllocator;
         m_nInputId = pConfig->inputId;
@@ -321,6 +326,40 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
         m_nNumStream = pConfig->numStream;
         m_nClientId = pConfig->clientId;
         m_bIsPrimary = pConfig->bPrimary;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    { /* setup submit request pattern for multiple streaming */
+        m_bRequestPatternMode = false;
+        if ( ( true == m_bRequestMode ) && ( pConfig->numStream > 1 ) )
+        {
+            m_refStreamId = MAX_CAMERA_STREAM;
+            for ( uint32_t i = 0; i < pConfig->numStream; i++ )
+            {
+                if ( 0 == m_streamConfig[i].submitRequestPattern )
+                {
+                    if ( MAX_CAMERA_STREAM == m_refStreamId )
+                    { /* the first stream with 0 pattern acting as reference stream */
+                        m_refStreamId = m_streamConfig[i].streamId;
+                    }
+                }
+                else
+                { /* if there is anyone none-zero pattern, a submit request pattern mode for FPS HW
+                     drop control */
+                    m_submitRequestPattern[i] = m_streamConfig[i].submitRequestPattern;
+                    m_bRequestPatternMode = true;
+                }
+            }
+
+            if ( true == m_bRequestPatternMode )
+            {
+                if ( MAX_CAMERA_STREAM == m_refStreamId )
+                {
+                    RIDEHAL_ERROR( "Need at least 1 stream with 0 submitRequestPattern" );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+            }
+        }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -568,18 +607,34 @@ RideHalError_e Camera::Start()
                  ( ( 0 == m_nClientId ) || ( true == m_bIsPrimary ) ) )
             {
                 m_nRequestId = 0;
-
-                for ( uint32_t i = 0; i < m_nNumStream; i++ )
+                for ( uint32_t bufIdx = 0; bufIdx < m_maxBufCnt; bufIdx++ )
                 {
-                    for ( uint32_t j = 0; j < m_streamConfig[i].bufCnt; j++ )
+                    QCarCamRequest_t request = { 0 };
+                    request.numStreamRequests = 0;
+                    for ( uint32_t i = 0; i < m_nNumStream; i++ )
                     {
-                        uint32_t streamId = m_streamConfig[i].streamId;
-                        ret = RequestFrame( &m_pCameraFrames[streamId][j] );
-                        if ( RIDEHAL_ERROR_NONE != ret )
+                        if ( bufIdx < m_streamConfig[i].bufCnt )
                         {
-                            RIDEHAL_ERROR( "RequestFrame failed, index: %u %u", i, j );
-                            break;
+                            QCarCamStreamRequest_t *pStreamRequest =
+                                    &request.streamRequests[request.numStreamRequests];
+                            pStreamRequest->bufferlistId = m_streamConfig[i].streamId;
+                            pStreamRequest->bufferIdx = bufIdx;
+                            request.numStreamRequests++;
+                            RIDEHAL_DEBUG( "RequestFrame m_QcarCamHndl: %lu, bufferlistId: %u, "
+                                           "bufferIdx: %u",
+                                           m_QcarCamHndl, pStreamRequest->bufferlistId,
+                                           pStreamRequest->bufferIdx );
                         }
+                    }
+                    request.requestId = __atomic_fetch_add( &m_nRequestId, 1, __ATOMIC_RELAXED );
+                    status = QCarCamSubmitRequest( m_QcarCamHndl, &request );
+                    if ( QCARCAM_RET_OK != status )
+                    {
+                        RIDEHAL_ERROR( "RequestFrame fail m_QcarCamHndl: %lu, bufferIdx: %u "
+                                       "request id: %u",
+                                       m_QcarCamHndl, bufIdx, request.requestId );
+                        ret = RIDEHAL_ERROR_FAIL;
+                        break;
                     }
                 }
             }
@@ -873,41 +928,76 @@ RideHalError_e Camera::RequestFrame( const CameraFrame_t *pFrame )
         RIDEHAL_ERROR( "RequestFrame is not allowed for multi-client non primary session" );
         ret = RIDEHAL_ERROR_OUT_OF_BOUND;
     }
+    else if ( nullptr == pFrame )
+    {
+        RIDEHAL_ERROR( "pFrame is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
     else
     {
-        if ( nullptr != pFrame )
+        uint32_t bufferListId = pFrame->streamId;
+        uint32_t bufferIdx = pFrame->frameIndex;
+        if ( true == m_bRequestPatternMode )
         {
-            uint32_t bufferListId = pFrame->streamId;
-            request.numStreamRequests = 1;
-
-            request.requestId = __atomic_fetch_add( &m_nRequestId, 1, __ATOMIC_RELAXED );
-
+            std::unique_lock<std::mutex> lock( m_mutex );
+            m_freeBufIdxQueue[bufferListId].push( bufferIdx );
+            if ( m_refStreamId == bufferListId )
+            { /* this is the reference frame, do submit requst */
+                for ( uint32_t i = 0; i < m_nNumStream; i++ )
+                {
+                    uint32_t streamId = m_streamConfig[i].streamId;
+                    if ( m_submitRequestPattern[i] > 0 )
+                    {
+                        m_submitRequestPattern[i]--;
+                    }
+                    if ( 0 == m_submitRequestPattern[i] )
+                    {
+                        if ( false == m_freeBufIdxQueue[streamId].empty() )
+                        {
+                            QCarCamStreamRequest_t *pStreamRequest =
+                                    &request.streamRequests[request.numStreamRequests];
+                            pStreamRequest->bufferlistId = streamId;
+                            pStreamRequest->bufferIdx = m_freeBufIdxQueue[streamId].front();
+                            m_freeBufIdxQueue[streamId].pop();
+                            request.numStreamRequests++;
+                            m_submitRequestPattern[i] = m_streamConfig[i].submitRequestPattern;
+                            RIDEHAL_DEBUG( "RequestFrame m_QcarCamHndl: %lu, bufferlistId: %u, "
+                                           "bufferIdx: %u",
+                                           m_QcarCamHndl, pStreamRequest->bufferlistId,
+                                           pStreamRequest->bufferIdx );
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
             QCarCamStreamRequest_t *pStreamRequest = &request.streamRequests[0];
             pStreamRequest->bufferlistId = bufferListId;
-            pStreamRequest->bufferIdx = pFrame->frameIndex;
+            pStreamRequest->bufferIdx = bufferIdx;
+            request.numStreamRequests = 1;
+        }
 
+        if ( request.numStreamRequests > 0 )
+        {
+            request.requestId = __atomic_fetch_add( &m_nRequestId, 1, __ATOMIC_RELAXED );
+            RIDEHAL_DEBUG( "RequestFrame begin m_QcarCamHndl: %lu, bufferlistId: %u, "
+                           "bufferIdx: %u, request id: %u",
+                           m_QcarCamHndl, bufferListId, bufferIdx, request.requestId );
             status = QCarCamSubmitRequest( m_QcarCamHndl, &request );
-
             if ( QCARCAM_RET_OK != status )
             {
                 RIDEHAL_ERROR( "RequestFrame fail m_QcarCamHndl: %lu, bufferlistId: %u, bufferIdx: "
                                "%u request id: %u",
-                               m_QcarCamHndl, pStreamRequest->bufferlistId,
-                               pStreamRequest->bufferIdx, request.requestId );
+                               m_QcarCamHndl, bufferListId, bufferIdx, request.requestId );
                 ret = RIDEHAL_ERROR_FAIL;
             }
             else
             {
                 RIDEHAL_DEBUG( "RequestFrame success m_QcarCamHndl: %lu, bufferlistId: %u, "
                                "bufferIdx: %u, request id: %u",
-                               m_QcarCamHndl, pStreamRequest->bufferlistId,
-                               pStreamRequest->bufferIdx, request.requestId );
+                               m_QcarCamHndl, bufferListId, bufferIdx, request.requestId );
             }
-        }
-        else
-        {
-            RIDEHAL_ERROR( "pFrame is nullptr" );
-            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 

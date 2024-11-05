@@ -9,6 +9,9 @@
 #include "qcarcam.h"
 #include "ridehal/component/ComponentIF.hpp"
 
+#include <mutex>
+#include <queue>
+
 using namespace ridehal::common;
 
 namespace ridehal
@@ -48,11 +51,12 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
 /** @brief Camera stream config */
 typedef struct
 {
-    uint32_t streamId;            /**< Camera stream id */
-    uint32_t width;               /**< Frame width */
-    uint32_t height;              /**< Frame height */
-    uint32_t bufCnt;              /**< Buffer count set to camera */
-    RideHal_ImageFormat_e format; /**< Camera frame format */
+    uint32_t streamId;             /**< Camera stream id */
+    uint32_t width;                /**< Frame width */
+    uint32_t height;               /**< Frame height */
+    uint32_t bufCnt;               /**< Buffer count set to camera */
+    uint32_t submitRequestPattern; /**< Buffer submit request pattern */
+    RideHal_ImageFormat_e format;  /**< Camera frame format */
 } CameraStreamConfig_t;
 
 /** @brief camera configuration */
@@ -235,6 +239,14 @@ private:
     QCarCamBuffer_t *m_pQcarcamBuffer[MAX_CAMERA_STREAM] = { 0 };
     QCarCamBufferList_t m_qcarcamBuffers[MAX_CAMERA_STREAM] = { 0 };
     QCarCamHndl_t m_QcarCamHndl;
+
+    uint32_t m_maxBufCnt = 0; /* the maximum buffer count of all the configured streams */
+
+    bool m_bRequestPatternMode = false;
+    uint32_t m_submitRequestPattern[MAX_CAMERA_STREAM];
+    uint32_t m_refStreamId = MAX_CAMERA_STREAM; /* Camera stream id */
+    std::queue<uint32_t> m_freeBufIdxQueue[MAX_CAMERA_STREAM];
+    std::mutex m_mutex;
 };   // class Camera
 
 }   // namespace component
