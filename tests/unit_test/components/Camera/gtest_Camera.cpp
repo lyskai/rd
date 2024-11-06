@@ -915,7 +915,8 @@ TEST( Camera, DropPattern_QcarCam )
         camConfig.streamConfig[0].bufCnt = BUFFFER_COUNT;
         camConfig.streamConfig[0].streamId = 0;
         camConfig.streamConfig[0].format = RIDEHAL_IMAGE_FORMAT_NV12;
-        camConfig.camFrameDropPat = 0b100; /* reduce to 10 FPS */
+        camConfig.camFrameDropPattern = 6; /* reduce to 10 FPS */
+        camConfig.camFrameDropPeriod = 2;
 
         /* 2024-9-25: till now this feature is not supported by qcarcam, so init will fail */
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );

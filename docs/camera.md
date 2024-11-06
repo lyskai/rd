@@ -16,6 +16,7 @@
   - [3.3 Set external allocated buffers to Camera](#33-Set-external-allocated-buffers-to-Camera)
   - [3.4 qcarcam multi-client feature](#34-qcarcam-multi-client-feature)
   - [3.5 Submit Request Pattern for multiple streaming of the camera](#35-submit-request-pattern-for-multiple-streaming-of-the-camera)
+  - [3.6 Camera frame drop pattern and period](#36-camera-frame-drop-pattern-and-period)
 - [4. References](#4-references)
 
 
@@ -99,8 +100,9 @@ typedef struct Camera_Config
                          client usecase */
     uint32_t inputMode;       /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
     uint32_t ispUserCase;     /**< ISP user case defined by qcarcam */
-    uint32_t camFrameDropPat; /**< Frame drop patten defined by qcarcam. Set to 0 when frame drop is
-                                 not used */
+    uint32_t camFrameDropPattern; /**< Frame drop patten defined by qcarcam. Set to 0 when frame
+                                 drop is not used */
+    uint32_t camFrameDropPeriod;  /**< Frame drop period defined by qcarcam. */
     uint32_t opMode;          /**< Operation mode defined by qcarcam */
     CameraStreamConfig_t streamConfig[MAX_CAMERA_STREAM]; /**< Per stream configuration */
     bool bAllocator;   /**< Flag to indicate if component is buffer allocator*/
@@ -123,7 +125,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
 ```
 ## 2.2 APIs
 
-- [GetInputsInfo](../include/ridehal/component/Camera.hpp#L103)
+- [GetInputsInfo](../include/ridehal/component/Camera.hpp#L104)
 ```c
     /**
      * @brief get camera inputs info
@@ -135,7 +137,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e GetInputsInfo( CameraInputs_t *pCamInputs );
 ```
 
-- [Init](../include/ridehal/component/Camera.hpp#L114)
+- [Init](../include/ridehal/component/Camera.hpp#L115)
 ```c
     /**
      * @brief init the Camera object
@@ -150,7 +152,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 ```
 
-- [SetBuffers](../include/ridehal/component/Camera.hpp#L126)
+- [SetBuffers](../include/ridehal/component/Camera.hpp#L127)
 ```c
     /**
      * @brief set a list of shared buffers to camera
@@ -165,7 +167,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                uint32_t streamId );
 ```
 
-- [GetBuffers](../include/ridehal/component/Camera.hpp#L139)
+- [GetBuffers](../include/ridehal/component/Camera.hpp#L140)
 ```c
     /**
      * @brief get a list of shared buffers use by the camera
@@ -180,7 +182,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                uint32_t streamId );
 ```
 
-- [RegisterCallback](../include/ridehal/component/Camera.hpp#L151)
+- [RegisterCallback](../include/ridehal/component/Camera.hpp#L152)
 ```c
     /**
      * @brief register callbacks to camera
@@ -195,7 +197,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
                                      RideHal_CamEventCallback_t eventCallback, void *pAppPriv );
 ```
 
-- [Start](../include/ridehal/component/Camera.hpp#L159)
+- [Start](../include/ridehal/component/Camera.hpp#L160)
 ```c
     /**
      * @brief Start the Camera object
@@ -205,7 +207,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Start() final;
 ```
 
-- [Pause](../include/ridehal/component/Camera.hpp#L166)
+- [Pause](../include/ridehal/component/Camera.hpp#L167)
 ```c
     /**
      * @brief Pause the Camera object
@@ -215,7 +217,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Pause();
 ```
 
-- [Resume](../include/ridehal/component/Camera.hpp#L173)
+- [Resume](../include/ridehal/component/Camera.hpp#L174)
 ```c
     /**
      * @brief Resume the Camera object
@@ -225,7 +227,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Resume();
 ```
 
-- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L182)
+- [ReleaseFrame](../include/ridehal/component/Camera.hpp#L183)
 ```c
     /**
      * @brief release a camera frame
@@ -237,7 +239,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e ReleaseFrame( CameraFrame_t *pFrame );
 ```
 
-- [RequestFrame](../include/ridehal/component/Camera.hpp#L191)
+- [RequestFrame](../include/ridehal/component/Camera.hpp#L192)
 ```c
     /**
      * @brief request a frame from camera
@@ -249,7 +251,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e RequestFrame( CameraFrame_t *pFrame );
 ```
 
-- [Stop](../include/ridehal/component/Camera.hpp#L198)
+- [Stop](../include/ridehal/component/Camera.hpp#L199)
 ```c
     /**
      * @brief Stop the Camera object
@@ -259,7 +261,7 @@ typedef void ( *RideHal_CamEventCallback_t )( const uint32_t eventId, const void
     RideHalError_e Stop() final;
 ```
 
-- [Deinit](../include/ridehal/component/Camera.hpp#L205)
+- [Deinit](../include/ridehal/component/Camera.hpp#L206)
 ```c
     /**
      * @brief Deinit the Camera object
@@ -392,6 +394,18 @@ In this configuration:
 Exactly! For any stream with a non-zero `submitRequestPattern`, the FPS is calculated as:
 
     FPS = The FPS of stream 0 / submitRequestPattern
+
+## 3.6 Camera frame drop pattern and period
+
+The option `camFrameDropPattern` and `camFrameDropPeriod` can be used to drop camera frames to reduce camera FPS.
+
+Below is the frame drop pattern and period has been tested.
+
+| FPS       | pattern  | period    |
+|-----------|----------|-----------|
+|  15       |  10      |  3        |
+|  7.5      |  7       |  3        |
+|  10       |  6       |  2        |
 
 # 4. References
 

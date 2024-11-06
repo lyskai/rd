@@ -19,20 +19,6 @@ static std::mutex g_camInitMutex;
 
 static CameraInputs_t s_cameraInputsInfo = { nullptr, nullptr, 0 };
 
-static uint32_t GetNumBitsOfInteger( uint32_t nInteger )
-{
-    uint32_t nTmp = nInteger;
-    uint32_t n = 0;
-
-    while ( 0 != nTmp )
-    {
-        nTmp = ( nTmp >> 1U );
-        ++n;
-    }
-
-    return n;
-}
-
 static void FreeCameraInputsInfo( void )
 {
     if ( nullptr != s_cameraInputsInfo.pCameraInputs )
@@ -491,23 +477,22 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
         }
         else
         {
-            RIDEHAL_INFO( "QCARCAM_STREAM_CONFIG_PARAM_ISP_USECASE successg" );
+            RIDEHAL_INFO( "QCARCAM_STREAM_CONFIG_PARAM_ISP_USECASE success" );
         }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        // setup frame rate params
-        QCarCamFrameDropConfig_t frameDropConfig = { 0 };
-        frameDropConfig.frameDropPeriod = GetNumBitsOfInteger( pConfig->camFrameDropPat );
-        frameDropConfig.frameDropPattern = pConfig->camFrameDropPat;
-
-        if ( 0 == pConfig->camFrameDropPat )
+        if ( 0 == pConfig->camFrameDropPattern )
         {
             RIDEHAL_INFO( "Ignore frame drop config" );
         }
         else
         {
+            // setup frame rate params
+            QCarCamFrameDropConfig_t frameDropConfig = { 0 };
+            frameDropConfig.frameDropPeriod = pConfig->camFrameDropPeriod;
+            frameDropConfig.frameDropPattern = pConfig->camFrameDropPattern;
             status = QCarCamSetParam( m_QcarCamHndl, QCARCAM_STREAM_CONFIG_PARAM_FRAME_DROP_CONTROL,
                                       &frameDropConfig, sizeof( frameDropConfig ) );
             if ( QCARCAM_RET_OK != status )

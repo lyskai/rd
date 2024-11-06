@@ -67,11 +67,12 @@ typedef struct Camera_Config
     uint32_t srcId;     /**< Input source identifier. See #QCarCamInputSrc_t */
     uint32_t clientId; /**< client id, used for multi client usecase, set to 0 by default for single
                          client usecase */
-    uint32_t inputMode;       /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
-    uint32_t ispUserCase;     /**< ISP user case defined by qcarcam */
-    uint32_t camFrameDropPat; /**< Frame drop patten defined by qcarcam. Set to 0 when frame drop is
-                                 not used */
-    uint32_t opMode;          /**< Operation mode defined by qcarcam */
+    uint32_t inputMode;   /**< The input mode id is the index into #QCarCamInputModes_t pModex*/
+    uint32_t ispUserCase; /**< ISP user case defined by qcarcam */
+    uint32_t camFrameDropPattern; /**< Frame drop patten defined by qcarcam. Set to 0 when frame
+                                 drop is not used */
+    uint32_t camFrameDropPeriod;  /**< Frame drop period defined by qcarcam. */
+    uint32_t opMode;              /**< Operation mode defined by qcarcam */
     CameraStreamConfig_t streamConfig[MAX_CAMERA_STREAM]; /**< Per stream configuration */
     bool bAllocator;   /**< Flag to indicate if component is buffer allocator*/
     bool bRequestMode; /**< Flag to set request buffer mode */
