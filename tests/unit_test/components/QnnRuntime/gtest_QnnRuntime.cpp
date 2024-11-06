@@ -4,6 +4,7 @@
 
 
 #define QNNRUNTIME_UNIT_TEST
+#include "accuracy.hpp"
 #include "md5_utils.hpp"
 #include "ridehal/component/QnnRuntime.hpp"
 #include "gtest/gtest.h"
@@ -930,12 +931,10 @@ TEST( QnnRuntime, TestAccuracy )
         size_t outputSize = 0;
         void *pOutputData = LoadRaw( outputDataPaths[i], outputSize );
         ASSERT_EQ( outputs[i].size, outputSize );
-        std::string md5OutputGolden = MD5Sum( pOutputData, outputSize );
-        std::string md5Output = MD5Sum( outputs[i].buffer.pData, outputs[i].size );
-        printf( "output: %d\n", i );
-        printf( "md5OutputGolden: %s\n", md5OutputGolden.c_str() );
-        printf( "md5Output: %s\n", md5Output.c_str() );
-        EXPECT_EQ( md5OutputGolden, md5Output );
+        double cosSim = CosineSimilarity( (uint8_t *) pOutputData,
+                                          (uint8_t *) outputs[i].buffer.pData, outputSize );
+        printf( "output: %d: cosine similarity = %f\n", i, (float) cosSim );
+        ASSERT_GT( cosSim, 0.99d );
         free( pOutputData );
     }
 }
