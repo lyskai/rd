@@ -296,6 +296,7 @@ private:
     RideHalError_e CheckOutputTensors( const RideHal_SharedBuffer_t *pOutputs,
                                        uint32_t numOutputs );
 
+    QnnLog_Level_t GetQnnLogLevel( Logger_Level_e level );
 
 #ifdef QNNRUNTIME_UNIT_TEST
 public:
@@ -348,7 +349,7 @@ private:
     const qnn_wrapper_api::GraphConfigInfo_t **m_GraphConfigsInfo = nullptr;
     uint32_t m_GraphConfigsInfoCount = 0;
 
-    const QnnDevice_PlatformInfo_t *m_PlatformInfo;
+    const QnnDevice_PlatformInfo_t *m_PlatformInfo = nullptr;
 
     typedef struct
     {

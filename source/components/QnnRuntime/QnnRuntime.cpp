@@ -13,6 +13,7 @@
 #include "QnnSampleAppUtils.hpp"
 #include "QnnSdkBuildId.h"
 #include "QnnTypeMacros.hpp"
+#include <libgen.h>
 #include <sstream>
 #include <unistd.h>
 
@@ -48,6 +49,7 @@ QnnRuntime::QnnRuntime() {}
 
 void QnnLog_Callback( const char *fmt, QnnLog_Level_t logLevel, uint64_t timestamp, va_list args )
 {
+#ifndef DISABLE_RIDEHAL_LOG
     switch ( logLevel )
     {
         case QNN_LOG_LEVEL_VERBOSE:
@@ -69,17 +71,12 @@ void QnnLog_Callback( const char *fmt, QnnLog_Level_t logLevel, uint64_t timesta
             Logger::GetDefault().Log( LOGGER_LEVEL_VERBOSE, fmt, args );
             break;
     }
+#endif
 }
 
 RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    if ( -1 == access( modelFile.c_str(), F_OK ) )
-    {
-        RIDEHAL_ERROR( "No existing file: %s", modelFile.c_str() );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -143,9 +140,9 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
                                                binaryBufferSize, &writtenBufferSize ) )
             {
                 RIDEHAL_INFO( "saving cached binary(size = %llu)", writtenBufferSize );
-
+                std::string fileDir = dirname( (char *) modelFile.c_str() );
                 auto dataUtilStatus = tools::datautil::writeBinaryToFile(
-                        modelFile, "programGenFromSo.bin", (uint8_t *) saveBuffer.get(),
+                        fileDir, "programGenFromSo.bin", (uint8_t *) saveBuffer.get(),
                         writtenBufferSize );
                 if ( tools::datautil::StatusCode::SUCCESS != dataUtilStatus )
                 {
@@ -262,12 +259,11 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
         ret = RIDEHAL_ERROR_FAIL;
     }
 
-    uint64_t bufferSize{ 0 };
+    size_t bufferSize{ 0 };
     std::shared_ptr<uint8_t> buffer{ nullptr };
     // read serialized binary into a byte buffer
     tools::datautil::StatusCode status{ tools::datautil::StatusCode::SUCCESS };
     std::tie( status, bufferSize ) = tools::datautil::getFileSize( modelFile );
-
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         if ( 0 == bufferSize )
@@ -277,10 +273,10 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
         }
     }
 
-    buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize], std::default_delete<uint8_t[]>() );
-
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize],
+                                           std::default_delete<uint8_t[]>() );
         if ( !buffer )
         {
             RIDEHAL_ERROR( "Failed to allocate memory." );
@@ -312,17 +308,6 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-    if ( numOfUdoPackages <= 0 )
-    {
-        RIDEHAL_ERROR( "UdoPackages size is less than 0: %d", numOfUdoPackages );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    if ( pUdoPackages == nullptr )
-    {
-        RIDEHAL_ERROR( "pUdoPackages is null" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
 
     for ( size_t i = 0; i < numOfUdoPackages; ++i )
     {
@@ -350,6 +335,38 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
     return ret;
 }
 
+QnnLog_Level_t QnnRuntime::GetQnnLogLevel( Logger_Level_e level )
+{
+    QnnLog_Level_t qnnLogLevel = QNN_LOG_LEVEL_WARN;
+    Logger_Level_e lvl = level;
+
+#ifndef DISABLE_RIDEHAL_LOG
+    lvl = m_logger.GetLevel();
+#endif
+    switch ( lvl )
+    {
+        case LOGGER_LEVEL_VERBOSE:
+            qnnLogLevel = QNN_LOG_LEVEL_VERBOSE;
+            break;
+        case LOGGER_LEVEL_DEBUG:
+            qnnLogLevel = QNN_LOG_LEVEL_DEBUG;
+            break;
+        case LOGGER_LEVEL_INFO:
+            qnnLogLevel = QNN_LOG_LEVEL_INFO;
+            break;
+        case LOGGER_LEVEL_WARN:
+            qnnLogLevel = QNN_LOG_LEVEL_WARN;
+            break;
+        case LOGGER_LEVEL_ERROR:
+            qnnLogLevel = QNN_LOG_LEVEL_ERROR;
+            break;
+        default: /* warn level */
+            break;
+    }
+
+    return qnnLogLevel;
+}
+
 RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *pConfig,
                                  Logger_Level_e level )
 {
@@ -364,6 +381,20 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         RIDEHAL_ERROR( "QnnRuntime Config is nullptr!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( ( pConfig->numOfUdoPackages > 0 ) && ( nullptr == pConfig->pUdoPackages ) )
+    {
+        RIDEHAL_ERROR( "pUdoPackages is null" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( pConfig->numOfUdoPackages < 0 )
+    {
+        RIDEHAL_ERROR( "UdoPackages size is less than 0: %d", pConfig->numOfUdoPackages );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        /* OK */
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -405,7 +436,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         QnnLog_Error_t logError;
-        auto logLevel = QNN_LOG_LEVEL_WARN;
+        auto logLevel = GetQnnLogLevel( level );
 
         (void) qnn::log::Logger::createLogger( &QnnLog_Callback, logLevel, &logError );
 
@@ -550,7 +581,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         {
             RIDEHAL_INFO( "no op package" );
         }
-        else if ( pConfig->numOfUdoPackages > 0 )
+        else
         {
             ret = LoadOpPackages( pConfig->pUdoPackages, pConfig->numOfUdoPackages );
             if ( RIDEHAL_ERROR_NONE != ret )
@@ -558,11 +589,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                 RIDEHAL_ERROR( "fail to load package" );
                 ret = RIDEHAL_ERROR_FAIL;
             }
-        }
-        else
-        {
-            RIDEHAL_ERROR( "UdoPackages size is less than 0: %d", pConfig->numOfUdoPackages );
-            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
@@ -727,6 +753,15 @@ RideHalError_e QnnRuntime::GetInputInfo( QnnRuntime_TensorInfoList_t *pList )
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
+    else if ( nullptr == pList )
+    {
+        RIDEHAL_ERROR( "pList is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        /* OK */
+    }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -820,6 +855,15 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfoList_t *pList )
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
+    else if ( nullptr == pList )
+    {
+        RIDEHAL_ERROR( "pList is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        /* OK */
+    }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -841,8 +885,6 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfoList_t *pList )
 RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pSharedBuffer,
                                            Qnn_MemHandle_t *pMemHandle )
 {
-
-
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
@@ -959,6 +1001,20 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pShare
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
+    else if ( nullptr == pSharedBuffers )
+    {
+        RIDEHAL_ERROR( "pSharedBuffers is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( 0 == numBuffers )
+    {
+        RIDEHAL_ERROR( "numBuffers is 0" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        /* OK */
+    }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -1057,25 +1113,15 @@ RideHalError_e QnnRuntime::GeneratePerf()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
-    {
-        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
-        ret = RIDEHAL_ERROR_BAD_STATE;
-    }
-
     const QnnProfile_EventId_t *profileEvents{ nullptr };
     uint32_t numEvents{ 0 };
 
-    if ( RIDEHAL_ERROR_NONE == ret )
+    const Qnn_ErrorHandle_t retVal = m_QnnFunctionPointers.qnnInterface.profileGetEvents(
+            m_ProfileBackendHandle, &profileEvents, &numEvents );
+    if ( QNN_PROFILE_NO_ERROR != retVal )
     {
-        const Qnn_ErrorHandle_t retVal = m_QnnFunctionPointers.qnnInterface.profileGetEvents(
-                m_ProfileBackendHandle, &profileEvents, &numEvents );
-        if ( QNN_PROFILE_NO_ERROR != retVal )
-        {
-            RIDEHAL_ERROR( "Failure in profile get events." );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
+        RIDEHAL_ERROR( "Failure in profile get events." );
+        ret = RIDEHAL_ERROR_FAIL;
     }
 
     RIDEHAL_DEBUG( "ProfileEvents: numEvents: [%u]", numEvents );
@@ -1095,10 +1141,9 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
-        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
+        RIDEHAL_ERROR( "QnnRuntime component not in running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
 
@@ -1212,19 +1257,9 @@ RideHalError_e QnnRuntime::DeRegisterBuffers()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
     {
-        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
-        ret = RIDEHAL_ERROR_BAD_STATE;
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        if ( m_BackendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
-        {
-            ret = RIDEHAL_ERROR_FAIL; /* for safety */
-        }
+        ret = RIDEHAL_ERROR_FAIL; /* for safety */
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -1270,6 +1305,20 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
     {
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pSharedBuffers )
+    {
+        RIDEHAL_ERROR( "pSharedBuffers is nullptr" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( 0 == numBuffers )
+    {
+        RIDEHAL_ERROR( "numBuffers is 0" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        /* OK */
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )

@@ -222,6 +222,12 @@ public:
     void Log( Logger_Level_e level, const char *pFormat, va_list args );
 
     /**
+     * @brief Get the acutal logger level of this logger
+     * @return The current the logger level
+     */
+    Logger_Level_e GetLevel() { return m_level; }
+
+    /**
      * @brief Setup the logger backend fuction pointers
      * @param[in] logFnc the function pointer that do log
      * @param[in] createFnc the function pointer that do create the implementation related handle
