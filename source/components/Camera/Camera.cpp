@@ -14,6 +14,8 @@ namespace ridehal
 namespace component
 {
 
+#define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
+
 static int g_nCamInitRefCount = 0;
 static std::mutex g_camInitMutex;
 
@@ -49,6 +51,16 @@ QCarCamColorFmt_e Camera::GetQcarCamFormat( RideHal_ImageFormat_e colorFormat )
 
     switch ( colorFormat )
     {
+        case RIDEHAL_IMAGE_FORMAT_RGB888:
+        {
+            qcarcamFormat = QCARCAM_FMT_RGB_888;
+            break;
+        }
+        case RIDEHAL_IMAGE_FORMAT_BGR888:
+        {
+            qcarcamFormat = QCARCAM_FMT_BGR_888;
+            break;
+        }
         case RIDEHAL_IMAGE_FORMAT_UYVY:
         {
             qcarcamFormat = QCARCAM_FMT_UYVY_8;
@@ -1033,8 +1045,26 @@ RideHalError_e Camera::AllocateBuffers()
         {
             QCarCamBuffer_t *pQcarcamBuf = &m_pQcarcamBuffer[streamId][j];
             CameraFrame_t *pCamFrame = &m_pCameraFrames[streamId][j];
-            ret2 = pCamFrame->sharedBuffer.Allocate(
-                    m_streamConfig[i].width, m_streamConfig[i].height, m_streamConfig[i].format );
+            if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_streamConfig[i].format ) ||
+                 ( RIDEHAL_IMAGE_FORMAT_BGR888 == m_streamConfig[i].format ) )
+            {
+                RideHal_ImageProps_t imgProp;
+                imgProp.format = m_streamConfig[i].format;
+                imgProp.batchSize = 1;
+                imgProp.width = m_streamConfig[i].width;
+                imgProp.height = m_streamConfig[i].height;
+                imgProp.stride[0] = ALIGN_S( m_streamConfig[i].width * 3, 16 );
+                imgProp.actualHeight[0] = m_streamConfig[i].height;
+                imgProp.numPlanes = 1;
+                imgProp.planeBufSize[0] = 0;
+                ret2 = pCamFrame->sharedBuffer.Allocate( &imgProp );
+            }
+            else
+            {
+                ret2 = pCamFrame->sharedBuffer.Allocate( m_streamConfig[i].width,
+                                                         m_streamConfig[i].height,
+                                                         m_streamConfig[i].format );
+            }
             if ( RIDEHAL_ERROR_NONE != ret2 )
             {
                 RIDEHAL_ERROR( "Buffer allocation failed" );

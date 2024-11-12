@@ -119,25 +119,28 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | client_id | false    | int       | 0       | client id, used for multi client usecase, set to 0 by default for single client usecase  |
 | is_primary| false    | int       | false   | Flag to indicate if the session is primary or not when configured the clientId |
 | input_id  | true     | int       | -       | The camera input id |
-| src_id    | true     | int       | 0       | Input source identifier |
-| input_mode | true    | int       | 0       | The input mode id |
-| width     | true     | int       | -       | The image width |
-| height    | true     | int       | -       | The image height |
+| src_id    | false    | int       | 0       | Input source identifier |
+| input_mode | false   | int       | 0       | The input mode id |
+| width     | true     | int       | -       | The image width for the stream 0 |
+| height    | true     | int       | -       | The image height for the stream 0 |
+| format    | false    | string    | "nv12"  | The camera frame format for the stream 0, options from [nv12, uyvy, p010, nv12_ubwc, rgb, bgr] |
+| stream_id | false    | int       | 0       | The camera stream id for the stream 0 |
+| pool_size | false    | int       | 4       | The image memory pool size for the stream 0 |
+| submit_request_pattern | false | int       | 0  | The submit request pattern for the stream 0 |
 | request_mode | false | bool      | false   | The camera request mode |
-| pool_size | false    | int       | 4       | The image memory pool size |
-| format    | false    | string    | "nv12"  | The camera frame format, options from [nv12, uyvy, p010, nv12_ubwc] |
 | frame_drop_patten | false | int  | 0       | The frame drop patten defined by qcarcam |
-| stream_id | false    | int       | 0       | The camera stream id |
+| frame_drop_period | false | int  | 0       | The frame drop period defined by qcarcam |
 | isp_use_case | false | int       | 3       | The ISP use case |
 | op_mode   | false    | int       | 2       | The input operation mode, 1: Inline ISP, 2: Injection to ISP. |
 | ignore_error | false | bool      | false   | Ignore the error of Camera Init&Start |
 | topic     | true     | string    | -       | The output topic name |
-| widthX     | true     | int       | -       | The image width for the stream X |
-| heightX    | true     | int       | -       | The image height for the stream X |
-| formatX    | false    | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy, p010, nv12_ubwc] |
-| stream_idX | false    | int       | ${X}       | The camera stream id for the stream X |
-| pool_sizeX | false    | int       | 4       | The image memory pool size for the stream X |
-| topicX     | true     | string    | -       | The output topic name for the stream X |
+| widthX     | false   | int       | -       | The image width for the stream X |
+| heightX    | false   | int       | -       | The image height for the stream X |
+| formatX    | false   | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy, p010, nv12_ubwc, rgb, bgr] |
+| stream_idX | false   | int       | ${X}       | The camera stream id for the stream X |
+| pool_sizeX | false   | int       | 4       | The image memory pool size for the stream X |
+| submit_request_patternX | false | int       | 0  | The submit request pattern for the stream X |
+| topicX     | false   | string    | -       | The output topic name for the stream X |
 
 Note: "X" is value from 1 to number-1, thus the attribute with suffix "X" is repeated for different streams.
 
@@ -146,8 +149,19 @@ The command line template example:
 ```sh
   -n CAM0 -t Camera -k input_id -v 0 \
     -k width -v 1928 -k height -v 1208 \
-    -k request_mode -v 0 \
+    -k request_mode -v false \
     -k topic -v /sensor/camera/CAM0/raw \
+```
+
+```sh
+  -n IMX728_0 -t Camera -k input_id -v 0 -k number -v 2 \
+    -k stream_id -v 0 -k width -v 1920 -k height -v 1080 -k format -v nv12_ubwc \
+    -k stream_id1 -v 1 -k width1 -v 3840 -k height1 -v 2160 -k format1 -v nv12_ubwc \
+    -k submit_request_pattern1 -v 3 \
+    -k isp_use_case -v 135 \
+    -k request_mode -v true -k pool_size -v 4 \
+    -k topic -v /sensor/camera/IMX728_0/raw \
+    -k topic1 -v /sensor/camera/IMX728_0_S1/raw \
 ```
 
 ### 2.3 RideHal C2D Sample
