@@ -244,7 +244,7 @@ private:
     uint32_t m_maxBufCnt = 0; /* the maximum buffer count of all the configured streams */
 
     bool m_bRequestPatternMode = false;
-    uint32_t m_submitRequestPattern[MAX_CAMERA_STREAM];
+    uint32_t m_submitRequestPattern[MAX_CAMERA_STREAM] = { 0 };
     uint32_t m_refStreamId = MAX_CAMERA_STREAM; /* Camera stream id */
     std::queue<uint32_t> m_freeBufIdxQueue[MAX_CAMERA_STREAM];
     std::mutex m_mutex;

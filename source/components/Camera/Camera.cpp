@@ -340,6 +340,7 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
                     { /* the first stream with 0 pattern acting as reference stream */
                         m_refStreamId = m_streamConfig[i].streamId;
                     }
+                    m_submitRequestPattern[i] = 0;
                 }
                 else
                 { /* if there is anyone none-zero pattern, a submit request pattern mode for FPS HW
@@ -876,11 +877,13 @@ CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pFrameinfo )
             pCameraFrame->timestamp = frameInformation.sofTimestamp.timestamp;
             pCameraFrame->timestampQGPTP = frameInformation.sofTimestamp.timestampGPTP;
             pCameraFrame->flags = frameInformation.flags;
-            RIDEHAL_DEBUG( "GetFrame index: %u ptr: %p buffer: %p, size: %u, timestamp: %llu, "
+            RIDEHAL_DEBUG( "GetFrame bufferlistId: %u, bufferIdx: %u ptr: %p buffer: %p, size: %u, "
+                           "timestamp: %llu, "
                            "timestampGPTP: %llu, flags: %x",
-                           frameIndex, pCameraFrame, pCameraFrame->sharedBuffer.data(),
-                           pCameraFrame->sharedBuffer.size, pCameraFrame->timestamp,
-                           pCameraFrame->timestampQGPTP, pCameraFrame->flags );
+                           frameInformation.id, frameIndex, pCameraFrame,
+                           pCameraFrame->sharedBuffer.data(), pCameraFrame->sharedBuffer.size,
+                           pCameraFrame->timestamp, pCameraFrame->timestampQGPTP,
+                           pCameraFrame->flags );
         }
         else
         {
@@ -894,11 +897,12 @@ CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pFrameinfo )
         pCameraFrame->timestamp = pFrameinfo->sofTimestamp.timestamp;
         pCameraFrame->timestampQGPTP = pFrameinfo->sofTimestamp.timestampGPTP;
         pCameraFrame->flags = pFrameinfo->flags;
-        RIDEHAL_DEBUG( "GetFrame index: %u ptr: %p buffer: %p, size: %d, timestamp: %llu, "
+        RIDEHAL_DEBUG( "GetFrame bufferlistId: %u, bufferIdx: %u ptr: %p buffer: %p, size: %d, "
+                       "timestamp: %llu, "
                        "timestampGPTP: %llu, flags: %x",
-                       frameIndex, pCameraFrame, pCameraFrame->sharedBuffer.data(),
-                       pCameraFrame->sharedBuffer.size, pCameraFrame->timestamp,
-                       pCameraFrame->timestampQGPTP, pCameraFrame->flags );
+                       frameInformation.id, frameIndex, pCameraFrame,
+                       pCameraFrame->sharedBuffer.data(), pCameraFrame->sharedBuffer.size,
+                       pCameraFrame->timestamp, pCameraFrame->timestampQGPTP, pCameraFrame->flags );
     }
 
     return pCameraFrame;
