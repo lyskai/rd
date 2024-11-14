@@ -59,6 +59,8 @@ private:
     std::map<uint32_t, std::shared_ptr<DataPublisher<DataFrames_t>>> m_pubMap;
     uint64_t m_frameId[MAX_CAMERA_STREAM] = { 0 };
 
+    bool m_bImmediateRelease = false;
+
     /* if true, ignore any camera Init or Start error */
     bool m_bIgnoreError = false;
 };   // class SampleCamera

@@ -184,7 +184,9 @@ QCarCamRet_e Camera::QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t ev
         }
         case QCARCAM_EVENT_ERROR:
         {
-            RIDEHAL_ERROR( "QCARCAM_EVENT_ERROR" );
+            RIDEHAL_ERROR( "QCARCAM_EVENT_ERROR: error Id=%d, code=%u, source=%u",
+                           pPayload->errInfo.errorId, pPayload->errInfo.errorCode,
+                           pPayload->errInfo.errorSource );
             m_EventCallback( eventId, (void *) pPayload, m_pAppPriv );
             break;
         }

@@ -45,15 +45,17 @@ public:
     RideHalError_e Publish( T &data )
     {
         RideHalError_e ret = RIDEHAL_ERROR_NONE;
+        {
+            std::unique_lock<std::mutex> lock( m_mutex );
+            m_queue.push( data );
+            m_condVar.notify_one();
+            /* with this block to activate the subscriber thread as soon as possible */
+        }
         std::unique_lock<std::mutex> lock( m_mutex );
-        m_queue.push( data );
         if ( m_queueDepth < m_queue.size() )
         {
             m_queue.pop(); /* drop the oldest */
         }
-
-        m_condVar.notify_one();
-
         return ret;
     }
 

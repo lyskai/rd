@@ -55,6 +55,9 @@ with open(args.input, 'rb') as f:
     record = f.read()
 reLen = ctypes.sizeof(SysTraceRecord)
 numRec = len(record)//reLen
+
+lastBEEvents = {} # cache the last B/E event
+
 for i in range(numRec):
     raw = record[i*reLen: (i+1)*reLen]
     rec = SysTraceRecord()
@@ -69,6 +72,18 @@ for i in range(numRec):
                 'tid': name, 'ts': ts, 'args': { 'id': rec.id, 'timestamp': ts } }
         if cat  in ['Init', 'Start', 'Stop', 'Deinit']:
             evt['name'] = cat
+        if cat in ['Execute'] and ph == 'B':
+            # check the previous B and E is match, as if Execute failed, there will be no E
+            if processor in lastBEEvents and name in lastBEEvents[processor]:
+                levt = lastBEEvents[processor][name]
+                if levt['ph'] != 'E':
+                    eevt = dict(levt)
+                    eevt['ph'] = 'E'
+                    events.append(eevt)
+                    print('WARNING: %s %s %s Execute failed' %(eevt['pid'], eevt['tid'], eevt['name']))
+        if processor not in lastBEEvents:
+            lastBEEvents[processor] = {}
+        lastBEEvents[processor][name] = evt
     elif ph in ['X']:
         evt = { 'name': cat, 'cat': cat, 'ph': 'X', 'pid': processor, 'dur': 1,
                 'tid': name, 'ts': ts, 'args': { 'id': rec.id, 'timestamp': ts } }

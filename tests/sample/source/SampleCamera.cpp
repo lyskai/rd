@@ -29,7 +29,11 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
         camFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
         camFrame.frameIndex = frameIndex;
         camFrame.streamId = pSharedBuffer->pubHandle >> 32;
-        if ( ( 0 != m_camConfig.clientId ) && ( false == m_camConfig.bPrimary ) )
+        if ( true == m_bImmediateRelease )
+        {
+            /* do nothing as immediate release in the callback */
+        }
+        else if ( ( 0 != m_camConfig.clientId ) && ( false == m_camConfig.bPrimary ) )
         {
             /* do nothing for multi-client non-primary session */
         }
@@ -67,6 +71,22 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
     else
     {
         RIDEHAL_ERROR( "no publisher for stream %u", pFrame->streamId );
+    }
+
+    if ( true == m_bImmediateRelease )
+    {
+        if ( ( 0 != m_camConfig.clientId ) && ( false == m_camConfig.bPrimary ) )
+        {
+            /* do nothing for multi-client non-primary session */
+        }
+        else if ( false == m_camConfig.bRequestMode )
+        {
+            m_camera.ReleaseFrame( pFrame );
+        }
+        else
+        {
+            m_camera.RequestFrame( pFrame );
+        }
     }
 }
 
@@ -181,6 +201,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
         m_camConfig.opMode = Get( config, "op_mode", (uint32_t) QCARCAM_OPMODE_OFFLINE_ISP );
 
         m_bIgnoreError = Get( config, "ignore_error", false );
+        m_bImmediateRelease = Get( config, "immediate_release", false );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
