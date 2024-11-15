@@ -1,3 +1,6 @@
+- The RideHal building guideline
+  - [How to build for HGY Linux](./build-hgy-linux.md)
+  - [How to build for HGY Ubuntu](./build-hgy-ubuntu.md)
 
 - The RideHal basic utils
   - [The RideHal Buffer](./buffer.md)
@@ -19,3 +22,4 @@
   - [The RideHal Sample App](../tests/sample/README.md)
   - [The RideHal Sample Buffer Life Cycle Management](./sample-buffer-life-cycle-management.md)
   - [The RideHal Sample Data Online](../scripts/utils/data_online/README.md)
+

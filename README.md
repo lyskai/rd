@@ -24,10 +24,15 @@ Below is a summary information of the current implemented components.
 
 # How to build
 
-For how to build the RideHal package, check this [README](./scripts/build/README.md).
+For how to build the RideHal package in simple steps with internal scripts, check this [README](./scripts/build/README.md).
+
+For how to build the RideHal package manually, check this:
+- HGY Linux: [How to build for HGY Linux](./build-hgy-linux.md)
+- HGY Ubuntu: [How to build for HGY Ubuntu](./build-hgy-ubuntu.md)
 
 # How to run
 
 For how to run the RideHal package, check this [README](./scripts/launch/README.md).
 
 For how to run the RideHal E2E perception pipeline sample, check this [README](./tests/sample/README.md).
+
