@@ -53,10 +53,10 @@ TEST( QnnRuntime, SANITY_General )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "SANITY";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -75,7 +75,7 @@ TEST( QnnRuntime, SANITY_General )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -87,7 +87,7 @@ TEST( QnnRuntime, SANITY_General )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -108,10 +108,10 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "MODEL_FROM_BUF";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP1;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_CONTEXT_BIN_FROM_BUFFER;
     std::string modelPath = std::string( qnnConfig.modelPath );
     uint64_t bufferSize{ 0 };
@@ -125,13 +125,13 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     qnnConfig.contextBuffer = nullptr;
     qnnConfig.contextSize = bufferSize;
     ret = qnnRuntime.Init( pName, pQnnConfig );
-    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     // buffer size is 0
     qnnConfig.contextBuffer = buffer.get();
     qnnConfig.contextSize = 0;
     ret = qnnRuntime.Init( pName, pQnnConfig );
-    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     // buffer size is incorrect
     qnnConfig.contextBuffer = buffer.get();
@@ -159,7 +159,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -174,7 +174,7 @@ TEST( QnnRuntime, CreateModelFromBuffer )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -198,10 +198,10 @@ TEST( QnnRuntime, Perf )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "QPERF";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -210,7 +210,6 @@ TEST( QnnRuntime, Perf )
 
     ret = qnnRuntime.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
 
     QnnRuntime_TensorInfoList_t tensorInputList;
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -223,7 +222,7 @@ TEST( QnnRuntime, Perf )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -238,22 +237,34 @@ TEST( QnnRuntime, Perf )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     ret = qnnRuntime.EnablePerf();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    QnnRuntime_Perf_t perf;
+    ret = qnnRuntime.GetPerf( &perf );
+    ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
+
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    QnnRuntime_Perf_t perf;
+    ret = qnnRuntime.GetPerf( (QnnRuntime_Perf_t *) nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
     ret = qnnRuntime.GetPerf( &perf );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = qnnRuntime.DisablePerf();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.GetPerf( &perf );
+    ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
 
     ret = qnnRuntime.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -269,10 +280,10 @@ TEST( QnnRuntime, RegisterBuffer )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "REGBUF";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -293,7 +304,7 @@ TEST( QnnRuntime, RegisterBuffer )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -308,9 +319,19 @@ TEST( QnnRuntime, RegisterBuffer )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
+
+    uint64_t dmaHandle = inputs[0].buffer.dmaHandle;
+    void *pData = inputs[0].buffer.pData;
+    inputs[0].buffer.dmaHandle = (uint64_t) -1;
+    inputs[0].buffer.pData = (void *) 123;
+    ret = qnnRuntime.RegisterBuffers( inputs, inputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    inputs[0].buffer.dmaHandle = dmaHandle;
+    inputs[0].buffer.pData = pData;
 
     ret = qnnRuntime.RegisterBuffers( inputs, 0 );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
@@ -358,16 +379,20 @@ TEST( QnnRuntime, LoadModel )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "LOAD_MODEL";
 
     ret = qnnRuntime.Init( (const char *) nullptr, &qnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     qnnConfig.modelPath = "data/noexistingfile.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP1;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP1;
 
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    qnnConfig.modelPath = nullptr;
+    ret = qnnRuntime.Init( pName, pQnnConfig );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     qnnConfig.modelPath = "data/centernet/zero_buffer_size.bin";
     ret = qnnRuntime.Init( pName, pQnnConfig );
@@ -428,10 +453,10 @@ TEST( QnnRuntime, LoadOpPackage )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "OP_PKG";
 
     qnnConfig.modelPath = "data/bevdet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
     const size_t numOfUdoPackages = 1;
     QnnRuntime_UdoPackage_t udoPackages[numOfUdoPackages];
 
@@ -476,7 +501,7 @@ TEST( QnnRuntime, LoadOpPackage )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -491,7 +516,7 @@ TEST( QnnRuntime, LoadOpPackage )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -581,9 +606,9 @@ TEST( QnnRuntime, CreateModelFromSo )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "FROM_SO";
 
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_CPU;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_CPU;
     qnnConfig.loadType = QnnRuntime_LoadType_e::QNNRUNTIME_LOAD_SHARED_LIBRARY_FROM_FILE;
 
     // invalid path
@@ -617,7 +642,7 @@ TEST( QnnRuntime, CreateModelFromSo )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -632,7 +657,7 @@ TEST( QnnRuntime, CreateModelFromSo )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -653,10 +678,10 @@ TEST( QnnRuntime, DynamicBatchSize )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "DYN_BATCH";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -687,8 +712,9 @@ TEST( QnnRuntime, DynamicBatchSize )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        tensorInputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        RideHal_TensorProps_t properties = tensorInputList.pInfo[i].properties;
+        properties.dims[0] = batchSize;
+        ret = inputs[i].Allocate( &properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -696,8 +722,9 @@ TEST( QnnRuntime, DynamicBatchSize )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        tensorOutputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        RideHal_TensorProps_t properties = tensorOutputList.pInfo[i].properties;
+        properties.dims[0] = batchSize;
+        ret = outputs[i].Allocate( &properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -720,9 +747,6 @@ TEST( QnnRuntime, DynamicBatchSize )
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    /****** Dynamic dimension test ******/
-
-
     ret = qnnRuntime.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -737,10 +761,10 @@ TEST( QnnRuntime, BufferFree )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "BUF_FREE";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -771,8 +795,9 @@ TEST( QnnRuntime, BufferFree )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        tensorInputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        RideHal_TensorProps_t properties = tensorInputList.pInfo[i].properties;
+        properties.dims[0] = batchSize;
+        ret = inputs[i].Allocate( &properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -780,8 +805,9 @@ TEST( QnnRuntime, BufferFree )
     RideHal_SharedBuffer_t outputs[outputNum];
     for ( int i = 0; i < outputNum; ++i )
     {
-        tensorOutputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        RideHal_TensorProps_t properties = tensorOutputList.pInfo[i].properties;
+        properties.dims[0] = batchSize;
+        ret = outputs[i].Allocate( &properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -797,26 +823,26 @@ TEST( QnnRuntime, BufferFree )
     batchSize = 10;
     for ( int i = 0; i < inputNum; ++i )
     {
-        inputs[i].Free();
-        tensorInputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        RideHal_TensorProps_t properties = tensorInputList.pInfo[i].properties;
+        properties.dims[0] = batchSize;
+        ret = inputs[i].Allocate( &properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
     for ( int i = 0; i < outputNum; ++i )
     {
-        outputs[i].Free();
-        tensorOutputList.pInfo[i].properties.dims[0] = batchSize;
-        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        RideHal_TensorProps_t properties = tensorOutputList.pInfo[i].properties;
+        properties.dims[0] = batchSize;
+        ret = outputs[i].Allocate( &properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
-
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-    /****** Dynamic dimension test ******/
-
 
     ret = qnnRuntime.Stop();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -832,10 +858,10 @@ TEST( QnnRuntime, OneBufferMutipleTensors )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "ONE_BUF_MUL_TS";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -856,7 +882,7 @@ TEST( QnnRuntime, OneBufferMutipleTensors )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -873,7 +899,7 @@ TEST( QnnRuntime, OneBufferMutipleTensors )
     size_t outputTotalSize = 0;
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         outputTotalSize += outputs[i].size;
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
@@ -921,10 +947,10 @@ TEST( QnnRuntime, TestAccuracy )
     QnnRuntime qnnRuntime;
     QnnRuntime_Config_t qnnConfig;
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
-    char pName[20] = "QnnRuntime";
+    char pName[20] = "ACCURACY";
 
     qnnConfig.modelPath = "data/centernet/program.bin";
-    qnnConfig.processorType = RideHal_ProcessorType_e::RIDEHAL_PROCESSOR_HTP0;
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -945,7 +971,7 @@ TEST( QnnRuntime, TestAccuracy )
     RideHal_SharedBuffer_t inputs[inputNum];
     for ( int i = 0; i < inputNum; ++i )
     {
-        const auto ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
@@ -974,7 +1000,7 @@ TEST( QnnRuntime, TestAccuracy )
     size_t outputTotalSize = 0;
     for ( int i = 0; i < outputNum; ++i )
     {
-        const auto ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
         outputTotalSize += outputs[i].size;
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }

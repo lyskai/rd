@@ -92,7 +92,7 @@ public:
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
-                         RideHal_ImageProps_t &imageProps,
+                         const RideHal_ImageProps_t &imageProps,
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
                          RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
@@ -108,7 +108,7 @@ public:
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number,
-                         RideHal_TensorProps_t &tensorProps,
+                         const RideHal_TensorProps_t &tensorProps,
                          RideHal_BufferUsage_e usage = RIDEHAL_BUFFER_USAGE_DEFAULT,
                          RideHal_BufferFlags_t flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA );
 
@@ -136,7 +136,7 @@ private:
     RideHalError_e Init( std::string name, Logger_Level_e level, uint32_t number );
     void Deleter( SharedBuffer_t *ptrToDelete );
 
-    RideHalError_e Register(void);
+    RideHalError_e Register( void );
 
     struct SharedBufferInfo
     {

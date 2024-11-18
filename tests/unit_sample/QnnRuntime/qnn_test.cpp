@@ -91,7 +91,7 @@ typedef struct
     int batchMultiplier = 1;
 } QnnTest_Parameters_t;
 
-static std::string GetTensorInfoStr( QnnRuntime_TensorInfo_t &info )
+static std::string GetTensorInfoStr( const QnnRuntime_TensorInfo_t &info )
 {
     std::string str = "";
     std::stringstream ss;

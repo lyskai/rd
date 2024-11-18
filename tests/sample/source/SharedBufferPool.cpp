@@ -145,7 +145,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 }
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
-                                       RideHal_ImageProps_t &imageProps,
+                                       const RideHal_ImageProps_t &imageProps,
                                        RideHal_BufferUsage_e usage, RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = Init( name, level, number );
@@ -169,7 +169,7 @@ RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, u
 }
 
 RideHalError_e SharedBufferPool::Init( std::string name, Logger_Level_e level, uint32_t number,
-                                       RideHal_TensorProps_t &tensorProps,
+                                       const RideHal_TensorProps_t &tensorProps,
                                        RideHal_BufferUsage_e usage, RideHal_BufferFlags_t flags )
 {
     RideHalError_e ret = Init( name, level, number );

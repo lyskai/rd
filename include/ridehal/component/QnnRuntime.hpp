@@ -77,8 +77,8 @@ typedef struct
 /** @brief The list of QnnRuntime tensor information */
 typedef struct
 {
-    QnnRuntime_TensorInfo_t *pInfo; /**<Pointer to QnnRuntime tensor information*/
-    uint32_t num;                   /**<The number of tensors*/
+    const QnnRuntime_TensorInfo_t *pInfo; /**<Pointer to QnnRuntime tensor information*/
+    uint32_t num;                         /**<The number of tensors*/
 } QnnRuntime_TensorInfoList_t;
 
 /*=================================================================================================
@@ -323,33 +323,32 @@ private:
     static constexpr size_t CONTEXT_CONFIG_SIZE = 1;
     static constexpr size_t DMA_MEMINFO_MAP_SIZE = 2;
 
-    Logger *m_pLogger = nullptr;
-    RideHal_ProcessorType_e m_BackendType;
-    int m_BackendCoreId = 0;
-    Qnn_BackendHandle_t m_BackendHandle = nullptr;
-    Qnn_DeviceHandle_t m_DeviceHandle = nullptr;
-    void *m_ModelHandle = nullptr;
-    Qnn_ProfileHandle_t m_ProfileBackendHandle = nullptr;
+    RideHal_ProcessorType_e m_backendType;
+    int m_backendCoreId = 0;
+    Qnn_BackendHandle_t m_backendHandle = nullptr;
+    Qnn_DeviceHandle_t m_deviceHandle = nullptr;
+    void *m_modelHandle = nullptr;
+    Qnn_ProfileHandle_t m_profileBackendHandle = nullptr;
 
-    Qnn_LogHandle_t m_LogHandle = nullptr;
+    Qnn_LogHandle_t m_logHandle = nullptr;
 
-    QnnFunctionPointers m_QnnFunctionPointers;
+    QnnFunctionPointers m_qnnFunctionPointers;
 
-    const QnnBackend_Config_t **m_BackendConfig = nullptr;
-    QnnSystemContext_Handle_t m_SystemContext = nullptr;
-    Qnn_ContextHandle_t m_Context = nullptr;
-    QnnContext_Config_t *m_ContextConfig[CONTEXT_CONFIG_SIZE + 1] = { nullptr };
-    QnnContext_Config_t m_ContextConfigArray[CONTEXT_CONFIG_SIZE];
+    const QnnBackend_Config_t **m_backendConfig = nullptr;
+    QnnSystemContext_Handle_t m_systemContext = nullptr;
+    Qnn_ContextHandle_t m_context = nullptr;
+    QnnContext_Config_t *m_contextConfig[CONTEXT_CONFIG_SIZE + 1] = { nullptr };
+    QnnContext_Config_t m_contextConfigArray[CONTEXT_CONFIG_SIZE];
 
-    bool m_LoadFromCachedBinary = false;
+    bool m_bLoadFromCachedBinary = false;
 
-    qnn_wrapper_api::GraphInfo_t **m_GraphsInfo = nullptr;
-    uint32_t m_GraphsCount = 0;
+    qnn_wrapper_api::GraphInfo_t **m_graphsInfo = nullptr;
+    uint32_t m_graphsCount = 0;
 
-    const qnn_wrapper_api::GraphConfigInfo_t **m_GraphConfigsInfo = nullptr;
-    uint32_t m_GraphConfigsInfoCount = 0;
+    const qnn_wrapper_api::GraphConfigInfo_t **m_graphConfigsInfo = nullptr;
+    uint32_t m_graphConfigsInfoCount = 0;
 
-    const QnnDevice_PlatformInfo_t *m_PlatformInfo = nullptr;
+    const QnnDevice_PlatformInfo_t *m_platformInfo = nullptr;
 
     typedef struct
     {
@@ -358,12 +357,11 @@ private:
         int32_t fd;
     } DmaMemInfo_t;
 
-    // NOTE: this is for now used by HTP backend only, HTP has 2 instance as max
-    static uint64_t s_DmaMemInfoMapUseRef[DMA_MEMINFO_MAP_SIZE];
-    static std::mutex s_DmaMemInfoMapLock[DMA_MEMINFO_MAP_SIZE];
-    static std::map<void *, DmaMemInfo_t> s_DmaMemInfoMap[DMA_MEMINFO_MAP_SIZE];
+    std::mutex m_lock;
+    std::map<void *, DmaMemInfo_t> m_dmaMemInfoMap;
     QnnRuntime_Perf_t m_perf;
     bool m_bEnabelPerf = false;
+    bool m_bPerfDataValid = false;
     QnnRuntime_TensorInfo_t *m_pInputTensor = nullptr;
     size_t m_inputTensorNum = 0;
     QnnRuntime_TensorInfo_t *m_pOutputTensor = nullptr;
