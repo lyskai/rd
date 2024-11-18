@@ -14,6 +14,11 @@ using namespace ridehal::common;
 using namespace ridehal::component;
 using namespace ridehal::test::utils;
 
+
+#if defined( __QNXNTO__ )
+#define QNN_GTEST_ENABLE_BUFFER_FREE
+#endif
+
 namespace
 {
 
@@ -99,6 +104,18 @@ TEST( QnnRuntime, SANITY_General )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, CreateModelFromBuffer )
@@ -189,6 +206,18 @@ TEST( QnnRuntime, CreateModelFromBuffer )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, Perf )
@@ -271,6 +300,18 @@ TEST( QnnRuntime, Perf )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, RegisterBuffer )
@@ -370,6 +411,18 @@ TEST( QnnRuntime, RegisterBuffer )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, LoadModel )
@@ -489,7 +542,6 @@ TEST( QnnRuntime, LoadOpPackage )
     ret = qnnRuntime.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-
     QnnRuntime_TensorInfoList_t tensorInputList;
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -528,6 +580,18 @@ TEST( QnnRuntime, LoadOpPackage )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, DataType )
@@ -661,6 +725,18 @@ TEST( QnnRuntime, CreateModelFromSo )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
+    /* not supported for CPU */
+    ret = qnnRuntime.RegisterBuffers( inputs, inputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_UNSUPPORTED, ret );
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    /* NOTE: Now QnnRuntime has issue to get CPU performance data, it will failed but should not
+     * block the execute  */
+    ret = qnnRuntime.EnablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -669,6 +745,18 @@ TEST( QnnRuntime, CreateModelFromSo )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, DynamicBatchSize )
@@ -752,6 +840,18 @@ TEST( QnnRuntime, DynamicBatchSize )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, BufferFree )
@@ -849,6 +949,18 @@ TEST( QnnRuntime, BufferFree )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
 
 TEST( QnnRuntime, OneBufferMutipleTensors )
@@ -938,6 +1050,21 @@ TEST( QnnRuntime, OneBufferMutipleTensors )
 
     ret = qnnRuntime.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = sharedBuffer.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#endif
 }
 
 TEST( QnnRuntime, TestAccuracy )
@@ -1025,7 +1152,110 @@ TEST( QnnRuntime, TestAccuracy )
         ASSERT_GT( cosSim, 0.99d );
         free( pOutputData );
     }
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
 }
+
+TEST( QnnRuntime, TwoModelWithSameBuffer )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnn0, qnn1;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
+
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Init( "QNN0", pQnnConfig, LOGGER_LEVEL_VERBOSE );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.Init( "QNN1", pQnnConfig, LOGGER_LEVEL_VERBOSE );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    ret = qnn0.GetInputInfo( &tensorInputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    ret = qnn0.GetOutputInfo( &tensorOutputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnn0.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    /* TODO: without deregister, I see coredump */
+    ret = qnn1.DeRegisterBuffers( inputs, inputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.DeRegisterBuffers( outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.Execute( inputs, inputNum, outputs, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn1.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
+}
+
 
 #ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )

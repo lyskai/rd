@@ -261,6 +261,12 @@ static void SANITY_Voxelization( RideHal_ProcessorType_e processor, Voxelization
 
     ret = plrPre.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = outPlrs.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = outFeature.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
 TEST( FadasPlr, SANITY_VoxelizationGPU )
@@ -427,6 +433,21 @@ void SANITY_PostCenterPoint( RideHal_ProcessorType_e processor, PostCenterPoint_
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = plrPost.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = inPts.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = hm.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = xy.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = z.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = size.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = theta.Free();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    ret = det.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 }
 
