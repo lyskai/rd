@@ -298,23 +298,24 @@ if [ -d $QNN_SDK_ROOT/model ]; then
 fi
 
 # Add fadas libs
+if [ -d /opt/toolchain/fadaslib/dsp ]; then
+        cp /opt/toolchain/fadaslib/dsp/* $destdir/opt/ridehal/lib/dsp
+fi
+
 case $target in
 aarch64-qnx)
     if [ -d /opt/toolchain/fadaslib/qnx ]; then
         cp /opt/toolchain/fadaslib/qnx/* $destdir/opt/ridehal/lib
-        cp /opt/toolchain/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
     fi
     ;;
 aarch64-linux)
     if [ -d /opt/toolchain/fadaslib/linux ]; then
         cp /opt/toolchain/fadaslib/linux/* $destdir/opt/ridehal/lib
-        cp /opt/toolchain/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
     fi
     ;;
 aarch64-ubuntu)
     if [ -d /opt/toolchain/fadaslib/ubuntu ]; then
         cp /opt/toolchain/fadaslib/ubuntu/* $destdir/opt/ridehal/lib
-        cp /opt/toolchain/fadaslib/libfadasNsp.so $destdir/opt/ridehal/lib/dsp
     fi
     ;;
 esac

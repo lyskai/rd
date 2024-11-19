@@ -4,14 +4,12 @@ stages:
   - start
   - build
   - test
-  - check
   - pack
 
 start:
   stage: start
   script:
     - echo "Start ridehal CI jobs ..."
-    - sh /data/scripts/gitlab-ci/update-ci-data.sh
   tags:
     - ridehal-dev
   rules:
@@ -25,8 +23,8 @@ build qnx:
   stage: build
   script:
     - echo "Start building ridehal for QNX"
-    - python3 /data/scripts/gitlab-ci/get_build_config.py
-    - sh /data/scripts/gitlab-ci/build_package_qnx.sh
+    - python3 /data/scripts/get_build_config.py
+    - sh /data/scripts/build_package_qnx.sh
   tags:
     - ridehal-dev
   rules:
@@ -40,8 +38,8 @@ build ubuntu:
   stage: build
   script:
     - echo "Start building ridehal for HGY Ubuntu"
-    - python3 /data/scripts/gitlab-ci/get_build_config.py
-    - sh /data/scripts/gitlab-ci/build_package_ubuntu.sh
+    - python3 /data/scripts/get_build_config.py
+    - sh /data/scripts/build_package_ubuntu.sh
   tags:
     - ridehal-dev
   rules:
@@ -55,8 +53,8 @@ gtest-qnx:
   stage: test
   script:
     - echo "Start running gtest for qnx"
-    - sh /data/scripts/gitlab-ci/run_gtest_host_qnx.sh
-    - python3 /data/scripts/gitlab-ci/parse_gtest_output_qnx.py
+    - sh /data/scripts/run_gtest_qnx.sh
+    - python3 /data/scripts/parse_gtest_output_qnx.py
   tags:
     - ridehal-dev
   rules:
@@ -64,15 +62,14 @@ gtest-qnx:
       when: on_success
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
-  allow_failure: true
   timeout: 1h
 
 gtest-ubuntu:
   stage: test
   script:
     - echo "Start running gtest for ubuntu"
-    - sh /data/scripts/gitlab-ci/run_gtest_host_ubuntu.sh
-    - python3 /data/scripts/gitlab-ci/parse_gtest_output_ubuntu.py
+    - sh /data/scripts/run_gtest_ubuntu.sh
+    - python3 /data/scripts/parse_gtest_output_ubuntu.py
   tags:
     - ridehal-dev
   rules:
@@ -80,50 +77,6 @@ gtest-ubuntu:
       when: on_success
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
-  allow_failure: true
-  timeout: 1h
-
-static-stan:
-  stage: check
-  script:
-    - echo "Start code static scan"
-    - sh /data/scripts/gitlab-ci/run_static_scan.sh
-  artifacts:
-    name: "static-scan-reports"
-    when: on_success
-    expire_in: 6 hours
-    paths:
-      - staticScan-reports
-  tags:
-    - ridehal-dev
-  rules:
-    - if: '$CI_COMMIT_TAG == "master"'
-      when: manual
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      when: manual
-  allow_failure: true
-  timeout: 1h
-
-code-coverage check:
-  stage: check
-  script:
-    - echo "Start code coverage test"
-    - sh /data/scripts/gitlab-ci/run_code_coverage_test.sh
-    - cp -r /data/test/gtest/code_coverage/gcov_report .
-  artifacts:
-    name: "code-coverage-reports"
-    when: on_success
-    expire_in: 6 hours
-    paths:
-      - gcov_report
-  tags:
-    - ridehal-dev
-  rules:
-    - if: '$CI_COMMIT_TAG == "master"'
-      when: manual
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-      when: manual
-  allow_failure: true
   timeout: 1h
 
 generate packages:
@@ -147,3 +100,4 @@ generate packages:
       when: manual
   allow_failure: true
   timeout: 1h
+
