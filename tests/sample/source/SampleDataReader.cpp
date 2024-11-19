@@ -226,7 +226,7 @@ RideHalError_e SampleDataReader::LoadImage( std::shared_ptr<SharedBuffer_t> imag
     file = fopen( path.c_str(), "rb" );
     if ( nullptr == file )
     {
-        RIDEHAL_WARN( "Failed to open file %s", path.c_str() );
+        RIDEHAL_DEBUG( "Failed to open file %s", path.c_str() );
         ret = RIDEHAL_ERROR_ALREADY;
     }
 
@@ -280,7 +280,7 @@ RideHalError_e SampleDataReader::LoadTensor( std::shared_ptr<SharedBuffer_t> ten
     file = fopen( path.c_str(), "rb" );
     if ( nullptr == file )
     {
-        RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
+        RIDEHAL_DEBUG( "Failed to open file %s", path.c_str() );
         ret = RIDEHAL_ERROR_ALREADY;
     }
 
@@ -340,17 +340,24 @@ void SampleDataReader::ThreadMain()
             {
                 if ( m_configs[i].dataPath != "" )
                 {
+                    std::string path;
                     if ( DATA_READER_TYPE_IMAGE == m_configs[i].type )
                     {
-                        std::string path = m_configs[i].dataPath + "/" + std::to_string( index ) +
-                                           s_rideHalFormatToStr[m_configs[i].format];
+                        path = m_configs[i].dataPath + "/" + std::to_string( index ) +
+                               s_rideHalFormatToStr[m_configs[i].format];
                         ret = LoadImage( buffer, path );
                     }
                     else
                     {
-                        std::string path =
-                                m_configs[i].dataPath + "/" + std::to_string( index ) + ".raw";
+                        path = m_configs[i].dataPath + "/" + std::to_string( index ) + ".raw";
                         ret = LoadTensor( buffer, path );
+                    }
+
+                    if ( ( RIDEHAL_ERROR_NONE != ret ) && ( 0 == index ) )
+                    {
+                        RIDEHAL_ERROR( "Invalid data path %u %s: no file %s", i,
+                                       m_configs[i].dataPath.c_str(), path.c_str() );
+                        m_stop = true;
                     }
                 }
                 else
