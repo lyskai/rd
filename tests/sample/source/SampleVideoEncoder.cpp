@@ -36,8 +36,6 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
     pSharedBuffer->sharedBuffer = pOutputFrame->sharedBuffer;
     pSharedBuffer->pubHandle = 0;
 
-    PROFILER_BEGIN();
-    PROFILER_END();
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         VideoEncoder_OutputFrame_t outFrame;
         outFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
@@ -62,6 +60,7 @@ void SampleVideoEncoder::OutFrameCallback( const VideoEncoder_OutputFrame_t *pOu
         frame.buffer = buffer;
         frame.timestamp = info.timestamp;
         frames.Add( frame );
+        PROFILER_END();
         TRACE_END( frame.frameId );
         RIDEHAL_DEBUG( "enc-outFrameCallback, frameId %" PRIu64 " tsNs:%" PRIu64
                        " type %d size %" PRIu32,
@@ -256,6 +255,7 @@ void SampleVideoEncoder::ThreadMain()
                 std::unique_lock<std::mutex> l( m_lock );
                 m_camFrameMap[frame.frameId] = frame;
             }
+            PROFILER_BEGIN();
             TRACE_BEGIN( frame.frameId );
             ret = m_encoder.SubmitInputFrame( &inputFrame );
             if ( RIDEHAL_ERROR_NONE != ret )

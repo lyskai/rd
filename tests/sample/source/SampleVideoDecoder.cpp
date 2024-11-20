@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleVideoDecoder.hpp"
 
 
@@ -47,8 +46,6 @@ void SampleVideoDecoder::OutFrameCallback( const VideoDecoder_OutputFrame_t *pOu
     pSharedBuffer->sharedBuffer = pOutputFrame->sharedBuffer;
     pSharedBuffer->pubHandle = 0;
 
-    PROFILER_BEGIN();
-    PROFILER_END();
     std::shared_ptr<SharedBuffer_t> buffer( pSharedBuffer, [&]( SharedBuffer_t *pSharedBuffer ) {
         VideoDecoder_OutputFrame_t outFrame;
         outFrame.sharedBuffer = pSharedBuffer->sharedBuffer;
@@ -72,6 +69,7 @@ void SampleVideoDecoder::OutFrameCallback( const VideoDecoder_OutputFrame_t *pOu
         frame.buffer = buffer;
         frame.timestamp = info.timestamp;
         frames.Add( frame );
+        PROFILER_END();
         TRACE_END( frame.frameId );
         m_pub.Publish( frames );
         RIDEHAL_DEBUG( "OutFrameCallback for frameId %" PRIu64 " handle 0x%x size %" PRIu32,
@@ -231,8 +229,6 @@ void SampleVideoDecoder::ThreadMain()
 {
     RideHalError_e ret;
     uint64_t bufHandle;
-    uint8_t frameHead[128];  /* handle frame header */
-    uint32_t frameHeadSize;
     bool foundFrameHead = false;
 
     while ( false == m_stop )
@@ -256,6 +252,7 @@ void SampleVideoDecoder::ThreadMain()
                 std::lock_guard<std::mutex> l( m_lock );
                 m_inFrameMap[bufHandle] = frame;
             }
+            PROFILER_BEGIN();
             TRACE_BEGIN( frame.frameId );
             ret = m_decoder.SubmitInputFrame( &inputFrame );
             if ( RIDEHAL_ERROR_NONE != ret )
