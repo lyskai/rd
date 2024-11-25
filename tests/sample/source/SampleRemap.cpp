@@ -208,13 +208,13 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
             bool bAllocateOK = true;
             uint32_t mapSize = m_config.inputConfigs[i].mapWidth *
                                m_config.inputConfigs[i].mapHeight * sizeof( float );
-            ret = m_mapXBuffer.Allocate( mapSize );
+            ret = m_mapXBuffer[i].Allocate( mapSize );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 bAllocateOK = false;
                 RIDEHAL_ERROR( "failed to allocate mapX%u!\n", i );
             }
-            ret = m_mapYBuffer.Allocate( mapSize );
+            ret = m_mapYBuffer[i].Allocate( mapSize );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 bAllocateOK = false;
@@ -223,24 +223,24 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
             if ( true == bAllocateOK )
             {
                 bool bReadOK = true;
-                std::string mapXPath =
-                        Get( config, "mapX_path" + std::to_string( i ), "/tmp/mapX.raw" );
-                std::string mapYPath =
-                        Get( config, "mapY_path" + std::to_string( i ), "/tmp/mapY.raw" );
-                ret = LoadMap( m_mapXBuffer, mapXPath );
+                std::string mapXPath = Get( config, "mapX_path" + std::to_string( i ),
+                                            "./data/test/remap/mapX.raw" );
+                std::string mapYPath = Get( config, "mapY_path" + std::to_string( i ),
+                                            "./data/test/remap/mapY.raw" );
+                ret = LoadMap( m_mapXBuffer[i], mapXPath );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    m_config.inputConfigs[i].remapTable.pMapX = (float *) m_mapXBuffer.data();
+                    m_config.inputConfigs[i].remapTable.pMapX = (float *) m_mapXBuffer[i].data();
                 }
                 else
                 {
                     RIDEHAL_ERROR( "failed to read mapX table for input %u!\n", i );
                     bReadOK = false;
                 }
-                ret = LoadMap( m_mapYBuffer, mapYPath );
+                ret = LoadMap( m_mapYBuffer[i], mapYPath );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    m_config.inputConfigs[i].remapTable.pMapY = (float *) m_mapYBuffer.data();
+                    m_config.inputConfigs[i].remapTable.pMapY = (float *) m_mapYBuffer[i].data();
                 }
                 else
                 {
@@ -428,15 +428,18 @@ RideHalError_e SampleRemap::Deinit()
     ret = m_remap.Deinit();
     if ( true == m_config.bEnableUndistortion )
     {
-        ret = m_mapXBuffer.Free();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
         {
-            RIDEHAL_ERROR( "failed to free mapX buffer!\n" );
-        }
-        ret = m_mapYBuffer.Free();
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "failed to free mapY buffer!\n" );
+            ret = m_mapXBuffer[i].Free();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "failed to free mapX buffer!\n" );
+            }
+            ret = m_mapYBuffer[i].Free();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "failed to free mapY buffer!\n" );
+            }
         }
     }
     TRACE_END( SYSTRACE_TASK_DEINIT );

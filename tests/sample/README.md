@@ -220,8 +220,8 @@ The command line template example:
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | normalize     | false    | bool      | true    | enable or disable normalization |
 | map_table     | false    | bool      | false   | enable or disable create map from map table pointers |
-| mapX_pathX    | false    | string    | "/tmp/mapX.raw"   | map table path of width direction for input X |
-| mapY_pathX    | false    | string    | "/tmp/mapY.raw"   | map table path of height direction for input X |
+| mapX_pathX    | false    | string    | "./data/test/remap/mapX.raw"   | map table path of width direction for input X |
+| mapY_pathX    | false    | string    | "./data/test/remap/mapY.raw"   | map table path of height direction for input X |
 | quant_scale   | false    | float     | 0.0186584480106831 | The quantization scale of the quantize model input  |
 | quant_offset  | false    | int       | 114     | The quantization offset of the quantize model input |
 | Rsub          | false    | float     | 123.675 | The sub normalization parameter of R channel  |
