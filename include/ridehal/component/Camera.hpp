@@ -208,12 +208,17 @@ public:
 private:
     QCarCamColorFmt_e GetQcarCamFormat( RideHal_ImageFormat_e colorFormat );
 
+    RideHalError_e SubmitAllBuffers();
     RideHalError_e AllocateBuffers();
     RideHalError_e FreeBuffers();
 
     RideHalError_e ImportBuffers();
+#ifdef CAMERA_UNIT_TEST
+public:
+#endif
     RideHalError_e UnImportBuffers();
 
+private:
     CameraFrame_t *GetFrame( const QCarCamFrameInfo_t *pFrameInfo );
 
     static QCarCamRet_e QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t eventId,
@@ -240,6 +245,7 @@ private:
     QCarCamBuffer_t *m_pQcarcamBuffer[MAX_CAMERA_STREAM] = { 0 };
     QCarCamBufferList_t m_qcarcamBuffers[MAX_CAMERA_STREAM] = { 0 };
     QCarCamHndl_t m_QcarCamHndl;
+    bool m_bReservedOK = false;
 
     uint32_t m_maxBufCnt = 0; /* the maximum buffer count of all the configured streams */
 

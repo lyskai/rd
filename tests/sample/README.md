@@ -133,6 +133,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | isp_use_case | false | int       | 3       | The ISP use case |
 | op_mode   | false    | int       | 2       | The input operation mode, 1: Inline ISP, 2: Injection to ISP. |
 | ignore_error | false | bool      | false   | Ignore the error of Camera Init&Start |
+| immediate_release | false | bool | false   | Perform an immediate camera frame release in the camera frame ready callback if true. Be cautious, as this approach does not provide life cycle management for the camera buffer, and data consistency is not guaranteed. |
 | topic     | true     | string    | -       | The output topic name |
 | widthX     | false   | int       | -       | The image width for the stream X |
 | heightX    | false   | int       | -       | The image height for the stream X |
@@ -570,7 +571,7 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| frame_drop_patten | false | int  | 0       | The frame drop bit patten defined by FpsAdapter, value of 1 to keep frame, value of 0 to drop frame. |
+| frame_drop_patten | false | int  | 0       | The frame drop bit pattern is defined by FpsAdapter, where a value of 1 keeps the frame and a value of 0 drops the frame. The period is determined by the index of the highest bit set to 1, plus 1. For example, with 0b100, the highest bit set to 1 is at index 2, so the period is 3. This means that only 1 frame is kept out of every 3 frames, reducing the FPS from 30 to 10. |
 | input_topic   | true     | string    | -       | the input topic name |
 | output_topic  | true     | string    | -       | the output topic name |
 
