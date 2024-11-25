@@ -237,7 +237,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
     }
 
     size_t bufferSize{ 0 };
-    std::shared_ptr<uint8_t> buffer{ nullptr };
+    uint8_t *pBuffer = nullptr;
     // read serialized binary into a byte buffer
     tools::datautil::StatusCode status{ tools::datautil::StatusCode::SUCCESS };
     std::tie( status, bufferSize ) = tools::datautil::getFileSize( modelFile );
@@ -252,9 +252,8 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        buffer = std::shared_ptr<uint8_t>( new uint8_t[bufferSize],
-                                           std::default_delete<uint8_t[]>() );
-        if ( !buffer )
+        pBuffer = (uint8_t *) malloc( bufferSize );
+        if ( nullptr == pBuffer )
         {
             RIDEHAL_ERROR( "Failed to allocate memory." );
             ret = RIDEHAL_ERROR_FAIL;
@@ -263,8 +262,7 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        status = tools::datautil::readBinaryFromFile(
-                modelFile, reinterpret_cast<uint8_t *>( buffer.get() ), bufferSize );
+        status = tools::datautil::readBinaryFromFile( modelFile, pBuffer, bufferSize );
         if ( status != tools::datautil::StatusCode::SUCCESS )
         {
             RIDEHAL_ERROR( "Failed to read binary data." );
@@ -274,7 +272,12 @@ RideHalError_e QnnRuntime::CreateFromBinaryFile( std::string modelFile )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = CreateFromBinaryBuffer( buffer.get(), bufferSize );
+        ret = CreateFromBinaryBuffer( pBuffer, bufferSize );
+    }
+
+    if ( nullptr != pBuffer )
+    {
+        free( pBuffer );
     }
 
     return ret;
@@ -411,7 +414,6 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
             modelPath = std::string( pConfig->modelPath );
         }
     }
-
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
