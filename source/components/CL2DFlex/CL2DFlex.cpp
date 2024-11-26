@@ -292,10 +292,13 @@ RideHalError_e CL2DFlex::Deinit()
     {
         RideHalError_e retVal;
 
-        retVal = m_roiBuffer.Free();
-        if ( RIDEHAL_ERROR_NONE != ret )
+        if ( nullptr != m_roiBuffer.buffer.pData )
         {
-            RIDEHAL_ERROR( "Failed to deallocate roi buffer!" );
+            retVal = m_roiBuffer.Free();
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to deallocate roi buffer!" );
+            }
         }
 
         retVal = m_OpenclSrvObj.Deinit();
