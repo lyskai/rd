@@ -199,7 +199,7 @@ RideHalError_e OpticalFlow::ValidateConfig( const OpticalFlow_Config_t *pConfig 
     }
     else if ( ( pConfig->format != RIDEHAL_IMAGE_FORMAT_UYVY ) &&
               ( pConfig->format != RIDEHAL_IMAGE_FORMAT_NV12 ) &&
-              ( pConfig->format != RIDEHAL_IMAGE_FORMAT_NV12_UBWC ) )
+              ( pConfig->format != RIDEHAL_IMAGE_FORMAT_P010 ) )
     {
         RIDEHAL_ERROR( "invalid format!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
@@ -233,9 +233,9 @@ EvaColorFormat_e OpticalFlow::GetEvaColorFormat( RideHal_ImageFormat_e colorForm
             evaFormat = EVA_COLORFORMAT_NV12;
             break;
         }
-        case RIDEHAL_IMAGE_FORMAT_NV12_UBWC:
+        case RIDEHAL_IMAGE_FORMAT_P010:
         {
-            evaFormat = EVA_COLORFORMAT_NV12_UBWC;
+            evaFormat = EVA_COLORFORMAT_P010_MSB;
             break;
         }
         default:
@@ -361,6 +361,16 @@ RideHalError_e OpticalFlow::RegisterBuffers( const RideHal_SharedBuffer_t *pBuff
     {
         RIDEHAL_ERROR( "Register Buffers is not allowed when in state %d!", m_state );
         ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( nullptr == pBuffers )
+    {
+        RIDEHAL_ERROR( "pBuffers is nullptr!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( 0 == numBuffers )
+    {
+        RIDEHAL_ERROR( "numBuffers is 0!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
@@ -610,7 +620,7 @@ RideHalError_e OpticalFlow::Execute( const RideHal_SharedBuffer_t *pRefImage,
     }
     else if ( nullptr == pOutMvBuf )
     {
-        RIDEHAL_ERROR( "pInPts is nullptr!" );
+        RIDEHAL_ERROR( "pOutMvBuf is nullptr!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else if ( ( RIDEHAL_BUFFER_TYPE_TENSOR != pOutMvBuf->type ) ||
@@ -747,6 +757,11 @@ RideHalError_e OpticalFlow::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBu
     else if ( nullptr == pBuffers )
     {
         RIDEHAL_ERROR( "Empty buffers pointer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( 0 == numBuffers )
+    {
+        RIDEHAL_ERROR( "numBuffers is 0!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
