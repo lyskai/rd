@@ -108,7 +108,7 @@ void SampleFrameSync::threadWindowMain()
     RideHalError_e ret;
     while ( false == m_stop )
     {
-        uint32_t timeoutMs = m_windowMs;
+        uint64_t timeoutMs = (uint64_t) m_windowMs;
         std::vector<DataFrames_t> framesList;
         DataFrames_t frames;
         uint64_t frameId;
@@ -125,12 +125,12 @@ void SampleFrameSync::threadWindowMain()
             for ( uint32_t i = 1; i < m_number; i++ )
             {
                 auto now = std::chrono::high_resolution_clock::now();
-                uint32_t elapsedMs =
+                uint64_t elapsedMs =
                         std::chrono::duration_cast<std::chrono::milliseconds>( now - begin )
                                 .count();
-                if ( timeoutMs > elapsedMs )
+                if ( (uint64_t) m_windowMs > elapsedMs )
                 {
-                    timeoutMs -= elapsedMs;
+                    timeoutMs = (uint64_t) m_windowMs - elapsedMs;
                     ret = m_subs[i].Receive( frames, timeoutMs );
                 }
                 else
