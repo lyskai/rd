@@ -19,7 +19,7 @@ And pull the file "/tmp/ridehal_systrace.bin" from the target device to a ubuntu
 
 ## Parse and generate the systrace json file.
 
-Using below command to convert the RideHal systrace bin file to a json file.
+Using below command to convert the RideHal systrace bin file to a json file, but please use python version "3.x".
 
 ```sh
 python scripts/utils/systrace/systrace.py -i ridehal_systrace.bin  -o ridehal_systrace.json
