@@ -2,7 +2,7 @@
 // All rights reserved.
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
-
+#include "md5_utils.hpp"
 #include "ridehal/component/OpticalFlow.hpp"
 #include "gtest/gtest.h"
 #include <chrono>
@@ -12,10 +12,38 @@
 
 using namespace ridehal::common;
 using namespace ridehal::component;
+using namespace ridehal::test::utils;
 
 #define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
 
-static void Eva_OpticalFlowRun( std::string name, OpticalFlow_Config_t &config )
+static void LoadRaw( void *pData, uint32_t length, std::string path )
+{
+    printf( "  load raw from %s\n", path.c_str() );
+    FILE *pFile = fopen( path.c_str(), "rb" );
+    ASSERT_NE( nullptr, pFile );
+    fseek( pFile, 0, SEEK_END );
+    int size = ftell( pFile );
+    ASSERT_LE( size, length );
+    fseek( pFile, 0, SEEK_SET );
+    int r = fread( pData, 1, size, pFile );
+    ASSERT_EQ( r, size );
+    fclose( pFile );
+}
+
+static void SaveRaw( std::string path, void *pData, size_t size )
+{
+    FILE *pFile = fopen( path.c_str(), "wb" );
+    if ( nullptr != pFile )
+    {
+        fwrite( pData, 1, size, pFile );
+        fclose( pFile );
+        printf( "  save raw %s\n", path.c_str() );
+    }
+}
+
+static void Eva_OpticalFlowRun( std::string name, OpticalFlow_Config_t &config,
+                                std::string img1 = "", std::string img2 = "",
+                                std::string goldenMvMap = "", std::string goldenMvConf = "" )
 {
     OpticalFlow ofl;
     RideHalError_e ret;
@@ -23,6 +51,8 @@ static void Eva_OpticalFlowRun( std::string name, OpticalFlow_Config_t &config )
     RideHal_SharedBuffer_t curImg;
     RideHal_SharedBuffer_t mvFwdMap;
     RideHal_SharedBuffer_t mvConf;
+    RideHal_SharedBuffer_t mvFwdMapG;
+    RideHal_SharedBuffer_t mvConfG;
 
     uint32_t width = ( config.width >> config.amFilter.nStepSize ) << config.amFilter.nUpScale;
     uint32_t height = ( config.height >> config.amFilter.nStepSize ) << config.amFilter.nUpScale;
@@ -47,6 +77,22 @@ static void Eva_OpticalFlowRun( std::string name, OpticalFlow_Config_t &config )
     ret = mvConf.Allocate( &mvConfTsProp );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    if ( false == img1.empty() )
+    {
+        LoadRaw( refImg.data(), refImg.size, img1 );
+    }
+
+    if ( false == img2.empty() )
+    {
+        LoadRaw( curImg.data(), curImg.size, img2 );
+    }
+
+    if ( ( false == goldenMvMap.empty() ) && ( false == goldenMvConf.empty() ) )
+    { /* clear output buffer for accuracy test */
+        memset( mvFwdMap.data(), 0, mvFwdMap.size );
+        memset( mvConf.data(), 0, mvConf.size );
+    }
+
     ret = ofl.Init( name.c_str(), &config, LOGGER_LEVEL_VERBOSE );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -64,6 +110,32 @@ static void Eva_OpticalFlowRun( std::string name, OpticalFlow_Config_t &config )
 
     ret = ofl.Execute( &refImg, &curImg, &mvFwdMap, &mvConf );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    if ( ( false == goldenMvMap.empty() ) && ( false == goldenMvConf.empty() ) )
+    {
+        // for the first run, with below to generate the golden
+        // SaveRaw( goldenMvMap, mvFwdMap.data(), mvFwdMap.size );
+        // SaveRaw( goldenMvConf, mvConf.data(), mvConf.size );
+
+        ret = mvFwdMapG.Allocate( &mvFwdMapTsProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        ret = mvConfG.Allocate( &mvConfTsProp );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        LoadRaw( mvFwdMapG.data(), mvFwdMapG.size, goldenMvMap );
+        LoadRaw( mvConfG.data(), mvConfG.size, goldenMvConf );
+
+        std::string md5Output = MD5Sum( mvFwdMap.data(), mvFwdMap.size );
+        std::string md5Golden = MD5Sum( mvFwdMapG.data(), mvFwdMapG.size );
+        ASSERT_EQ( md5Output, md5Golden );
+
+        md5Output = MD5Sum( mvConf.data(), mvConf.size );
+        md5Golden = MD5Sum( mvConfG.data(), mvConfG.size );
+        ASSERT_EQ( md5Output, md5Golden );
+
+        mvFwdMapG.Free();
+        mvConfG.Free();
+    }
 
     ret = ofl.Execute( &curImg, &refImg, &mvFwdMap, &mvConf );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -99,7 +171,9 @@ TEST( EVA, SANITY_OpticalFlowCPU )
     config.width = 1920;
     config.height = 1024;
     config.filterOperationMode = EVA_OF_MODE_CPU;
-    Eva_OpticalFlowRun( "OFL0_CPU", config );
+    Eva_OpticalFlowRun( "OFL0_CPU", config, "data/test/ofl/0.nv12", "data/test/ofl/1.nv12",
+                        "data/test/ofl/golden/semi-cpu-mv-map.raw",
+                        "data/test/ofl/golden/semi-cpu-mv-conf.raw" );
 }
 
 TEST( EVA, SANITY_OpticalFlowDSP )
@@ -108,7 +182,10 @@ TEST( EVA, SANITY_OpticalFlowDSP )
     config.width = 1920;
     config.height = 1024;
     config.filterOperationMode = EVA_OF_MODE_DSP;
-    Eva_OpticalFlowRun( "OFL0_DSP", config );
+    /* output the same as cpu */
+    Eva_OpticalFlowRun( "OFL0_DSP", config, "data/test/ofl/0.nv12", "data/test/ofl/1.nv12",
+                        "data/test/ofl/golden/semi-cpu-mv-map.raw",
+                        "data/test/ofl/golden/semi-cpu-mv-conf.raw" );
 }
 
 TEST( EVA, SANITY_OpticalFlowNONE )
@@ -117,7 +194,9 @@ TEST( EVA, SANITY_OpticalFlowNONE )
     config.width = 1920;
     config.height = 1024;
     config.filterOperationMode = EVA_OF_MODE_DISABLE;
-    Eva_OpticalFlowRun( "OFL0_NONE", config );
+    Eva_OpticalFlowRun( "OFL0_NONE", config, "data/test/ofl/0.nv12", "data/test/ofl/1.nv12",
+                        "data/test/ofl/golden/semi-none-mv-map.raw",
+                        "data/test/ofl/golden/semi-none-mv-conf.raw" );
 }
 
 #if defined( __QNXNTO__ )

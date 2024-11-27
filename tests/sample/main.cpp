@@ -109,7 +109,6 @@ int main( int argc, char *argv[] )
     signal( SIGTERM, SignalHandler );
 
     std::vector<PipelineConfig_t> pipelineConfigs;
-    PipelineConfig_t cameraConfig;
     std::string key;
     int opt;
     while ( ( opt = getopt( argc, argv, "dn:t:k:v:hT:" ) ) != -1 )
