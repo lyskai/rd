@@ -450,7 +450,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             uint8_t *pSrc = (uint8_t *) inputs[inputId].data();
             uint8_t *pDst = (uint8_t *) output->data() + inputId * outputSize;
 
-            FadasImage_t srcImg;
+            FadasImage_t srcImg = { 0 };
             srcImg.props.width = inputs[inputId].imgProps.width;
             srcImg.props.height = inputs[inputId].imgProps.height;
             srcImg.props.numPlanes = inputs[inputId].imgProps.numPlanes;
@@ -489,7 +489,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             }
             srcImg.bAllocated = false;
 
-            FadasImage_t rgbImg;
+            FadasImage_t rgbImg{ 0 };
             rgbImg.props.width = output->imgProps.width;
             rgbImg.props.height = output->imgProps.height;
             if ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_outputFormat )
@@ -535,7 +535,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                     if ( FADAS_ERROR_NONE != retFadas )
                     {
                         RIDEHAL_ERROR( "FadasRemap_RunGPU failed for batch %d: ret = 0x%x", inputId,
-                                       ret );
+                                       retFadas );
                         ret = RIDEHAL_ERROR_FAIL;
                         break;
                     }
@@ -554,7 +554,7 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                     if ( FADAS_ERROR_NONE != retFadas )
                     {
                         RIDEHAL_ERROR( "FadasRemap_RunMT failed for batch %d: ret = 0x%x", inputId,
-                                       ret );
+                                       retFadas );
                         ret = RIDEHAL_ERROR_FAIL;
                         break;
                     }
