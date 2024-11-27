@@ -42,13 +42,13 @@ void EventCb( const VideoEncoder_EventType_e eventId, const void *pEvent, void *
     printf( "EventCb return \n" );
     switch ( eventId )
     {
-        case VIDEO_ENCODER_EVENT_FLUSH_INPUT_DONE:
+        case VIDEO_CODEC_EVT_FLUSH_INPUT_DONE:
             printf( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
             break;
-        case VIDEO_ENCODER_EVENT_FLUSH_OUTPUT_DONE:
+        case VIDEO_CODEC_EVT_FLUSH_OUTPUT_DONE:
             printf( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
             break;
-        case VIDEO_ENCODER_EVENT_ERROR:
+        case VIDEO_CODEC_EVT_ERROR:
             printf( "Received event: %d, pPrivData:%p\n", eventId, pPrivData );
             break;
     }
@@ -99,10 +99,10 @@ TEST( VideoEncoder, SANITY_VideoEncoder_Dynamic )
 
     RideHal_SharedBuffer_t *inputList = new RideHal_SharedBuffer_t[config.numInputBufferReq];
     ret = veTest.GetInputBuffers( inputList, config.numInputBufferReq );
-    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
     RideHal_SharedBuffer_t *outputList = new RideHal_SharedBuffer_t[config.numOutputBufferReq];
     ret = veTest.GetOutputBuffers( outputList, config.numOutputBufferReq );
-    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
 
     VideoEncoder_InputFrame_t *inputFrame =
             new VideoEncoder_InputFrame_t[config.numInputBufferReq + 1];
@@ -651,7 +651,7 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = veTest1.Start();
-    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = veTest1.Configure( nullptr );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
@@ -674,11 +674,6 @@ TEST( VideoEncoder, SANITY_VideoEncoder_OtherError )
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = veTest.RegisterCallback( OnInputDoneCb, nullptr, nullptr, nullptr );
-    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
-    ret = veTest.Start();
-    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
-
-    ret = veTest.RegisterCallback( OnInputDoneCb, OnOutputDoneCb, nullptr, nullptr );
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
     ret = veTest.Start();
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
@@ -789,3 +784,4 @@ int main( int argc, char **argv )
     return nVal;
 }
 #endif
+

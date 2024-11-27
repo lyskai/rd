@@ -589,6 +589,7 @@ The command line template example:
 |---------------|----------|-----------|---------|----------|
 | width         | true     | int       | -       | The image width |
 | height        | true     | int       | -       | The image height |
+| format        | false    | string    | nv12    | The output image format, options from [nv12, nv12_ubwc, p010] |
 | pool_size     | false    | int       | 4       | The image memory pool size |
 | fps           | false    | int       | 30      | The frame rate per second |
 | input_topic   | true     | string    | -       | the input topic name |
@@ -598,7 +599,7 @@ The command line template example:
 
 ```sh
   -n VDEC1 -t VideoDecoder -k width -v 1920 -k height -v 1024 \
-    -k input_topic -v /sensor/camera/CAM0/hevc \
+    -k format -v nv12 -k input_topic -v /sensor/camera/CAM0/hevc \
     -k output_topic -v /sensor/camera/CAM0_DEC/raw \
 ```
 
@@ -910,3 +911,4 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_topic -v /sensor/camera/CAM0/objs \
   -n VIZ -t TinyViz -k cameras -v CAM0 -k winH -v 1050 -d
 ```
+

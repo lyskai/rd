@@ -6,7 +6,8 @@ string( REPLACE "/lib/cmake/ridehal" "" _ridehal_prefix ${CMAKE_CURRENT_LIST_DIR
 set( _ridehal_include_dir
   ${_ridehal_prefix}/include
   ${_ridehal_prefix}/include/ridehal/libs/FadasIface
-  ${_ridehal_prefix}/include/ridehal/libs/OpenclIface )
+  ${_ridehal_prefix}/include/ridehal/libs/OpenclIface
+  ${_ridehal_prefix}/include/ridehal/libs/VideoCodec )
 
 set( _ridehal_defines )
 
@@ -44,7 +45,8 @@ set( _ridehal_libs
   ${_ridehal_library_dir}/libRideHal.so
   ${_ridehal_library_dir}/libFadasIface.so
   ${_ridehal_library_dir}/libFadasIfaceStub.so
-  ${_ridehal_library_dir}/libOpenclIface.so )
+  ${_ridehal_library_dir}/libOpenclIface.so
+  ${_ridehal_library_dir}/libRideHalVideoCodec.so )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     list( APPEND _ridehal_libs
@@ -64,3 +66,4 @@ set( RIDEHAL_VERSION "1.5.0" )
 set( RIDEHAL_LIBRARIES RideHal )
 
 message( STATUS "RideHal version: ${RideHal_VERSION} : ${_ridehal_prefix}" )
+

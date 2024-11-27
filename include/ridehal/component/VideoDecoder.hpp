@@ -6,6 +6,7 @@
 #ifndef RIDEHAL_VIDEO_DECODER_HPP
 #define RIDEHAL_VIDEO_DECODER_HPP
 
+#include "VidcCompBase.hpp"
 #include "ridehal/component/ComponentIF.hpp"
 #include <mutex>
 #include <queue>
@@ -18,19 +19,6 @@ namespace ridehal
 {
 namespace component
 {
-
-static constexpr uint8_t DEFAULT_VIDC_INPUT_BUFFER_REQ = 8;
-static constexpr uint8_t DEFAULT_VIDC_OUTPUT_BUFFER_REQ = 8;
-
-/** @brief This data type list the different VideoDecoder Callback Event Type */
-typedef enum
-{
-    VIDEO_DECODER_EVENT_FLUSH_INPUT_DONE = 0, /**< flush input buffer done */
-    VIDEO_DECODER_EVENT_FLUSH_OUTPUT_DONE,    /**< flush output buffer done */
-    VIDEO_DECODER_EVENT_INPUT_RECONFIG,       /**< received input buffer reconfig event */
-    VIDEO_DECODER_EVENT_OUTPUT_RECONFIG,      /**< received output buffer reconfig event */
-    VIDEO_DECODER_EVENT_ERROR = 0xf0000000
-} VideoDecoder_EventType_e;
 
 /**
  * @brief The VideoDecoder Init Config
@@ -60,7 +48,8 @@ typedef struct
     RideHal_SharedBuffer_t *pInputBufferList = nullptr;  /**< bufferList ptr for input buffer */
     RideHal_SharedBuffer_t *pOutputBufferList = nullptr; /**< bufferList ptr for output buffer */
 
-    RideHal_ImageFormat_e inFormat; /**< compress mode, now support h264 and h265 */
+    RideHal_ImageFormat_e inFormat;  /**< compress mode, now support h264 and h265 */
+    RideHal_ImageFormat_e outFormat; /**< support NV12, NV12_UBWC, P010 */
 } VideoDecoder_Config_t;
 
 /** @brief The VideoDecoder Input Frame */
@@ -82,6 +71,9 @@ typedef struct
     uint32_t frameFlag;   /**< indicate whether some error occurred during deccoding this frame. */
 } VideoDecoder_OutputFrame_t;
 
+/** @brief This data type list the different VideoDecoder Callback Event Type */
+typedef VideoCodec_EventType_e VideoDecoder_EventType_e;
+
 /** @brief callback for input buffer done */
 typedef void ( *VideoDecoder_InFrameCallback_t )( const VideoDecoder_InputFrame_t *pInputBuf,
                                                   void *pPrivData );
@@ -92,8 +84,8 @@ typedef void ( *VideoDecoder_OutFrameCallback_t )( const VideoDecoder_OutputFram
 typedef void ( *VideoDecoder_EventCallback_t )( const VideoDecoder_EventType_e eventId,
                                                 const void *pEvent, void *pPrivData );
 
-/** @brief Top level control for interfacing with vidc based driver */
-class VideoDecoder final : public ComponentIF
+/** @brief Top level control for video decoder */
+class VideoDecoder final : public VidcCompBase
 {
 public:
     /** @brief Default constructor */
@@ -144,22 +136,6 @@ public:
     RideHalError_e SubmitOutputFrame( const VideoDecoder_OutputFrame_t *pOutput );
 
     /**
-     * @brief get video input buffers to submit input in non-dynamic mode
-     * @param pInputList pointer to hold the video input buffer list
-     * @param num size of pInputList
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e GetInputBuffers( RideHal_SharedBuffer_t *pInputList, uint32_t num );
-
-    /**
-     * @brief get video output buffers to submit output in non-dynamic mode
-     * @param pOutputList pointer to hold the video output buffer list
-     * @param num size of pOutputList
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e GetOutputBuffers( RideHal_SharedBuffer_t *pOutputList, uint32_t num );
-
-    /**
      * @brief register callback
      * @param inputDoneCb input frame callback function
      * @param outputDoneCb output frame callback function
@@ -171,109 +147,35 @@ public:
                                      VideoDecoder_EventCallback_t eventCb, void *pAppPriv );
 
 private:
-    typedef int ( *VideoCodec_Callback_Handler_t )( uint8_t *msg, uint32_t length, void *cd );
-
-    typedef struct
-    {
-        VideoCodec_Callback_Handler_t handler;
-        void *data;
-    } VideoCodec_Ioctl_Callback_t;
-
-    typedef enum
-    {
-        VIDEO_CODEC_BUF_TYPE_INPUT = 0,
-        VIDEO_CODEC_BUF_TYPE_OUTPUT,
-        VIDEO_CODEC_BUF_TYPE_UNUSED = 0xf0000000
-    } VideoCodec_BufType;
-
-    /** The VideoDecoder Driver Callback Message */
-    typedef enum
-    {
-        COMMAND_NONE,        /**< none command received */
-        COMMAND_DRAIN,       /**< drain input buffers */
-        COMMAND_INPUT_STOP,  /**< stop input executing */
-        COMMAND_OUTPUT_STOP, /**< stop output executing */
-        COMMAND_LAST_FLAG,   /**< last flag event received */
-    } CommandType;
-
-    static int DeviceCallback( uint8_t *msg, uint32_t length, void *cdata );
-    int DeviceCbHandler( uint8_t *msg, uint32_t length );
-
-    RideHalError_e GetDrvProperty( uint32_t id, uint32_t nPktSize, uint8_t *pPkt );
-    RideHalError_e SetDrvProperty( uint32_t id, uint32_t nPktSize, uint8_t *pPkt );
-    RideHalError_e WaitForState( RideHal_ComponentState_t expectedState );
-    RideHalError_e InitBufferForNonDynamicMode( RideHal_SharedBuffer_t *pBufList,
-                                                VideoCodec_BufType bufferType );
-
-    RideHalError_e AllocateBuffer( VideoCodec_BufType bufferType );
-    RideHalError_e SetBuffer( VideoCodec_BufType bufferType );
     RideHalError_e HandleOutputReconfig();
     RideHalError_e FinishOutputReconfig();
-
-    RideHalError_e GetOutputInformation( void );
-    RideHalError_e GetInputBufferRequirement( void );
-    RideHalError_e GetOutputBufferRequirement( void );
-    RideHalError_e FreeOutputBuffer( void );
-    RideHalError_e FreeInputBuffer( void );
-    void PrintDecoderConfig( void );
     RideHalError_e ValidateConfig( const char *name, const VideoDecoder_Config_t *cfg );
-    RideHalError_e ValidateBuffer( const RideHal_SharedBuffer_t *pBuffer,
-                                   VideoCodec_BufType bufferType );
-    RideHalError_e InitDriver();
-    RideHalError_e InitFromConfig( const char *name, const VideoDecoder_Config_t *cfg );
-    RideHalError_e WaitForCmdCompleted( CommandType expectedCmd, int32_t timeout );
+    RideHalError_e InitFromConfig( const VideoDecoder_Config_t *cfg );
+    RideHalError_e InitDrvProperty();
+    RideHalError_e CheckBuffer( const RideHal_SharedBuffer_t *pBuffer,
+                                VideoCodec_BufType_e bufferType );
 
     VideoDecoder_InFrameCallback_t m_inputDoneCb = nullptr;
     VideoDecoder_OutFrameCallback_t m_outputDoneCb = nullptr;
     VideoDecoder_EventCallback_t m_eventCb = nullptr;
     void *m_pAppPriv = nullptr;
 
-    void *m_pVidcDecoderContext = nullptr;
-    VideoCodec_Ioctl_Callback_t m_ioctlCb = { 0 };
-    CommandType m_cmdCompleted = COMMAND_NONE;
-    bool m_bCmdDrainReceived = false;
-
-    std::string m_Name;
-    uint32_t m_width = 0;
-    uint32_t m_height = 0;
-    uint32_t m_frameRate = 0;
-    uint32_t m_numInputBuffer = 0;
-    uint32_t m_numOutputBuffer = 0;
-    bool m_bInputDynamicMode = true;
-    bool m_bOutputDynamicMode = true;
-    bool m_bInputNonDynamicAppAllocBuffer = false;
-    bool m_bOutputNonDynamicAppAllocBuffer = false;
-    RideHal_ImageFormat_e m_inFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
-    RideHal_ImageFormat_e m_outFormat = RIDEHAL_IMAGE_FORMAT_NV12;
     bool m_OutputStarted = false;
     bool m_OutputReconfigInprogress = false;
 
-    RideHal_SharedBuffer_t *m_pInputList =
-            nullptr; /**< store input buffer list for non-dynamic mode */
-    RideHal_SharedBuffer_t *m_pOutputList =
-            nullptr; /**< store output buffer list for non-dynamic mode */
+    void InFrameCallback( const VideoCodec_InputFrame_t *pInputFrame );
+    void OutFrameCallback( const VideoCodec_OutputFrame_t *pOutputFrame );
+    void EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload );
 
-    typedef struct
-    {
-        RideHal_SharedBuffer_t sharedBuffer;
-        uint64_t timestampNs;
-        uint64_t appMarkData;
-        bool bUseFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
-    } VideoDecoder_InputInfo_t;
-
-    typedef struct
-    {
-        RideHal_SharedBuffer_t sharedBuffer;
-        bool bUseFlag = false; /**< indicate whether sharedBuffer is using by driver or available */
-    } VideoDecoder_OutputInfo_t;
-
-    std::mutex m_inLock;
-    std::unordered_map<uint64_t, VideoDecoder_InputInfo_t> m_inputMap; /**< store input info */
-    std::mutex m_outLock;
-    std::unordered_map<uint64_t, VideoDecoder_OutputInfo_t> m_outputMap; /**< store output info */
+    static void InFrameCallback( const VideoCodec_InputFrame_t *pInputFrame, void *pPrivData );
+    static void OutFrameCallback( const VideoCodec_OutputFrame_t *pOutputFrame, void *pPrivData );
+    static void EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload,
+                               void *pPrivData );
 };
 
 }   // namespace component
 }   // namespace ridehal
 
 #endif   // RIDEHAL_VIDEO_DECODER_HPP
+
+

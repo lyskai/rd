@@ -87,8 +87,7 @@ void SampleVideoDecoder::OutFrameCallback( const VideoDecoder_OutputFrame_t *pOu
     }
 }
 
-void SampleVideoDecoder::EventCallback( const VideoDecoder_EventType_e eventId,
-                                        const void *pPayload )
+void SampleVideoDecoder::EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload )
 {
     RIDEHAL_INFO( "Received event: %d, pPayload:%p\n", eventId, pPayload );
 }
@@ -107,8 +106,8 @@ void SampleVideoDecoder::OutFrameCallback( const VideoDecoder_OutputFrame_t *pOu
     self->OutFrameCallback( pOutputFrame );
 }
 
-void SampleVideoDecoder::EventCallback( const VideoDecoder_EventType_e eventId,
-                                        const void *pPayload, void *pPrivData )
+void SampleVideoDecoder::EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload,
+                                        void *pPrivData )
 {
     SampleVideoDecoder *self = (SampleVideoDecoder *) pPrivData;
     self->EventCallback( eventId, pPayload );
@@ -161,6 +160,7 @@ RideHalError_e SampleVideoDecoder::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    m_config.outFormat = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
     m_config.inFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
 
     m_config.bInputDynamicMode = true;
@@ -229,7 +229,6 @@ void SampleVideoDecoder::ThreadMain()
 {
     RideHalError_e ret;
     uint64_t bufHandle;
-    bool foundFrameHead = false;
 
     while ( false == m_stop )
     {
@@ -304,3 +303,4 @@ REGISTER_SAMPLE( VideoDecoder, SampleVideoDecoder );
 
 }   // namespace sample
 }   // namespace ridehal
+

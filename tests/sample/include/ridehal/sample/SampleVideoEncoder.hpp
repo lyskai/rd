@@ -93,3 +93,5 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDEHAL_SAMPLE_VIDEO_ENCODER_HPP_
+
+

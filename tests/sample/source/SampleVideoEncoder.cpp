@@ -338,3 +338,4 @@ REGISTER_SAMPLE( VideoEncoder, SampleVideoEncoder );
 
 }   // namespace sample
 }   // namespace ridehal
+

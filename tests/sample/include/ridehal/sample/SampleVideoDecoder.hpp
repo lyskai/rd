@@ -53,11 +53,11 @@ private:
 private:
     void InFrameCallback( const VideoDecoder_InputFrame_t *pInputFrame );
     void OutFrameCallback( const VideoDecoder_OutputFrame_t *pOutputFrame );
-    void EventCallback( const VideoDecoder_EventType_e eventId, const void *pPayload );
+    void EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload );
 
     static void InFrameCallback( const VideoDecoder_InputFrame_t *pInputFrame, void *pPrivData );
     static void OutFrameCallback( const VideoDecoder_OutputFrame_t *pOutputFrame, void *pPrivData );
-    static void EventCallback( const VideoDecoder_EventType_e eventId, const void *pPayload,
+    static void EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload,
                                void *pPrivData );
 
 private:
@@ -89,3 +89,5 @@ private:
 }   // namespace ridehal
 
 #endif   // _RIDEHAL_SAMPLE_VIDEO_DECODER_HPP_
+
+
