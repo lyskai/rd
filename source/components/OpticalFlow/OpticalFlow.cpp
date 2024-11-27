@@ -12,7 +12,7 @@ namespace component
 #define RIDEHAL_EVA_OF_NUM_ICONFIG 11
 #define RIDEHAL_EVA_OF_NUM_FCONFIG 14
 
-#define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
+#define ALIGN_S( size, align ) ( ( ( ( size ) + (align) -1 ) / ( align ) ) * ( align ) )
 
 static const char *evaOFIConfigStrings[RIDEHAL_EVA_OF_NUM_ICONFIG] = {
         EVA_OF_ICONFIG_ACTUAL_FPS,
@@ -88,12 +88,12 @@ OpticalFlow_Config::OpticalFlow_Config()
 
 OpticalFlow_Config::OpticalFlow_Config( const OpticalFlow_Config &rhs )
 {
-    memcpy( this, &rhs, sizeof( rhs ) );
+    (void) memcpy( this, &rhs, sizeof( rhs ) );
 }
 
 OpticalFlow_Config &OpticalFlow_Config::operator=( const OpticalFlow_Config &rhs )
 {
-    memcpy( this, &rhs, sizeof( rhs ) );
+    (void) memcpy( this, &rhs, sizeof( rhs ) );
     return *this;
 }
 

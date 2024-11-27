@@ -298,6 +298,8 @@ private:
 
     QnnLog_Level_t GetQnnLogLevel( Logger_Level_e level );
 
+    RideHalError_e Destroy();
+
 #ifdef QNNRUNTIME_UNIT_TEST
 public:
 #endif

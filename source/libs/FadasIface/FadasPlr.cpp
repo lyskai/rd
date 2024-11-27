@@ -554,8 +554,9 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunCPU(
         const RideHal_SharedBuffer_t *pHeatmap, const RideHal_SharedBuffer_t *pXY,
         const RideHal_SharedBuffer_t *pZ, const RideHal_SharedBuffer_t *pSize,
         const RideHal_SharedBuffer_t *pTheta, const RideHal_SharedBuffer_t *pInPts,
-        RideHal_SharedBuffer_t *pBBoxList, RideHal_SharedBuffer_t *pLabels,
-        RideHal_SharedBuffer_t *pScores, RideHal_SharedBuffer_t *pMetadata, uint32_t *pNumDetOut )
+        const RideHal_SharedBuffer_t *pBBoxList, const RideHal_SharedBuffer_t *pLabels,
+        const RideHal_SharedBuffer_t *pScores, const RideHal_SharedBuffer_t *pMetadata,
+        uint32_t *pNumDetOut )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     FadasError_e error;
@@ -707,8 +708,9 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRunDSP(
         const RideHal_SharedBuffer_t *pHeatmap, const RideHal_SharedBuffer_t *pXY,
         const RideHal_SharedBuffer_t *pZ, const RideHal_SharedBuffer_t *pSize,
         const RideHal_SharedBuffer_t *pTheta, const RideHal_SharedBuffer_t *pInPts,
-        RideHal_SharedBuffer_t *pBBoxList, RideHal_SharedBuffer_t *pLabels,
-        RideHal_SharedBuffer_t *pScores, RideHal_SharedBuffer_t *pMetadata, uint32_t *pNumDetOut )
+        const RideHal_SharedBuffer_t *pBBoxList, const RideHal_SharedBuffer_t *pLabels,
+        const RideHal_SharedBuffer_t *pScores, const RideHal_SharedBuffer_t *pMetadata,
+        uint32_t *pNumDetOut )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     AEEResult error;
@@ -863,8 +865,9 @@ RideHalError_e FadasPlrPostProc::ExtractBBoxRun(
         const RideHal_SharedBuffer_t *pHeatmap, const RideHal_SharedBuffer_t *pXY,
         const RideHal_SharedBuffer_t *pZ, const RideHal_SharedBuffer_t *pSize,
         const RideHal_SharedBuffer_t *pTheta, const RideHal_SharedBuffer_t *pInPts,
-        RideHal_SharedBuffer_t *pBBoxList, RideHal_SharedBuffer_t *pLabels,
-        RideHal_SharedBuffer_t *pScores, RideHal_SharedBuffer_t *pMetadata, uint32_t *pNumDetOut )
+        const RideHal_SharedBuffer_t *pBBoxList, const RideHal_SharedBuffer_t *pLabels,
+        const RideHal_SharedBuffer_t *pScores, const RideHal_SharedBuffer_t *pMetadata,
+        uint32_t *pNumDetOut )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 

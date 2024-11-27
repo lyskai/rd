@@ -111,8 +111,8 @@ public:
     ExtractBBoxRun( const RideHal_SharedBuffer_t *pHeatmap, const RideHal_SharedBuffer_t *pXY,
                     const RideHal_SharedBuffer_t *pZ, const RideHal_SharedBuffer_t *pSize,
                     const RideHal_SharedBuffer_t *pTheta, const RideHal_SharedBuffer_t *pInPts,
-                    RideHal_SharedBuffer_t *pBBoxList, RideHal_SharedBuffer_t *pLabels,
-                    RideHal_SharedBuffer_t *pScores, RideHal_SharedBuffer_t *pMetadata,
+                    const RideHal_SharedBuffer_t *pBBoxList, const RideHal_SharedBuffer_t *pLabels,
+                    const RideHal_SharedBuffer_t *pScores, const RideHal_SharedBuffer_t *pMetadata,
                     uint32_t *pNumDetOut );
     RideHalError_e DestroyPostProc();
 
@@ -124,16 +124,16 @@ private:
     ExtractBBoxRunCPU( const RideHal_SharedBuffer_t *pHeatmap, const RideHal_SharedBuffer_t *pXY,
                        const RideHal_SharedBuffer_t *pZ, const RideHal_SharedBuffer_t *pSize,
                        const RideHal_SharedBuffer_t *pTheta, const RideHal_SharedBuffer_t *pInPts,
-                       RideHal_SharedBuffer_t *pBBoxList, RideHal_SharedBuffer_t *pLabels,
-                       RideHal_SharedBuffer_t *pScores, RideHal_SharedBuffer_t *pMetadata,
-                       uint32_t *pNumDetOut );
+                       const RideHal_SharedBuffer_t *pBBoxList,
+                       const RideHal_SharedBuffer_t *pLabels, const RideHal_SharedBuffer_t *pScores,
+                       const RideHal_SharedBuffer_t *pMetadata, uint32_t *pNumDetOut );
     RideHalError_e
     ExtractBBoxRunDSP( const RideHal_SharedBuffer_t *pHeatmap, const RideHal_SharedBuffer_t *pXY,
                        const RideHal_SharedBuffer_t *pZ, const RideHal_SharedBuffer_t *pSize,
                        const RideHal_SharedBuffer_t *pTheta, const RideHal_SharedBuffer_t *pInPts,
-                       RideHal_SharedBuffer_t *pBBoxList, RideHal_SharedBuffer_t *pLabels,
-                       RideHal_SharedBuffer_t *pScores, RideHal_SharedBuffer_t *pMetadata,
-                       uint32_t *pNumDetOut );
+                       const RideHal_SharedBuffer_t *pBBoxList,
+                       const RideHal_SharedBuffer_t *pLabels, const RideHal_SharedBuffer_t *pScores,
+                       const RideHal_SharedBuffer_t *pMetadata, uint32_t *pNumDetOut );
 
     RideHalError_e DestroyPostProcCPU();
     RideHalError_e DestroyPostProcDSP();

@@ -14,7 +14,7 @@ namespace ridehal
 namespace component
 {
 
-#define ALIGN_S( size, align ) ( ( size + align - 1 ) / align ) * align
+#define ALIGN_S( size, align ) ( ( ( ( size ) + (align) -1 ) / ( align ) ) * ( align ) )
 
 static int g_nCamInitRefCount = 0;
 static std::mutex g_camInitMutex;
@@ -892,14 +892,14 @@ RideHalError_e Camera::ReleaseFrame( const CameraFrame_t *pFrame )
     return ret;
 }
 
-CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pFrameinfo )
+CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pFrameInfo )
 {
     uint32_t frameIndex = 0;
     QCarCamRet_e status = QCARCAM_RET_OK;
     QCarCamFrameInfo_t frameInformation = { 0 };
     CameraFrame_t *pCameraFrame = nullptr;
     uint64_t timeout = 0;
-    frameInformation.id = pFrameinfo->id;
+    frameInformation.id = pFrameInfo->id;
 
     if ( !m_bRequestMode )
     {
@@ -928,11 +928,11 @@ CameraFrame_t *Camera::GetFrame( const QCarCamFrameInfo_t *pFrameinfo )
     }
     else
     {
-        frameIndex = pFrameinfo->bufferIndex;
-        pCameraFrame = &m_pCameraFrames[pFrameinfo->id][frameIndex];
-        pCameraFrame->timestamp = pFrameinfo->sofTimestamp.timestamp;
-        pCameraFrame->timestampQGPTP = pFrameinfo->sofTimestamp.timestampGPTP;
-        pCameraFrame->flags = pFrameinfo->flags;
+        frameIndex = pFrameInfo->bufferIndex;
+        pCameraFrame = &m_pCameraFrames[pFrameInfo->id][frameIndex];
+        pCameraFrame->timestamp = pFrameInfo->sofTimestamp.timestamp;
+        pCameraFrame->timestampQGPTP = pFrameInfo->sofTimestamp.timestampGPTP;
+        pCameraFrame->flags = pFrameInfo->flags;
         RIDEHAL_DEBUG( "GetFrame bufferlistId: %u, bufferIdx: %u ptr: %p buffer: %p, size: %d, "
                        "timestamp: %llu, "
                        "timestampGPTP: %llu, flags: %x",
@@ -1435,11 +1435,9 @@ RideHalError_e Camera::SetBuffers( const RideHal_SharedBuffer_t *pBuffers, uint3
                             m_pQcarcamBuffer[streamId][i].planes[0].size );
                 }
 
-                // setup buffers
-                if ( QCARCAM_RET_OK !=
-                     ( status = QCarCamSetBuffers(
-                               m_QcarCamHndl,
-                               (const QCarCamBufferList_t *) &m_qcarcamBuffers[streamId] ) ) )
+                status = QCarCamSetBuffers(
+                        m_QcarCamHndl, (const QCarCamBufferList_t *) &m_qcarcamBuffers[streamId] );
+                if ( QCARCAM_RET_OK != status )
                 {
                     RIDEHAL_ERROR( "QCarCamSetBuffers error ret %d  handle %lu", status,
                                    m_QcarCamHndl );
