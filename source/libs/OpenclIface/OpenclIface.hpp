@@ -135,8 +135,8 @@ public:
      * @note Set arguments for an OpenCL kernel and execute the kernel in GPU device. The number of
      * arguments must correspond to kernel codes.
      */
-    RideHalError_e Execute( cl_kernel *pKernel, const OpenclIfcae_Arg_t *pArgs, size_t numOfArgs,
-                            const OpenclIface_WorkParams_t *pWorkParam );
+    RideHalError_e Execute( const cl_kernel *pKernel, const OpenclIfcae_Arg_t *pArgs,
+                            size_t numOfArgs, const OpenclIface_WorkParams_t *pWorkParam );
 
 
 private:

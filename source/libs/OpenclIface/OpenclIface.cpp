@@ -350,7 +350,7 @@ RideHalError_e OpenclSrv::DeregBuf( const RideHal_Buffer_t *pBuffer )
     return ret;
 }
 
-RideHalError_e OpenclSrv::Execute( cl_kernel *pKernel, const OpenclIfcae_Arg_t *pArgs,
+RideHalError_e OpenclSrv::Execute( const cl_kernel *pKernel, const OpenclIfcae_Arg_t *pArgs,
                                    size_t numOfArgs, const OpenclIface_WorkParams_t *pWorkParam )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;

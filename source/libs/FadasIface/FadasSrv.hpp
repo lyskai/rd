@@ -89,8 +89,9 @@ private:
     int32_t FadasMemMapDSP( const RideHal_SharedBuffer_t *pBuffer );
     int32_t FadasMemMapCPU( const RideHal_SharedBuffer_t *pBuffer );
     int32_t FadasMemMap( const RideHal_SharedBuffer_t *pBuffer );
-    RideHalError_e FadasRegisterBufDSP( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
-                                        uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
+    RideHalError_e FadasRegisterBufDSP( FadasBufType_e bufType, const uint8_t *bufPtr,
+                                        int32_t bufFd, uint32_t bufSize, uint32_t bufOffset,
+                                        uint32_t batch );
     RideHalError_e FadasRegisterBufCPU( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,
                                         uint32_t bufSize, uint32_t bufOffset, uint32_t batch );
     RideHalError_e FadasRegisterBufGPU( FadasBufType_e bufType, uint8_t *bufPtr, int32_t bufFd,

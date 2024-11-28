@@ -200,7 +200,7 @@ FadasIface_FadasRemapPipeline_e FadasRemap::RemapGetPipelineDSP( RideHal_ImageFo
 }
 
 RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth, uint32_t mapHeight,
-                                            float *pMapX, float *pMapY )
+                                            const float *pMapX, const float *pMapY )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -485,7 +485,6 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
             {
                 RIDEHAL_ERROR( "Invalid input format for inputId = %d!", inputId );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                break;
             }
             srcImg.bAllocated = false;
 
@@ -537,7 +536,6 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                         RIDEHAL_ERROR( "FadasRemap_RunGPU failed for batch %d: ret = 0x%x", inputId,
                                        retFadas );
                         ret = RIDEHAL_ERROR_FAIL;
-                        break;
                     }
                 }
                 else
@@ -556,9 +554,12 @@ RideHalError_e FadasRemap::RemapRunCPU( const RideHal_SharedBuffer_t *inputs,
                         RIDEHAL_ERROR( "FadasRemap_RunMT failed for batch %d: ret = 0x%x", inputId,
                                        retFadas );
                         ret = RIDEHAL_ERROR_FAIL;
-                        break;
                     }
                 }
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                break;
             }
         }
     }
@@ -713,29 +714,29 @@ RideHalError_e FadasRemap::RemapRun( const RideHal_SharedBuffer_t *inputs,
             {
                 RIDEHAL_ERROR( "Format in input buffer and config not match!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                break;
             }
             else if ( m_inputWidths[inputId] != inputs[inputId].imgProps.width )
             {
                 RIDEHAL_ERROR( "Width in input buffer and config not match!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                break;
             }
             else if ( m_inputHeights[inputId] != inputs[inputId].imgProps.height )
             {
                 RIDEHAL_ERROR( "Height in input buffer and config not match!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                break;
             }
             else if ( 1 != inputs[inputId].imgProps.batchSize )
             {
                 RIDEHAL_ERROR( "Batch in input buffer must be 1!" );
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                break;
             }
             else
             {
                 RIDEHAL_INFO( "Input image property check pass for id=%d!", inputId );
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                break;
             }
         }
 

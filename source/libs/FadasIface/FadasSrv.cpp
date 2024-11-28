@@ -182,8 +182,8 @@ RideHalError_e FadasSrv::InitDSP( RideHal_ProcessorType_e coreId )
         struct remote_rpc_control_unsigned_module data;
         data.enable = 1;
         data.domain = domain;
-        int nErr = remote_session_control( DSPRPC_CONTROL_UNSIGNED_MODULE,
-                                           reinterpret_cast<void *>( &data ), sizeof( data ) );
+        (void) remote_session_control( DSPRPC_CONTROL_UNSIGNED_MODULE,
+                                       reinterpret_cast<void *>( &data ), sizeof( data ) );
         auto retVal = FadasIface_open( uri, &handle64 );
         if ( AEE_SUCCESS != retVal )
         {
@@ -291,7 +291,7 @@ RideHalError_e FadasSrv::Deinit()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
     std::lock_guard<std::mutex> l( s_FadasLock );
-    if ( s_initialized[m_processor] && ( s_useRef[m_processor] > 0 ) )
+    if ( ( 0 != s_initialized[m_processor] ) && ( 0 < s_useRef[m_processor] ) )
     {
         s_useRef[m_processor]--;
         if ( 0 == s_useRef[m_processor] )
@@ -441,7 +441,7 @@ int32_t FadasSrv::FadasMemMap( const RideHal_SharedBuffer_t *pBuffer )
     return fd;
 }
 
-RideHalError_e FadasSrv::FadasRegisterBufDSP( FadasBufType_e bufType, uint8_t *bufPtr,
+RideHalError_e FadasSrv::FadasRegisterBufDSP( FadasBufType_e bufType, const uint8_t *bufPtr,
                                               int32_t bufFd, uint32_t bufSize, uint32_t bufOffset,
                                               uint32_t batch )
 {
@@ -550,7 +550,6 @@ int32_t FadasSrv::RegisterImage( const RideHal_SharedBuffer_t *pBuffer, FadasBuf
     int32_t fd = -1;
 
     auto &memMap = s_memMaps[m_processor];
-    auto handle64 = s_handle64[m_processor];
     uint8_t *ptr = (uint8_t *) pBuffer->buffer.pData;
     size_t size = pBuffer->buffer.size;
     size_t offset = pBuffer->offset;

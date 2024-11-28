@@ -27,7 +27,7 @@ public:
                                    FadasNormlzParams_t normlzB, bool bEnableUndistortion,
                                    bool bEnableNormalize );
     RideHalError_e CreatRemapTable( uint32_t inputId, uint32_t mapWidth, uint32_t mapHeight,
-                                    float *pMapX, float *pMapY );
+                                    const float *pMapX, const float *pMapY );
     RideHalError_e CreateRemapWorker( uint32_t inputId, RideHal_ImageFormat_e inputFormat,
                                       uint32_t inputWidth, uint32_t inputHeight, FadasROI_t ROI );
     RideHalError_e RemapRun( const RideHal_SharedBuffer_t *inputs,
