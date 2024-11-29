@@ -218,6 +218,16 @@ mkdir $DST_DIR/lib/runtime
 cp LiberationSans-Regular.ttf $DST_DIR/lib/runtime
 ```
 
+- copy dependent libraries to RideHal
+```sh
+cd $WORKSPACE
+readelf -d $DST_DIR/lib/libSDL2.so | \
+    grep Shared | awk -F \[ '{print $2}' | \
+    sed 's/\]//' | \
+    xargs -i find $UBUNTU_TARGET -name {} | \
+    xargs -i cp {} $DST_DIR/lib
+```
+
 - generate RideHal package
 ```sh
 cd $WORKSPACE
@@ -226,3 +236,4 @@ tar -C $WORKSPACE --exclude="*.a" \
     --exclude="share" --exclude="cmake" \
     --use-compress-program=pigz -cf $PKG_NAME opt/ridehal
 ```
+
