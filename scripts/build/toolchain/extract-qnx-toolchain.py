@@ -330,6 +330,7 @@ libList = libListVidc + libListFastCV + libListC2d + libListPmem + libListQgptp 
         "libsmmu_clientS.a", "libfastcvopt.a", "libfastcvoptS.a",
         "liblibstd.so", "libmmap_peer.so", "libxml_config.so", "libOpenCL_Adreno.so",
         "libicb_client.so", "libnpa_client.so", "libc2c.so", "libep_client.so", "librc_client.so",
+        "libsafe_xml.so", "libsafe_xml_c.so"
     ] + libListRSM
 
 targetLibDirs = [
