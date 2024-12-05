@@ -78,18 +78,33 @@ The relationship of input, map, ROI, output scales are showed in following pictu
 
 If bEnableUndistortion is set to true, user can do undistortion or lens distortion correction for fisheye type camera by using the calibrated mapping table mapX and mapY. The mapping table mapX and mapY are floating point matrixs, each element is the column/row coordinate of the mapped location in the source image. The following example show how to set a map table with linear resize. 
 ```c++
-    float *mapX = (float *) mapXBuffer.data();
-    float *mapY = (float *) mapYBuffer.data();
-    for ( int i = 0; i < mapHeight; i++ )
-    {
-        for ( int j = 0; j < mapWidth; j++ )
-        {
-            mapX[i * mapWidth + j] = j / mapWidth * inputWidth;
-            mapY[i * mapWidth + j] = i / mapHeight * inputHeight;
-        }
-    }
-    RemapConfig.inputConfigs[inputId].remapTable.pMapX = mapX;
-    RemapConfig.inputConfigs[inputId].remapTable.pMapY = mapY;
+            RideHal_TensorProps_t mapXProp;
+            mapXProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { mapWidth, mapHeight, 0 },
+                    2,
+            };
+            ret = mapXBuffer[inputId].Allocate( &mapXProp );
+            RideHal_TensorProps_t mapYProp;
+            mapYProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { mapWidth, mapHeight, 0 },
+                    2,
+            };
+            ret = mapYBuffer[inputId].Allocate( &mapYProp );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            float *mapX = (float *) mapXBuffer[inputId].data();
+            float *mapY = (float *) mapYBuffer[inputId].data();
+            for ( int i = 0; i < mapHeight; i++ )
+            {
+                for ( int j = 0; j < mapWidth; j++ )
+                {
+                    mapX[i * mapWidth + j] = (float) j / (float) mapWidth * (float) inputWidth;
+                    mapY[i * mapWidth + j] = (float) i / (float) mapHeight * (float) inputHeight;
+                }
+            }
+            RemapConfig.inputConfigs[inputId].remapTable.pMapX = &mapXBuffer[inputId];
+            RemapConfig.inputConfigs[inputId].remapTable.pMapY = &mapYBuffer[inputId];
 ```
 
 ## 4.2 API Call flow
@@ -120,7 +135,7 @@ Calling of RegisterBuffers and DeRegisterBuffers API for input/output buffer is 
 
 ## 4.3 Supported pipelines
 
-The supported remap pipelines for different input/output image format on each processor are listed below. In which Y means supported, N means unsupported. And norm means pipeline with normalization, corresponding to bEnableNormalize = true in the configuration parameters.
+The supported remap pipelines for different input/output image format on each processor are listed below. In which Y means supported, N means unsupported. And norm means pipeline with normalization, corresponding to bEnableNormalize = true in the configuration parameters. Note that the NV12 input pipelines of each processor are only supported with internal engineering fadas libraries, and only verified in specific QNX meta build(Snapdragon_Auto.HQX.4.5.6.0.1.r1-00010).
 
 | Pipeline         | DSP processor | CPU processor | GPU processor |
 |------------------|---------------|---------------|---------------|

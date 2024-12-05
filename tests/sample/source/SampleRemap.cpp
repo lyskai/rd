@@ -206,15 +206,25 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
         if ( true == m_config.bEnableUndistortion )
         {
             bool bAllocateOK = true;
-            uint32_t mapSize = m_config.inputConfigs[i].mapWidth *
-                               m_config.inputConfigs[i].mapHeight * sizeof( float );
-            ret = m_mapXBuffer[i].Allocate( mapSize );
+            RideHal_TensorProps_t mapXProp;
+            mapXProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { m_config.inputConfigs[i].mapWidth, m_config.inputConfigs[i].mapHeight, 0 },
+                    2,
+            };
+            ret = m_mapXBuffer[i].Allocate( &mapXProp );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 bAllocateOK = false;
                 RIDEHAL_ERROR( "failed to allocate mapX%u!\n", i );
             }
-            ret = m_mapYBuffer[i].Allocate( mapSize );
+            RideHal_TensorProps_t mapYProp;
+            mapYProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { m_config.inputConfigs[i].mapWidth, m_config.inputConfigs[i].mapHeight, 0 },
+                    2,
+            };
+            ret = m_mapYBuffer[i].Allocate( &mapYProp );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 bAllocateOK = false;
@@ -230,7 +240,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
                 ret = LoadMap( m_mapXBuffer[i], mapXPath );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    m_config.inputConfigs[i].remapTable.pMapX = (float *) m_mapXBuffer[i].data();
+                    m_config.inputConfigs[i].remapTable.pMapX = &m_mapXBuffer[i];
                 }
                 else
                 {
@@ -240,7 +250,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
                 ret = LoadMap( m_mapYBuffer[i], mapYPath );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
-                    m_config.inputConfigs[i].remapTable.pMapY = (float *) m_mapYBuffer[i].data();
+                    m_config.inputConfigs[i].remapTable.pMapY = &m_mapYBuffer[i];
                 }
                 else
                 {

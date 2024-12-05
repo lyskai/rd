@@ -206,15 +206,15 @@ AEEResult FadasIface_FadasDeInit( remote_handle64 handle )
     return AEE_SUCCESS;
 }
 
-AEEResult FadasIface_FadasRemap_CreateMapFromMap( remote_handle64 handle, uint64 *mapPtr,
-                                                  uint32_t camWidth, uint32_t camHeight,
-                                                  uint32_t mapWidth, uint32_t mapHeight,
-                                                  const float *mapX, int mapXLen, const float *mapY,
-                                                  int mapYLen, uint32_t mapStride,
-                                                  FadasIface_FadasRemapPipeline_e imgFormat,
-                                                  uint8_t borderConst )
+AEEResult FadasIface_FadasRemap_CreateMapFromMap(
+        remote_handle64 handle, uint64 *mapPtr, uint32_t camWidth, uint32_t camHeight,
+        uint32_t mapWidth, uint32_t mapHeight, int32_t mapXFd, int32_t mapYFd, uint32_t mapStride,
+        FadasIface_FadasRemapPipeline_e imgFormat, uint8_t borderConst )
 {
     AEEResult ret = AEE_SUCCESS;
+
+    float *mapX = (float *) FadasIface_GetBufPtr( mapXFd );
+    float *mapY = (float *) FadasIface_GetBufPtr( mapYFd );
     FadasRemapMap *map = FadasRemap_CreateMapFromMap(
             camWidth, camHeight, mapWidth, mapHeight, mapStride, mapX, mapY,
             g_MapImageConversion[static_cast<int>( imgFormat )], borderConst );

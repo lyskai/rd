@@ -30,10 +30,11 @@ namespace component
 /** @brief remap tables for input images */
 typedef struct
 {
-    float *pMapX; /**<pointer for X map, each element is the column coordinate of the mapped
-                     location in the source image, data size is mapWidth * mapHeight*/
-    float *pMapY; /**<pointer for Y map, each element is the row coordinate of the mapped location
-                     in the source image, data size is mapWidth * mapHeight*/
+    RideHal_SharedBuffer_t
+            *pMapX; /**<shared buffer for X map, each element is the column coordinate of the mapped
+      location in the source image, data size is mapWidth * mapHeight*/
+    RideHal_SharedBuffer_t *pMapY; /**<shared buffer for Y map, each element is the row coordinate
+                     of the mapped location in the source image, data size is mapWidth * mapHeight*/
 } Remap_MapTable_t;
 
 /** @brief remap configuration for each input image*/

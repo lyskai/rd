@@ -200,7 +200,8 @@ FadasIface_FadasRemapPipeline_e FadasRemap::RemapGetPipelineDSP( RideHal_ImageFo
 }
 
 RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth, uint32_t mapHeight,
-                                            const float *pMapX, const float *pMapY )
+                                            const RideHal_SharedBuffer_t *pMapX,
+                                            const RideHal_SharedBuffer_t *pMapY )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -210,6 +211,34 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
     if ( ( true == m_bEnableUndistortion ) && ( ( nullptr == pMapX ) || ( nullptr == pMapY ) ) )
     {
         RIDEHAL_ERROR( "Null remap pointer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( ( true == m_bEnableUndistortion ) &&
+              ( ( RIDEHAL_BUFFER_TYPE_TENSOR != pMapX->type ) || ( nullptr == pMapX->data() ) ) )
+    {
+        RIDEHAL_ERROR( "Invalid mapX table!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( ( true == m_bEnableUndistortion ) &&
+              ( ( RIDEHAL_BUFFER_TYPE_TENSOR != pMapY->type ) || ( nullptr == pMapY->data() ) ) )
+    {
+        RIDEHAL_ERROR( "Invalid mapY table!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( ( true == m_bEnableUndistortion ) &&
+              ( ( RIDEHAL_TENSOR_TYPE_FLOAT_32 != pMapX->tensorProps.type ) ||
+                ( 2 != pMapX->tensorProps.numDims ) || ( mapWidth != pMapX->tensorProps.dims[0] ) ||
+                ( mapHeight != pMapX->tensorProps.dims[1] ) ) )
+    {
+        RIDEHAL_ERROR( "mapX table size not match!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else if ( ( true == m_bEnableUndistortion ) &&
+              ( ( RIDEHAL_TENSOR_TYPE_FLOAT_32 != pMapY->tensorProps.type ) ||
+                ( 2 != pMapY->tensorProps.numDims ) || ( mapWidth != pMapY->tensorProps.dims[0] ) ||
+                ( mapHeight != pMapY->tensorProps.dims[1] ) ) )
+    {
+        RIDEHAL_ERROR( "mapY table size not match!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
@@ -230,12 +259,14 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 uint64 retVal = 0;
                 if ( true == m_bEnableUndistortion )
                 {
+                    int32_t mapXFd = RegBuf( pMapX, FADAS_BUF_TYPE_IN );
+                    int32_t mapYFd = RegBuf( pMapY, FADAS_BUF_TYPE_IN );
                     retVal = FadasIface_FadasRemap_CreateMapFromMap(
                             m_handle64, &remapPtr, m_inputWidths[inputId], m_inputHeights[inputId],
-                            m_mapWidths[inputId], m_mapHeights[inputId], pMapX,
-                            m_mapHeights[inputId] * m_mapWidths[inputId], pMapY,
-                            m_mapHeights[inputId] * m_mapWidths[inputId],
+                            m_mapWidths[inputId], m_mapHeights[inputId], mapXFd, mapYFd,
                             m_mapWidths[inputId] * sizeof( float ), pipeline, 0 );
+                    DeregBuf( pMapX->data() );
+                    DeregBuf( pMapY->data() );
                 }
                 else
                 {
@@ -271,8 +302,8 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 {
                     remapPtr = s_FadasRemap_CreateMapFromMapGPU(
                             m_inputWidths[inputId], m_inputHeights[inputId], m_mapWidths[inputId],
-                            m_mapHeights[inputId], m_mapWidths[inputId] * sizeof( float ), pMapX,
-                            pMapY, pipeline, 0, 1 );
+                            m_mapHeights[inputId], m_mapWidths[inputId] * sizeof( float ),
+                            (float *) pMapX->data(), (float *) pMapY->data(), pipeline, 0, 1 );
                 }
                 else
                 {
@@ -308,8 +339,8 @@ RideHalError_e FadasRemap::CreatRemapTable( uint32_t inputId, uint32_t mapWidth,
                 {
                     remapPtr = FadasRemap_CreateMapFromMap(
                             m_inputWidths[inputId], m_inputHeights[inputId], m_mapWidths[inputId],
-                            m_mapHeights[inputId], m_mapWidths[inputId] * sizeof( float ), pMapX,
-                            pMapY, pipeline, 0 );
+                            m_mapHeights[inputId], m_mapWidths[inputId] * sizeof( float ),
+                            (float *) pMapX->data(), (float *) pMapY->data(), pipeline, 0 );
                 }
                 else
                 {

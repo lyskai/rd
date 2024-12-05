@@ -494,11 +494,24 @@ void SuccessTest( uint32_t batchTest, RideHal_ProcessorType_e processorTest,
             uint32_t mapHeight = RemapConfig.inputConfigs[inputId].mapHeight;
             uint32_t inputWidth = RemapConfig.inputConfigs[inputId].inputWidth;
             uint32_t inputHeight = RemapConfig.inputConfigs[inputId].inputHeight;
-            uint32_t mapSize = mapWidth * mapHeight * sizeof( float );
-            ret = mapXBuffer[inputId].Allocate( mapSize );
+
+            RideHal_TensorProps_t mapXProp;
+            mapXProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { mapWidth, mapHeight, 0 },
+                    2,
+            };
+            ret = mapXBuffer[inputId].Allocate( &mapXProp );
             ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-            ret = mapYBuffer[inputId].Allocate( mapSize );
+            RideHal_TensorProps_t mapYProp;
+            mapYProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { mapWidth, mapHeight, 0 },
+                    2,
+            };
+            ret = mapYBuffer[inputId].Allocate( &mapYProp );
             ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
             float *mapX = (float *) mapXBuffer[inputId].data();
             float *mapY = (float *) mapYBuffer[inputId].data();
             for ( int i = 0; i < mapHeight; i++ )
@@ -510,8 +523,8 @@ void SuccessTest( uint32_t batchTest, RideHal_ProcessorType_e processorTest,
                 }
             }
 
-            RemapConfig.inputConfigs[inputId].remapTable.pMapX = mapX;
-            RemapConfig.inputConfigs[inputId].remapTable.pMapY = mapY;
+            RemapConfig.inputConfigs[inputId].remapTable.pMapX = &mapXBuffer[inputId];
+            RemapConfig.inputConfigs[inputId].remapTable.pMapY = &mapYBuffer[inputId];
         }
     }
 
@@ -909,7 +922,7 @@ TEST( Remap, ImageAccuracyTest )   // image pipeline md5 accuracy tests
     ImageTest( RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
                1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_cpu.rgb",
                true, false );
-#if defined( __QNXNTO__ )
+#if defined( USE_ENG_FADAS_GPU )
     printf( "GPU image accuracy test\n" );
     ImageTest( RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888, 1920,
                1024, 1152, 800, "./data/test/remap/0.uyvy", "./data/test/remap/golden_gpu.rgb",
@@ -926,7 +939,7 @@ TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backen
     printf( "CPU general accuracy test\n" );
     SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, true, false );
-#if defined( __QNXNTO__ )
+#if defined( USE_ENG_FADAS_GPU )
     printf( "GPU general accuracy test\n" );
     SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_RGB888, RIDEHAL_IMAGE_FORMAT_RGB888,
                  512, 512, 256, 256, false, false, true, false );
@@ -936,17 +949,32 @@ TEST( Remap, GeneralAccuracyTest )   // general accuracy test for DSP&CPU backen
                  RIDEHAL_IMAGE_FORMAT_RGB888, 512, 512, 256, 256, true, false, true, false );
 }
 
-TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU backend, RGB to
+TEST( Remap, GeneralPerformanceTest )   // general performance test for DSP&CPU backend, UYVY to
                                         // RGB pipeline, no undistortion and no renormalization
 {
-    printf( "DSP general performance test\n" );
+    printf( "DSP UYVY general performance test\n" );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 1920, 1024, 1152, 800, false, false, false, true );
+    printf( "CPU UYVY general performance test\n" );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 1920, 1024, 1152, 800, false, false, false, true );
+#if defined( USE_ENG_FADAS_GPU )
+    printf( "GPU UYVY general performance test\n" );
+    SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_RGB888,
+                 1920, 1024, 1152, 800, false, false, false, true );
+#endif
+#if defined( USE_ENG_FADAS_DSP )
+    printf( "DSP NV12 general performance test\n" );
     SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  1920, 1024, 1152, 800, false, false, false, true );
-    printf( "CPU general performance test\n" );
+#endif
+#if defined( USE_ENG_FADAS_CPU )
+    printf( "CPU NV12 general performance test\n" );
     SuccessTest( 2, RIDEHAL_PROCESSOR_CPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_RGB888,
                  1920, 1024, 1152, 800, false, false, false, true );
-#if defined( __QNXNTO__ )
-    printf( "GPU general performance test\n" );
+#endif
+#if defined( USE_ENG_FADAS_GPU )
+    printf( "GPU NV12 general performance test\n" );
     SuccessTest( 2, RIDEHAL_PROCESSOR_GPU, RIDEHAL_IMAGE_FORMAT_NV12, RIDEHAL_IMAGE_FORMAT_BGR888,
                  1920, 1024, 1152, 800, false, false, false, true );
 #endif
@@ -983,7 +1011,8 @@ TEST( Remap, CPUSuccessPipeline2Test )   // general success test on CPU for UYVY
                  512, 512, 256, 256, true, true, false, false );
 }
 
-#if defined( __QNXNTO__ )                // nv12 input format on CPU is not supported in HGY
+#if defined( USE_ENG_FADAS_CPU )   // nv12 input and bgr output format on CPU is only supported in
+                                   // eng version
 TEST( Remap, CPUSuccessPipeline3Test )   // general success test on CPU for NV12/UYVY to RGB, with
                                          // and without undistortion
 {
@@ -1029,6 +1058,8 @@ TEST( Remap, DSPSuccessPipeline2Test )   // general success test on DSP for UYVY
                  512, 512, 256, 256, true, true, false, false );
 }
 
+#if defined( USE_ENG_FADAS_DSP )   // nv12 input and bgr output format on DSP is only supported in
+                                   // eng version
 TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12/UYVY to BGR, with
                                          // and without undistortion
 {
@@ -1041,8 +1072,9 @@ TEST( Remap, DSPSuccessPipeline3Test )   // general success test on DSP for NV12
     SuccessTest( 2, RIDEHAL_PROCESSOR_HTP0, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_BGR888,
                  512, 512, 256, 256, true, false, false, false );
 }
+#endif
 
-#if defined( __QNXNTO__ )
+#if defined( USE_ENG_FADAS_GPU )
 TEST( Remap, GPUSuccessPipeline1Test )   // general success test on GPU for UYVY/RGB to RGB, with
                                          // and without normalization, no undistortion
 {
