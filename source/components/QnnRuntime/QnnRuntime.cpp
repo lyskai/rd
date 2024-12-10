@@ -77,7 +77,7 @@ RideHalError_e QnnRuntime::CreateFromModelSo( std::string modelFile )
             &m_context );
     if ( QNN_CONTEXT_NO_ERROR != retVal )
     {
-        RIDEHAL_ERROR( "Could not create context, error is %d", (int) retVal );
+        RIDEHAL_ERROR( "Could not create context, error is %" PRIu64, retVal );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
@@ -286,6 +286,7 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
 
     for ( size_t i = 0; i < numOfUdoPackages; ++i )
     {
@@ -294,10 +295,9 @@ RideHalError_e QnnRuntime::LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages
             QnnRuntime_UdoPackage_t *pUdoPackage = &pUdoPackages[i];
             RIDEHAL_INFO( "Registered Op Package: %s and interface provider: %s",
                           pUdoPackage->udoLibPath, pUdoPackage->interfaceProvider );
-            const Qnn_ErrorHandle_t retVal =
-                    m_qnnFunctionPointers.qnnInterface.backendRegisterOpPackage(
-                            m_backendHandle, (char *) pUdoPackage->udoLibPath,
-                            (char *) pUdoPackage->interfaceProvider, nullptr );
+            retVal = m_qnnFunctionPointers.qnnInterface.backendRegisterOpPackage(
+                    m_backendHandle, (char *) pUdoPackage->udoLibPath,
+                    (char *) pUdoPackage->interfaceProvider, nullptr );
             if ( QNN_BACKEND_NO_ERROR != retVal )
             {
                 RIDEHAL_ERROR( "Could not register Op Package: %s and interface provider: %s, "
@@ -350,6 +350,7 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     bool bIFInitOK = false;
+    Qnn_ErrorHandle_t retVal;
 
     ret = ComponentIF::Init( pName, level );
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -434,8 +435,8 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
         (void) qnn::log::Logger::createLogger( &QnnLog_Callback, logLevel, &logError );
 
-        const Qnn_ErrorHandle_t retVal = m_qnnFunctionPointers.qnnInterface.logCreate(
-                &QnnLog_Callback, logLevel, &m_logHandle );
+        retVal = m_qnnFunctionPointers.qnnInterface.logCreate( &QnnLog_Callback, logLevel,
+                                                               &m_logHandle );
         if ( QNN_SUCCESS != retVal )
         {
             RIDEHAL_WARN( "Unable to initialize logging in the backend. error is %d",
@@ -467,22 +468,21 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        const Qnn_ErrorHandle_t retVal =
-                m_qnnFunctionPointers.qnnSystemInterface.systemContextCreate( &m_systemContext );
+        retVal = m_qnnFunctionPointers.qnnSystemInterface.systemContextCreate( &m_systemContext );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "Could not create system handle. error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Could not create system handle. error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        const auto returnStatus = m_qnnFunctionPointers.qnnInterface.backendCreate(
+        retVal = m_qnnFunctionPointers.qnnInterface.backendCreate(
                 m_logHandle, (const QnnBackend_Config_t **) m_backendConfig, &m_backendHandle );
-        if ( QNN_BACKEND_NO_ERROR != returnStatus )
+        if ( QNN_BACKEND_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Could not initialize backend due to error = %d", returnStatus );
+            RIDEHAL_ERROR( "Could not initialize backend due to error = %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -490,11 +490,10 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     if ( RIDEHAL_ERROR_NONE == ret )
     {
         Qnn_ApiVersion_t version;
-        const auto returnStatus =
-                m_qnnFunctionPointers.qnnInterface.backendGetApiVersion( &version );
-        if ( QNN_BACKEND_NO_ERROR != returnStatus )
+        retVal = m_qnnFunctionPointers.qnnInterface.backendGetApiVersion( &version );
+        if ( QNN_BACKEND_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Could not get backend version due to error = %d", returnStatus );
+            RIDEHAL_ERROR( "Could not get backend version due to error = %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
         RIDEHAL_INFO( "QNN build version: %s", QNN_SDK_BUILD_ID );
@@ -508,12 +507,11 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
     {
         if ( pConfig->processorType != RIDEHAL_PROCESSOR_CPU )
         {
-            const auto returnStatus = m_qnnFunctionPointers.qnnInterface.deviceGetPlatformInfo(
-                    m_logHandle, &m_platformInfo );
-            if ( QNN_DEVICE_NO_ERROR != returnStatus )
+            retVal = m_qnnFunctionPointers.qnnInterface.deviceGetPlatformInfo( m_logHandle,
+                                                                               &m_platformInfo );
+            if ( QNN_DEVICE_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "Could not get platform information due to error = %d",
-                               returnStatus );
+                RIDEHAL_ERROR( "Could not get platform information due to error = %" PRIu64, retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -551,11 +549,11 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                             .hardwareInfo = &platformInfo,
                     };
                     const QnnDevice_Config_t *configs[] = { &deviceConfig, nullptr };
-                    const auto returnStatus = m_qnnFunctionPointers.qnnInterface.deviceCreate(
-                            m_logHandle, configs, &m_deviceHandle );
-                    if ( QNN_BACKEND_NO_ERROR != returnStatus )
+                    retVal = m_qnnFunctionPointers.qnnInterface.deviceCreate( m_logHandle, configs,
+                                                                              &m_deviceHandle );
+                    if ( QNN_BACKEND_NO_ERROR != retVal )
                     {
-                        RIDEHAL_ERROR( "Could not create device due to error = %d", returnStatus );
+                        RIDEHAL_ERROR( "Could not create device due to error = %" PRIu64, retVal );
                         ret = RIDEHAL_ERROR_FAIL;
                     }
                 }
@@ -655,6 +653,13 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
         {
             (void) ComponentIF::Deinit();
         }
+    }
+    else
+    {
+        m_outputCb = nullptr;
+        m_errorCb = nullptr;
+        m_pAppPriv = nullptr;
+        m_notifyParamQ.Init();
     }
 
     return ret;
@@ -870,6 +875,7 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
                                            Qnn_MemHandle_t *pMemHandle )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
 
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
@@ -881,12 +887,6 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
         ret = RIDEHAL_ERROR_FAIL;
     }
 #endif
-
-    if ( m_backendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
-    {
-        RIDEHAL_ERROR( "Backend core id is out of dma memery info map size!" );
-        ret = RIDEHAL_ERROR_UNSUPPORTED; /* for safety */
-    }
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -932,8 +932,8 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
             desc.ionInfo.fd = fd;
 #endif
 
-            const Qnn_ErrorHandle_t retVal = m_qnnFunctionPointers.qnnInterface.memRegister(
-                    m_context, &desc, 1, pMemHandle );
+            retVal = m_qnnFunctionPointers.qnnInterface.memRegister( m_context, &desc, 1,
+                                                                     pMemHandle );
             if ( QNN_SUCCESS == retVal )
             {
                 QnnRuntime::DmaMemInfo_t info;
@@ -1031,37 +1031,18 @@ RideHalError_e QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t *pSharedBu
 }
 
 RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEventId,
-                                                  QnnRuntime_Perf_t *pPerf )
+                                                  QnnRuntime_Perf_t *pPerf, bool &bPerfDataValid )
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
-         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
-    {
-        RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
-        ret = RIDEHAL_ERROR_BAD_STATE;
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        if ( pPerf == nullptr )
-        {
-            RIDEHAL_ERROR( "Pointer of perf is nullptr!" );
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-        }
-    }
-
     QnnProfile_EventData_t eventData;
-    if ( RIDEHAL_ERROR_NONE == ret )
+    Qnn_ErrorHandle_t retVal;
+
+    retVal = m_qnnFunctionPointers.qnnInterface.profileGetEventData( profileEventId, &eventData );
+    if ( QNN_PROFILE_NO_ERROR != retVal )
     {
-        const Qnn_ErrorHandle_t retVal = m_qnnFunctionPointers.qnnInterface.profileGetEventData(
-                profileEventId, &eventData );
-        if ( QNN_PROFILE_NO_ERROR != retVal )
-        {
-            RIDEHAL_ERROR( "Failure in profile get event type. error is %d", (int) retVal );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
+        RIDEHAL_ERROR( "Failure in profile get event type. error is %" PRIu64, retVal );
+        ret = RIDEHAL_ERROR_FAIL;
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -1072,20 +1053,20 @@ RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEv
         switch ( eventData.type )
         {
             case QNN_PROFILE_EVENTTYPE_EXECUTE:
+                bPerfDataValid = true;
                 pPerf->entireExecTime = eventData.value;
-                m_bPerfDataValid = true;
                 break;
             case QNN_HTP_PROFILE_EVENTTYPE_GRAPH_EXECUTE_HOST_RPC_TIME_MICROSEC:
+                bPerfDataValid = true;
                 pPerf->rpcExecTimeCPU = eventData.value;
-                m_bPerfDataValid = true;
                 break;
             case QNN_HTP_PROFILE_EVENTTYPE_GRAPH_EXECUTE_HTP_RPC_TIME_MICROSEC:
+                bPerfDataValid = true;
                 pPerf->rpcExecTimeHTP = eventData.value;
-                m_bPerfDataValid = true;
                 break;
             case QNN_HTP_PROFILE_EVENTTYPE_GRAPH_EXECUTE_ACCEL_TIME_MICROSEC:
+                bPerfDataValid = true;
                 pPerf->rpcExecTimeAcc = eventData.value;
-                m_bPerfDataValid = true;
                 break;
             default:
             {
@@ -1098,42 +1079,27 @@ RideHalError_e QnnRuntime::ExtractProfilingEvent( QnnProfile_EventId_t profileEv
     return ret;
 }
 
-RideHalError_e QnnRuntime::GeneratePerf()
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    const QnnProfile_EventId_t *profileEvents{ nullptr };
-    uint32_t numEvents{ 0 };
-
-    (void) memset( &m_perf, 0, sizeof( m_perf ) );
-    m_bPerfDataValid = false;
-
-    const Qnn_ErrorHandle_t retVal = m_qnnFunctionPointers.qnnInterface.profileGetEvents(
-            m_profileBackendHandle, &profileEvents, &numEvents );
-    if ( QNN_PROFILE_NO_ERROR != retVal )
-    {
-        RIDEHAL_ERROR( "Failure in profile get events." );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    RIDEHAL_DEBUG( "ProfileEvents: numEvents: [%u]", numEvents );
-    for ( uint32_t event = 0; event < numEvents; event++ )
-    {
-        (void) ExtractProfilingEvent( profileEvents[event], &m_perf );
-    }
-
-    return ret;
-}
-
 RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
-                                    const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs )
+                                    const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs,
+                                    void *pOutputPriv )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
+    NotifyParam_t *pNotifyParam = nullptr;
 
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
         RIDEHAL_ERROR( "QnnRuntime component not in running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( ( nullptr != pOutputPriv ) && ( nullptr == m_outputCb ) )
+    {
+        RIDEHAL_ERROR( "ASYNC execute request without callback registerred!" );
+        ret = RIDEHAL_ERROR_OUT_OF_BOUND;
+    }
+    else
+    {
+        /* OK */
     }
 
     // Check input tensors
@@ -1208,82 +1174,108 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( ( m_bEnabelPerf ) && ( nullptr == m_profileBackendHandle ) )
+        if ( nullptr == pOutputPriv )
         {
-            const Qnn_ErrorHandle_t retVal = m_qnnFunctionPointers.qnnInterface.profileCreate(
-                    m_backendHandle, QNN_PROFILE_LEVEL_BASIC, &m_profileBackendHandle );
-            if ( QNN_GRAPH_NO_ERROR != retVal )
-            {
-                RIDEHAL_ERROR( "failed to create profile. error is %d", (int) retVal );
-                ret = RIDEHAL_ERROR_FAIL;
-            }
-        }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        const Qnn_ErrorHandle_t executeStatus = m_qnnFunctionPointers.qnnInterface.graphExecute(
-                graphInfo.graph, inputs.data(), graphInfo.numInputTensors, outputs.data(),
-                graphInfo.numOutputTensors, m_profileBackendHandle, nullptr );
-        if ( QNN_GRAPH_NO_ERROR != executeStatus )
-        {
-            RIDEHAL_ERROR( "QNN failed %d", executeStatus );
-            ret = RIDEHAL_ERROR_FAIL;
+            retVal = m_qnnFunctionPointers.qnnInterface.graphExecute(
+                    graphInfo.graph, inputs.data(), graphInfo.numInputTensors, outputs.data(),
+                    graphInfo.numOutputTensors, m_profileBackendHandle, nullptr );
         }
         else
         {
-            if ( ( m_bEnabelPerf ) && ( nullptr != m_profileBackendHandle ) )
+            pNotifyParam = m_notifyParamQ.Pop();
+            if ( nullptr != pNotifyParam )
             {
-                /* Ignore error of GeneratePerf */
-                (void) GeneratePerf();
+                pNotifyParam->self = this;
+                pNotifyParam->pOutputPriv = pOutputPriv;
+                retVal = m_qnnFunctionPointers.qnnInterface.graphExecuteAsync(
+                        graphInfo.graph, inputs.data(), graphInfo.numInputTensors, outputs.data(),
+                        graphInfo.numOutputTensors, m_profileBackendHandle, nullptr, QnnNotifyFn,
+                        pNotifyParam );
             }
+            else
+            {
+                RIDEHAL_ERROR( "notifyParamQ is empty!" );
+                retVal = QNN_GRAPH_ERROR_MEM_ALLOC;
+            }
+        }
+        if ( QNN_GRAPH_NO_ERROR != retVal )
+        {
+            RIDEHAL_ERROR( "QNN failed %" PRIu64, retVal );
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
     return ret;
 }
 
+void QnnRuntime::QnnNotifyFn( void *pNotifyParam, Qnn_NotifyStatus_t notifyStatus )
+{
+    NotifyParam_t *pNotifyParam2 = (NotifyParam_t *) pNotifyParam;
+
+    pNotifyParam2->self->QnnNotifyFn( pNotifyParam2, notifyStatus );
+}
+
+void QnnRuntime::QnnNotifyFn( NotifyParam_t *pNotifyParam, Qnn_NotifyStatus_t notifyStatus )
+{
+    if ( QNN_SUCCESS == notifyStatus.error )
+    {
+        if ( m_outputCb != nullptr )
+        {
+            m_outputCb( m_pAppPriv, pNotifyParam->pOutputPriv );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "output callback is nullptr!" );
+        }
+    }
+    else
+    {
+        if ( m_errorCb != nullptr )
+        {
+            m_errorCb( m_pAppPriv, pNotifyParam->pOutputPriv, notifyStatus );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "error callback is nullptr!" );
+        }
+    }
+
+    m_notifyParamQ.Push( pNotifyParam );
+}
+
 RideHalError_e QnnRuntime::DeRegisterBuffers()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
+    constexpr int client = 0;   // NOTE: default is 0
+    int domain = CDSP_DOMAIN_ID;
 
-    if ( m_backendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
+    if ( 1 == m_backendCoreId )
     {
-        ret = RIDEHAL_ERROR_FAIL; /* for safety */
+        domain = CDSP1_DOMAIN_ID;
     }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
+    int extDomainId = get_extended_domains_id( domain, client );
+    for ( auto &kv : m_dmaMemInfoMap )
     {
-        constexpr int client = 0;   // NOTE: default is 0
-        int domain = CDSP_DOMAIN_ID;
-        if ( 1 == m_backendCoreId )
+        auto ptr = kv.first;
+        auto &info = kv.second;
+        retVal = m_qnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+        if ( QNN_SUCCESS != retVal )
         {
-            domain = CDSP1_DOMAIN_ID;
+            RIDEHAL_ERROR( "Failed to DeRegister memory. error is %" PRIu64, retVal );
+            ret = RIDEHAL_ERROR_FAIL;
         }
-        int extDomainId = get_extended_domains_id( domain, client );
-        for ( auto &kv : m_dmaMemInfoMap )
+        else
         {
-            auto ptr = kv.first;
-            auto &info = kv.second;
-            const auto retVal =
-                    m_qnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
-            if ( QNN_SUCCESS != retVal )
-            {
-                RIDEHAL_ERROR( "Failed to DeRegister memory. error is %d", (int) retVal );
-                ret = RIDEHAL_ERROR_FAIL;
-            }
-            else
-            {
-                RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %u) as %p for core %d", ptr,
-                              info.fd, info.size, info.memHandle, m_backendCoreId );
-            }
-            if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
-                 ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
-            {
-                remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
-            }
+            RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %u) as %p for core %d", ptr, info.fd,
+                          info.size, info.memHandle, m_backendCoreId );
         }
-        m_dmaMemInfoMap.clear();
+        if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
+             ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
+        {
+            remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
+        }
     }
+    m_dmaMemInfoMap.clear();
 
     return ret;
 }
@@ -1293,6 +1285,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
 {
 
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
          ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
@@ -1317,15 +1310,6 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        if ( m_backendCoreId >= (int) DMA_MEMINFO_MAP_SIZE )
-        {
-            ret = RIDEHAL_ERROR_FAIL; /* for safety */
-        }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-
         constexpr int client = 0;   // NOTE: default is 0
         int domain = CDSP_DOMAIN_ID;
         if ( 1 == m_backendCoreId )
@@ -1342,11 +1326,10 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
             {
                 auto ptr = it->first;
                 auto &info = it->second;
-                const auto retVal =
-                        m_qnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
+                retVal = m_qnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
                 if ( QNN_SUCCESS != retVal )
                 {
-                    RIDEHAL_ERROR( "Failed to DeRegister memory. error is %d", (int) retVal );
+                    RIDEHAL_ERROR( "Failed to DeRegister memory. error is %" PRIu64, retVal );
                     ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
@@ -1396,7 +1379,7 @@ RideHalError_e QnnRuntime::Destroy()
         retVal = m_qnnFunctionPointers.qnnInterface.profileFree( m_profileBackendHandle );
         if ( QNN_PROFILE_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Could not free backend profile handle. error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Could not free backend profile handle. error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -1406,7 +1389,7 @@ RideHalError_e QnnRuntime::Destroy()
         retVal = m_qnnFunctionPointers.qnnInterface.contextFree( m_context, nullptr );
         if ( QNN_CONTEXT_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Could not free context. error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Could not free context. error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
         m_context = nullptr;
@@ -1417,7 +1400,7 @@ RideHalError_e QnnRuntime::Destroy()
         retVal = m_qnnFunctionPointers.qnnSystemInterface.systemContextFree( m_systemContext );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "Failed to free system context. error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Failed to free system context. error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -1427,7 +1410,7 @@ RideHalError_e QnnRuntime::Destroy()
         retVal = m_qnnFunctionPointers.qnnInterface.deviceFree( m_deviceHandle );
         if ( QNN_CONTEXT_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Could not free device handle. Error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Could not free device handle. Error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
         m_deviceHandle = nullptr;
@@ -1439,7 +1422,7 @@ RideHalError_e QnnRuntime::Destroy()
                                                                             m_platformInfo );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_ERROR( "Failed to free device platform info. error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Failed to free device platform info. error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
         m_platformInfo = nullptr;
@@ -1450,7 +1433,7 @@ RideHalError_e QnnRuntime::Destroy()
         retVal = m_qnnFunctionPointers.qnnInterface.backendFree( m_backendHandle );
         if ( QNN_BACKEND_NO_ERROR != retVal )
         {
-            RIDEHAL_ERROR( "Could not terminate backend. Error is %d", (int) retVal );
+            RIDEHAL_ERROR( "Could not terminate backend. Error is %" PRIu64, retVal );
             ret = RIDEHAL_ERROR_FAIL;
         }
         m_backendHandle = nullptr;
@@ -1461,7 +1444,7 @@ RideHalError_e QnnRuntime::Destroy()
         retVal = m_qnnFunctionPointers.qnnInterface.logFree( m_logHandle );
         if ( QNN_SUCCESS != retVal )
         {
-            RIDEHAL_WARN( "Unable to terminate logging in the backend. Error is %d", (int) retVal );
+            RIDEHAL_WARN( "Unable to terminate logging in the backend. Error is %" PRIu64, retVal );
         }
     }
 
@@ -1472,7 +1455,7 @@ RideHalError_e QnnRuntime::Destroy()
                 qnn_wrapper_api::freeGraphsInfo( &m_graphsInfo, m_graphsCount );
         if ( qnn_wrapper_api::MODEL_NO_ERROR != retVal2 )
         {
-            RIDEHAL_ERROR( "failed to free graph info. Error is %d", (int) retVal2 );
+            RIDEHAL_ERROR( "failed to free graph info. Error is %" PRIu64, retVal2 );
             ret = RIDEHAL_ERROR_FAIL;
         }
     }
@@ -1517,6 +1500,33 @@ RideHalError_e QnnRuntime::Deinit()
     return ret;
 }
 
+RideHalError_e QnnRuntime::RegisterCallback( QnnRuntime_OutputCallback_t outputCb,
+                                             QnnRuntime_ErrorCallback_t errorCb, void *pAppPriv )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
+         ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
+    {
+        RIDEHAL_ERROR( "Register Callback failed due to wrong state!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( ( nullptr == outputCb ) || ( nullptr == errorCb ) || ( nullptr == pAppPriv ) )
+    {
+        RIDEHAL_ERROR( "Register Callback with nullptr!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        m_outputCb = outputCb;
+        m_errorCb = errorCb;
+        m_pAppPriv = pAppPriv;
+    }
+
+    return ret;
+}
+
+
 RideHalError_e QnnRuntime::Start()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -1555,6 +1565,7 @@ RideHalError_e QnnRuntime::Stop()
 RideHalError_e QnnRuntime::EnablePerf()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
          ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
@@ -1562,14 +1573,29 @@ RideHalError_e QnnRuntime::EnablePerf()
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
+    else if ( nullptr != m_profileBackendHandle )
+    {
+        RIDEHAL_ERROR( "perf prifiler already created!" );
+        ret = RIDEHAL_ERROR_ALREADY;
+    }
+    else
+    {
+        retVal = m_qnnFunctionPointers.qnnInterface.profileCreate(
+                m_backendHandle, QNN_PROFILE_LEVEL_BASIC, &m_profileBackendHandle );
+        if ( QNN_GRAPH_NO_ERROR != retVal )
+        {
+            RIDEHAL_ERROR( "failed to create profile. error is %" PRIu64, retVal );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
 
-    m_bEnabelPerf = true;
     return ret;
 }
 
 RideHalError_e QnnRuntime::DisablePerf()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
 
     if ( ( RIDEHAL_COMPONENT_STATE_READY != m_state ) &&
          ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state ) )
@@ -1577,14 +1603,35 @@ RideHalError_e QnnRuntime::DisablePerf()
         RIDEHAL_ERROR( "QnnRuntime component not in ready or running status!" );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
+    else if ( nullptr == m_profileBackendHandle )
+    {
+        RIDEHAL_ERROR( "perf prifiler is not created!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else
+    {
+        retVal = m_qnnFunctionPointers.qnnInterface.profileFree( m_profileBackendHandle );
+        if ( QNN_PROFILE_NO_ERROR != retVal )
+        {
+            RIDEHAL_ERROR( "Could not free backend profile handle. error is %" PRIu64, retVal );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        else
+        {
+            m_profileBackendHandle = nullptr;
+        }
+    }
 
-    m_bEnabelPerf = false;
     return ret;
 }
 
 RideHalError_e QnnRuntime::GetPerf( QnnRuntime_Perf_t *pPerf )
 {
+    bool bPerfDataValid = false;
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    Qnn_ErrorHandle_t retVal;
+    const QnnProfile_EventId_t *profileEvents{ nullptr };
+    uint32_t numEvents{ 0 };
 
     if ( RIDEHAL_COMPONENT_STATE_RUNNING != m_state )
     {
@@ -1596,19 +1643,36 @@ RideHalError_e QnnRuntime::GetPerf( QnnRuntime_Perf_t *pPerf )
         RIDEHAL_ERROR( "pPerf is nullptr!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
-    else if ( false == m_bEnabelPerf )
+    else if ( nullptr == m_profileBackendHandle )
     {
         RIDEHAL_ERROR( "perf was not enabled!" );
         ret = RIDEHAL_ERROR_OUT_OF_BOUND;
     }
-    else if ( false == m_bPerfDataValid )
-    {
-        RIDEHAL_ERROR( "no valid performance data!" );
-        ret = RIDEHAL_ERROR_OUT_OF_BOUND;
-    }
     else
     {
-        *pPerf = m_perf;
+        (void) memset( pPerf, 0, sizeof( QnnRuntime_Perf_t ) );
+
+        retVal = m_qnnFunctionPointers.qnnInterface.profileGetEvents( m_profileBackendHandle,
+                                                                      &profileEvents, &numEvents );
+        if ( QNN_PROFILE_NO_ERROR != retVal )
+        {
+            RIDEHAL_ERROR( "Failure in profile get events." );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        else
+        {
+            RIDEHAL_DEBUG( "ProfileEvents: numEvents: [%u]", numEvents );
+            for ( uint32_t event = 0; event < numEvents; event++ )
+            {
+                (void) ExtractProfilingEvent( profileEvents[event], pPerf, bPerfDataValid );
+            }
+
+            if ( false == bPerfDataValid )
+            {
+                RIDEHAL_ERROR( "no valid perf data!" );
+                ret = RIDEHAL_ERROR_OUT_OF_BOUND;
+            }
+        }
     }
 
     return ret;
@@ -1616,7 +1680,7 @@ RideHalError_e QnnRuntime::GetPerf( QnnRuntime_Perf_t *pPerf )
 
 RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType )
 {
-    RideHal_TensorType_e tensorType = RIDEHAL_TENSOR_TYPE_UINT_8;
+    RideHal_TensorType_e tensorType = RIDEHAL_TENSOR_TYPE_MAX;
     switch ( dataType )
     {
         case QNN_DATATYPE_INT_8:
@@ -1696,7 +1760,7 @@ RideHal_TensorType_e QnnRuntime::SwitchFromQnnDataType( Qnn_DataType_t dataType 
 
 Qnn_DataType_t QnnRuntime::SwitchToQnnDataType( RideHal_TensorType_e tensorType )
 {
-    Qnn_DataType_t dataType = QNN_DATATYPE_UINT_8;
+    Qnn_DataType_t dataType = QNN_DATATYPE_UNDEFINED;
     switch ( tensorType )
     {
         case RIDEHAL_TENSOR_TYPE_INT_8:
@@ -1909,6 +1973,52 @@ RideHalError_e QnnRuntime::CheckOutputTensors( const RideHal_SharedBuffer_t *pOu
     }
 
     return ret;
+}
+
+
+void QnnRuntime::NotifyParamQueue::Init()
+{
+    uint16_t idx;
+    pushIdx = 0;
+    popIdx = 0;
+
+    for ( idx = 0; idx < QNNRUNTIME_NOTIFY_PARAM_NUM; idx++ )
+    {
+        ring[pushIdx % QNNRUNTIME_NOTIFY_PARAM_NUM] = idx;
+        pushIdx++;
+    }
+}
+
+void QnnRuntime::NotifyParamQueue::Push( NotifyParam_t *pNotifyParam )
+{
+    uint16_t idx;
+
+    if ( ( pNotifyParam >= &notifyParam[0] ) &&
+         ( pNotifyParam <= &notifyParam[QNNRUNTIME_NOTIFY_PARAM_NUM - 1] ) )
+    {
+        idx = pNotifyParam - &notifyParam[0];
+        ring[pushIdx % QNNRUNTIME_NOTIFY_PARAM_NUM] = idx;
+        pushIdx++;
+    }
+    else
+    {
+        RIDEHAL_LOG_ERROR( "QnnRuntime NotifyParamQueue Push with invalid param!" );
+    }
+}
+
+QnnRuntime::NotifyParam_t *QnnRuntime::NotifyParamQueue::Pop()
+{
+    NotifyParam_t *pNotifyParam = nullptr;
+    uint16_t idx;
+
+    if ( pushIdx != popIdx )
+    {
+        idx = ring[popIdx % QNNRUNTIME_NOTIFY_PARAM_NUM];
+        popIdx++;
+        pNotifyParam = &notifyParam[idx];
+    }
+
+    return pNotifyParam;
 }
 
 }   // namespace component

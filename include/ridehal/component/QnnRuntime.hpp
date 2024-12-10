@@ -23,6 +23,11 @@ namespace ridehal
 namespace component
 {
 
+#ifndef QNNRUNTIME_NOTIFY_PARAM_NUM
+/* @note this value must be power of 2 */
+#define QNNRUNTIME_NOTIFY_PARAM_NUM 8
+#endif
+
 /** @brief QnnRuntime performance information */
 typedef struct
 {
@@ -81,9 +86,21 @@ typedef struct
     uint32_t num;                         /**<The number of tensors*/
 } QnnRuntime_TensorInfoList_t;
 
-/*=================================================================================================
-** API Functions
-=================================================================================================*/
+/** @brief callback for QNN graphExecute done that output is ready.
+ * @param[in] pAppPriv the private data to be used to identify the app instance
+ * @param[in] pOutputPriv the private data associated with the output tensors
+ * @return None
+ */
+typedef void ( *QnnRuntime_OutputCallback_t )( void *pAppPriv, void *pOutputPriv );
+
+/** @brief callback for QNN graphExecute done but with error.
+ * @param[in] pAppPriv the private data to be used to identify the app instance
+ * @param[in] pOutputPriv the private data associated with the output tensors
+ * @param[in] notifyStatus the QNN SDK specific notify status
+ * @return None
+ */
+typedef void ( *QnnRuntime_ErrorCallback_t )( void *pAppPriv, void *pOutputPriv,
+                                              Qnn_NotifyStatus_t notifyStatus );
 
 /** @addtogroup QnnRuntime Functions
 @{ */
@@ -95,7 +112,6 @@ public:
     ~QnnRuntime();
 
     /**
-     * @cond QnnRuntime::Init @endcond
      * @brief Initialize QnnRuntime component
      * @param[in] pName Component name
      * @param[in] pConfig QnnRuntime configuration
@@ -106,7 +122,6 @@ public:
                          Logger_Level_e level = LOGGER_LEVEL_ERROR );
 
     /**
-     * @cond QnnRuntime::GetInputInfo @endcond
      * @brief Get Input tensor information
      * @param[out] pList Pointer to tensor info list
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -114,7 +129,6 @@ public:
     RideHalError_e GetInputInfo( QnnRuntime_TensorInfoList_t *pList );
 
     /**
-     * @cond QnnRuntime::GetOutputInfo @endcond
      * @brief Get output tensor information
      * @param[out] pList Pointer to tensor info list
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -122,7 +136,17 @@ public:
     RideHalError_e GetOutputInfo( QnnRuntime_TensorInfoList_t *pList );
 
     /**
-     * @cond QnnRuntime::RegisterBuffers @endcond
+     * @brief register callback
+     * @param outputCb callback for QNN graphExecuteAsync done that output is ready.
+     * @param errorCb callback for QNN graphExecuteAsync done but with error.
+     * @param pAppPriv the private data to be used to identify the app instance.
+     * @note This API is optional if QNN graphExecuteAsync API was not used.
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RegisterCallback( QnnRuntime_OutputCallback_t outputCb,
+                                     QnnRuntime_ErrorCallback_t errorCb, void *pAppPriv );
+
+    /**
      * @brief Rigister memory with specific shared buffers
      * @param[in] pSharedBuffers Pointer to shared buffers
      * @param[in] numBuffers The number of shared buffers
@@ -132,33 +156,36 @@ public:
                                     uint32_t numBuffers );
 
     /**
-     * @cond QnnRuntime::Start @endcond
      * @brief Start the QnnRuntime object
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Start() final;
 
     /**
-     * @cond QnnRuntime::EnablePerf @endcond
      * @brief Enable qnn performance calculation
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e EnablePerf();
 
     /**
-     * @cond QnnRuntime::Execute @endcond
-     * @brief Execute qnn model with input and output buffer
-     * @param[in] pInputs Pointer to input shared buffer
+     * @brief Execute qnn model with input and output buffers
+     * @param[in] pInputs Pointer to input shared buffers
      * @param[in] numInputs The number of input shared buffers
      * @param[out] pOutputs Pointer to output shared buffer
      * @param[in] numOutputs The number of output shared buffers
+     * @param[in] pOutputPriv the private data associated with the output tensors
+     *   If pOutputPriv is nullptr, the QNN graphExecute will be called that when
+     * this API returned, the inference is done.
+     *   If pOutputPriv is not nullptr, the QNN graphExecuteAsync will be called and
+     * this API will return immediately, once when the inference is done, through the
+     * callback outputCb or errorCb to notifiy the inference status.
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Execute( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs,
-                            const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs );
+                            const RideHal_SharedBuffer_t *pOutputs, uint32_t numOutputs,
+                            void *pOutputPriv = nullptr );
 
     /**
-     * @cond QnnRuntime::GetPerf @endcond
      * @brief Get qnn latest performance data
      * @param[out] pPerf Pointer to QnnRuntime perf structure
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -166,21 +193,18 @@ public:
     RideHalError_e GetPerf( QnnRuntime_Perf_t *pPerf );
 
     /**
-     * @cond QnnRuntime::DisablePerf @endcond
      * @brief Disable qnn performance calculation
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e DisablePerf();
 
     /**
-     * @cond QnnRuntime::Stop @endcond
      * @brief Stop the QnnRuntime object
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Stop() final;
 
     /**
-     * @cond QnnRuntime::DeRegisterBuffers @endcond
      * @brief DeRigister memory with specific shared buffers
      * @param[in] pSharedBuffers Pointer to shared buffers
      * @param[in] numBuffers The number of shared buffers
@@ -190,15 +214,40 @@ public:
                                       uint32_t numBuffers );
 
     /**
-     * @cond QnnRuntime::Deinit @endcond
      * @brief Deinit the QnnRuntime object
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e Deinit() final;
 
 private:
+    typedef struct
+    {
+        Qnn_MemHandle_t memHandle;
+        size_t size;
+        int32_t fd;
+    } DmaMemInfo_t;
+
+    typedef struct
+    {
+        QnnRuntime *self;
+        void *pOutputPriv;
+    } NotifyParam_t;
+
+    typedef struct NotifyParamQueue
+    {
+        NotifyParam_t notifyParam[QNNRUNTIME_NOTIFY_PARAM_NUM];
+        uint16_t ring[QNNRUNTIME_NOTIFY_PARAM_NUM];
+        uint16_t popIdx;
+        uint16_t pushIdx;
+
+    public:
+        void Init();
+        void Push( NotifyParam_t *pNotifyParam );
+        NotifyParam_t *Pop();
+    } NotifyParamQueue_t;
+
+private:
     /**
-     * @cond QnnRuntime::CreateFromModelSo @endcond
      * @brief Create qnn model from .so file
      * @param[in] modelFile model path
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -206,7 +255,6 @@ private:
     RideHalError_e CreateFromModelSo( std::string modelFile );
 
     /**
-     * @cond QnnRuntime::CreateFromBinary @endcond
      * @brief Create qnn model from .bin file
      * @param[in] modelFile model path
      * @return RIDEHAL_ERROR_NONE on success, others on failure
@@ -214,7 +262,6 @@ private:
     RideHalError_e CreateFromBinaryFile( std::string modelFile );
 
     /**
-     * @cond QnnRuntime::CreateFromBinary @endcond
      * @brief Create qnn model from binary buffer
      * @param[in] pBuffer The pointer ro buffer
      * @param[in] bufferSize The size of buffer
@@ -223,7 +270,6 @@ private:
     RideHalError_e CreateFromBinaryBuffer( uint8_t *pBuffer, uint64_t bufferSize );
 
     /**
-     * @cond QnnRuntime::LoadOpPackages @endcond
      * @brief Load customer op package
      * @param[in] pUdoPackages The pointer to udo packages information
      * @param[in] numOfUdoPackages The number of udo packages
@@ -232,7 +278,6 @@ private:
     RideHalError_e LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages, int numOfUdoPackages );
 
     /**
-     * @cond QnnRuntime::RegisterBuffer @endcond
      * @brief Register Buffer on HTP memory and get the handle
      * @param[in] pSharedBuffer pointer shared buffer
      * @param[out] pMemHandle pointer to HTP memory handle
@@ -242,7 +287,6 @@ private:
                                    Qnn_MemHandle_t *pMemHandle );
 
     /**
-     * @cond QnnRuntime::GetMemHandle @endcond
      * @brief Get HTP memory handle
      * @param[in] pSharedBuffer pointer shared buffer
      * @param[out] pMemHandle pointer to HTP memory handle
@@ -252,44 +296,35 @@ private:
                                  Qnn_MemHandle_t *pMemHandle );
 
     /**
-     * @cond QnnRuntime::DeRegisterBuffers @endcond
      * @brief DeRegister memory buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e DeRegisterBuffers();
 
     /**
-     * @cond QnnRuntime::GetInputInfo @endcond
      * @brief get input tensor info internally
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e GetInputInfo();
 
     /**
-     * @cond QnnRuntime::GetOutputInfo @endcond
      * @brief get output tensor info internally
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e GetOutputInfo();
 
     /**
-     * @cond QnnRuntime::ExtractProfilingEvent @endcond
      * @brief Extract qnn profiling event
      * @param[in] profileEventId profiling event id
-     * @param[in] pPerf Pointer to QnnRuntime perf structure
+     * @param[out] pPerf Pointer to QnnRuntime perf structure
+     * @param[out] bPerfDataValid has valid perf data or not
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e ExtractProfilingEvent( QnnProfile_EventId_t profileEventId,
-                                          QnnRuntime_Perf_t *pPerf );
-
-    /**
-     * @cond QnnRuntime::GeneratePerf @endcond
-     * @brief Generate qnn performance
-     * @param[in] profileEventId profiling event id
-     * @param[in] pPerf Pointer to QnnRuntime perf structure
-     * @return RIDEHAL_ERROR_NONE on success, others on failure
-     */
-    RideHalError_e GeneratePerf();
+                                          QnnRuntime_Perf_t *pPerf, bool &bPerfDataValid );
+#ifdef QNNRUNTIME_UNIT_TEST
+public:
+#endif
 
     RideHalError_e CheckInputTensors( const RideHal_SharedBuffer_t *pInputs, uint32_t numInputs );
 
@@ -300,12 +335,15 @@ private:
 
     RideHalError_e Destroy();
 
+    static void QnnNotifyFn( void *pNotifyParam, Qnn_NotifyStatus_t notifyStatus );
+
+    void QnnNotifyFn( NotifyParam_t *pNotifyParam, Qnn_NotifyStatus_t notifyStatus );
+
 #ifdef QNNRUNTIME_UNIT_TEST
 public:
 #endif
 
     /**
-     * @cond QnnRuntime::SwitchFromQnnDataType @endcond
      * @brief Stwich qnn defined data type to ridehal defined tensor type
      * @param[in] dataType qnn defined data type
      * @return RideHal_TensorType_e ridehal defined tensor type
@@ -313,17 +351,14 @@ public:
     RideHal_TensorType_e SwitchFromQnnDataType( Qnn_DataType_t dataType );
 
     /**
-     * @cond QnnRuntime::SwitchFromQnnDataType @endcond
      * @brief Stwich ridehal defined tensor type to qnn defined data type
      * @param[in] tensorType ridehal defined tensor type
      * @return Qnn_DataType_t qnn defined data type
      */
     Qnn_DataType_t SwitchToQnnDataType( RideHal_TensorType_e tensorType );
 
-
 private:
     static constexpr size_t CONTEXT_CONFIG_SIZE = 1;
-    static constexpr size_t DMA_MEMINFO_MAP_SIZE = 2;
 
     RideHal_ProcessorType_e m_backendType;
     int m_backendCoreId = 0;
@@ -352,18 +387,13 @@ private:
 
     const QnnDevice_PlatformInfo_t *m_platformInfo = nullptr;
 
-    typedef struct
-    {
-        Qnn_MemHandle_t memHandle;
-        size_t size;
-        int32_t fd;
-    } DmaMemInfo_t;
+    QnnRuntime_OutputCallback_t m_outputCb = nullptr;
+    QnnRuntime_ErrorCallback_t m_errorCb = nullptr;
+    void *m_pAppPriv = nullptr;
+    NotifyParamQueue_t m_notifyParamQ;
 
     std::mutex m_lock;
     std::map<void *, DmaMemInfo_t> m_dmaMemInfoMap;
-    QnnRuntime_Perf_t m_perf;
-    bool m_bEnabelPerf = false;
-    bool m_bPerfDataValid = false;
     QnnRuntime_TensorInfo_t *m_pInputTensor = nullptr;
     size_t m_inputTensorNum = 0;
     QnnRuntime_TensorInfo_t *m_pOutputTensor = nullptr;

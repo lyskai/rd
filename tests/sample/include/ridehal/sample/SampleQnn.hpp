@@ -50,6 +50,8 @@ private:
 private:
     QnnRuntime_Config_t m_config;
     uint32_t m_poolSize = 4;
+    bool m_bAsync = false;
+    std::condition_variable m_condVar;
 
     std::string m_inputTopicName;
     std::string m_outputTopicName;

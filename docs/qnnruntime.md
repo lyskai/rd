@@ -6,8 +6,9 @@
   - [4.1 Set up QnnRuntime configuration](#41-set-up-qnnruntime-configuration)
   - [4.2 Load qnn model from configuration](#42-load-qnn-model-from-configuration)
   - [4.3 Get qnn input/output tensor information](#43-get-qnn-inputoutput-tensor-information)
-  - [4.4 Use QnnRuntime::Execute to run qnn inference](#44-use-qnnruntimeexecute-to-run-qnn-inference)
-  - [4.5 Register/DeRegister Buffers](#45-registerderegister-buffers)
+  - [4.4 Use QnnRuntime::Execute to run qnn inference in sync mode](#44-use-qnnruntimeexecute-to-run-qnn-inference-in-sync-mode)
+  - [4.5 Use QnnRuntime::Execute to run qnn inference in async mode](#45-use-qnnruntimeexecute-to-run-qnn-inference-in-async-mode)
+  - [4.6 Register/DeRegister Buffers](#46-registerderegister-buffers)
 - [5. References](#5-references)
 
 
@@ -26,32 +27,36 @@ QnnRuntime is an AI infenrence framework designed to assist users in running QNN
 - [QnnRuntime_Config_t](../include/ridehal/component/QnnRuntime.hpp#L66)
 - [QnnRuntime_TensorInfo_t](../include/ridehal/component/QnnRuntime.hpp#L75)
 - [QnnRuntime_TensorInfoList_t](../include/ridehal/component/QnnRuntime.hpp#L82)
+- [QnnRuntime_OutputCallback_t](../include/ridehal/component/QnnRuntime.hpp#L94)
+- [QnnRuntime_ErrorCallback_t](../include/ridehal/component/QnnRuntime.hpp#L102)
 
 # 3. QnnRuntime APIs
 
-- [QnnRuntime::Init](../include/ridehal/component/QnnRuntime.hpp#L105) Initialize QnnRuntime component
+- [QnnRuntime::Init](../include/ridehal/component/QnnRuntime.hpp#L121) Initialize QnnRuntime component
 
-- [QnnRuntime::GetInputInfo](../include/ridehal/component/QnnRuntime.hpp#L114) Get input tensor information
+- [QnnRuntime::GetInputInfo](../include/ridehal/component/QnnRuntime.hpp#L129) Get input tensor information
 
-- [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L122) Get output tensor information
+- [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L136) Get output tensor information
 
-- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L131) Rigister memory with specific shared buffers
+- [QnnRuntime::RegisterCallback](../include/ridehal/component/QnnRuntime.hpp#L146) Register callback to use QNN graphExecuteAsync API
 
-- [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L139) Start the QnnRuntime object
+- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L155) Rigister memory with specific shared buffers
 
-- [QnnRuntime::EnablePerf](../include/ridehal/component/QnnRuntime.hpp#L146) Enable qnn performance calculation
+- [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L162) Start the QnnRuntime object
 
-- [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L157) Execute qnn model with input and output buffer
+- [QnnRuntime::EnablePerf](../include/ridehal/component/QnnRuntime.hpp#L168) Enable qnn performance calculation
 
-- [QnnRuntime::GetPerf](../include/ridehal/component/QnnRuntime.hpp#L166) Get qnn latest performance data
+- [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L184) Execute qnn model with input and output buffer
 
-- [QnnRuntime:DisablePerf](../include/ridehal/component/QnnRuntime.hpp#L173) Disable qnn performance calculation
+- [QnnRuntime::GetPerf](../include/ridehal/component/QnnRuntime.hpp#L193) Get qnn latest performance data
 
-- [QnnRuntime::Stop](../include/ridehal/component/QnnRuntime.hpp#L180) Stop the QnnRuntime object
+- [QnnRuntime:DisablePerf](../include/ridehal/component/QnnRuntime.hpp#L199) Disable qnn performance calculation
 
-- [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L189) DeRigister memory with specific shared buffers
+- [QnnRuntime::Stop](../include/ridehal/component/QnnRuntime.hpp#L205) Stop the QnnRuntime object
 
-- [QnnRuntime::Deinit](../include/ridehal/component/QnnRuntime.hpp#L197) Deinit the QnnRuntime object
+- [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L213) DeRigister memory with specific shared buffers
+
+- [QnnRuntime::Deinit](../include/ridehal/component/QnnRuntime.hpp#L220) Deinit the QnnRuntime object
 
 # 4. QnnRuntime Examples
 
@@ -80,7 +85,7 @@ qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
 ## 4.2 Load qnn model from configuration
 
-Once configuration setup is ready, we can call [QnnRuntime::Init](../include/ridehal/component/QnnRuntime.hpp#L103) and the system will help us automatically load qnn model. Please refer below code block on how to achieve this:
+Once the configuration setup is ready, we can call [QnnRuntime::Init](../include/ridehal/component/QnnRuntime.hpp#L121), and this API call will automatically load the QNN model. Please refer to the code block below to see how this can be achieved:
 
 ```c++
 qnnRuntime.Init( pName, &qnnConfig );
@@ -88,7 +93,7 @@ qnnRuntime.Init( pName, &qnnConfig );
 
 ## 4.3 Get qnn input/output tensor information
 
-Before we start to create proper input/output buffers, we need to obtain input/output tensor information according to model details. QnnRuntime provides [QnnRuntime::GetInputInfo](../include/ridehal/component/QnnRuntime.hpp#L114) and [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L122) to help user get necessnary information. Please refer below code block on how to achieve this:
+Before creating the appropriate input/output buffers, we need to obtain input/output tensor information based on the model details. QnnRuntime provides the [QnnRuntime::GetInputInfo](../include/ridehal/component/QnnRuntime.hpp#L129) and [QnnRuntime::GetOutputInfo](../include/ridehal/component/QnnRuntime.hpp#L136) APIs to help users get the necessary information. Please refer to the code block below to see how this can be achieved:
 
 ```c++
 // Get input tensor information
@@ -116,9 +121,9 @@ for ( int i = 0; i < outputNum; ++i )
 ```
 
 
-## 4.4 Use QnnRuntime::Execute to run qnn inference
+## 4.4 Use QnnRuntime::Execute to run qnn inference in sync mode
 
-Once user successfully load qnn model and create input/output buffers, then it's time to feed them into qnn context and execute qnn inference cycles. With [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L157), Please refer below code block on how to achieve this:
+Once the user successfully loads the QNN model and creates input/output buffers, it's time to feed them into the QNN context and execute QNN inference cycles. To achieve this with [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L184), please refer to the code block below:
 
 ```c++
 // Execute qnn model inference
@@ -126,10 +131,54 @@ Once user successfully load qnn model and create input/output buffers, then it's
 qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
 ```
 
+Note that in synchronous mode, there is no need to call the [QnnRuntime::RegisterCallback](../include/ridehal/component/QnnRuntime.hpp#L146) API to register a callback
 
-## 4.5 Register/DeRegister Buffers
+## 4.5 Use QnnRuntime::Execute to run qnn inference in async mode
 
-Addtionally, QnnRuntime provides independent interfaces - [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L131)/[QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L189) to register/deregister buffers. Actually, it is a bridge mapping buffer address between CPU and HTP. Qnn inference could run on registered buffers without creating a new buffer space for input and output data.
+The QNN asynchronous mode is supported by calling the [QnnRuntime::Execute](../include/ridehal/component/QnnRuntime.hpp#L184) API with the `pOutputPriv` set to a non-null value. However, before using this API in async mode, you must register the related callbacks through the [QnnRuntime::RegisterCallback](../include/ridehal/component/QnnRuntime.hpp#L146) API.
+
+```c++
+static void SampleQnn_OutputCallback( void *pAppPriv, void *pOutputPriv )
+{
+    std::condition_variable *pCondVar = (std::condition_variable *) pAppPriv;
+    uint64_t *pAsyncResult = (uint64_t *) pOutputPriv;
+    *pAsyncResult = 0;
+    pCondVar->notify_one();
+}
+
+static void SampleQnn_ErrorCallback( void *pAppPriv, void *pOutputPriv,
+                                     Qnn_NotifyStatus_t notifyStatus )
+{
+    std::condition_variable *pCondVar = (std::condition_variable *) pAppPriv;
+    uint64_t *pAsyncResult = (uint64_t *) pOutputPriv;
+    *pAsyncResult = notifyStatus.error;
+    pCondVar->notify_one();
+}
+
+    // During Init
+    // after qnnRuntime.Init API call, do the related callback register.
+    ret = qnnRuntime.RegisterCallback( SampleQnn_OutputCallback, SampleQnn_ErrorCallback, &m_condVar );
+
+    // During Running
+    std::mutex mtx;
+    uint64_t asyncResult = 0xdeadbeef;
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum, &asyncResult );
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        std::unique_lock<std::mutex> lock( mtx );
+        // wait async output or error callback invoked
+        (void) m_condVar.wait_for( lock, std::chrono::milliseconds( 1000 ) );
+        if ( 0 != asyncResult ) // check result OK
+        {
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+```
+
+## 4.6 Register/DeRegister Buffers
+
+Additionally, QnnRuntime provides independent interfaces [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L155) and [QnnRuntime::DeRegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L213) to register and deregister buffers. These interfaces act as a bridge, mapping buffer addresses between the CPU and HTP. This allows QNN inference to run on registered buffers without the need to create new buffer space for input and output data.
+
 ```c++
 // Get input tensor information
 QnnRuntime_TensorInfoList_t tensorInputList;
@@ -153,8 +202,3 @@ qnnRuntime.DeRegisterBuffers(inputs,inputNum );
 
 - [SampleQnn](../tests/sample/source/SampleQnn.cpp#L107).
 - [gtest QnnRuntime](../tests/unit_test/components/QnnRuntime/gtest_QnnRuntime.cpp#L49).
-
-
-
-
-

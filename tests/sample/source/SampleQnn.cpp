@@ -3,7 +3,6 @@
 // Confidential and Proprietary - Qualcomm Technologies, Inc.
 
 
-
 #include "ridehal/sample/SampleQnn.hpp"
 #include "QnnSampleAppUtils.hpp"
 
@@ -12,6 +11,23 @@ namespace ridehal
 {
 namespace sample
 {
+
+static void SampleQnn_OutputCallback( void *pAppPriv, void *pOutputPriv )
+{
+    std::condition_variable *pCondVar = (std::condition_variable *) pAppPriv;
+    uint64_t *pAsyncResult = (uint64_t *) pOutputPriv;
+    *pAsyncResult = 0;
+    pCondVar->notify_one();
+}
+
+static void SampleQnn_ErrorCallback( void *pAppPriv, void *pOutputPriv,
+                                     Qnn_NotifyStatus_t notifyStatus )
+{
+    std::condition_variable *pCondVar = (std::condition_variable *) pAppPriv;
+    uint64_t *pAsyncResult = (uint64_t *) pOutputPriv;
+    *pAsyncResult = notifyStatus.error;
+    pCondVar->notify_one();
+}
 
 SampleQnn::SampleQnn() {}
 SampleQnn::~SampleQnn() {}
@@ -41,6 +57,8 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
         RIDEHAL_ERROR( "invalid pool_size = %d\n", m_poolSize );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
+
+    m_bAsync = Get( config, "async", false );
 
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
@@ -106,6 +124,12 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
         TRACE_BEGIN( SYSTRACE_TASK_INIT );
         ret = m_qnn.Init( name.c_str(), &m_config );
         TRACE_END( SYSTRACE_TASK_INIT );
+    }
+
+    if ( ( RIDEHAL_ERROR_NONE == ret ) && ( true == m_bAsync ) )
+    {
+        ret = m_qnn.RegisterCallback( SampleQnn_OutputCallback, SampleQnn_ErrorCallback,
+                                      &m_condVar );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -212,6 +236,9 @@ RideHalError_e SampleQnn::Start()
 void SampleQnn::ThreadMain()
 {
     RideHalError_e ret;
+    std::mutex mtx;
+    uint64_t asyncResult = 0;
+
     while ( false == m_stop )
     {
         DataFrames_t frames;
@@ -266,8 +293,29 @@ void SampleQnn::ThreadMain()
                 {
                     PROFILER_BEGIN();
                     TRACE_BEGIN( frames.FrameId( 0 ) );
-                    ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(),
-                                         outputs.size() );
+                    if ( true == m_bAsync )
+                    {
+                        asyncResult = 0xdeadbeef;
+                        ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(),
+                                             outputs.size(), &asyncResult );
+                        if ( RIDEHAL_ERROR_NONE == ret )
+                        {
+                            std::unique_lock<std::mutex> lock( mtx );
+                            (void) m_condVar.wait_for( lock, std::chrono::milliseconds( 1000 ) );
+                            if ( 0 != asyncResult )
+                            {
+                                RIDEHAL_ERROR( "QNN Async Execute failed for %" PRIu64
+                                               " : %" PRIu64,
+                                               frames.FrameId( 0 ), asyncResult );
+                                ret = RIDEHAL_ERROR_FAIL;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        ret = m_qnn.Execute( inputs.data(), inputs.size(), outputs.data(),
+                                             outputs.size() );
+                    }
                     if ( RIDEHAL_ERROR_NONE == ret )
                     {
                         PROFILER_END();

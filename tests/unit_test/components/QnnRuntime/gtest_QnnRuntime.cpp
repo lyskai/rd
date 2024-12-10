@@ -8,7 +8,11 @@
 #include "md5_utils.hpp"
 #include "ridehal/component/QnnRuntime.hpp"
 #include "gtest/gtest.h"
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <stdio.h>
+#include <thread>
 
 using namespace ridehal::common;
 using namespace ridehal::component;
@@ -19,8 +23,9 @@ using namespace ridehal::test::utils;
 #define QNN_GTEST_ENABLE_BUFFER_FREE
 #endif
 
-namespace
-{
+#if defined( __QNXNTO__ )
+#define QNN_GTEST_ENABLE_ASYNC
+#endif
 
 static void *LoadRaw( std::string path, size_t &size )
 {
@@ -49,7 +54,21 @@ static void *LoadRaw( std::string path, size_t &size )
     return pOut;
 }
 
-}   // namespace
+static void Qnn_OutputCallback( void *pAppPriv, void *pOutputPriv )
+{
+    std::condition_variable *pCondVar = (std::condition_variable *) pAppPriv;
+    uint64_t *pCounter = (uint64_t *) pOutputPriv;
+    *pCounter += 1;
+    pCondVar->notify_one();
+}
+
+static void Qnn_ErrorCallback( void *pAppPriv, void *pOutputPriv, Qnn_NotifyStatus_t notifyStatus )
+{
+    std::condition_variable *pCondVar = (std::condition_variable *) pAppPriv;
+    uint64_t *pCounter = (uint64_t *) pOutputPriv;
+    *pCounter = 0xdeadbeef;
+    pCondVar->notify_one();
+}
 
 TEST( QnnRuntime, SANITY_General )
 {
@@ -237,6 +256,12 @@ TEST( QnnRuntime, Perf )
     ret = qnnRuntime.Init( pName, pQnnConfig, LOGGER_LEVEL_INFO );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    ret = qnnRuntime.EnablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.EnablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_ALREADY, ret );
+
     ret = qnnRuntime.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -270,9 +295,6 @@ TEST( QnnRuntime, Perf )
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
     }
 
-    ret = qnnRuntime.EnablePerf();
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     QnnRuntime_Perf_t perf;
     ret = qnnRuntime.GetPerf( &perf );
     ASSERT_EQ( RIDEHAL_ERROR_OUT_OF_BOUND, ret );
@@ -286,8 +308,14 @@ TEST( QnnRuntime, Perf )
     ret = qnnRuntime.GetPerf( &perf );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    printf( "perf(us): QNN=%" PRIu64 " RPC=%" PRIu64 " QNN ACC=%" PRIu64 " ACC=%" PRIu64 "\n",
+            perf.entireExecTime, perf.rpcExecTimeCPU, perf.rpcExecTimeHTP, perf.rpcExecTimeAcc );
+
     ret = qnnRuntime.DisablePerf();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.DisablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
 
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
@@ -627,6 +655,7 @@ TEST( QnnRuntime, DataType )
     EXPECT_EQ( QNN_DATATYPE_UFIXED_POINT_32,
                qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32 ) );
 
+    EXPECT_EQ( QNN_DATATYPE_UNDEFINED, qnnRuntime.SwitchToQnnDataType( RIDEHAL_TENSOR_TYPE_MAX ) );
 
     EXPECT_EQ( RIDEHAL_TENSOR_TYPE_INT_8, qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_INT_8 ) );
     EXPECT_EQ( RIDEHAL_TENSOR_TYPE_INT_16,
@@ -661,6 +690,9 @@ TEST( QnnRuntime, DataType )
                qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UFIXED_POINT_16 ) );
     EXPECT_EQ( RIDEHAL_TENSOR_TYPE_UFIXED_POINT_32,
                qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UFIXED_POINT_32 ) );
+
+    EXPECT_EQ( RIDEHAL_TENSOR_TYPE_MAX,
+               qnnRuntime.SwitchFromQnnDataType( QNN_DATATYPE_UNDEFINED ) );
 }
 
 TEST( QnnRuntime, CreateModelFromSo )
@@ -1076,6 +1108,10 @@ TEST( QnnRuntime, TestAccuracy )
     QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
     char pName[20] = "ACCURACY";
 
+    std::mutex mtx;
+    std::condition_variable condVar;
+    uint64_t counter = 0;
+
     qnnConfig.modelPath = "data/centernet/program.bin";
     qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
 
@@ -1083,7 +1119,10 @@ TEST( QnnRuntime, TestAccuracy )
 
     ret = qnnRuntime.Init( pName, pQnnConfig );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
+#ifdef QNN_GTEST_ENABLE_ASYNC
+    ret = qnnRuntime.RegisterCallback( Qnn_OutputCallback, Qnn_ErrorCallback, &condVar );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#endif
     ret = qnnRuntime.Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -1123,18 +1162,33 @@ TEST( QnnRuntime, TestAccuracy )
 
     const uint32_t outputNum = tensorOutputList.num;
     RideHal_SharedBuffer_t outputs[outputNum];
-
-    size_t outputTotalSize = 0;
+#ifdef QNN_GTEST_ENABLE_ASYNC
+    RideHal_SharedBuffer_t outputsAsync[outputNum];
+#endif
     for ( int i = 0; i < outputNum; ++i )
     {
         ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
-        outputTotalSize += outputs[i].size;
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_ASYNC
+        ret = outputsAsync[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#endif
     }
 
     ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+#ifdef QNN_GTEST_ENABLE_ASYNC
+    ret = qnnRuntime.Execute( inputs, inputNum, outputsAsync, outputNum, &counter );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    {
+        std::unique_lock<std::mutex> lock( mtx );
+        auto status = condVar.wait_for( lock, std::chrono::milliseconds( 1000 ) );
+        ASSERT_EQ( std::cv_status::no_timeout, status );
+        ASSERT_EQ( 1, counter );
+    }
+#endif
     std::vector<std::string> outputDataPaths;
     outputDataPaths.push_back( "data/test/qnn/centernet/gd_uint8_output_0.raw" );
     outputDataPaths.push_back( "data/test/qnn/centernet/gd_uint8_output_1.raw" );
@@ -1150,6 +1204,12 @@ TEST( QnnRuntime, TestAccuracy )
                                           (uint8_t *) outputs[i].buffer.pData, outputSize );
         printf( "output: %d: cosine similarity = %f\n", i, (float) cosSim );
         ASSERT_GT( cosSim, 0.99d );
+#ifdef QNN_GTEST_ENABLE_ASYNC
+        cosSim = CosineSimilarity( (uint8_t *) pOutputData,
+                                   (uint8_t *) outputsAsync[i].buffer.pData, outputSize );
+        printf( "output async: %d: cosine similarity = %f\n", i, (float) cosSim );
+        ASSERT_GT( cosSim, 0.99d );
+#endif
         free( pOutputData );
     }
 #ifdef QNN_GTEST_ENABLE_BUFFER_FREE
@@ -1162,6 +1222,10 @@ TEST( QnnRuntime, TestAccuracy )
     {
         ret = outputs[i].Free();
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_ASYNC
+        ret = outputsAsync[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#endif
     }
 #endif
 }
@@ -1242,6 +1306,258 @@ TEST( QnnRuntime, TwoModelWithSameBuffer )
 
     ret = qnn1.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
+}
+
+#ifdef QNN_GTEST_ENABLE_ASYNC
+TEST( QnnRuntime, AsyncExecute )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    std::mutex mtx;
+    std::condition_variable condVar;
+    uint64_t counter = 0;
+    QnnRuntime_Perf_t perf;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "ASYNC";
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
+
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.RegisterCallback( Qnn_OutputCallback, Qnn_ErrorCallback, &condVar );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+    ret = qnnRuntime.Init( pName, pQnnConfig, LOGGER_LEVEL_VERBOSE );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.RegisterCallback( nullptr, Qnn_ErrorCallback, &condVar );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = qnnRuntime.RegisterCallback( Qnn_OutputCallback, nullptr, &condVar );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = qnnRuntime.RegisterCallback( Qnn_OutputCallback, Qnn_ErrorCallback, nullptr );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = qnnRuntime.RegisterCallback( Qnn_OutputCallback, Qnn_ErrorCallback, &condVar );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.EnablePerf();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    ret = qnnRuntime.GetInputInfo( &tensorInputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum, &counter );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    {
+        std::unique_lock<std::mutex> lock( mtx );
+        auto status = condVar.wait_for( lock, std::chrono::milliseconds( 1000 ) );
+        ASSERT_EQ( std::cv_status::no_timeout, status );
+        ASSERT_EQ( 1, counter );
+    }
+
+    ret = qnnRuntime.GetPerf( &perf );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    printf( "perf(us): QNN=%" PRIu64 " RPC=%" PRIu64 " QNN ACC=%" PRIu64 " ACC=%" PRIu64 "\n",
+            perf.entireExecTime, perf.rpcExecTimeCPU, perf.rpcExecTimeHTP, perf.rpcExecTimeAcc );
+
+    auto begin = std::chrono::high_resolution_clock::now();
+    for ( int i = 0; i < QNNRUNTIME_NOTIFY_PARAM_NUM; i++ )
+    {
+        ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum, &counter );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+
+    ret = qnnRuntime.Execute( inputs, inputNum, outputs, outputNum, &counter );
+    ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+    double elpasedMs =
+            (double) std::chrono::duration_cast<std::chrono::microseconds>( end - begin ).count() /
+            1000.d;
+
+    printf( "counter = %" PRIu64 ", async perf=%.3f ms\n", counter,
+            (float) ( elpasedMs / QNNRUNTIME_NOTIFY_PARAM_NUM ) );
+
+    std::this_thread::sleep_for( std::chrono::microseconds(
+            perf.entireExecTime * QNNRUNTIME_NOTIFY_PARAM_NUM + 1000000 ) );
+    {
+        std::unique_lock<std::mutex> lock( mtx );
+        condVar.wait_for( lock, std::chrono::milliseconds( 1 ) );
+        ASSERT_EQ( 1 + QNNRUNTIME_NOTIFY_PARAM_NUM, counter );
+    }
+
+    ret = qnnRuntime.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+
+    ret = qnnRuntime.RegisterCallback( Qnn_OutputCallback, Qnn_ErrorCallback, &condVar );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
+}
+#endif
+
+TEST( QnnRuntime, InputOutputCheck )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnnRuntime;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+    char pName[20] = "IOVAL";
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
+
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Init( pName, pQnnConfig, LOGGER_LEVEL_VERBOSE );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    ret = qnnRuntime.GetInputInfo( &tensorInputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    RideHal_SharedBuffer_t inputs2[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        inputs2[i] = inputs[i];
+    }
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    ret = qnnRuntime.GetOutputInfo( &tensorOutputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+    RideHal_SharedBuffer_t outputs2[outputNum];
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        outputs2[i] = outputs[i];
+    }
+
+    ret = qnnRuntime.Execute( inputs2, inputNum + 1, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum + 1 );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    // input tensor props
+    inputs2[0].buffer.pData = nullptr;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    inputs2[0] = inputs[0];
+
+    inputs2[0].tensorProps.type = RIDEHAL_TENSOR_TYPE_INT_8;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    inputs2[0] = inputs[0];
+
+    inputs2[0].tensorProps.numDims += 1;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    inputs2[0] = inputs[0];
+
+    inputs2[0].tensorProps.dims[1] += 1;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    inputs2[0] = inputs[0];
+
+    // output tensor props
+    outputs2[0].buffer.pData = nullptr;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    outputs2[0] = outputs[0];
+
+    outputs2[0].tensorProps.type = RIDEHAL_TENSOR_TYPE_INT_8;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    outputs2[0] = outputs[0];
+
+    outputs2[0].tensorProps.numDims += 1;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    outputs2[0] = outputs[0];
+
+    outputs2[0].tensorProps.dims[1] += 1;
+    ret = qnnRuntime.Execute( inputs2, inputNum, outputs2, outputNum );
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+    outputs2[0] = outputs[0];
+
+    ret = qnnRuntime.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnnRuntime.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
 #ifdef QNN_GTEST_ENABLE_BUFFER_FREE
     for ( int i = 0; i < inputNum; ++i )
     {
