@@ -122,7 +122,14 @@ QCarCamRet_e Camera::QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t ev
             pCameraFrame = GetFrame( &pPayload->frameInfo );
             if ( nullptr != pCameraFrame )
             {
-                m_FrameCallback( pCameraFrame, m_pAppPriv );
+                if ( nullptr != m_FrameCallback )
+                {
+                    m_FrameCallback( pCameraFrame, m_pAppPriv );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "frame callback is nullptr!" );
+                }
             }
             else
             {
@@ -179,7 +186,14 @@ QCarCamRet_e Camera::QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t ev
                     break;
             }
             /* Let the user applicaiton to handle the multi-client event */
-            m_EventCallback( eventId, (void *) pPayload, m_pAppPriv );
+            if ( nullptr != m_EventCallback )
+            {
+                m_EventCallback( eventId, (void *) pPayload, m_pAppPriv );
+            }
+            else
+            {
+                RIDEHAL_ERROR( "event callback is nullptr!" );
+            }
             break;
         }
         case QCARCAM_EVENT_ERROR:
@@ -187,7 +201,14 @@ QCarCamRet_e Camera::QcarcamEventCb( const QCarCamHndl_t hndl, const uint32_t ev
             RIDEHAL_ERROR( "QCARCAM_EVENT_ERROR: error Id=%d, code=%u, source=%u",
                            pPayload->errInfo.errorId, pPayload->errInfo.errorCode,
                            pPayload->errInfo.errorSource );
-            m_EventCallback( eventId, (void *) pPayload, m_pAppPriv );
+            if ( nullptr != m_EventCallback )
+            {
+                m_EventCallback( eventId, (void *) pPayload, m_pAppPriv );
+            }
+            else
+            {
+                RIDEHAL_ERROR( "event callback is nullptr!" );
+            }
             break;
         }
         default:
@@ -622,6 +643,11 @@ RideHalError_e Camera::Start()
         RIDEHAL_ERROR( "Camera not in ready state: %d", m_state );
         ret = RIDEHAL_ERROR_BAD_STATE;
     }
+    else if ( nullptr == m_FrameCallback )
+    {
+        RIDEHAL_ERROR( "Camera callbacks is not registerred!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
     else
     {
         m_state = RIDEHAL_COMPONENT_STATE_STARTING;
@@ -1046,9 +1072,24 @@ RideHalError_e Camera::RegisterCallback( RideHal_CamFrameCallback_t frameCallbac
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    m_FrameCallback = frameCallback;
-    m_EventCallback = eventCallback;
-    m_pAppPriv = pAppPriv;
+    if ( ( RIDEHAL_COMPONENT_STATE_INITIAL != m_state ) &&
+         ( RIDEHAL_COMPONENT_STATE_READY != m_state ) )
+    {
+        RIDEHAL_ERROR( "Register Callback failed due to wrong state!" );
+        ret = RIDEHAL_ERROR_BAD_STATE;
+    }
+    else if ( ( nullptr == frameCallback ) || ( nullptr == eventCallback ) ||
+              ( nullptr == pAppPriv ) )
+    {
+        RIDEHAL_ERROR( "Register Callback with nullptr!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+    else
+    {
+        m_FrameCallback = frameCallback;
+        m_EventCallback = eventCallback;
+        m_pAppPriv = pAppPriv;
+    }
 
     return ret;
 }

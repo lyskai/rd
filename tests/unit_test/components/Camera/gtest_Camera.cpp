@@ -481,6 +481,18 @@ TEST( Camera, NegtiveUnImportBuffers )
     ret = pCamera->Init( name.c_str(), &camConfig, LOGGER_LEVEL_VERBOSE );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
+    if ( false == camConfig.bRequestMode )
+    {
+        ret = pCamera->RegisterCallback( FrameCallBack, EventCallBack, (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    else
+    {
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack,
+                                         (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
     ret = pCamera->Start();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
@@ -1169,6 +1181,46 @@ TEST( Camera, Coverage_QcarCam )
         ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
         ASSERT_NE( RIDEHAL_ERROR_NONE, ret );
 
+        delete pCamera;
+    }
+
+    /* Negative - invalid callback or not regiter and start */
+    {
+        RideHalError_e ret;
+        Camera *pCamera = new Camera;
+
+        Camera_Config_t camConfig = s_pieplineConfigs[0].camConfig;
+        camConfig.bRequestMode = true;
+
+        ret = pCamera->Init( componentName, &camConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Start();
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+        ret = pCamera->RegisterCallback( nullptr, EventCallBack, (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, nullptr, (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack, nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack,
+                                         (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->Start();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = pCamera->RegisterCallback( FrameCallBack_RequestMode, EventCallBack,
+                                         (void *) pCamera );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_STATE, ret );
+
+        ret = pCamera->RequestFrame( nullptr );
+        ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+        (void) pCamera->Stop();
+        (void) pCamera->Deinit();
         delete pCamera;
     }
 }
