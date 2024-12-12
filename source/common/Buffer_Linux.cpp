@@ -219,12 +219,19 @@ RideHalError_e RideHal_DmaImport( void **pData, uint64_t *pDmaHandle, uint64_t p
     }
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        newFd = dmabufheap_import( static_cast<int>( pid ), fd );
-        if ( newFd < 0 )
+        if ( 0 != pid )
         {
-            RIDEHAL_LOG_ERROR( "DmaImport failed to import dma-buf pid %d fd %d: %d",
-                               static_cast<int>( pid ), fd );
-            ret = RIDEHAL_ERROR_FAIL;
+            newFd = dmabufheap_import( static_cast<int>( pid ), fd );
+            if ( newFd < 0 )
+            {
+                RIDEHAL_LOG_ERROR( "DmaImport failed to import dma-buf pid %d fd %d: %d",
+                                   static_cast<int>( pid ), fd );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+        }
+        else
+        { /* pid is 0, a case that the fd is already imported one */
+            newFd = fd;
         }
     }
 

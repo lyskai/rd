@@ -1061,7 +1061,6 @@ TEST( Buffer, SanityImport )
     }
     else
     {
-
         std::this_thread::sleep_for( 1000ms );
         printf( "This is parent process %" PRIi32 "\n", getpid() );
         ASSERT_EQ( 5678, pData[0] );
@@ -1146,6 +1145,13 @@ TEST( Buffer, L2_Import )
                              sharedBuffer.buffer.size, sharedBuffer.buffer.flags,
                              sharedBuffer.buffer.usage );
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
+
+#if !defined( __QNXNTO__ )
+    RideHal_SharedBuffer_t sharedBufferPid0 = sharedBuffer;
+    sharedBufferPid0.buffer.pid = 0;
+    ret = importedBuffer.Import( &sharedBufferPid0 );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+#endif
 
     ret = sharedBuffer.Free();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );

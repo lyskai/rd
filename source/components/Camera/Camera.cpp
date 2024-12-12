@@ -1318,7 +1318,8 @@ RideHalError_e Camera::ImportBuffers()
                     sharedBuffer.buffer.size = 0;
                     sharedBuffer.buffer.usage = RIDEHAL_BUFFER_USAGE_CAMERA;
                     sharedBuffer.buffer.flags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
-                    /* TODO: for HGY, need to know the allocater's process id */
+                    /* for HGY, the fd is already imported one so no need to know the allocator's
+                     * pid, set this to 0, the Import API will skip the dma buf import */
                     sharedBuffer.buffer.pid = 0;
                     sharedBuffer.type = RIDEHAL_BUFFER_TYPE_IMAGE;
                     sharedBuffer.imgProps.format = m_streamConfig[i].format;
