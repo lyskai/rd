@@ -117,13 +117,45 @@ public:
     RideHalError_e RegBuf( const RideHal_Buffer_t *pBuffer, cl_mem *pBufferCL );
 
     /**
+     * @brief Register the OpenclIface buffer in image format
+     * @param[in] pData the image data pointer to register
+     * @param[in] dmaHandle the dma handle of image buffer
+     * @param[in] pBufferCL the OpenCL memory buffer pointer
+     * @param[in] pFormat the cl image format pointer
+     * @param[in] pDesc the cl image descriptor pointer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Create an OpenCL memory buffer in image format and register the host RideHal buffer to
+     * it in zero memory copy method.
+     */
+    RideHalError_e RegImage( void *pData, uint64_t dmaHandle, cl_mem *pBufferCL,
+                             cl_image_format *pFormat, cl_image_desc *pDesc );
+    /**
+     * @brief Register a single plane of image buffer
+     * @param[in] pBufferCL the OpenCL memory buffer pointer
+     * @param[in] pFormat the cl image format pointer
+     * @param[in] pDesc the cl image descriptor pointer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Create an OpenCL memory buffer in image format and register a single plane of image
+     * such as Y or UV plane of NV12 image to it.
+     */
+    RideHalError_e RegPlane( cl_mem *pBufferCL, cl_image_format *pFormat, cl_image_desc *pDesc );
+
+    /**
      * @brief Deregister the OpenclIface buffer
      * @param[in] pBuffer the RideHal buffer pointer to deregister
      * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note Release the OpenCL memory buffer corresponding to the host RideHal buffer and erase it
-     * in the buffer map.
+     * @note Release the OpenCL memory buffer corresponding to the host RideHal buffer and
+     * erase it in the buffer map.
      */
     RideHalError_e DeregBuf( const RideHal_Buffer_t *pBuffer );
+
+    /**
+     * @brief Deregister the OpenclIface image
+     * @param[in] pBufferCL the OpenCL memory buffer pointer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Release the OpenCL memory buffer of image or plane.
+     */
+    RideHalError_e DeregImage( const cl_mem *pBufferCL );
 
     /**
      * @brief Execute the OpenclIface kernel
@@ -147,6 +179,9 @@ private:
     cl_program m_program;                             /**OpenCL program*/
     std::map<void *, OpenclIface_MemInfo_t> m_memMap; /**OpenCL memory map*/
     std::map<std::string, cl_kernel> m_kernelMap;     /**OpenCL kernel map*/
+
+public:
+    cl_sampler m_sampler; /**OpenCL sampler*/
 
 protected:
     RIDEHAL_DECLARE_LOGGER();

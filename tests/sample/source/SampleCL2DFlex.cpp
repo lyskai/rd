@@ -271,9 +271,10 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
         }
         else
         {
-            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.outputWidth,
-                                    m_config.outputHeight, m_config.outputFormat,
-                                    RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
+                                    m_config.outputWidth, m_config.outputHeight,
+                                    m_config.outputFormat, RIDEHAL_BUFFER_USAGE_GPU,
+                                    m_bufferFlags );
         }
     }
 

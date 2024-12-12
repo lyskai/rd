@@ -379,6 +379,15 @@ static const char *s_pSourceCL2DFlex = KernelCode(
             UV4 += Y;
             RGB = convert_uchar3_sat( ( float3 )( UV4.s3, UV4.s1, UV4.s0 ) );
             vstore3( RGB, 0, dst );
+        }
+
+        __kernel void Compress( __read_only image2d_t srcPlane, __write_only image2d_t dstPlane,
+                                sampler_t sampler ) {
+            const int x = get_global_id( 0 );
+            const int y = get_global_id( 1 );
+            const int2 coord = ( int2 )( x, y );
+            const float4 pixel = read_imagef( srcPlane, sampler, coord );
+            write_imagef( dstPlane, coord, pixel );
         } );
 
 #endif   // RIDEHAL_CL2DFLEX_CLH

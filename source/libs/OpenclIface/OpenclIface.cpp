@@ -117,6 +117,23 @@ RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level )
         }
     }
 
+    if ( CL_SUCCESS == retCL )
+    {
+        const cl_sampler_properties samplerProperties[] = { CL_SAMPLER_NORMALIZED_COORDS,
+                                                            CL_FALSE,
+                                                            CL_SAMPLER_ADDRESSING_MODE,
+                                                            CL_ADDRESS_CLAMP_TO_EDGE,
+                                                            CL_SAMPLER_FILTER_MODE,
+                                                            CL_FILTER_NEAREST,
+                                                            0 };
+        m_sampler = clCreateSamplerWithProperties( m_context, samplerProperties, &retCL );
+        if ( CL_SUCCESS != retCL )
+        {
+            RIDEHAL_ERROR( "Unable to create sampler, retCL = %d", retCL );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
     return ret;
 }
 
@@ -253,6 +270,14 @@ RideHalError_e OpenclSrv::Deinit()
     }
     m_memMap.clear();
 
+    retCL = clReleaseSampler( m_sampler );
+    if ( CL_SUCCESS != retCL )
+    {
+        RIDEHAL_ERROR( "Unable to release sampler, retCL = %d", retCL );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+
     ret = RIDEHAL_LOGGER_DEINIT();
     if ( RIDEHAL_ERROR_NONE != ret )
     {
@@ -319,6 +344,69 @@ RideHalError_e OpenclSrv::RegBuf( const RideHal_Buffer_t *pBuffer, cl_mem *pBuff
     return ret;
 }
 
+RideHalError_e OpenclSrv::RegImage( void *pData, uint64_t dmaHandle, cl_mem *pBufferCL,
+                                    cl_image_format *pFormat, cl_image_desc *pDesc )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    cl_int retCL = CL_SUCCESS;
+
+#if defined( __QNXNTO__ )
+    cl_mem_pmem_host_ptr clBufHostPtr = { { 0 } };
+    clBufHostPtr.pmem_handle = (uintptr_t) 0;
+    clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_PMEM_HOST_PTR_QCOM;
+    clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
+    clBufHostPtr.pmem_hostptr = pData;
+    cl_mem bufferCL = clCreateImage(
+            m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, pFormat,
+            pDesc, &clBufHostPtr, &retCL );
+#else
+    cl_mem_dmabuf_host_ptr clBufHostPtr = { { 0 } };
+    clBufHostPtr.dmabuf_filedesc = (int) dmaHandle;
+    clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_DMABUF_HOST_PTR_QCOM;
+    clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
+    clBufHostPtr.dmabuf_hostptr = pData;
+    cl_mem bufferCL = clCreateImage(
+            m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, pFormat,
+            pDesc, &clBufHostPtr, &retCL );
+#endif
+
+    if ( CL_SUCCESS != retCL )
+    {
+        RIDEHAL_ERROR( "Unable to create CL image, retCL = %d", retCL );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+    else
+    {
+        *pBufferCL = bufferCL;
+    }
+
+
+    return ret;
+}
+
+RideHalError_e OpenclSrv::RegPlane( cl_mem *pBufferCL, cl_image_format *pFormat,
+                                    cl_image_desc *pDesc )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    cl_int retCL = CL_SUCCESS;
+
+    cl_mem bufferCL =
+            clCreateImage( m_context, CL_MEM_READ_WRITE, pFormat, pDesc, nullptr, &retCL );
+
+    if ( CL_SUCCESS != retCL )
+    {
+        RIDEHAL_ERROR( "Unable to create CL image, retCL = %d", retCL );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+    else
+    {
+        m_memMap[bufferCL] = { bufferCL };
+        *pBufferCL = bufferCL;
+    }
+
+    return ret;
+}
+
 RideHalError_e OpenclSrv::DeregBuf( const RideHal_Buffer_t *pBuffer )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -345,6 +433,21 @@ RideHalError_e OpenclSrv::DeregBuf( const RideHal_Buffer_t *pBuffer )
                 (void) m_memMap.erase( it );
             }
         }
+    }
+
+    return ret;
+}
+
+RideHalError_e OpenclSrv::DeregImage( const cl_mem *pBufferCL )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    cl_int retCL = CL_SUCCESS;
+
+    retCL = clReleaseMemObject( *pBufferCL );
+    if ( CL_SUCCESS != retCL )
+    {
+        RIDEHAL_ERROR( "Unable to release CL buffer, retCL = %d", retCL );
+        ret = RIDEHAL_ERROR_FAIL;
     }
 
     return ret;

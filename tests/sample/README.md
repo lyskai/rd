@@ -465,7 +465,7 @@ The command line template example:
 | batch_size    | false    | int       | 1       | The CL2DFlex input batch size |
 | input_widthX  | false    | int       | 1920    | The input X image width |
 | input_heightX | false    | int       | 1024    | The input X image height|
-| input_formatX | false    | string    | nv12    | The input X image format, options from [uyvy, nv12, rgb]|
+| input_formatX | false    | string    | nv12    | The input X image format, options from [uyvy, nv12, rgb, nv12_ubwc]|
 | output_width  | false    | int       | 1920    | The output image width  |
 | output_height | false    | int       | 1024    | The output image height |
 | output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
