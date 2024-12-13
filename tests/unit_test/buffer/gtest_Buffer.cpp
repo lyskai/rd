@@ -582,7 +582,8 @@ TEST( Buffer, L2_Image )
         RideHal_SharedBuffer_t sharedBuffer;
         RideHal_ImageProps_t imgProp;
 
-        if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == (RideHal_ImageFormat_e) i )
+        if ( ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == (RideHal_ImageFormat_e) i ) ||
+             ( RIDEHAL_IMAGE_FORMAT_TP10_UBWC == (RideHal_ImageFormat_e) i ) )
         {
             continue;
         }

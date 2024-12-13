@@ -106,6 +106,7 @@ typedef enum
     RIDEHAL_IMAGE_FORMAT_NV12,
     RIDEHAL_IMAGE_FORMAT_P010,
     RIDEHAL_IMAGE_FORMAT_NV12_UBWC,
+    RIDEHAL_IMAGE_FORMAT_TP10_UBWC,
     RIDEHAL_IMAGE_FORMAT_MAX,
     /**< Below formats for an image with compression, such as by the Video Encoder */
     RIDEHAL_IMAGE_FORMAT_COMPRESSED_MIN = 100,

@@ -123,7 +123,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | input_mode | false   | int       | 0       | The input mode id |
 | width     | true     | int       | -       | The image width for the stream 0 |
 | height    | true     | int       | -       | The image height for the stream 0 |
-| format    | false    | string    | "nv12"  | The camera frame format for the stream 0, options from [nv12, uyvy, p010, nv12_ubwc, rgb, bgr] |
+| format    | false    | string    | "nv12"  | The camera frame format for the stream 0, options from [nv12, uyvy, p010, nv12_ubwc, tp10_ubwc, rgb, bgr] |
 | stream_id | false    | int       | 0       | The camera stream id for the stream 0 |
 | pool_size | false    | int       | 4       | The image memory pool size for the stream 0 |
 | submit_request_pattern | false | int       | 0  | The submit request pattern for the stream 0 |
@@ -137,7 +137,7 @@ Refer [DataReader Utils](../../scripts/utils/data_reader/README.md#L38) for how 
 | topic     | true     | string    | -       | The output topic name |
 | widthX     | false   | int       | -       | The image width for the stream X |
 | heightX    | false   | int       | -       | The image height for the stream X |
-| formatX    | false   | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy, p010, nv12_ubwc, rgb, bgr] |
+| formatX    | false   | string    | "nv12"  | The camera frame format for the stream X, options from [nv12, uyvy, p010, nv12_ubwc, tp10_ubwc, rgb, bgr] |
 | stream_idX | false   | int       | ${X}       | The camera stream id for the stream X |
 | pool_sizeX | false   | int       | 4       | The image memory pool size for the stream X |
 | submit_request_patternX | false | int       | 0  | The submit request pattern for the stream X |
@@ -912,4 +912,3 @@ export RIDEHAL_LOG_LEVEL=INFO
     -k output_topic -v /sensor/camera/CAM0/objs \
   -n VIZ -t TinyViz -k cameras -v CAM0 -k winH -v 1050 -d
 ```
-

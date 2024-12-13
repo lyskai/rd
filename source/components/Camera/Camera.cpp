@@ -81,6 +81,11 @@ QCarCamColorFmt_e Camera::GetQcarCamFormat( RideHal_ImageFormat_e colorFormat )
             qcarcamFormat = QCARCAM_FMT_P010;
             break;
         }
+        case RIDEHAL_IMAGE_FORMAT_TP10_UBWC:
+        {
+            qcarcamFormat = QCARCAM_FMT_UBWC_TP10;
+            break;
+        }
         default:
         {
             RIDEHAL_ERROR( "Unsupport corlor sormat: %d", colorFormat );
@@ -1155,8 +1160,10 @@ RideHalError_e Camera::AllocateBuffers()
             else
             {
                 uint32_t offset = 0;
+                RideHal_ImageFormat_e format = pCamFrame->sharedBuffer.imgProps.format;
                 pQcarcamBuf->numPlanes = pCamFrame->sharedBuffer.imgProps.numPlanes;
-                if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == pCamFrame->sharedBuffer.imgProps.format )
+                if ( ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == format ) ||
+                     ( RIDEHAL_IMAGE_FORMAT_TP10_UBWC == format ) )
                 {
                     pQcarcamBuf->numPlanes = 2;
                 }
@@ -1174,13 +1181,15 @@ RideHalError_e Camera::AllocateBuffers()
                     pQcarcamBuf->planes[k].offset = offset;
                     offset += pCamFrame->sharedBuffer.imgProps.planeBufSize[k];
                 }
-                if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == pCamFrame->sharedBuffer.imgProps.format ) ||
-                     ( RIDEHAL_IMAGE_FORMAT_P010 == pCamFrame->sharedBuffer.imgProps.format ) ||
-                     ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == pCamFrame->sharedBuffer.imgProps.format ) )
+                if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == format ) ||
+                     ( RIDEHAL_IMAGE_FORMAT_P010 == format ) ||
+                     ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == format ) ||
+                     ( RIDEHAL_IMAGE_FORMAT_TP10_UBWC == format ) )
                 {
                     pQcarcamBuf->planes[1].height /= 2;
                 }
-                if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == pCamFrame->sharedBuffer.imgProps.format )
+                if ( ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == format ) ||
+                     ( RIDEHAL_IMAGE_FORMAT_TP10_UBWC == format ) )
                 {
                     pQcarcamBuf->planes[0].size = pCamFrame->sharedBuffer.imgProps.planeBufSize[0] +
                                                   pCamFrame->sharedBuffer.imgProps.planeBufSize[1];

@@ -21,7 +21,8 @@ static PDColorFormat_e s_rideHalFormatToApdfFormat[RIDEHAL_IMAGE_FORMAT_MAX] = {
         PD_FORMAT_UYVY,   /* RIDEHAL_IMAGE_FORMAT_UYVY */
         PD_FORMAT_NV12,   /* RIDEHAL_IMAGE_FORMAT_NV12 */
         PD_FORMAT_P010,   /* RIDEHAL_IMAGE_FORMAT_P010 */
-        PD_FORMAT_NV12    /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
+        PD_FORMAT_NV12,   /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
+        PD_FORMAT_TP10    /* RIDEHAL_IMAGE_FORMAT_TP10_UBWC */
 };
 
 static uint32_t s_rideHalFormatToBytesPerPixel[RIDEHAL_IMAGE_FORMAT_MAX] = {
@@ -30,7 +31,8 @@ static uint32_t s_rideHalFormatToBytesPerPixel[RIDEHAL_IMAGE_FORMAT_MAX] = {
         2, /* RIDEHAL_IMAGE_FORMAT_UYVY */
         1, /* RIDEHAL_IMAGE_FORMAT_NV12 */
         2, /* RIDEHAL_IMAGE_FORMAT_P010 */
-        1  /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
+        1, /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
+        2  /* RIDEHAL_IMAGE_FORMAT_TP10_UBWC */
 };
 
 static uint32_t s_rideHalFormatToNumPlanes[RIDEHAL_IMAGE_FORMAT_MAX] = {
@@ -39,7 +41,8 @@ static uint32_t s_rideHalFormatToNumPlanes[RIDEHAL_IMAGE_FORMAT_MAX] = {
         1, /* RIDEHAL_IMAGE_FORMAT_UYVY */
         2, /* RIDEHAL_IMAGE_FORMAT_NV12 */
         2, /* RIDEHAL_IMAGE_FORMAT_P010 */
-        4  /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
+        4, /* RIDEHAL_IMAGE_FORMAT_NV12_UBWC */
+        4  /* RIDEHAL_IMAGE_FORMAT_P010_UBWC */
 };
 
 static uint32_t s_rideHalFormatToHeightDividerPerPlanes
@@ -93,7 +96,8 @@ RideHalError_e RideHal_SharedBuffer::Allocate( uint32_t batchSize, uint32_t widt
         eColorFormat = s_rideHalFormatToApdfFormat[format];
     }
 
-    if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == format )
+    if ( ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == format ) ||
+         ( RIDEHAL_IMAGE_FORMAT_TP10_UBWC == format ) )
     {
         nUsage = nUsage | WFD_USAGE_COMPRESSION;
     }

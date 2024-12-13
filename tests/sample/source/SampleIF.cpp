@@ -417,6 +417,10 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         {
             ret = RIDEHAL_IMAGE_FORMAT_P010;
         }
+        else if ( "tp10_ubwc" == format )
+        {
+            ret = RIDEHAL_IMAGE_FORMAT_TP10_UBWC;
+        }
         else
         {
             ret = RIDEHAL_IMAGE_FORMAT_MAX;
