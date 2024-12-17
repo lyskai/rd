@@ -55,6 +55,7 @@ private:
     CL2DFlex_Config_t m_config;
     uint32_t m_poolSize = 4;
     RideHal_BufferFlags_t m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
+    bool m_bNoPadding = false;
 
     std::string m_inputTopicName;
     std::string m_outputTopicName;

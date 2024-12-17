@@ -48,7 +48,16 @@ private:
     void ThreadMain();
 
 private:
+    typedef enum
+    {
+        SAMPLE_QNN_IMAGE_CONVERT_DEFAULT,
+        SAMPLE_QNN_IMAGE_CONVERT_GRAY,
+        SAMPLE_QNN_IMAGE_CONVERT_CHROMA_FIRST,
+    } SampleQnn_ImageConvertType_e;
+
+private:
     QnnRuntime_Config_t m_config;
+    SampleQnn_ImageConvertType_e m_imageConvertType = SAMPLE_QNN_IMAGE_CONVERT_DEFAULT;
     uint32_t m_poolSize = 4;
     bool m_bAsync = false;
     std::condition_variable m_condVar;

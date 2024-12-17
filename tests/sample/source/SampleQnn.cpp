@@ -44,6 +44,25 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    auto imageConvertTypeStr = Get( config, "image_convert", "default" );
+    if ( "default" == imageConvertTypeStr )
+    {
+        m_imageConvertType = SAMPLE_QNN_IMAGE_CONVERT_DEFAULT;
+    }
+    else if ( "gray" == imageConvertTypeStr )
+    {
+        m_imageConvertType = SAMPLE_QNN_IMAGE_CONVERT_GRAY;
+    }
+    else if ( "chroma_first" == imageConvertTypeStr )
+    {
+        m_imageConvertType = SAMPLE_QNN_IMAGE_CONVERT_CHROMA_FIRST;
+    }
+    else
+    {
+        RIDEHAL_ERROR( "invalid image_convert\n" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
+
     m_config.processorType = Get( config, "processor", RIDEHAL_PROCESSOR_HTP0 );
     if ( RIDEHAL_PROCESSOR_MAX == m_config.processorType )
     {
@@ -252,24 +271,53 @@ void SampleQnn::ThreadMain()
             std::vector<std::shared_ptr<SharedBuffer_t>> outputBuffers;
             for ( auto &frame : frames.frames )
             {
-                RideHal_SharedBuffer_t sharedBuffer;
                 if ( RIDEHAL_BUFFER_TYPE_IMAGE == frame.BufferType() )
                 {
-                    ret = frame.SharedBuffer().ImageToTensor( &sharedBuffer );
-                    if ( RIDEHAL_ERROR_NONE != ret )
+                    if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == frame.SharedBuffer().imgProps.format ) ||
+                         ( RIDEHAL_IMAGE_FORMAT_P010 == frame.SharedBuffer().imgProps.format ) )
                     {
-                        RIDEHAL_ERROR(
-                                "QNN failed to do image to tensor convert for frameId %" PRIu64
-                                ": ret = %d",
-                                frames.FrameId( 0 ), ret );
-                        break;
+                        RideHal_SharedBuffer luma;
+                        RideHal_SharedBuffer chroma;
+                        ret = frame.SharedBuffer().ImageToTensor( &luma, &chroma );
+                        if ( RIDEHAL_ERROR_NONE == ret )
+                        {
+                            if ( SAMPLE_QNN_IMAGE_CONVERT_DEFAULT == m_imageConvertType )
+                            {
+                                inputs.push_back( luma );
+                                inputs.push_back( chroma );
+                            }
+                            else if ( SAMPLE_QNN_IMAGE_CONVERT_GRAY == m_imageConvertType )
+                            {
+                                inputs.push_back( luma );
+                            }
+                            else
+                            {
+                                inputs.push_back( chroma );
+                                inputs.push_back( luma );
+                            }
+                        }
+                    }
+                    else
+                    {
+                        RideHal_SharedBuffer_t sharedBuffer;
+                        ret = frame.SharedBuffer().ImageToTensor( &sharedBuffer );
+                        if ( RIDEHAL_ERROR_NONE == ret )
+                        {
+                            inputs.push_back( sharedBuffer );
+                        }
                     }
                 }
                 else
                 {
-                    sharedBuffer = frame.SharedBuffer();
+                    inputs.push_back( frame.SharedBuffer() );
                 }
-                inputs.push_back( sharedBuffer );
+                if ( RIDEHAL_ERROR_NONE != ret )
+                { /* only possible has error for image */
+                    RIDEHAL_ERROR( "QNN failed to do image to tensor convert for frameId %" PRIu64
+                                   ": ret = %d",
+                                   frames.FrameId( 0 ), ret );
+                    break;
+                }
             }
 
             for ( size_t i = 0; ( i < m_outputInfoList.num ) && ( RIDEHAL_ERROR_NONE == ret ); i++ )

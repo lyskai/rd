@@ -62,6 +62,8 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    m_bNoPadding = Get( config, "no_padding", false );
+
     m_config.outputWidth = Get( config, "output_width", 1920 );
     if ( 0 == m_config.outputWidth )
     {
@@ -271,10 +273,50 @@ RideHalError_e SampleCL2DFlex::Init( std::string name, SampleConfig_t &config )
         }
         else
         {
-            ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.numOfInputs,
-                                    m_config.outputWidth, m_config.outputHeight,
-                                    m_config.outputFormat, RIDEHAL_BUFFER_USAGE_GPU,
-                                    m_bufferFlags );
+            if ( true == m_bNoPadding )
+            {
+                if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) ||
+                     ( RIDEHAL_IMAGE_FORMAT_P010 == m_config.outputFormat ) )
+                {
+                    uint32_t bpp = 1;
+                    if ( RIDEHAL_IMAGE_FORMAT_P010 == m_config.outputFormat )
+                    {
+                        bpp = 2;
+                    }
+                    imgProp.numPlanes = 2;
+                    imgProp.format = m_config.outputFormat;
+                    imgProp.stride[0] = m_config.outputWidth * bpp;
+                    imgProp.actualHeight[0] = m_config.outputHeight;
+                    imgProp.planeBufSize[0] = 0;
+                    imgProp.stride[1] = m_config.outputWidth * bpp;
+                    imgProp.actualHeight[1] = m_config.outputHeight / 2;
+                    imgProp.planeBufSize[1] = 0;
+                    ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
+                                            RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+                }
+                else if ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.outputFormat )
+                {
+                    imgProp.numPlanes = 1;
+                    imgProp.format = m_config.outputFormat;
+                    imgProp.stride[0] = m_config.outputWidth * 2;
+                    imgProp.actualHeight[0] = m_config.outputHeight;
+                    imgProp.planeBufSize[0] = 0;
+                    ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, imgProp,
+                                            RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "no padding for format %d is not supported",
+                                   m_config.outputFormat );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
+            }
+            else
+            {
+                ret = m_imagePool.Init( name, LOGGER_LEVEL_INFO, m_poolSize, m_config.outputWidth,
+                                        m_config.outputHeight, m_config.outputFormat,
+                                        RIDEHAL_BUFFER_USAGE_GPU, m_bufferFlags );
+            }
         }
     }
 
