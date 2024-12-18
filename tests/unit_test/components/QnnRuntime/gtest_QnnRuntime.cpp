@@ -1291,13 +1291,6 @@ TEST( QnnRuntime, TwoModelWithSameBuffer )
     ret = qnn0.Deinit();
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-    /* TODO: without deregister, I see coredump */
-    ret = qnn1.DeRegisterBuffers( inputs, inputNum );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
-    ret = qnn1.DeRegisterBuffers( outputs, outputNum );
-    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
-
     ret = qnn1.Execute( inputs, inputNum, outputs, outputNum );
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 

@@ -278,28 +278,44 @@ private:
     RideHalError_e LoadOpPackages( QnnRuntime_UdoPackage_t *pUdoPackages, int numOfUdoPackages );
 
     /**
-     * @brief Register Buffer on HTP memory and get the handle
-     * @param[in] pSharedBuffer pointer shared buffer
-     * @param[out] pMemHandle pointer to HTP memory handle
+     * @brief FastRPC remote buffer register
+     * @param[in] pSharedBuffer Pointer to shared buffer
+     * @param[out] fd the returned FastRPC memory descriptor
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e RegisterBuffer( const RideHal_SharedBuffer_t *pSharedBuffer,
-                                   Qnn_MemHandle_t *pMemHandle );
+    RideHalError_e RemoteRegisterBuf( const RideHal_SharedBuffer_t *pSharedBuffer, int &fd );
 
     /**
-     * @brief Get HTP memory handle
+     * @brief FastRPC remote buffer deregister
+     * @param[in] pData the buffer virtual address
+     * @param[in] size the size of the buffer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RemoteDeRegisterBuf( void *pData, size_t size );
+
+    /**
+     * @brief Register Buffer to HTP and get the QNN memory handle
      * @param[in] pSharedBuffer pointer shared buffer
-     * @param[out] pMemHandle pointer to HTP memory handle
+     * @param[out] pMemHandle pointer to QNN memory handle
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     */
+    RideHalError_e RegisterBufferToHTP( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                        Qnn_MemHandle_t *pMemHandle );
+
+    /**
+     * @brief Get a QNN memory handle
+     * @param[in] pSharedBuffer pointer shared buffer
+     * @param[out] pMemHandle pointer to QNN memory handle
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
     RideHalError_e GetMemHandle( const RideHal_SharedBuffer_t *pSharedBuffer,
                                  Qnn_MemHandle_t *pMemHandle );
 
     /**
-     * @brief DeRegister memory buffers
+     * @brief DeRegister all the buffers
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      */
-    RideHalError_e DeRegisterBuffers();
+    RideHalError_e DeRegisterAllBuffers();
 
     /**
      * @brief get input tensor info internally
@@ -398,6 +414,14 @@ private:
     size_t m_inputTensorNum = 0;
     QnnRuntime_TensorInfo_t *m_pOutputTensor = nullptr;
     size_t m_outputTensorNum = 0;
+
+    std::vector<Qnn_Tensor_t> m_inputs;
+    std::vector<Qnn_Tensor_t> m_outputs;
+
+    /* used to maintain the reference counter for the buffer that used among
+     * different QNN instances on the some hardware processor */
+    static std::mutex s_lock[RIDEHAL_PROCESSOR_MAX];
+    static std::map<void *, int> s_dmaMemRefMap[RIDEHAL_PROCESSOR_MAX];
 };   // QnnRuntime
 
 }   // namespace component

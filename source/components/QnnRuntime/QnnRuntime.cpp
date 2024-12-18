@@ -33,6 +33,9 @@ namespace ridehal
 namespace component
 {
 
+std::mutex QnnRuntime::s_lock[RIDEHAL_PROCESSOR_MAX];
+std::map<void *, int> QnnRuntime::s_dmaMemRefMap[RIDEHAL_PROCESSOR_MAX];
+
 static std::map<RideHal_ProcessorType_e, const char *> s_Backends = {
         { RIDEHAL_PROCESSOR_HTP0, "libQnnHtp.so" },
         { RIDEHAL_PROCESSOR_HTP1, "libQnnHtp.so" },
@@ -511,7 +514,8 @@ RideHalError_e QnnRuntime::Init( const char *pName, const QnnRuntime_Config_t *p
                                                                                &m_platformInfo );
             if ( QNN_DEVICE_NO_ERROR != retVal )
             {
-                RIDEHAL_ERROR( "Could not get platform information due to error = %" PRIu64, retVal );
+                RIDEHAL_ERROR( "Could not get platform information due to error = %" PRIu64,
+                               retVal );
                 ret = RIDEHAL_ERROR_FAIL;
             }
         }
@@ -689,10 +693,12 @@ RideHalError_e QnnRuntime::GetInputInfo()
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        m_inputs.resize( m_inputTensorNum );
         for ( uint32_t i = 0; i < m_inputTensorNum; ++i )
         {
             RideHal_TensorProps_t tensorProp;
             auto tensor = &m_graphsInfo[0]->inputTensors[i];
+            m_inputs[i] = *tensor;
 
             m_pInputTensor[i].pName = QNN_TENSOR_GET_NAME( tensor );
 
@@ -791,10 +797,12 @@ RideHalError_e QnnRuntime::GetOutputInfo()
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        m_outputs.resize( m_outputTensorNum );
         for ( uint32_t i = 0; i < m_outputTensorNum; ++i )
         {
             RideHal_TensorProps_t tensorProp;
             auto tensor = &m_graphsInfo[0]->outputTensors[i];
+            m_outputs[i] = *tensor;
 
             m_pOutputTensor[i].pName = QNN_TENSOR_GET_NAME( tensor );
 
@@ -871,8 +879,93 @@ RideHalError_e QnnRuntime::GetOutputInfo( QnnRuntime_TensorInfoList_t *pList )
     return ret;
 }
 
-RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pSharedBuffer,
-                                           Qnn_MemHandle_t *pMemHandle )
+RideHalError_e QnnRuntime::RemoteRegisterBuf( const RideHal_SharedBuffer_t *pSharedBuffer, int &fd )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    int rpcFd = rpcmem_to_fd( pSharedBuffer->buffer.pData );
+    if ( rpcFd < 0 )
+    {
+        std::lock_guard<std::mutex> l( s_lock[m_backendType] );
+        int domain = CDSP_DOMAIN_ID;
+        if ( 1 == m_backendCoreId )
+        {
+            domain = CDSP1_DOMAIN_ID;
+        }
+        int client = 0;   // NOTE: default is 0
+        int extDomainId = get_extended_domains_id( domain, client );
+
+#if defined( __QNXNTO__ )
+        remote_register_buf_v2( extDomainId, pSharedBuffer->buffer.pData,
+                                pSharedBuffer->buffer.size, 0 );
+#else
+        remote_register_buf_v2( extDomainId, pSharedBuffer->buffer.pData,
+                                pSharedBuffer->buffer.size, (int) pSharedBuffer->buffer.dmaHandle );
+#endif
+        rpcFd = rpcmem_to_fd( pSharedBuffer->buffer.pData );
+        if ( rpcFd >= 0 )
+        {
+            s_dmaMemRefMap[m_backendType][pSharedBuffer->buffer.pData] = 1;
+            fd = rpcFd;
+        }
+        else
+        {
+            RIDEHAL_ERROR( "remote register failed for buffer %p(%" PRIu64 ", %" PRIu64
+                           ") for core %d!",
+                           pSharedBuffer->buffer.pData, pSharedBuffer->buffer.size,
+                           pSharedBuffer->offset, m_backendCoreId );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+    else
+    {
+        std::lock_guard<std::mutex> l( s_lock[m_backendType] );
+        auto it = s_dmaMemRefMap[m_backendType].find( pSharedBuffer->buffer.pData );
+        if ( it != s_dmaMemRefMap[m_backendType].end() )
+        {
+            it->second++;
+        }
+        fd = rpcFd;
+    }
+
+    return ret;
+}
+
+RideHalError_e QnnRuntime::RemoteDeRegisterBuf( void *pData, size_t size )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    constexpr int client = 0;   // NOTE: default is 0
+    int domain = CDSP_DOMAIN_ID;
+
+    if ( 1 == m_backendCoreId )
+    {
+        domain = CDSP1_DOMAIN_ID;
+    }
+    int extDomainId = get_extended_domains_id( domain, client );
+    std::lock_guard<std::mutex> l( s_lock[m_backendType] );
+    auto it = s_dmaMemRefMap[m_backendType].find( pData );
+    if ( it != s_dmaMemRefMap[m_backendType].end() )
+    {
+        if ( it->second > 0 )
+        {
+            it->second--;
+        }
+        if ( 0 == it->second )
+        {
+            remote_register_buf_v2( extDomainId, (void *) pData, size, -1 );
+            s_dmaMemRefMap[m_backendType].erase( it );
+        }
+    }
+    else
+    {
+        RIDEHAL_ERROR( "Can't find buffer %p(%" PRIu64 ") in dma ref map", pData, size );
+    }
+
+    return ret;
+}
+
+RideHalError_e QnnRuntime::RegisterBufferToHTP( const RideHal_SharedBuffer_t *pSharedBuffer,
+                                                Qnn_MemHandle_t *pMemHandle )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     Qnn_ErrorHandle_t retVal;
@@ -894,70 +987,63 @@ RideHalError_e QnnRuntime::RegisterBuffer( const RideHal_SharedBuffer_t *pShared
         auto it = m_dmaMemInfoMap.find( (uint8_t *) pSharedBuffer->data() );
         if ( it == m_dmaMemInfoMap.end() )
         {
-            int domain = CDSP_DOMAIN_ID;
-            if ( 1 == m_backendCoreId )
+            int fd;
+            ret = RemoteRegisterBuf( pSharedBuffer, fd );
+            if ( RIDEHAL_ERROR_NONE == ret )
             {
-                domain = CDSP1_DOMAIN_ID;
-            }
+                Qnn_MemDescriptor_t desc;
+                desc.memShape.numDim = pSharedBuffer->tensorProps.numDims;
+                desc.memShape.dimSize = (uint32_t *) pSharedBuffer->tensorProps.dims;
+                desc.memShape.shapeConfig = nullptr;
+                desc.dataType = SwitchToQnnDataType( pSharedBuffer->tensorProps.type );
 
-            Qnn_MemDescriptor_t desc;
-            desc.memShape.numDim = pSharedBuffer->tensorProps.numDims;
-            desc.memShape.dimSize = (uint32_t *) pSharedBuffer->tensorProps.dims;
-            desc.memShape.shapeConfig = nullptr;
-            desc.dataType = SwitchToQnnDataType( pSharedBuffer->tensorProps.type );
-
-            int client = 0;   // NOTE: default is 0
-            int extDomainId = get_extended_domains_id( domain, client );
-#if defined( __QNXNTO__ )
-            remote_register_buf_v2( extDomainId, pSharedBuffer->buffer.pData,
-                                    pSharedBuffer->buffer.size, 0 );
-#else
-            remote_register_buf_v2( extDomainId, pSharedBuffer->buffer.pData,
-                                    pSharedBuffer->buffer.size,
-                                    (int) pSharedBuffer->buffer.dmaHandle );
-#endif
-            auto fd = rpcmem_to_fd( pSharedBuffer->buffer.pData );
 #if ( ( QNN_HTP_API_VERSION_MAJOR == 5 ) && ( QNN_HTP_API_VERSION_MINOR >= 16 ) ) ||               \
         ( QNN_HTP_API_VERSION_MAJOR > 5 )
-            QnnMemHtp_Descriptor_t htpDesc;
-            htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
-            htpDesc.size = pSharedBuffer->buffer.size;
-            htpDesc.sharedBufferConfig.fd = fd;
-            htpDesc.sharedBufferConfig.offset = pSharedBuffer->offset;
+                QnnMemHtp_Descriptor_t htpDesc;
+                htpDesc.type = QNN_HTP_MEM_SHARED_BUFFER;
+                htpDesc.size = pSharedBuffer->buffer.size;
+                htpDesc.sharedBufferConfig.fd = fd;
+                htpDesc.sharedBufferConfig.offset = pSharedBuffer->offset;
 
-            desc.memType = QNN_MEM_TYPE_CUSTOM;
-            desc.customInfo = &htpDesc;
+                desc.memType = QNN_MEM_TYPE_CUSTOM;
+                desc.customInfo = &htpDesc;
 #else
-            desc.memType = QNN_MEM_TYPE_ION;
-            desc.ionInfo.fd = fd;
+                desc.memType = QNN_MEM_TYPE_ION;
+                desc.ionInfo.fd = fd;
 #endif
 
-            retVal = m_qnnFunctionPointers.qnnInterface.memRegister( m_context, &desc, 1,
-                                                                     pMemHandle );
-            if ( QNN_SUCCESS == retVal )
-            {
-                QnnRuntime::DmaMemInfo_t info;
-                info.memHandle = *pMemHandle;
-                info.size = pSharedBuffer->buffer.size;
-                info.fd = fd;
-                m_dmaMemInfoMap[(uint8_t *) pSharedBuffer->data()] = info;
-                RIDEHAL_INFO( "succeed to register map buffer %p(%d, %u, %u) as %p for core %d",
-                              pSharedBuffer->buffer.pData, fd, pSharedBuffer->buffer.size,
-                              pSharedBuffer->offset, *pMemHandle, m_backendCoreId );
-            }
-            else
-            {
-                RIDEHAL_ERROR( "failed to map buffer %p(%d, %u, %u) for core %d, error %d\n",
-                               pSharedBuffer->buffer.pData, fd, pSharedBuffer->buffer.size,
-                               pSharedBuffer->offset, m_backendCoreId, retVal );
-                ret = RIDEHAL_ERROR_FAIL;
+                retVal = m_qnnFunctionPointers.qnnInterface.memRegister( m_context, &desc, 1,
+                                                                         pMemHandle );
+                if ( QNN_SUCCESS == retVal )
+                {
+                    QnnRuntime::DmaMemInfo_t info;
+                    info.memHandle = *pMemHandle;
+                    info.size = pSharedBuffer->buffer.size;
+                    info.fd = fd;
+                    m_dmaMemInfoMap[(uint8_t *) pSharedBuffer->data()] = info;
+                    RIDEHAL_INFO( "succeed to register map buffer %p(%d, %" PRIu64 ", %" PRIu64
+                                  ") as %p for core %d",
+                                  pSharedBuffer->buffer.pData, fd, pSharedBuffer->buffer.size,
+                                  pSharedBuffer->offset, *pMemHandle, m_backendCoreId );
+                }
+                else
+                {
+                    (void) RemoteDeRegisterBuf( pSharedBuffer->buffer.pData,
+                                                pSharedBuffer->buffer.size );
+                    RIDEHAL_ERROR( "failed to map buffer %p(%d, %" PRIu64 ", %" PRIu64
+                                   ") for core %d, error %d\n",
+                                   pSharedBuffer->buffer.pData, fd, pSharedBuffer->buffer.size,
+                                   pSharedBuffer->offset, m_backendCoreId, retVal );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
             }
         }
         else
         {
             auto &info = it->second;
             *pMemHandle = info.memHandle;
-            RIDEHAL_DEBUG( "already register map buffer %p(%d, %u, %u) as %p for core %d",
+            RIDEHAL_DEBUG( "already register map buffer %p(%d, %" PRIu64 ", %" PRIu64
+                           ") as %p for core %d",
                            pSharedBuffer->buffer.pData, info.fd, pSharedBuffer->size,
                            pSharedBuffer->offset, *pMemHandle, m_backendCoreId );
         }
@@ -1003,7 +1089,7 @@ RideHalError_e QnnRuntime::RegisterBuffers( const RideHal_SharedBuffer_t *pShare
         for ( size_t i = 0; i < numBuffers; ++i )
         {
             Qnn_MemHandle_t memHandle = nullptr;
-            ret = RegisterBuffer( &pSharedBuffers[i], &memHandle );
+            ret = RegisterBufferToHTP( &pSharedBuffers[i], &memHandle );
             if ( ret != RIDEHAL_ERROR_NONE )
             {
                 break;
@@ -1024,7 +1110,7 @@ RideHalError_e QnnRuntime::GetMemHandle( const RideHal_SharedBuffer_t *pSharedBu
     if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
          ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
     {
-        ret = RegisterBuffer( pSharedBuffer, pMemHandle );
+        ret = RegisterBufferToHTP( pSharedBuffer, pMemHandle );
     }
 
     return ret;
@@ -1114,59 +1200,52 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
         ret = CheckOutputTensors( pOutputs, numOutputs );
     }
 
-    const auto graphInfo = ( *m_graphsInfo )[0];
-
-    std::vector<Qnn_Tensor_t> inputs;
-    inputs.reserve( numInputs );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        for ( uint32_t i = 0; i < graphInfo.numInputTensors; i++ )
+        for ( uint32_t i = 0; i < m_inputTensorNum; i++ )
         {
-            inputs[i] = graphInfo.inputTensors[i];
             Qnn_MemHandle_t memHandle = nullptr;
             ret = GetMemHandle( &pInputs[i], &memHandle );
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                QNN_TENSOR_SET_DIMENSIONS( &inputs[i], (uint32_t *) pInputs[i].tensorProps.dims );
+                QNN_TENSOR_SET_DIMENSIONS( &m_inputs[i], (uint32_t *) pInputs[i].tensorProps.dims );
                 if ( nullptr != memHandle )
                 {
-                    QNN_TENSOR_SET_MEM_TYPE( &inputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
-                    QNN_TENSOR_SET_MEM_HANDLE( &inputs[i], memHandle );
+                    QNN_TENSOR_SET_MEM_TYPE( &m_inputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
+                    QNN_TENSOR_SET_MEM_HANDLE( &m_inputs[i], memHandle );
                 }
                 else
                 {
-                    QNN_TENSOR_SET_MEM_TYPE( &inputs[i], QNN_TENSORMEMTYPE_RAW );
+                    QNN_TENSOR_SET_MEM_TYPE( &m_inputs[i], QNN_TENSORMEMTYPE_RAW );
                     Qnn_ClientBuffer_t clientBuffer = { (uint8_t *) pInputs[i].data(),
                                                         (uint32_t) pInputs[i].size };
-                    QNN_TENSOR_SET_CLIENT_BUF( &inputs[i], clientBuffer );
+                    QNN_TENSOR_SET_CLIENT_BUF( &m_inputs[i], clientBuffer );
                 }
             }
         }
     }
 
-    std::vector<Qnn_Tensor_t> outputs;
-    outputs.reserve( numOutputs );
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        for ( uint32_t i = 0; i < graphInfo.numOutputTensors; i++ )
+        for ( uint32_t i = 0; i < m_outputTensorNum; i++ )
         {
-            outputs[i] = graphInfo.outputTensors[i];
             Qnn_MemHandle_t memHandle = nullptr;
             ret = GetMemHandle( &pOutputs[i], &memHandle );
             if ( RIDEHAL_ERROR_NONE == ret )
             {
-                QNN_TENSOR_SET_DIMENSIONS( &outputs[i], (uint32_t *) pOutputs[i].tensorProps.dims );
+                QNN_TENSOR_SET_DIMENSIONS( &m_outputs[i],
+                                           (uint32_t *) pOutputs[i].tensorProps.dims );
                 if ( nullptr != memHandle )
                 {
-                    QNN_TENSOR_SET_MEM_TYPE( &outputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
-                    QNN_TENSOR_SET_MEM_HANDLE( &outputs[i], memHandle );
+                    QNN_TENSOR_SET_MEM_TYPE( &m_outputs[i], QNN_TENSORMEMTYPE_MEMHANDLE );
+                    QNN_TENSOR_SET_MEM_HANDLE( &m_outputs[i], memHandle );
                 }
                 else
                 {
-                    QNN_TENSOR_SET_MEM_TYPE( &outputs[i], QNN_TENSORMEMTYPE_RAW );
+                    QNN_TENSOR_SET_MEM_TYPE( &m_outputs[i], QNN_TENSORMEMTYPE_RAW );
                     Qnn_ClientBuffer_t clientBuffer = { (uint8_t *) pOutputs[i].data(),
                                                         (uint32_t) pOutputs[i].size };
-                    QNN_TENSOR_SET_CLIENT_BUF( &outputs[i], clientBuffer );
+                    QNN_TENSOR_SET_CLIENT_BUF( &m_outputs[i], clientBuffer );
                 }
             }
         }
@@ -1174,11 +1253,12 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
+        const auto graphInfo = m_graphsInfo[0];
         if ( nullptr == pOutputPriv )
         {
             retVal = m_qnnFunctionPointers.qnnInterface.graphExecute(
-                    graphInfo.graph, inputs.data(), graphInfo.numInputTensors, outputs.data(),
-                    graphInfo.numOutputTensors, m_profileBackendHandle, nullptr );
+                    graphInfo->graph, m_inputs.data(), m_inputs.size(), m_outputs.data(),
+                    m_outputs.size(), m_profileBackendHandle, nullptr );
         }
         else
         {
@@ -1188,8 +1268,8 @@ RideHalError_e QnnRuntime::Execute( const RideHal_SharedBuffer_t *pInputs, uint3
                 pNotifyParam->self = this;
                 pNotifyParam->pOutputPriv = pOutputPriv;
                 retVal = m_qnnFunctionPointers.qnnInterface.graphExecuteAsync(
-                        graphInfo.graph, inputs.data(), graphInfo.numInputTensors, outputs.data(),
-                        graphInfo.numOutputTensors, m_profileBackendHandle, nullptr, QnnNotifyFn,
+                        graphInfo->graph, m_inputs.data(), m_inputs.size(), m_outputs.data(),
+                        m_outputs.size(), m_profileBackendHandle, nullptr, QnnNotifyFn,
                         pNotifyParam );
             }
             else
@@ -1242,21 +1322,14 @@ void QnnRuntime::QnnNotifyFn( NotifyParam_t *pNotifyParam, Qnn_NotifyStatus_t no
     m_notifyParamQ.Push( pNotifyParam );
 }
 
-RideHalError_e QnnRuntime::DeRegisterBuffers()
+RideHalError_e QnnRuntime::DeRegisterAllBuffers()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     Qnn_ErrorHandle_t retVal;
-    constexpr int client = 0;   // NOTE: default is 0
-    int domain = CDSP_DOMAIN_ID;
-
-    if ( 1 == m_backendCoreId )
-    {
-        domain = CDSP1_DOMAIN_ID;
-    }
-    int extDomainId = get_extended_domains_id( domain, client );
+    std::lock_guard<std::mutex> l( m_lock );
     for ( auto &kv : m_dmaMemInfoMap )
     {
-        auto ptr = kv.first;
+        auto pData = kv.first;
         auto &info = kv.second;
         retVal = m_qnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
         if ( QNN_SUCCESS != retVal )
@@ -1266,13 +1339,17 @@ RideHalError_e QnnRuntime::DeRegisterBuffers()
         }
         else
         {
-            RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %u) as %p for core %d", ptr, info.fd,
-                          info.size, info.memHandle, m_backendCoreId );
+            RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %" PRIu64 ") as %p for core %d",
+                          pData, info.fd, info.size, info.memHandle, m_backendCoreId );
         }
         if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
              ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
         {
-            remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
+            RideHalError_e ret2 = RemoteDeRegisterBuf( pData, info.size );
+            if ( RIDEHAL_ERROR_NONE != ret2 )
+            {
+                ret = ret2;
+            }
         }
     }
     m_dmaMemInfoMap.clear();
@@ -1324,7 +1401,7 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
             auto it = m_dmaMemInfoMap.find( pSharedBuffers[i].data() );
             if ( it != m_dmaMemInfoMap.end() )
             {
-                auto ptr = it->first;
+                auto pData = it->first;
                 auto &info = it->second;
                 retVal = m_qnnFunctionPointers.qnnInterface.memDeRegister( &info.memHandle, 1 );
                 if ( QNN_SUCCESS != retVal )
@@ -1334,20 +1411,26 @@ RideHalError_e QnnRuntime::DeRegisterBuffers( const RideHal_SharedBuffer_t *pSha
                 }
                 else
                 {
-                    RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %u, %u) as %p for core %d",
+                    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
+                         ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
+                    {
+                        ret = RemoteDeRegisterBuf( pData, info.size );
+                    }
+                }
+
+                if ( RIDEHAL_ERROR_NONE == ret )
+                {
+                    RIDEHAL_INFO( "succeed to deregister buffer %p(%d, %" PRIu64 ", %" PRIu64
+                                  ") as %p for core %d",
                                   pSharedBuffers[i].buffer.pData, info.fd, pSharedBuffers[i].size,
                                   pSharedBuffers[i].offset, info.memHandle, m_backendCoreId );
+                    (void) m_dmaMemInfoMap.erase( it );
                 }
-                if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
-                     ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
-                {
-                    remote_register_buf_v2( extDomainId, (void *) ptr, info.size, -1 );
-                }
-                (void) m_dmaMemInfoMap.erase( it );
             }
             else
             {
-                RIDEHAL_ERROR( "buffer hasn't been registered yet %p(%u, %u) for core %d",
+                RIDEHAL_ERROR( "buffer hasn't been registered yet %p(%" PRIu64 ", %" PRIu64
+                               ") for core %d",
                                pSharedBuffers[i].buffer.pData, pSharedBuffers[i].size,
                                pSharedBuffers[i].offset, m_backendCoreId );
                 ret = RIDEHAL_ERROR_OUT_OF_BOUND;
@@ -1368,11 +1451,7 @@ RideHalError_e QnnRuntime::Destroy()
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     Qnn_ErrorHandle_t retVal = QNN_SUCCESS;
 
-    if ( ( RIDEHAL_PROCESSOR_HTP0 == m_backendType ) ||
-         ( RIDEHAL_PROCESSOR_HTP1 == m_backendType ) )
-    {
-        ret = DeRegisterBuffers();
-    }
+    ret = DeRegisterAllBuffers();
 
     if ( nullptr != m_profileBackendHandle )
     {

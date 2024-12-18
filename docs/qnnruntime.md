@@ -40,7 +40,7 @@ QnnRuntime is an AI infenrence framework designed to assist users in running QNN
 
 - [QnnRuntime::RegisterCallback](../include/ridehal/component/QnnRuntime.hpp#L146) Register callback to use QNN graphExecuteAsync API
 
-- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L155) Rigister memory with specific shared buffers
+- [QnnRuntime::RegisterBuffers](../include/ridehal/component/QnnRuntime.hpp#L155) Register memory with specific shared buffers
 
 - [QnnRuntime::Start](../include/ridehal/component/QnnRuntime.hpp#L162) Start the QnnRuntime object
 
