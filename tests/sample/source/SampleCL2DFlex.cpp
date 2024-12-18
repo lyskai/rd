@@ -44,6 +44,10 @@ CL2DFlex_Work_Mode_e SampleCL2DFlex::GetMode( SampleConfig_t &config, std::strin
         {
             ret = CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE;
         }
+        else if ( "convert_ubwc" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_CONVERT_UBWC;
+        }
         else
         {
             ret = CL2DFLEX_WORK_MODE_MAX;

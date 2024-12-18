@@ -29,48 +29,6 @@ namespace component
 ** Typedefs
 =================================================================================================*/
 
-/** @brief CL2DFlex valid pipelines */
-typedef enum
-{
-    CL2DFLEX_PIPELINE_CONVERT_NV12_TO_RGB,  /**<color convert only from nv12 to rgb, roi.width
-                                               should be equal to output width and roi.height should
-                                               be equal to output height*/
-    CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_RGB,  /**<color convert only from uyvy to rgb, roi.width
-                                                should be equal to output width and roi.height should
-                                                be equal to output height*/
-    CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12, /**<color convert only from uyvy to nv12, roi.width
-                                               should be equal to output width and roi.height should
-                                               be equal to output height*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB,    /**<color convert and resize use nearest point
-                                                        from nv12 to rgb*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB,    /**<color convert and resize use nearest point
-                                                        from uyvy to rgb*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12,   /**<color convert and resize use nearest point
-                                                        from uyvy to nv12*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB,     /**<resize use nearest point from rgb to rgb*/
-    CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB, /**<color convert and letterbox with fixed
-                                                        height/width ratio use nearest point from
-                                                        nv12 to rgb, padding 0 to the redundant
-                                                        bottom or right edge*/
-    CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB_MULTIPLE, /**<color convert and letterbox with
-                                                                 fixed height/width ratio use
-                                                                 nearest point from nv12 to rgb,
-                                                                 padding 0 to the redundant bottom
-                                                                 or right edge, execute on multiple
-                                                                 batches with different ROI
-                                                                 paramters*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB_MULTIPLE, /**<color convert and resize use nearest
-                                                              point from nv12 to rgb, execute on
-                                                              multiple batches with different ROI
-                                                              paramters*/
-    CL2DFLEX_PIPELINE_CONVERT_NV12UBWC_TO_NV12, /**<color convert only from compressed nv12 ubwc to
-                                                   nv12, input width should be equal to output
-                                                   width, input height should be equal to output
-                                                   height, and ROI parameters should not be used,
-                                                   only valid on qnx*/
-    CL2DFLEX_PIPELINE_MAX
-} CL2DFlex_Pipeline_e;
-
 /** @brief CL2DFlex valid work modes */
 typedef enum
 {
@@ -87,6 +45,7 @@ typedef enum
     CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE,    /**<color convert and resize use nearest point,
                                                       execute on multiple batches with different ROI
                                                       paramters*/
+    CL2DFLEX_WORK_MODE_CONVERT_UBWC, /**<convert from ubwc compress format to normal format*/
     CL2DFLEX_WORK_MODE_MAX
 } CL2DFlex_Work_Mode_e;
 
@@ -120,6 +79,8 @@ typedef struct
                   value in which the lower 24 bits are composed of three 8 bits values representing
                   R,G,B respectively, default set to 0 which means all black */
 } CL2DFlex_Config_t;
+
+class CL2DPipelineBase; /**<pipeline base class*/
 
 class CL2DFlex : public ComponentIF
 {
@@ -217,59 +178,8 @@ public:
 private:
     CL2DFlex_Config_t m_config;
     OpenclSrv m_OpenclSrvObj;
+    CL2DPipelineBase *m_pCL2DPipeline[RIDEHAL_MAX_INPUTS] = { nullptr };
     cl_kernel m_kernel[RIDEHAL_MAX_INPUTS];
-    CL2DFlex_Pipeline_e m_pipelines[RIDEHAL_MAX_INPUTS]; /**<input image format for each batch*/
-    RideHal_SharedBuffer_t
-            m_roiBuffer; /**<internal buffer used to store roi parameters for ExecuteWithROI API*/
-
-private:
-    RideHalError_e ConvertFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                         uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                         const RideHal_SharedBuffer_t *pInput,
-                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ConvertFromUYVYToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                         uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                         const RideHal_SharedBuffer_t *pInput,
-                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ConvertFromUYVYToNV12( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                          uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                          const RideHal_SharedBuffer_t *pInput,
-                                          const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                        uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                        const RideHal_SharedBuffer_t *pInput,
-                                        const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromUYVYToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                        uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                        const RideHal_SharedBuffer_t *pInput,
-                                        const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromUYVYToNV12( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                         uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                         const RideHal_SharedBuffer_t *pInput,
-                                         const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e ResizeFromRGBToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                       uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                       const RideHal_SharedBuffer_t *pInput,
-                                       const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                           uint32_t srcOffset, cl_mem bufferDst, uint32_t dstOffset,
-                                           const RideHal_SharedBuffer_t *pInput,
-                                           const RideHal_SharedBuffer_t *pOutput );
-    RideHalError_e LetterboxFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
-                                                   cl_mem bufferSrc, uint32_t srcOffset,
-                                                   cl_mem bufferDst, uint32_t dstOffset,
-                                                   const RideHal_SharedBuffer_t *pInput,
-                                                   const RideHal_SharedBuffer_t *pOutput,
-                                                   const CL2DFlex_ROIConfig_t *pROIs );
-    RideHalError_e ResizeFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
-                                                cl_mem bufferSrc, uint32_t srcOffset,
-                                                cl_mem bufferDst, uint32_t dstOffset,
-                                                const RideHal_SharedBuffer_t *pInput,
-                                                const RideHal_SharedBuffer_t *pOutput,
-                                                const CL2DFlex_ROIConfig_t *pROIs );
-    RideHalError_e ConvertFromNV12UBWCToNV12( uint32_t inputId, cl_kernel *pKernel,
-                                              const RideHal_SharedBuffer_t *pInput,
-                                              const RideHal_SharedBuffer_t *pOutput );
 
 };   // class CL2DFlex
 

@@ -470,7 +470,7 @@ The command line template example:
 | output_width  | false    | int       | 1920    | The output image width  |
 | output_height | false    | int       | 1024    | The output image height |
 | output_format | false    | string    | rgb     | The output image format, options from [rgb, nv12]|
-| work_modeX    | false    | string    | resize_nearest    | The input X work mode, options from [convert, resize_nearest, letterbox_nearest, letterbox_nearest_multiple, resize_nearest_multiple]|
+| work_modeX    | false    | string    | resize_nearest    | The input X work mode, options from [convert, resize_nearest, letterbox_nearest, letterbox_nearest_multiple, resize_nearest_multiple, convert_ubwc]|
 | roi_xX        | false    | int       | 0       | The ROI top x for input X |
 | roi_yX        | false    | int       | 0       | The ROI top y for input X |
 | roi_widthX    | false    | int       | =input_widthX  | The ROI width for input X |

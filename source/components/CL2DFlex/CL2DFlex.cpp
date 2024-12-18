@@ -5,6 +5,13 @@
 
 #include "ridehal/component/CL2DFlex.hpp"
 #include "CL2DFlex.cl.h"
+#include "include/CL2DPipelineBase.hpp"
+#include "include/CL2DPipelineConvert.hpp"
+#include "include/CL2DPipelineConvertUBWC.hpp"
+#include "include/CL2DPipelineLetterbox.hpp"
+#include "include/CL2DPipelineLetterboxMultiple.hpp"
+#include "include/CL2DPipelineResize.hpp"
+#include "include/CL2DPipelineResizeMultiple.hpp"
 
 namespace ridehal
 {
@@ -130,147 +137,55 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
             {
                 for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
                 {
-                    if ( ( m_config.outputWidth == m_config.ROIs[inputId].width ) &&
-                         ( m_config.outputHeight == m_config.ROIs[inputId].height ) &&
-                         ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormats[inputId] ) &&
-                         ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                         ( CL2DFLEX_WORK_MODE_CONVERT == m_config.workModes[inputId] ) )
-                    {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_CONVERT_NV12_TO_RGB;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "ConvertNV12ToRGB" );
-                    }
+                    m_pCL2DPipeline[inputId] = nullptr;
 
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST == m_config.workModes[inputId] ) )
+                    if ( CL2DFLEX_WORK_MODE_CONVERT == m_config.workModes[inputId] )
                     {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "ResizeNV12ToRGB" );
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineConvert();
                     }
-
-                    else if ( ( m_config.outputWidth == m_config.ROIs[inputId].width ) &&
-                              ( m_config.outputHeight == m_config.ROIs[inputId].height ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_CONVERT == m_config.workModes[inputId] ) )
+                    else if ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST == m_config.workModes[inputId] )
                     {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_RGB;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "ConvertUYVYToRGB" );
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineResize();
                     }
-
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST == m_config.workModes[inputId] ) )
+                    else if ( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST == m_config.workModes[inputId] )
                     {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "ResizeUYVYToRGB" );
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineLetterbox();
                     }
-
-                    else if ( ( m_config.outputWidth == m_config.ROIs[inputId].width ) &&
-                              ( m_config.outputHeight == m_config.ROIs[inputId].height ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_CONVERT == m_config.workModes[inputId] ) )
+                    else if ( CL2DFLEX_WORK_MODE_CONVERT_UBWC == m_config.workModes[inputId] )
                     {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId],
-                                                           "ConvertUYVYToNV12" );
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineConvertUBWC();
                     }
-
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST == m_config.workModes[inputId] ) )
+                    else if ( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE ==
+                              m_config.workModes[inputId] )
                     {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "ResizeRGBToRGB" );
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineLetterboxMultiple();
                     }
-
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_UYVY == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST == m_config.workModes[inputId] ) )
+                    else if ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE ==
+                              m_config.workModes[inputId] )
                     {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "ResizeUYVYToNV12" );
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineResizeMultiple();
                     }
-
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST ==
-                                m_config.workModes[inputId] ) )
-                    {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId],
-                                                           "LetterboxNV12ToRGB" );
-                    }
-
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST_MULTIPLE ==
-                                m_config.workModes[inputId] ) )
-                    {
-                        m_pipelines[inputId] =
-                                CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB_MULTIPLE;
-                        RideHal_TensorProps_t roiProp = {
-                                RIDEHAL_TENSOR_TYPE_INT_32,
-                                { ( uint32_t )( RIDEHAL_CL2DFLEX_ROI_NUMBER_MAX * 4 ), 0 },
-                                1,
-                        };
-                        ret = m_roiBuffer.Allocate( &roiProp );
-                        if ( RIDEHAL_ERROR_NONE != ret )
-                        {
-                            RIDEHAL_ERROR( "Failed to allocate roi buffer!" );
-                        }
-                        else
-                        {
-                            ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId],
-                                                               "LetterboxNV12ToRGBMultiple" );
-                        }
-                    }
-
-                    else if ( ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_RGB888 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE ==
-                                m_config.workModes[inputId] ) )
-                    {
-                        m_pipelines[inputId] =
-                                CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB_MULTIPLE;
-                        RideHal_TensorProps_t roiProp = {
-                                RIDEHAL_TENSOR_TYPE_INT_32,
-                                { ( uint32_t )( RIDEHAL_CL2DFLEX_ROI_NUMBER_MAX * 4 ), 0 },
-                                1,
-                        };
-                        ret = m_roiBuffer.Allocate( &roiProp );
-                        if ( RIDEHAL_ERROR_NONE != ret )
-                        {
-                            RIDEHAL_ERROR( "Failed to allocate roi buffer!" );
-                        }
-                        else
-                        {
-                            ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId],
-                                                               "ResizeNV12ToRGBMultiple" );
-                        }
-                    }
-
-                    else if ( ( m_config.outputWidth == m_config.inputWidths[inputId] ) &&
-                              ( m_config.outputHeight == m_config.inputHeights[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC ==
-                                m_config.inputFormats[inputId] ) &&
-                              ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) &&
-                              ( CL2DFLEX_WORK_MODE_CONVERT == m_config.workModes[inputId] ) )
-                    {
-                        m_pipelines[inputId] = CL2DFLEX_PIPELINE_CONVERT_NV12UBWC_TO_NV12;
-                        ret = m_OpenclSrvObj.CreateKernel( &m_kernel[inputId], "Compress" );
-                    }
-
                     else
                     {
-                        RIDEHAL_ERROR( "Invalid CL2DFlex pipeline for inputId=%d!", inputId );
+                        RIDEHAL_ERROR( "Invalid CL2DFlex work mode for inputId=%d!", inputId );
+                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                    }
+
+                    if ( nullptr != m_pCL2DPipeline[inputId] )
+                    {
+                        m_pCL2DPipeline[inputId]->InitLogger( pName, level );
+                        ret = m_pCL2DPipeline[inputId]->Init( inputId, &m_kernel[inputId],
+                                                              &m_config, &m_OpenclSrvObj );
+                    }
+                    else
+                    {
+                        RIDEHAL_ERROR( "CL2D pipeline create failed for inputId=%d!", inputId );
                         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                     }
 
                     if ( RIDEHAL_ERROR_NONE != ret )
                     {
-                        RIDEHAL_ERROR( "Create kernel failed for inputId=%d!", inputId );
+                        RIDEHAL_ERROR( "Setup pipeline failed for inputId=%d!", inputId );
                         break;
                     }
                 }
@@ -309,20 +224,26 @@ RideHalError_e CL2DFlex::Deinit()
     {
         RideHalError_e retVal;
 
-        if ( nullptr != m_roiBuffer.buffer.pData )
-        {
-            retVal = m_roiBuffer.Free();
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to deallocate roi buffer!" );
-            }
-        }
-
         retVal = m_OpenclSrvObj.Deinit();
         if ( RIDEHAL_ERROR_NONE != retVal )
         {
             RIDEHAL_ERROR( "Release CL resources failed!" );
             ret = RIDEHAL_ERROR_FAIL;
+        }
+
+        for ( uint32_t inputId = 0; inputId < m_config.numOfInputs; inputId++ )
+        {
+            if ( nullptr != m_pCL2DPipeline[inputId] )
+            {
+                m_pCL2DPipeline[inputId]->DeinitLogger();
+                retVal = m_pCL2DPipeline[inputId]->Deinit();
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    RIDEHAL_ERROR( "Deinit pipeline failed for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
+                delete m_pCL2DPipeline[inputId];
+            }
         }
 
         retVal = ComponentIF::Deinit();
@@ -401,838 +322,6 @@ RideHalError_e CL2DFlex::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffe
     return ret;
 }
 
-RideHalError_e CL2DFlex::ConvertFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel,
-                                               cl_mem bufferSrc, uint32_t srcOffset,
-                                               cl_mem bufferDst, uint32_t dstOffset,
-                                               const RideHal_SharedBuffer_t *pInput,
-                                               const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 10;
-    OpenclIfcae_Arg_t OpenclArgs[10];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( pInput->imgProps.stride[1] );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    uint32_t kernelROIX = m_config.ROIs[inputId].x / 2;
-    uint32_t kernelROIY = m_config.ROIs[inputId].y / 2;
-    OpenclArgs[8].pArg = (void *) &( kernelROIX );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( kernelROIY );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { ( size_t )( pOutput->imgProps.width ) / 2,
-                                 ( size_t )( pOutput->imgProps.height ) / 2 };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ConvertFromUYVYToRGB( uint32_t inputId, cl_kernel *pKernel,
-                                               cl_mem bufferSrc, uint32_t srcOffset,
-                                               cl_mem bufferDst, uint32_t dstOffset,
-                                               const RideHal_SharedBuffer_t *pInput,
-                                               const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 8;
-    OpenclIfcae_Arg_t OpenclArgs[8];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    uint32_t kernelROIX = m_config.ROIs[inputId].x / 2;
-    uint32_t kernelROIY = m_config.ROIs[inputId].y;
-    OpenclArgs[6].pArg = (void *) &( kernelROIX );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( kernelROIY );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { ( size_t )( pOutput->imgProps.width ) / 2,
-                                 pOutput->imgProps.height };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert UYVY to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ConvertFromUYVYToNV12( uint32_t inputId, cl_kernel *pKernel,
-                                                cl_mem bufferSrc, uint32_t srcOffset,
-                                                cl_mem bufferDst, uint32_t dstOffset,
-                                                const RideHal_SharedBuffer_t *pInput,
-                                                const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 10;
-    OpenclIfcae_Arg_t OpenclArgs[10];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( pOutput->imgProps.planeBufSize[0] );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[1] );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    uint32_t kernelROIX = m_config.ROIs[inputId].x / 2;
-    uint32_t kernelROIY = m_config.ROIs[inputId].y / 2;
-    OpenclArgs[8].pArg = (void *) &( kernelROIX );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( kernelROIY );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { ( size_t )( pOutput->imgProps.width ) / 2,
-                                 ( size_t )( pOutput->imgProps.height ) / 2 };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert UYVY to NV12 OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ResizeFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel,
-                                              cl_mem bufferSrc, uint32_t srcOffset,
-                                              cl_mem bufferDst, uint32_t dstOffset,
-                                              const RideHal_SharedBuffer_t *pInput,
-                                              const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 14;
-    OpenclIfcae_Arg_t OpenclArgs[14];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( m_config.ROIs[inputId].height );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( m_config.ROIs[inputId].width );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( m_config.outputHeight );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( m_config.outputWidth );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    OpenclArgs[8].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-    OpenclArgs[10].pArg = (void *) &( pInput->imgProps.stride[1] );
-    OpenclArgs[10].argSize = sizeof( cl_int );
-    OpenclArgs[11].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[11].argSize = sizeof( cl_int );
-    uint32_t kernelROIX =
-            m_config.ROIs[inputId].x / m_config.ROIs[inputId].width * m_config.outputWidth;
-    uint32_t kernelROIY =
-            m_config.ROIs[inputId].y / m_config.ROIs[inputId].height * m_config.outputHeight;
-    OpenclArgs[12].pArg = (void *) &( kernelROIX );
-    OpenclArgs[12].argSize = sizeof( cl_int );
-    OpenclArgs[13].pArg = (void *) &( kernelROIY );
-    OpenclArgs[13].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ResizeFromUYVYToRGB( uint32_t inputId, cl_kernel *pKernel,
-                                              cl_mem bufferSrc, uint32_t srcOffset,
-                                              cl_mem bufferDst, uint32_t dstOffset,
-                                              const RideHal_SharedBuffer_t *pInput,
-                                              const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 12;
-    OpenclIfcae_Arg_t OpenclArgs[12];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( m_config.ROIs[inputId].height );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( m_config.ROIs[inputId].width );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( m_config.outputHeight );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( m_config.outputWidth );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    OpenclArgs[8].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-    uint32_t kernelROIX =
-            m_config.ROIs[inputId].x / m_config.ROIs[inputId].width * m_config.outputWidth;
-    uint32_t kernelROIY =
-            m_config.ROIs[inputId].y / m_config.ROIs[inputId].height * m_config.outputHeight;
-    OpenclArgs[10].pArg = (void *) &( kernelROIX );
-    OpenclArgs[10].argSize = sizeof( cl_int );
-    OpenclArgs[11].pArg = (void *) &( kernelROIY );
-    OpenclArgs[11].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ResizeFromUYVYToNV12( uint32_t inputId, cl_kernel *pKernel,
-                                               cl_mem bufferSrc, uint32_t srcOffset,
-                                               cl_mem bufferDst, uint32_t dstOffset,
-                                               const RideHal_SharedBuffer_t *pInput,
-                                               const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 16;
-    OpenclIfcae_Arg_t OpenclArgs[16];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( m_config.ROIs[inputId].height );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( m_config.ROIs[inputId].width );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( m_config.outputHeight );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( m_config.outputWidth );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    OpenclArgs[8].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-    OpenclArgs[10].pArg = (void *) &( pOutput->imgProps.planeBufSize[0] );
-    OpenclArgs[10].argSize = sizeof( cl_int );
-    OpenclArgs[11].pArg = (void *) &( pOutput->imgProps.stride[1] );
-    OpenclArgs[11].argSize = sizeof( cl_int );
-    uint32_t kernelROIX =
-            m_config.ROIs[inputId].x / m_config.ROIs[inputId].width * m_config.outputWidth;
-    uint32_t kernelROIY =
-            m_config.ROIs[inputId].y / m_config.ROIs[inputId].height * m_config.outputHeight;
-    OpenclArgs[12].pArg = (void *) &( kernelROIX );
-    OpenclArgs[12].argSize = sizeof( cl_int );
-    OpenclArgs[13].pArg = (void *) &( kernelROIY );
-    OpenclArgs[13].argSize = sizeof( cl_int );
-    OpenclArgs[14].pArg = (void *) &( pOutput->imgProps.height );
-    OpenclArgs[14].argSize = sizeof( cl_int );
-    OpenclArgs[15].pArg = (void *) &( pOutput->imgProps.width );
-    OpenclArgs[15].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::LetterboxFromNV12ToRGB( uint32_t inputId, cl_kernel *pKernel,
-                                                 cl_mem bufferSrc, uint32_t srcOffset,
-                                                 cl_mem bufferDst, uint32_t dstOffset,
-                                                 const RideHal_SharedBuffer_t *pInput,
-                                                 const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 17;
-    OpenclIfcae_Arg_t OpenclArgs[17];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( m_config.ROIs[inputId].height );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( m_config.ROIs[inputId].width );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( m_config.outputHeight );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( m_config.outputWidth );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    OpenclArgs[8].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-    OpenclArgs[10].pArg = (void *) &( pInput->imgProps.stride[1] );
-    OpenclArgs[10].argSize = sizeof( cl_int );
-    OpenclArgs[11].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[11].argSize = sizeof( cl_int );
-    uint32_t kernelROIX = m_config.ROIs[inputId].x;
-    uint32_t kernelROIY = m_config.ROIs[inputId].y;
-    OpenclArgs[12].pArg = (void *) &( kernelROIX );
-    OpenclArgs[12].argSize = sizeof( cl_int );
-    OpenclArgs[13].pArg = (void *) &( kernelROIY );
-    OpenclArgs[13].argSize = sizeof( cl_int );
-    float inputRatio = (float) m_config.ROIs[inputId].height / (float) m_config.ROIs[inputId].width;
-    float outputRatio = (float) ( pOutput->imgProps.height ) / (float) ( pOutput->imgProps.width );
-    OpenclArgs[14].pArg = (void *) &( inputRatio );
-    OpenclArgs[14].argSize = sizeof( cl_float );
-    OpenclArgs[15].pArg = (void *) &( outputRatio );
-    OpenclArgs[15].argSize = sizeof( cl_float );
-    OpenclArgs[16].pArg = (void *) &( m_config.letterboxPaddingValue );
-    OpenclArgs[16].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ResizeFromRGBToRGB( uint32_t inputId, cl_kernel *pKernel, cl_mem bufferSrc,
-                                             uint32_t srcOffset, cl_mem bufferDst,
-                                             uint32_t dstOffset,
-                                             const RideHal_SharedBuffer_t *pInput,
-                                             const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    size_t numOfArgs = 12;
-    OpenclIfcae_Arg_t OpenclArgs[12];
-    OpenclArgs[0].pArg = (void *) &bufferSrc;
-    OpenclArgs[0].argSize = sizeof( cl_mem );
-    OpenclArgs[1].pArg = (void *) &srcOffset;
-    OpenclArgs[1].argSize = sizeof( cl_int );
-    OpenclArgs[2].pArg = (void *) &bufferDst;
-    OpenclArgs[2].argSize = sizeof( cl_mem );
-    OpenclArgs[3].pArg = (void *) &dstOffset;
-    OpenclArgs[3].argSize = sizeof( cl_int );
-    OpenclArgs[4].pArg = (void *) &( m_config.ROIs[inputId].height );
-    OpenclArgs[4].argSize = sizeof( cl_int );
-    OpenclArgs[5].pArg = (void *) &( m_config.ROIs[inputId].width );
-    OpenclArgs[5].argSize = sizeof( cl_int );
-    OpenclArgs[6].pArg = (void *) &( m_config.outputHeight );
-    OpenclArgs[6].argSize = sizeof( cl_int );
-    OpenclArgs[7].pArg = (void *) &( m_config.outputWidth );
-    OpenclArgs[7].argSize = sizeof( cl_int );
-    OpenclArgs[8].pArg = (void *) &( pInput->imgProps.stride[0] );
-    OpenclArgs[8].argSize = sizeof( cl_int );
-    OpenclArgs[9].pArg = (void *) &( pOutput->imgProps.stride[0] );
-    OpenclArgs[9].argSize = sizeof( cl_int );
-    uint32_t kernelROIX =
-            m_config.ROIs[inputId].x / m_config.ROIs[inputId].width * m_config.outputWidth;
-    uint32_t kernelROIY =
-            m_config.ROIs[inputId].y / m_config.ROIs[inputId].height * m_config.outputHeight;
-    OpenclArgs[10].pArg = (void *) &( kernelROIX );
-    OpenclArgs[10].argSize = sizeof( cl_int );
-    OpenclArgs[11].pArg = (void *) &( kernelROIY );
-    OpenclArgs[11].argSize = sizeof( cl_int );
-
-    OpenclIface_WorkParams_t OpenclWorkParams;
-    OpenclWorkParams.workDim = 2;
-    size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-    OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-    size_t globalWorkOffset[2] = { 0, 0 };
-    OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-    /*set local work size to NULL, device would choose optimal size automatically*/
-    OpenclWorkParams.pLocalWorkSize = NULL;
-
-    ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::LetterboxFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
-                                                         cl_mem bufferSrc, uint32_t srcOffset,
-                                                         cl_mem bufferDst, uint32_t dstOffset,
-                                                         const RideHal_SharedBuffer_t *pInput,
-                                                         const RideHal_SharedBuffer_t *pOutput,
-                                                         const CL2DFlex_ROIConfig_t *pROIs )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    for ( int i = 0; i < numROIs; i++ )
-    {
-        if ( ( ( pROIs[i].x + pROIs[i].width ) <= pInput->imgProps.width ) &&
-             ( ( pROIs[i].y + pROIs[i].height ) <= pInput->imgProps.height ) )
-        {
-            ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
-            ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;
-            ( (int *) m_roiBuffer.data() )[i * 4 + 2] = pROIs[i].width;
-            ( (int *) m_roiBuffer.data() )[i * 4 + 3] = pROIs[i].height;
-        }
-        else
-        {
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-            RIDEHAL_ERROR( "Invalid roi parameter for inputId=%d\n!", i );
-            break;
-        }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        cl_mem roiBufferCL;
-        ret = m_OpenclSrvObj.RegBuf( &( m_roiBuffer.buffer ), &roiBufferCL );
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to register roi buffer!" );
-        }
-        else
-        {
-            size_t numOfArgs = 12;
-            OpenclIfcae_Arg_t OpenclArgs[12];
-            OpenclArgs[0].pArg = (void *) &bufferSrc;
-            OpenclArgs[0].argSize = sizeof( cl_mem );
-            OpenclArgs[1].pArg = (void *) &srcOffset;
-            OpenclArgs[1].argSize = sizeof( cl_int );
-            OpenclArgs[2].pArg = (void *) &bufferDst;
-            OpenclArgs[2].argSize = sizeof( cl_mem );
-            OpenclArgs[3].pArg = (void *) &dstOffset;
-            OpenclArgs[3].argSize = sizeof( cl_int );
-            OpenclArgs[4].pArg = (void *) &roiBufferCL;
-            OpenclArgs[4].argSize = sizeof( cl_mem );
-            OpenclArgs[5].pArg = (void *) &( m_config.outputHeight );
-            OpenclArgs[5].argSize = sizeof( cl_int );
-            OpenclArgs[6].pArg = (void *) &( m_config.outputWidth );
-            OpenclArgs[6].argSize = sizeof( cl_int );
-            OpenclArgs[7].pArg = (void *) &( pInput->imgProps.stride[0] );
-            OpenclArgs[7].argSize = sizeof( cl_int );
-            OpenclArgs[8].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
-            OpenclArgs[8].argSize = sizeof( cl_int );
-            OpenclArgs[9].pArg = (void *) &( pInput->imgProps.stride[1] );
-            OpenclArgs[9].argSize = sizeof( cl_int );
-            OpenclArgs[10].pArg = (void *) &( pOutput->imgProps.stride[0] );
-            OpenclArgs[10].argSize = sizeof( cl_int );
-            OpenclArgs[11].pArg = (void *) &( m_config.letterboxPaddingValue );
-            OpenclArgs[11].argSize = sizeof( cl_int );
-
-            OpenclIface_WorkParams_t OpenclWorkParams;
-            OpenclWorkParams.workDim = 3;
-            size_t globalWorkSize[3] = { numROIs, pOutput->imgProps.width,
-                                         pOutput->imgProps.height };
-            OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-            size_t globalWorkOffset[3] = { 0, 0, 0 };
-            OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-            /*set local work size to NULL, device would choose optimal size automatically*/
-            OpenclWorkParams.pLocalWorkSize = NULL;
-
-            ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-                ret = RIDEHAL_ERROR_FAIL;
-            }
-
-            ret = m_OpenclSrvObj.DeregBuf( &( m_roiBuffer.buffer ) );
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to deregister roi buffer!" );
-            }
-        }
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ResizeFromNV12ToRGBMultiple( uint32_t numROIs, cl_kernel *pKernel,
-                                                      cl_mem bufferSrc, uint32_t srcOffset,
-                                                      cl_mem bufferDst, uint32_t dstOffset,
-                                                      const RideHal_SharedBuffer_t *pInput,
-                                                      const RideHal_SharedBuffer_t *pOutput,
-                                                      const CL2DFlex_ROIConfig_t *pROIs )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    for ( int i = 0; i < numROIs; i++ )
-    {
-        if ( ( ( pROIs[i].x + pROIs[i].width ) <= pInput->imgProps.width ) &&
-             ( ( pROIs[i].y + pROIs[i].height ) <= pInput->imgProps.height ) )
-        {
-            ( (int *) m_roiBuffer.data() )[i * 4 + 0] = pROIs[i].x;
-            ( (int *) m_roiBuffer.data() )[i * 4 + 1] = pROIs[i].y;
-            ( (int *) m_roiBuffer.data() )[i * 4 + 2] = pROIs[i].width;
-            ( (int *) m_roiBuffer.data() )[i * 4 + 3] = pROIs[i].height;
-        }
-        else
-        {
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-            RIDEHAL_ERROR( "Invalid roi parameter for inputId=%d\n!", i );
-            break;
-        }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        cl_mem roiBufferCL;
-        ret = m_OpenclSrvObj.RegBuf( &( m_roiBuffer.buffer ), &roiBufferCL );
-        if ( RIDEHAL_ERROR_NONE != ret )
-        {
-            RIDEHAL_ERROR( "Failed to register roi buffer!" );
-        }
-        else
-        {
-            size_t numOfArgs = 11;
-            OpenclIfcae_Arg_t OpenclArgs[11];
-            OpenclArgs[0].pArg = (void *) &bufferSrc;
-            OpenclArgs[0].argSize = sizeof( cl_mem );
-            OpenclArgs[1].pArg = (void *) &srcOffset;
-            OpenclArgs[1].argSize = sizeof( cl_int );
-            OpenclArgs[2].pArg = (void *) &bufferDst;
-            OpenclArgs[2].argSize = sizeof( cl_mem );
-            OpenclArgs[3].pArg = (void *) &dstOffset;
-            OpenclArgs[3].argSize = sizeof( cl_int );
-            OpenclArgs[4].pArg = (void *) &roiBufferCL;
-            OpenclArgs[4].argSize = sizeof( cl_mem );
-            OpenclArgs[5].pArg = (void *) &( m_config.outputHeight );
-            OpenclArgs[5].argSize = sizeof( cl_int );
-            OpenclArgs[6].pArg = (void *) &( m_config.outputWidth );
-            OpenclArgs[6].argSize = sizeof( cl_int );
-            OpenclArgs[7].pArg = (void *) &( pInput->imgProps.stride[0] );
-            OpenclArgs[7].argSize = sizeof( cl_int );
-            OpenclArgs[8].pArg = (void *) &( pInput->imgProps.planeBufSize[0] );
-            OpenclArgs[8].argSize = sizeof( cl_int );
-            OpenclArgs[9].pArg = (void *) &( pInput->imgProps.stride[1] );
-            OpenclArgs[9].argSize = sizeof( cl_int );
-            OpenclArgs[10].pArg = (void *) &( pOutput->imgProps.stride[0] );
-            OpenclArgs[10].argSize = sizeof( cl_int );
-
-            OpenclIface_WorkParams_t OpenclWorkParams;
-            OpenclWorkParams.workDim = 3;
-            size_t globalWorkSize[3] = { numROIs, pOutput->imgProps.width,
-                                         pOutput->imgProps.height };
-            OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-            size_t globalWorkOffset[3] = { 0, 0, 0 };
-            OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-            /*set local work size to NULL, device would choose optimal size automatically*/
-            OpenclWorkParams.pLocalWorkSize = NULL;
-
-            ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
-                ret = RIDEHAL_ERROR_FAIL;
-            }
-
-            ret = m_OpenclSrvObj.DeregBuf( &( m_roiBuffer.buffer ) );
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to deregister roi buffer!" );
-            }
-        }
-    }
-
-    return ret;
-}
-
-RideHalError_e CL2DFlex::ConvertFromNV12UBWCToNV12( uint32_t inputId, cl_kernel *pKernel,
-                                                    const RideHal_SharedBuffer_t *pInput,
-                                                    const RideHal_SharedBuffer_t *pOutput )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-
-    uint32_t outputSize = ( uint32_t )( pOutput->size ) / ( pOutput->imgProps.batchSize );
-    void *pSrc = pInput->data();
-    void *pDst = &( (uint8_t *) pOutput->data() )[inputId * outputSize];
-    cl_mem bufferSrc;
-    cl_mem bufferDst;
-    cl_mem bufferSrcY;
-    cl_mem bufferDstY;
-    cl_mem bufferSrcUV;
-    cl_mem bufferDstUV;
-
-    cl_image_format inputImageFormat = { 0 };
-    inputImageFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12;
-    inputImageFormat.image_channel_data_type = CL_UNORM_INT8;
-    cl_image_desc inputImageDesc = { 0 };
-    inputImageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-    inputImageDesc.image_width = (size_t) m_config.outputWidth;
-    inputImageDesc.image_height = (size_t) m_config.outputHeight;
-    ret = m_OpenclSrvObj.RegImage( pSrc, pInput->buffer.dmaHandle, &bufferSrc, &inputImageFormat,
-                                   &inputImageDesc );
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register input image!" );
-    }
-    else
-    {
-        cl_image_format outputImageFormat = { 0 };
-        outputImageFormat.image_channel_order = CL_QCOM_NV12;
-        outputImageFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc outputImageDesc = { 0 };
-        outputImageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        outputImageDesc.image_width = (size_t) m_config.outputWidth;
-        outputImageDesc.image_height = (size_t) m_config.outputHeight;
-        ret = m_OpenclSrvObj.RegImage( pDst, pOutput->buffer.dmaHandle, &bufferDst,
-                                       &outputImageFormat, &outputImageDesc );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register output image!" );
-    }
-    else
-    {
-        cl_image_format inputYFormat = { 0 };
-        inputYFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_Y;
-        inputYFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc inputYDesc = { 0 };
-        inputYDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        inputYDesc.image_width = (size_t) m_config.outputWidth;
-        inputYDesc.image_height = (size_t) m_config.outputHeight;
-        inputYDesc.mem_object = bufferSrc;
-        ret = m_OpenclSrvObj.RegPlane( &bufferSrcY, &inputYFormat, &inputYDesc );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register input Y plane!" );
-    }
-    else
-    {
-        cl_image_format outputYFormat = { 0 };
-        outputYFormat.image_channel_order = CL_QCOM_NV12_Y;
-        outputYFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc outputYDesc = { 0 };
-        outputYDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        outputYDesc.image_width = (size_t) m_config.outputWidth;
-        outputYDesc.image_height = (size_t) m_config.outputHeight;
-        outputYDesc.mem_object = bufferDst;
-        ret = m_OpenclSrvObj.RegPlane( &bufferDstY, &outputYFormat, &outputYDesc );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register output Y plane!" );
-    }
-    else
-    {
-        cl_image_format inputUVFormat = { 0 };
-        inputUVFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_UV;
-        inputUVFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc inputUVDesc = { 0 };
-        inputUVDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        inputUVDesc.image_width = (size_t) m_config.outputWidth;
-        inputUVDesc.image_height = (size_t) m_config.outputHeight;
-        inputUVDesc.mem_object = bufferSrc;
-        ret = m_OpenclSrvObj.RegPlane( &bufferSrcUV, &inputUVFormat, &inputUVDesc );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register input UV plane!" );
-    }
-    else
-    {
-        cl_image_format outputUVFormat = { 0 };
-        outputUVFormat.image_channel_order = CL_QCOM_NV12_UV;
-        outputUVFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc outputUVDesc = { 0 };
-        outputUVDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        outputUVDesc.image_width = (size_t) m_config.outputWidth;
-        outputUVDesc.image_height = (size_t) m_config.outputHeight;
-        outputUVDesc.mem_object = bufferDst;
-        ret = m_OpenclSrvObj.RegPlane( &bufferDstUV, &outputUVFormat, &outputUVDesc );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register output UV plane!" );
-    }
-    else
-    {
-        size_t numOfArgs = 3;
-        OpenclIfcae_Arg_t OpenclArgs[3];
-        OpenclArgs[0].pArg = (void *) &bufferSrcY;
-        OpenclArgs[0].argSize = sizeof( bufferSrcY );
-        OpenclArgs[1].pArg = (void *) &bufferDstY;
-        OpenclArgs[1].argSize = sizeof( bufferDstY );
-        OpenclArgs[2].pArg = (void *) &( m_OpenclSrvObj.m_sampler );
-        OpenclArgs[2].argSize = sizeof( m_OpenclSrvObj.m_sampler );
-
-        OpenclIface_WorkParams_t OpenclWorkParams;
-        OpenclWorkParams.workDim = 2;
-        size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-        OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-        size_t globalWorkOffset[2] = { 0, 0 };
-        OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-        /*set local work size to NULL, device would choose optimal size automatically*/
-        OpenclWorkParams.pLocalWorkSize = NULL;
-
-        ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert UBWC to NV12 OpenCL kernel for Y plane!" );
-    }
-    else
-    {
-        size_t numOfArgs = 3;
-        OpenclIfcae_Arg_t OpenclArgs[3];
-        OpenclArgs[0].pArg = (void *) &bufferSrcUV;
-        OpenclArgs[0].argSize = sizeof( bufferSrcUV );
-        OpenclArgs[1].pArg = (void *) &bufferDstUV;
-        OpenclArgs[1].argSize = sizeof( bufferDstUV );
-        OpenclArgs[2].pArg = (void *) &( m_OpenclSrvObj.m_sampler );
-        OpenclArgs[2].argSize = sizeof( m_OpenclSrvObj.m_sampler );
-
-        OpenclIface_WorkParams_t OpenclWorkParams;
-        OpenclWorkParams.workDim = 2;
-        size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-        OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-        size_t globalWorkOffset[2] = { 0, 0 };
-        OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-        /*set local work size to NULL, device would choose optimal size automatically*/
-        OpenclWorkParams.pLocalWorkSize = NULL;
-
-        ret = m_OpenclSrvObj.Execute( pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute convert UBWC to NV12 OpenCL kernel for UV plane!" );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-    else
-    {
-        (void) m_OpenclSrvObj.DeregImage( &bufferSrc );
-        (void) m_OpenclSrvObj.DeregImage( &bufferDst );
-        (void) m_OpenclSrvObj.DeregImage( &bufferSrcY );
-        (void) m_OpenclSrvObj.DeregImage( &bufferDstY );
-        (void) m_OpenclSrvObj.DeregImage( &bufferSrcUV );
-        (void) m_OpenclSrvObj.DeregImage( &bufferDstUV );
-    }
-
-    return ret;
-}
-
 RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, const uint32_t numInputs,
                                   const RideHal_SharedBuffer_t *pOutput )
 {
@@ -1286,126 +375,49 @@ RideHalError_e CL2DFlex::Execute( const RideHal_SharedBuffer_t *pInputs, const u
     }
     else
     {
-        cl_mem bufferDst;
-        ret = m_OpenclSrvObj.RegBuf( &( pOutput->buffer ), &bufferDst );
-        if ( RIDEHAL_ERROR_NONE != ret )
+        for ( uint32_t inputId = 0; inputId < numInputs; inputId++ )
         {
-            RIDEHAL_ERROR( "Failed to register output buffer!" );
-        }
-        else
-        {
-            for ( uint32_t inputId = 0; inputId < numInputs; inputId++ )
+            if ( nullptr == pInputs[inputId].data() )
             {
-                if ( nullptr == pInputs[inputId].data() )
+                RIDEHAL_ERROR( "Input buffer data is null for inputId=%d!", inputId );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pInputs[inputId].type )
+            {
+                RIDEHAL_ERROR( "Input buffer is not image type for inputId=%d!", inputId );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else if ( m_config.inputFormats[inputId] != pInputs[inputId].imgProps.format )
+            {
+                RIDEHAL_ERROR( "Input image format not match for inputId=%d!", inputId );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else if ( m_config.inputWidths[inputId] != pInputs[inputId].imgProps.width )
+            {
+                RIDEHAL_ERROR( "Input image width not match for inputId=%d!", inputId );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else if ( m_config.inputHeights[inputId] != pInputs[inputId].imgProps.height )
+            {
+                RIDEHAL_ERROR( "Input image height not match for inputId=%d!", inputId );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            }
+            else
+            {
+                if ( nullptr == m_pCL2DPipeline[inputId] )
                 {
-                    RIDEHAL_ERROR( "Input buffer data is null for inputId=%d!", inputId );
-                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                }
-                else if ( RIDEHAL_BUFFER_TYPE_IMAGE != pInputs[inputId].type )
-                {
-                    RIDEHAL_ERROR( "Input buffer is not image type for inputId=%d!", inputId );
-                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                }
-                else if ( m_config.inputFormats[inputId] != pInputs[inputId].imgProps.format )
-                {
-                    RIDEHAL_ERROR( "Input image format not match for inputId=%d!", inputId );
-                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                }
-                else if ( m_config.inputWidths[inputId] != pInputs[inputId].imgProps.width )
-                {
-                    RIDEHAL_ERROR( "Input image width not match for inputId=%d!", inputId );
-                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                }
-                else if ( m_config.inputHeights[inputId] != pInputs[inputId].imgProps.height )
-                {
-                    RIDEHAL_ERROR( "Input image height not match for inputId=%d!", inputId );
-                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                    RIDEHAL_ERROR( "Pipeline not setup for inputId=%d!", inputId );
+                    ret = RIDEHAL_ERROR_FAIL;
                 }
                 else
                 {
-                    cl_mem bufferSrc;
-                    ret = m_OpenclSrvObj.RegBuf( &( pInputs[inputId].buffer ), &bufferSrc );
-                    if ( RIDEHAL_ERROR_NONE != ret )
-                    {
-                        RIDEHAL_ERROR( "Failed to register input buffer for inputId=%d!", inputId );
-                    }
-                    else
-                    {
-                        uint32_t srcOffset = pInputs[inputId].offset;
-                        uint32_t sizeOne =
-                                ( uint32_t )( pOutput->size ) / ( pOutput->imgProps.batchSize );
-                        uint32_t dstOffset = ( uint32_t )( pOutput->offset ) + inputId * sizeOne;
-                        if ( CL2DFLEX_PIPELINE_CONVERT_NV12_TO_RGB == m_pipelines[inputId] )
-                        {
-                            ret = ConvertFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                        srcOffset, bufferDst, dstOffset,
-                                                        &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB ==
-                                  m_pipelines[inputId] )
-                        {
-                            ret = ResizeFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                       srcOffset, bufferDst, dstOffset,
-                                                       &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_RGB == m_pipelines[inputId] )
-                        {
-                            ret = ConvertFromUYVYToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                        srcOffset, bufferDst, dstOffset,
-                                                        &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB ==
-                                  m_pipelines[inputId] )
-                        {
-                            ret = ResizeFromUYVYToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                       srcOffset, bufferDst, dstOffset,
-                                                       &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12 == m_pipelines[inputId] )
-                        {
-                            ret = ConvertFromUYVYToNV12( inputId, &m_kernel[inputId], bufferSrc,
-                                                         srcOffset, bufferDst, dstOffset,
-                                                         &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12 ==
-                                  m_pipelines[inputId] )
-                        {
-                            ret = ResizeFromUYVYToNV12( inputId, &m_kernel[inputId], bufferSrc,
-                                                        srcOffset, bufferDst, dstOffset,
-                                                        &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB ==
-                                  m_pipelines[inputId] )
-                        {
-                            ret = LetterboxFromNV12ToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                          srcOffset, bufferDst, dstOffset,
-                                                          &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB ==
-                                  m_pipelines[inputId] )
-                        {
-                            ret = ResizeFromRGBToRGB( inputId, &m_kernel[inputId], bufferSrc,
-                                                      srcOffset, bufferDst, dstOffset,
-                                                      &pInputs[inputId], pOutput );
-                        }
-                        else if ( CL2DFLEX_PIPELINE_CONVERT_NV12UBWC_TO_NV12 ==
-                                  m_pipelines[inputId] )
-                        {
-                            ret = ConvertFromNV12UBWCToNV12( inputId, &m_kernel[inputId],
-                                                             &pInputs[inputId], pOutput );
-                        }
-                        else
-                        {
-                            RIDEHAL_ERROR( "Invalid CL2DFlex pipeline for inputId=%d!", inputId );
-                            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                        }
-                    }
+                    ret = m_pCL2DPipeline[inputId]->Execute( &pInputs[inputId], pOutput );
                 }
-                if ( RIDEHAL_ERROR_NONE != ret )
-                {
-                    RIDEHAL_ERROR( "Failed to run OpenCL kernel for inputId=%d!", inputId );
-                    break;
-                }
+            }
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                RIDEHAL_ERROR( "Failed to execute pipeline for inputId=%d!", inputId );
+                break;
             }
         }
     }
@@ -1502,54 +514,19 @@ RideHalError_e CL2DFlex::ExecuteWithROI( const RideHal_SharedBuffer_t *pInput,
     }
     else
     {
-        cl_mem bufferDst;
-        ret = m_OpenclSrvObj.RegBuf( &( pOutput->buffer ), &bufferDst );
-        if ( RIDEHAL_ERROR_NONE != ret )
+        if ( nullptr == m_pCL2DPipeline[0] )
         {
-            RIDEHAL_ERROR( "Failed to register output buffer!" );
+            RIDEHAL_ERROR( "Pipeline not setup for inputId=0!" );
+            ret = RIDEHAL_ERROR_FAIL;
         }
         else
         {
-            cl_mem bufferSrc;
-            ret = m_OpenclSrvObj.RegBuf( &( pInput->buffer ), &bufferSrc );
-            if ( RIDEHAL_ERROR_NONE != ret )
-            {
-                RIDEHAL_ERROR( "Failed to register input buffer" );
-            }
-            else
-            {
-                if ( RIDEHAL_ERROR_NONE == ret )
-                {
-                    if ( CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB_MULTIPLE ==
-                         m_pipelines[0] )
-                    {
-                        uint32_t srcOffset = pInput->offset;
-                        uint32_t dstOffset = pOutput->offset;
-                        ret = LetterboxFromNV12ToRGBMultiple( numROIs, &m_kernel[0], bufferSrc,
-                                                              srcOffset, bufferDst, dstOffset,
-                                                              pInput, pOutput, pROIs );
-                    }
-                    else if ( CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB_MULTIPLE ==
-                              m_pipelines[0] )
-                    {
-                        uint32_t srcOffset = pInput->offset;
-                        uint32_t dstOffset = pOutput->offset;
-                        ret = ResizeFromNV12ToRGBMultiple( numROIs, &m_kernel[0], bufferSrc,
-                                                           srcOffset, bufferDst, dstOffset, pInput,
-                                                           pOutput, pROIs );
-                    }
-                    else
-                    {
-                        RIDEHAL_ERROR( "Invalid CL2DFlex pipeline!" );
-                        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
-                    }
+            ret = m_pCL2DPipeline[0]->ExecuteWithROI( pInput, pOutput, pROIs, numROIs );
+        }
 
-                    if ( RIDEHAL_ERROR_NONE != ret )
-                    {
-                        RIDEHAL_ERROR( "Failed to run OpenCL kernel!" );
-                    }
-                }
-            }
+        if ( RIDEHAL_ERROR_NONE != ret )
+        {
+            RIDEHAL_ERROR( "Failed to execute pipeline with ROI!" );
         }
     }
 

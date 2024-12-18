@@ -980,7 +980,6 @@ void CoverageTest()
     ret = OpenclSrvObj.Deinit();   // success deinit
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
-
     cl_mem *clMem;
     ret = OpenclSrvObj.RegBuf( &( input.buffer ), clMem );   // register without init
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
