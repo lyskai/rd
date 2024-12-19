@@ -29,7 +29,7 @@ RideHalError_e CL2DPipelineConvertUBWC::Init( uint32_t inputId, cl_kernel *pKern
          ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) )
     {
         m_pipeline = CL2DFLEX_PIPELINE_CONVERT_NV12UBWC_TO_NV12;
-        ret = m_pOpenclSrvObj->CreateKernel( pKernel, "Compress" );
+        ret = m_pOpenclSrvObj->CreateKernel( pKernel, "ConvertUBWC" );
     }
     else
     {

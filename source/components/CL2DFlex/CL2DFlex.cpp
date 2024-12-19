@@ -4,7 +4,6 @@
 
 
 #include "ridehal/component/CL2DFlex.hpp"
-#include "CL2DFlex.cl.h"
 #include "include/CL2DPipelineBase.hpp"
 #include "include/CL2DPipelineConvert.hpp"
 #include "include/CL2DPipelineConvertUBWC.hpp"
@@ -12,6 +11,7 @@
 #include "include/CL2DPipelineLetterboxMultiple.hpp"
 #include "include/CL2DPipelineResize.hpp"
 #include "include/CL2DPipelineResizeMultiple.hpp"
+#include "kernel/CL2DFlex.cl.h"
 
 namespace ridehal
 {

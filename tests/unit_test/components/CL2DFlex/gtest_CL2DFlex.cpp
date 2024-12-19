@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "CL2DFlex.cl.h"
+#include "kernel/CL2DFlex.cl.h"
 #include "md5_utils.hpp"
 #include "ridehal/component/CL2DFlex.hpp"
 
