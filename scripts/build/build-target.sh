@@ -14,6 +14,13 @@ target=$1
 # Toplevel build dir
 topdir=$(realpath $2)
 
+# Linux kernel variant: rh, oe
+if [ $# -eq 3 ] ; then
+variant=$3
+else
+variant=oe
+fi
+
 # Build directory
 workdir=$topdir/bld-$target
 
@@ -266,14 +273,14 @@ aarch64-qnx)
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;
 aarch64-linux)
-    cp -vf $QNN_SDK_ROOT/bin/aarch64-rh-linux-gcc9.3/* $destdir/opt/ridehal/bin
-    cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
+    cp -vf $QNN_SDK_ROOT/bin/aarch64-${variant}-linux-gcc9.3/* $destdir/opt/ridehal/bin
+    cp -vf $QNN_SDK_ROOT/lib/aarch64-${variant}-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;
 aarch64-ubuntu)
-    cp -vf $QNN_SDK_ROOT/bin/aarch64-rh-linux-gcc9.3/* $destdir/opt/ridehal/bin
-    cp -vf $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
+    cp -vf $QNN_SDK_ROOT/bin/aarch64-${variant}-linux-gcc9.3/* $destdir/opt/ridehal/bin
+    cp -vf $QNN_SDK_ROOT/lib/aarch64-${variant}-linux-gcc9.3/libQnn* $destdir/opt/ridehal/lib
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     cp -vf $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/libQnn* $destdir/opt/ridehal/lib/dsp
     ;;

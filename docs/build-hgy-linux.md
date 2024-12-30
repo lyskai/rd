@@ -193,8 +193,8 @@ make DESTDIR=$WORKSPACE install
 
 - copy QNN library to RideHal
 ```sh
-cp $QNN_SDK_ROOT/bin/aarch64-rh-linux-gcc9.3/* $DST_DIR/bin
-cp $QNN_SDK_ROOT/lib/aarch64-rh-linux-gcc9.3/* $DST_DIR/lib
+cp $QNN_SDK_ROOT/bin/aarch64-oe-linux-gcc9.3/* $DST_DIR/bin
+cp $QNN_SDK_ROOT/lib/aarch64-oe-linux-gcc9.3/* $DST_DIR/lib
 cp $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/libQnn* $DST_DIR/lib/dsp
 ```
 
