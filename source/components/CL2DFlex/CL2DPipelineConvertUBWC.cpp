@@ -251,15 +251,6 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
         RIDEHAL_ERROR( "Failed to execute ConvertUBWC UBWC to NV12 OpenCL kernel for UV plane!" );
         ret = RIDEHAL_ERROR_FAIL;
     }
-    else
-    {
-        (void) m_pOpenclSrvObj->DeregImage( &bufferSrc );
-        (void) m_pOpenclSrvObj->DeregImage( &bufferDst );
-        (void) m_pOpenclSrvObj->DeregImage( &bufferSrcY );
-        (void) m_pOpenclSrvObj->DeregImage( &bufferDstY );
-        (void) m_pOpenclSrvObj->DeregImage( &bufferSrcUV );
-        (void) m_pOpenclSrvObj->DeregImage( &bufferDstUV );
-    }
 
     return ret;
 }

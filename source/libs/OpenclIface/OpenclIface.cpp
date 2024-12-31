@@ -260,7 +260,7 @@ RideHalError_e OpenclSrv::Deinit()
         ret = RIDEHAL_ERROR_FAIL;
     }
 
-    for ( auto &it : m_memMap )
+    for ( auto &it : m_bufferMap )
     {
         retCL = clReleaseMemObject( it.second.clMem );
         if ( CL_SUCCESS != retCL )
@@ -268,7 +268,27 @@ RideHalError_e OpenclSrv::Deinit()
             RIDEHAL_ERROR( "Unable to deregister buffer %d", it.first );
         }
     }
-    m_memMap.clear();
+    m_bufferMap.clear();
+
+    for ( auto &it : m_imageMap )
+    {
+        retCL = clReleaseMemObject( it.second.clMem );
+        if ( CL_SUCCESS != retCL )
+        {
+            RIDEHAL_ERROR( "Unable to deregister image %d", it.first );
+        }
+    }
+    m_imageMap.clear();
+
+    for ( auto &it : m_planeMap )
+    {
+        retCL = clReleaseMemObject( it.second.clMem );
+        if ( CL_SUCCESS != retCL )
+        {
+            RIDEHAL_ERROR( "Unable to deregister plane %d", it.first );
+        }
+    }
+    m_planeMap.clear();
 
     retCL = clReleaseSampler( m_sampler );
     if ( CL_SUCCESS != retCL )
@@ -301,8 +321,8 @@ RideHalError_e OpenclSrv::RegBuf( const RideHal_Buffer_t *pBuffer, cl_mem *pBuff
     }
     else
     {
-        auto it = m_memMap.find( pBuffer->pData );
-        if ( it == m_memMap.end() )
+        auto it = m_bufferMap.find( pBuffer->pData );
+        if ( it == m_bufferMap.end() )
         {
 #if defined( __QNXNTO__ )
             cl_mem_pmem_host_ptr clBufHostPtr = { 0 };
@@ -331,7 +351,7 @@ RideHalError_e OpenclSrv::RegBuf( const RideHal_Buffer_t *pBuffer, cl_mem *pBuff
             }
             else
             {
-                m_memMap[pBuffer->pData] = { bufferCL };
+                m_bufferMap[pBuffer->pData] = { bufferCL };
                 *pBufferCL = bufferCL;
             }
         }
@@ -350,36 +370,52 @@ RideHalError_e OpenclSrv::RegImage( void *pData, uint64_t dmaHandle, cl_mem *pBu
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
 
-#if defined( __QNXNTO__ )
-    cl_mem_pmem_host_ptr clBufHostPtr = { { 0 } };
-    clBufHostPtr.pmem_handle = (uintptr_t) 0;
-    clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_PMEM_HOST_PTR_QCOM;
-    clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
-    clBufHostPtr.pmem_hostptr = pData;
-    cl_mem bufferCL = clCreateImage(
-            m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, pFormat,
-            pDesc, &clBufHostPtr, &retCL );
-#else
-    cl_mem_dmabuf_host_ptr clBufHostPtr = { { 0 } };
-    clBufHostPtr.dmabuf_filedesc = (int) dmaHandle;
-    clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_DMABUF_HOST_PTR_QCOM;
-    clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
-    clBufHostPtr.dmabuf_hostptr = pData;
-    cl_mem bufferCL = clCreateImage(
-            m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM, pFormat,
-            pDesc, &clBufHostPtr, &retCL );
-#endif
-
-    if ( CL_SUCCESS != retCL )
+    if ( nullptr == pData )
     {
-        RIDEHAL_ERROR( "Unable to create CL image, retCL = %d", retCL );
-        ret = RIDEHAL_ERROR_FAIL;
+        RIDEHAL_ERROR( "null data pointer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        *pBufferCL = bufferCL;
-    }
+        auto it = m_imageMap.find( pData );
+        if ( it == m_imageMap.end() )
+        {
+#if defined( __QNXNTO__ )
+            cl_mem_pmem_host_ptr clBufHostPtr = { { 0 } };
+            clBufHostPtr.pmem_handle = (uintptr_t) 0;
+            clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_PMEM_HOST_PTR_QCOM;
+            clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
+            clBufHostPtr.pmem_hostptr = pData;
+            cl_mem bufferCL = clCreateImage(
+                    m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
+                    pFormat, pDesc, &clBufHostPtr, &retCL );
+#else
+            cl_mem_dmabuf_host_ptr clBufHostPtr = { { 0 } };
+            clBufHostPtr.dmabuf_filedesc = (int) dmaHandle;
+            clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_DMABUF_HOST_PTR_QCOM;
+            clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_UNCACHED_QCOM;
+            clBufHostPtr.dmabuf_hostptr = pData;
+            cl_mem bufferCL = clCreateImage(
+                    m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,
+                    pFormat, pDesc, &clBufHostPtr, &retCL );
+#endif
 
+            if ( CL_SUCCESS != retCL )
+            {
+                RIDEHAL_ERROR( "Unable to create CL image, retCL = %d", retCL );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                m_imageMap[pData] = { bufferCL };
+                *pBufferCL = bufferCL;
+            }
+        }
+        else
+        {
+            *pBufferCL = it->second.clMem;
+        }
+    }
 
     return ret;
 }
@@ -390,18 +426,37 @@ RideHalError_e OpenclSrv::RegPlane( cl_mem *pBufferCL, cl_image_format *pFormat,
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
 
-    cl_mem bufferCL =
-            clCreateImage( m_context, CL_MEM_READ_WRITE, pFormat, pDesc, nullptr, &retCL );
-
-    if ( CL_SUCCESS != retCL )
+    std::pair<void *, uint32_t> key;
+    key.first = pDesc->mem_object;
+    if ( nullptr == key.first )
     {
-        RIDEHAL_ERROR( "Unable to create CL image, retCL = %d", retCL );
-        ret = RIDEHAL_ERROR_FAIL;
+        RIDEHAL_ERROR( "null image CL buffer pointer!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
     {
-        m_memMap[bufferCL] = { bufferCL };
-        *pBufferCL = bufferCL;
+        key.second = pFormat->image_channel_order;
+        auto it = m_planeMap.find( key );
+        if ( it == m_planeMap.end() )
+        {
+            cl_mem bufferCL =
+                    clCreateImage( m_context, CL_MEM_READ_WRITE, pFormat, pDesc, nullptr, &retCL );
+
+            if ( CL_SUCCESS != retCL )
+            {
+                RIDEHAL_ERROR( "Unable to create CL image, retCL = %d", retCL );
+                ret = RIDEHAL_ERROR_FAIL;
+            }
+            else
+            {
+                m_planeMap[key] = { bufferCL };
+                *pBufferCL = bufferCL;
+            }
+        }
+        else
+        {
+            *pBufferCL = it->second.clMem;
+        }
     }
 
     return ret;
@@ -419,8 +474,8 @@ RideHalError_e OpenclSrv::DeregBuf( const RideHal_Buffer_t *pBuffer )
     }
     else
     {
-        auto it = m_memMap.find( pBuffer->pData );
-        if ( it != m_memMap.end() )
+        auto it = m_bufferMap.find( pBuffer->pData );
+        if ( it != m_bufferMap.end() )
         {
             retCL = clReleaseMemObject( it->second.clMem );
             if ( CL_SUCCESS != retCL )
@@ -430,7 +485,7 @@ RideHalError_e OpenclSrv::DeregBuf( const RideHal_Buffer_t *pBuffer )
             }
             else
             {
-                (void) m_memMap.erase( it );
+                (void) m_bufferMap.erase( it );
             }
         }
     }
@@ -438,16 +493,50 @@ RideHalError_e OpenclSrv::DeregBuf( const RideHal_Buffer_t *pBuffer )
     return ret;
 }
 
-RideHalError_e OpenclSrv::DeregImage( const cl_mem *pBufferCL )
+RideHalError_e OpenclSrv::DeregImage( void *pData )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
 
-    retCL = clReleaseMemObject( *pBufferCL );
-    if ( CL_SUCCESS != retCL )
+    auto it = m_imageMap.find( pData );
+    if ( it != m_imageMap.end() )
     {
-        RIDEHAL_ERROR( "Unable to release CL buffer, retCL = %d", retCL );
-        ret = RIDEHAL_ERROR_FAIL;
+        retCL = clReleaseMemObject( it->second.clMem );
+        if ( CL_SUCCESS != retCL )
+        {
+            RIDEHAL_ERROR( "Unable to release CL image, retCL = %d", retCL );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        else
+        {
+            (void) m_imageMap.erase( it );
+        }
+    }
+
+    return ret;
+}
+
+RideHalError_e OpenclSrv::DeregPlane( cl_image_format *pFormat, cl_image_desc *pDesc )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    cl_int retCL = CL_SUCCESS;
+
+    std::pair<void *, uint32_t> key;
+    key.first = pDesc->mem_object;
+    key.second = pFormat->image_channel_order;
+    auto it = m_planeMap.find( key );
+    if ( it != m_planeMap.end() )
+    {
+        retCL = clReleaseMemObject( it->second.clMem );
+        if ( CL_SUCCESS != retCL )
+        {
+            RIDEHAL_ERROR( "Unable to release CL plane, retCL = %d", retCL );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+        else
+        {
+            (void) m_planeMap.erase( it );
+        }
     }
 
     return ret;

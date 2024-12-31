@@ -151,11 +151,20 @@ public:
 
     /**
      * @brief Deregister the OpenclIface image
-     * @param[in] pBufferCL the OpenCL memory buffer pointer
+     * @param[in] pBufferCL the OpenCL memory image pointer
      * @return RIDEHAL_ERROR_NONE on success, others on failure
-     * @note Release the OpenCL memory buffer of image or plane.
+     * @note Release the OpenCL memory buffer of image.
      */
-    RideHalError_e DeregImage( const cl_mem *pBufferCL );
+    RideHalError_e DeregImage( void *pData );
+
+    /**
+     * @brief Deregister the OpenclIface plane
+     * @param[in] pFormat the cl image format pointer
+     * @param[in] pDesc the cl image descriptor pointer
+     * @return RIDEHAL_ERROR_NONE on success, others on failure
+     * @note Release the OpenCL memory buffer of single plane.
+     */
+    RideHalError_e DeregPlane( cl_image_format *pFormat, cl_image_desc *pDesc );
 
     /**
      * @brief Execute the OpenclIface kernel
@@ -172,13 +181,16 @@ public:
 
 
 private:
-    cl_platform_id m_platformID;                      /**OpenCL platform ID*/
-    cl_device_id m_deviceID;                          /**OpenCL device ID*/
-    cl_command_queue m_commandQueue;                  /**OpenCL command queue*/
-    cl_context m_context;                             /**OpenCL context*/
-    cl_program m_program;                             /**OpenCL program*/
-    std::map<void *, OpenclIface_MemInfo_t> m_memMap; /**OpenCL memory map*/
-    std::map<std::string, cl_kernel> m_kernelMap;     /**OpenCL kernel map*/
+    cl_platform_id m_platformID;                         /**OpenCL platform ID*/
+    cl_device_id m_deviceID;                             /**OpenCL device ID*/
+    cl_command_queue m_commandQueue;                     /**OpenCL command queue*/
+    cl_context m_context;                                /**OpenCL context*/
+    cl_program m_program;                                /**OpenCL program*/
+    std::map<void *, OpenclIface_MemInfo_t> m_bufferMap; /**OpenCL buffer memory map*/
+    std::map<void *, OpenclIface_MemInfo_t> m_imageMap;  /**OpenCL image memory map*/
+    std::map<std::pair<void *, uint32_t>, OpenclIface_MemInfo_t>
+            m_planeMap;                           /**OpenCL plane memory map*/
+    std::map<std::string, cl_kernel> m_kernelMap; /**OpenCL kernel map*/
 
 public:
     cl_sampler m_sampler; /**OpenCL sampler*/
