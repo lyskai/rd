@@ -18,8 +18,8 @@ mkdir -p $destdir || exit 1
 mkdir -p $workdir && cd $workdir || exit 1
 
 # workaround to fix include issues
-CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT -I$TOOLCHAIN_SYSROOT/usr/include/linux-ark"
-CXXFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT -I$TOOLCHAIN_SYSROOT/usr/include/linux-ark"
+CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT"
+CXXFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT"
 
 # workaround to fix link issue of standard libs
 LDFLAGS="--sysroot=$TOOLCHAIN_SYSROOT"

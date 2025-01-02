@@ -76,8 +76,8 @@ export STRIP=aarch64-linux-gnu-strip
 
 - Set toolchain flags
 ```sh
-export CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT -I$TOOLCHAIN_SYSROOT/usr/include/linux-ark"
-export CXXFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT -I$TOOLCHAIN_SYSROOT/usr/include/linux-ark"
+export CFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT"
+export CXXFLAGS="-O3 -g --sysroot=$TOOLCHAIN_SYSROOT"
 export LDFLAGS="--sysroot=$TOOLCHAIN_SYSROOT"
 export LDFLAGS="$LDFLAGS -L$TOOLCHAIN_SYSROOT/usr/lib/aarch64-linux-gnu"
 ```
@@ -109,7 +109,11 @@ set( CMAKE_CXX_COMPILER_TARGET ${arch} )
 set( CMAKE_SYSROOT $ENV{UBUNTU_TARGET} )
 
 add_link_options( "-L$ENV{UBUNTU_TARGET}/usr/lib/aarch64-linux-gnu" )
-include_directories( $ENV{UBUNTU_TARGET}/usr/include/linux-ark )
+if(EXISTS $ENV{UBUNTU_TARGET}/usr/include/linux-ark)
+include_directories( $ENV{UBUNTU_TARGET}/usr/include/linux-ark)
+else()
+include_directories( $ENV{UBUNTU_TARGET}/usr/include/linux-qcom-custom-rt)
+endif()
 ```
 Set the cmake toolchain env:
 ```sh
