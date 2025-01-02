@@ -4,6 +4,7 @@ stages:
   - start
   - build
   - test
+  - eval
   - pack
 
 start:
@@ -107,6 +108,21 @@ gtest-linux:
       when: on_success
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
       when: on_success
+  timeout: 1h
+
+perf-eval-ubuntu:
+  stage: eval
+  script:
+    - echo "Start running perf evaluation for ubuntu"
+    - sh /data/scripts/run_perf_eval_ubuntu.sh
+  tags:
+    - ridehal-dev
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: on_success
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: on_success
+  allow_failure: true
   timeout: 1h
 
 generate packages:
