@@ -8,6 +8,10 @@ import numpy as np
 import argparse
 from nuscenes.nuscenes import NuScenes
 
+CWD = os.path.dirname(__file__)
+if CWD == '':
+    CWD = '.'
+
 parser = argparse.ArgumentParser(
     description='convert lidar pointcloud from nuScenes dataset to inputs of the Sample DataReader')
 
@@ -15,9 +19,9 @@ parser.add_argument('-r', '--range', type=str, default="-10.0 10.0 -40.0 40.0 -3
                     help='the range of points: [minX, maxX, minY, maxY, minZ, maxZ]',
                     required=False)
 
-parser.add_argument('-p', '--path', type=str, default="/mnt/nas_server4/jiawyou/nuScenes/",
+parser.add_argument('-p', '--path', type=str,
                     help='the root path of nuScenes dataset',
-                    required=False)
+                    required=True)
 
 parser.add_argument('-n', '--num_of_samples', type=int, default=100,
                     help='generate n samples from nuScenes dataset',
@@ -33,9 +37,10 @@ args = parser.parse_args()
 minX, maxX, minY, maxY, minZ, maxZ = [float(x) for x in args.range.split(' ')]
 
 if not os.path.exists('/tmp/rgb2yuv'):
-    if 0 != os.system('gcc %s/rgb2yuv.c -o /tmp/rgb2yuv' %(os.getcwd())):
+    if 0 != os.system('gcc %s/rgb2yuv.c -o /tmp/rgb2yuv' %(CWD)):
         print("failed to compile the simple host color convert tool /tmp/rgb2yuv")
         exit()
+
 
 def create_nuscenes_infos(root_path,
                           version='v1.0-trainval'
