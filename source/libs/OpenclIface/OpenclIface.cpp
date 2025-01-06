@@ -393,7 +393,7 @@ RideHalError_e OpenclSrv::RegImage( void *pData, uint64_t dmaHandle, cl_mem *pBu
             cl_mem_dmabuf_host_ptr clBufHostPtr = { { 0 } };
             clBufHostPtr.dmabuf_filedesc = (int) dmaHandle;
             clBufHostPtr.ext_host_ptr.allocation_type = CL_MEM_DMABUF_HOST_PTR_QCOM;
-            clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_UNCACHED_QCOM;
+            clBufHostPtr.ext_host_ptr.host_cache_policy = CL_MEM_HOST_IOCOHERENT_QCOM;
             clBufHostPtr.dmabuf_hostptr = pData;
             cl_mem bufferCL = clCreateImage(
                     m_context, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR | CL_MEM_EXT_HOST_PTR_QCOM,

@@ -23,8 +23,8 @@ RideHalError_e CL2DPipelineConvertUBWC::Init( uint32_t inputId, cl_kernel *pKern
     m_pOpenclSrvObj = pOpenclSrvObj;
     m_config = *pConfig;
 
-    if ( ( m_config.outputWidth == m_config.inputWidths[m_inputId] ) &&
-         ( m_config.outputHeight == m_config.inputHeights[m_inputId] ) &&
+    if ( ( m_config.outputWidth == m_config.ROIs[m_inputId].width ) &&
+         ( m_config.outputHeight == m_config.ROIs[m_inputId].height ) &&
          ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == m_config.inputFormats[m_inputId] ) &&
          ( RIDEHAL_IMAGE_FORMAT_NV12 == m_config.outputFormat ) )
     {
@@ -87,15 +87,12 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
-    uint32_t outputSize = ( uint32_t )( pOutput->size ) / ( pOutput->imgProps.batchSize );
-    void *pSrc = pInput->data();
-    void *pDst = &( (uint8_t *) pOutput->data() )[m_inputId * outputSize];
+    uint32_t sizeOne = ( uint32_t )( pOutput->size ) / ( pOutput->imgProps.batchSize );
+    uint32_t dstOffset = ( uint32_t )( pOutput->offset ) + m_inputId * sizeOne;
     cl_mem bufferSrc;
     cl_mem bufferDst;
     cl_mem bufferSrcY;
-    cl_mem bufferDstY;
     cl_mem bufferSrcUV;
-    cl_mem bufferDstUV;
 
     cl_image_format inputImageFormat = { 0 };
     inputImageFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12;
@@ -104,8 +101,8 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
     inputImageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
     inputImageDesc.image_width = (size_t) m_config.outputWidth;
     inputImageDesc.image_height = (size_t) m_config.outputHeight;
-    ret = m_pOpenclSrvObj->RegImage( pSrc, pInput->buffer.dmaHandle, &bufferSrc, &inputImageFormat,
-                                     &inputImageDesc );
+    ret = m_pOpenclSrvObj->RegImage( pInput->data(), pInput->buffer.dmaHandle, &bufferSrc,
+                                     &inputImageFormat, &inputImageDesc );
 
     if ( RIDEHAL_ERROR_NONE != ret )
     {
@@ -113,15 +110,7 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
     }
     else
     {
-        cl_image_format outputImageFormat = { 0 };
-        outputImageFormat.image_channel_order = CL_QCOM_NV12;
-        outputImageFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc outputImageDesc = { 0 };
-        outputImageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        outputImageDesc.image_width = (size_t) m_config.outputWidth;
-        outputImageDesc.image_height = (size_t) m_config.outputHeight;
-        ret = m_pOpenclSrvObj->RegImage( pDst, pOutput->buffer.dmaHandle, &bufferDst,
-                                         &outputImageFormat, &outputImageDesc );
+        ret = m_pOpenclSrvObj->RegBuf( &( pOutput->buffer ), &bufferDst );
     }
 
     if ( RIDEHAL_ERROR_NONE != ret )
@@ -147,23 +136,6 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
     }
     else
     {
-        cl_image_format outputYFormat = { 0 };
-        outputYFormat.image_channel_order = CL_QCOM_NV12_Y;
-        outputYFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc outputYDesc = { 0 };
-        outputYDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        outputYDesc.image_width = (size_t) m_config.outputWidth;
-        outputYDesc.image_height = (size_t) m_config.outputHeight;
-        outputYDesc.mem_object = bufferDst;
-        ret = m_pOpenclSrvObj->RegPlane( &bufferDstY, &outputYFormat, &outputYDesc );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register output Y plane!" );
-    }
-    else
-    {
         cl_image_format inputUVFormat = { 0 };
         inputUVFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_UV;
         inputUVFormat.image_channel_data_type = CL_UNORM_INT8;
@@ -181,35 +153,36 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
     }
     else
     {
-        cl_image_format outputUVFormat = { 0 };
-        outputUVFormat.image_channel_order = CL_QCOM_NV12_UV;
-        outputUVFormat.image_channel_data_type = CL_UNORM_INT8;
-        cl_image_desc outputUVDesc = { 0 };
-        outputUVDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        outputUVDesc.image_width = (size_t) m_config.outputWidth;
-        outputUVDesc.image_height = (size_t) m_config.outputHeight;
-        outputUVDesc.mem_object = bufferDst;
-        ret = m_pOpenclSrvObj->RegPlane( &bufferDstUV, &outputUVFormat, &outputUVDesc );
-    }
 
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to register output UV plane!" );
-    }
-    else
-    {
-        size_t numOfArgs = 3;
-        OpenclIfcae_Arg_t OpenclArgs[3];
+        size_t numOfArgs = 10;
+        OpenclIfcae_Arg_t OpenclArgs[10];
         OpenclArgs[0].pArg = (void *) &bufferSrcY;
         OpenclArgs[0].argSize = sizeof( bufferSrcY );
-        OpenclArgs[1].pArg = (void *) &bufferDstY;
-        OpenclArgs[1].argSize = sizeof( bufferDstY );
+        OpenclArgs[1].pArg = (void *) &bufferSrcUV;
+        OpenclArgs[1].argSize = sizeof( bufferSrcUV );
         OpenclArgs[2].pArg = (void *) &( m_pOpenclSrvObj->m_sampler );
         OpenclArgs[2].argSize = sizeof( m_pOpenclSrvObj->m_sampler );
+        OpenclArgs[3].pArg = (void *) &bufferDst;
+        OpenclArgs[3].argSize = sizeof( cl_mem );
+        OpenclArgs[4].pArg = (void *) &dstOffset;
+        OpenclArgs[4].argSize = sizeof( cl_int );
+        OpenclArgs[5].pArg = (void *) &( pOutput->imgProps.stride[0] );
+        OpenclArgs[5].argSize = sizeof( cl_int );
+        OpenclArgs[6].pArg = (void *) &( pOutput->imgProps.planeBufSize[0] );
+        OpenclArgs[6].argSize = sizeof( cl_int );
+        OpenclArgs[7].pArg = (void *) &( pOutput->imgProps.stride[1] );
+        OpenclArgs[7].argSize = sizeof( cl_int );
+        uint32_t kernelROIX = m_config.ROIs[m_inputId].x;
+        uint32_t kernelROIY = m_config.ROIs[m_inputId].y;
+        OpenclArgs[8].pArg = (void *) &( kernelROIX );
+        OpenclArgs[8].argSize = sizeof( cl_int );
+        OpenclArgs[9].pArg = (void *) &( kernelROIY );
+        OpenclArgs[9].argSize = sizeof( cl_int );
 
         OpenclIface_WorkParams_t OpenclWorkParams;
         OpenclWorkParams.workDim = 2;
-        size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
+        size_t globalWorkSize[2] = { (size_t) pOutput->imgProps.width,
+                                     (size_t) pOutput->imgProps.height };
         OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
         size_t globalWorkOffset[2] = { 0, 0 };
         OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
@@ -221,34 +194,7 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
 
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        RIDEHAL_ERROR( "Failed to execute ConvertUBWC UBWC to NV12 OpenCL kernel for Y plane!" );
-    }
-    else
-    {
-        size_t numOfArgs = 3;
-        OpenclIfcae_Arg_t OpenclArgs[3];
-        OpenclArgs[0].pArg = (void *) &bufferSrcUV;
-        OpenclArgs[0].argSize = sizeof( bufferSrcUV );
-        OpenclArgs[1].pArg = (void *) &bufferDstUV;
-        OpenclArgs[1].argSize = sizeof( bufferDstUV );
-        OpenclArgs[2].pArg = (void *) &( m_pOpenclSrvObj->m_sampler );
-        OpenclArgs[2].argSize = sizeof( m_pOpenclSrvObj->m_sampler );
-
-        OpenclIface_WorkParams_t OpenclWorkParams;
-        OpenclWorkParams.workDim = 2;
-        size_t globalWorkSize[2] = { pOutput->imgProps.width, pOutput->imgProps.height };
-        OpenclWorkParams.pGlobalWorkSize = globalWorkSize;
-        size_t globalWorkOffset[2] = { 0, 0 };
-        OpenclWorkParams.pGlobalWorkOffset = globalWorkOffset;
-        /*set local work size to NULL, device would choose optimal size automatically*/
-        OpenclWorkParams.pLocalWorkSize = NULL;
-
-        ret = m_pOpenclSrvObj->Execute( m_pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
-    }
-
-    if ( RIDEHAL_ERROR_NONE != ret )
-    {
-        RIDEHAL_ERROR( "Failed to execute ConvertUBWC UBWC to NV12 OpenCL kernel for UV plane!" );
+        RIDEHAL_ERROR( "Failed to execute ConvertUBWC UBWC to NV12 OpenCL kernel!" );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
