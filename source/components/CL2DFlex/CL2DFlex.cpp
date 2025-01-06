@@ -278,8 +278,69 @@ RideHalError_e CL2DFlex::RegisterBuffers( const RideHal_SharedBuffer_t *pBuffers
     {
         for ( uint32_t i = 0; i < numBuffers; i++ )
         {
-            cl_mem bufferCL;
-            ret = m_OpenclSrvObj.RegBuf( &( pBuffers[i].buffer ), &bufferCL );
+            if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == pBuffers[i].imgProps.format )
+            {
+                RideHalError_e retVal = RIDEHAL_ERROR_NONE;
+                cl_mem bufferSrc;
+                cl_mem bufferSrcY;
+                cl_mem bufferSrcUV;
+                cl_image_format inputImageFormat = { 0 };
+                inputImageFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12;
+                inputImageFormat.image_channel_data_type = CL_UNORM_INT8;
+                cl_image_desc inputImageDesc = { 0 };
+                inputImageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
+                inputImageDesc.image_width = (size_t) pBuffers[i].imgProps.width;
+                inputImageDesc.image_height = (size_t) pBuffers[i].imgProps.height;
+                retVal = m_OpenclSrvObj.RegImage( pBuffers[i].data(), pBuffers[i].buffer.dmaHandle,
+                                                  &bufferSrc, &inputImageFormat, &inputImageDesc );
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to register input NV12 UBWC image!" );
+                }
+                else
+                {
+                    cl_image_format inputYFormat = { 0 };
+                    inputYFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_Y;
+                    inputYFormat.image_channel_data_type = CL_UNORM_INT8;
+                    cl_image_desc inputYDesc = { 0 };
+                    inputYDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
+                    inputYDesc.image_width = (size_t) m_config.outputWidth;
+                    inputYDesc.image_height = (size_t) m_config.outputHeight;
+                    inputYDesc.mem_object = bufferSrc;
+                    retVal = m_OpenclSrvObj.RegPlane( pBuffers[i].data(), &bufferSrcY,
+                                                      &inputYFormat, &inputYDesc );
+                }
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to register input Y plane!" );
+                }
+                else
+                {
+                    cl_image_format inputUVFormat = { 0 };
+                    inputUVFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_UV;
+                    inputUVFormat.image_channel_data_type = CL_UNORM_INT8;
+                    cl_image_desc inputUVDesc = { 0 };
+                    inputUVDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
+                    inputUVDesc.image_width = (size_t) m_config.outputWidth;
+                    inputUVDesc.image_height = (size_t) m_config.outputHeight;
+                    inputUVDesc.mem_object = bufferSrc;
+                    retVal = m_OpenclSrvObj.RegPlane( pBuffers[i].data(), &bufferSrcUV,
+                                                      &inputUVFormat, &inputUVDesc );
+                }
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to register input UV plane!" );
+                }
+            }
+            else
+            {
+                cl_mem bufferCL;
+                ret = m_OpenclSrvObj.RegBuf( &( pBuffers[i].buffer ), &bufferCL );
+            }
+
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to register buffer for number %d!", i );
@@ -311,7 +372,42 @@ RideHalError_e CL2DFlex::DeRegisterBuffers( const RideHal_SharedBuffer_t *pBuffe
     {
         for ( uint32_t i = 0; i < numBuffers; i++ )
         {
-            ret = m_OpenclSrvObj.DeregBuf( &( pBuffers[i].buffer ) );
+            if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == pBuffers[i].imgProps.format )
+            {
+                RideHalError_e retVal = RIDEHAL_ERROR_NONE;
+                retVal = m_OpenclSrvObj.DeregImage( pBuffers[i].data() );
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to deregister input NV12 UBWC image!" );
+                }
+                else
+                {
+                    cl_image_format inputYFormat = { 0 };
+                    inputYFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_Y;
+                    retVal = m_OpenclSrvObj.DeregPlane( pBuffers[i].data(), &inputYFormat );
+                }
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to deregister input Y plane!" );
+                }
+                else
+                {
+                    cl_image_format inputUVFormat = { 0 };
+                    inputUVFormat.image_channel_order = CL_QCOM_COMPRESSED_NV12_UV;
+                    retVal = m_OpenclSrvObj.DeregPlane( pBuffers[i].data(), &inputUVFormat );
+                }
+                if ( RIDEHAL_ERROR_NONE != retVal )
+                {
+                    ret = RIDEHAL_ERROR_FAIL;
+                    RIDEHAL_ERROR( "Failed to deregister input UV plane!" );
+                }
+            }
+            else
+            {
+                ret = m_OpenclSrvObj.DeregBuf( &( pBuffers[i].buffer ) );
+            }
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Failed to deregister buffer for number %d!", i );

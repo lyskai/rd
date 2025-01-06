@@ -131,6 +131,7 @@ public:
                              cl_image_format *pFormat, cl_image_desc *pDesc );
     /**
      * @brief Register a single plane of image buffer
+     * @param[in] pData the image data pointer to register
      * @param[in] pBufferCL the OpenCL memory buffer pointer
      * @param[in] pFormat the cl image format pointer
      * @param[in] pDesc the cl image descriptor pointer
@@ -138,7 +139,8 @@ public:
      * @note Create an OpenCL memory buffer in image format and register a single plane of image
      * such as Y or UV plane of NV12 image to it.
      */
-    RideHalError_e RegPlane( cl_mem *pBufferCL, cl_image_format *pFormat, cl_image_desc *pDesc );
+    RideHalError_e RegPlane( void *pData, cl_mem *pBufferCL, cl_image_format *pFormat,
+                             cl_image_desc *pDesc );
 
     /**
      * @brief Deregister the OpenclIface buffer
@@ -151,7 +153,7 @@ public:
 
     /**
      * @brief Deregister the OpenclIface image
-     * @param[in] pBufferCL the OpenCL memory image pointer
+     * @param[in] pData the image data pointer to deregister
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      * @note Release the OpenCL memory buffer of image.
      */
@@ -159,12 +161,12 @@ public:
 
     /**
      * @brief Deregister the OpenclIface plane
+     * @param[in] pData the image data pointer to deregister
      * @param[in] pFormat the cl image format pointer
-     * @param[in] pDesc the cl image descriptor pointer
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      * @note Release the OpenCL memory buffer of single plane.
      */
-    RideHalError_e DeregPlane( cl_image_format *pFormat, cl_image_desc *pDesc );
+    RideHalError_e DeregPlane( void *pData, cl_image_format *pFormat );
 
     /**
      * @brief Execute the OpenclIface kernel

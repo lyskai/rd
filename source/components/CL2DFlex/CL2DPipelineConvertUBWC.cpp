@@ -99,8 +99,8 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
     inputImageFormat.image_channel_data_type = CL_UNORM_INT8;
     cl_image_desc inputImageDesc = { 0 };
     inputImageDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-    inputImageDesc.image_width = (size_t) m_config.outputWidth;
-    inputImageDesc.image_height = (size_t) m_config.outputHeight;
+    inputImageDesc.image_width = (size_t) pInput->imgProps.width;
+    inputImageDesc.image_height = (size_t) pInput->imgProps.height;
     ret = m_pOpenclSrvObj->RegImage( pInput->data(), pInput->buffer.dmaHandle, &bufferSrc,
                                      &inputImageFormat, &inputImageDesc );
 
@@ -124,10 +124,10 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
         inputYFormat.image_channel_data_type = CL_UNORM_INT8;
         cl_image_desc inputYDesc = { 0 };
         inputYDesc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        inputYDesc.image_width = (size_t) m_config.outputWidth;
-        inputYDesc.image_height = (size_t) m_config.outputHeight;
+        inputYDesc.image_width = (size_t) pOutput->imgProps.width;
+        inputYDesc.image_height = (size_t) pOutput->imgProps.height;
         inputYDesc.mem_object = bufferSrc;
-        ret = m_pOpenclSrvObj->RegPlane( &bufferSrcY, &inputYFormat, &inputYDesc );
+        ret = m_pOpenclSrvObj->RegPlane( pInput->data(), &bufferSrcY, &inputYFormat, &inputYDesc );
     }
 
     if ( RIDEHAL_ERROR_NONE != ret )
@@ -144,7 +144,8 @@ CL2DPipelineConvertUBWC::ConvertUBWCFromNV12UBWCToNV12( const RideHal_SharedBuff
         inputUVDesc.image_width = (size_t) m_config.outputWidth;
         inputUVDesc.image_height = (size_t) m_config.outputHeight;
         inputUVDesc.mem_object = bufferSrc;
-        ret = m_pOpenclSrvObj->RegPlane( &bufferSrcUV, &inputUVFormat, &inputUVDesc );
+        ret = m_pOpenclSrvObj->RegPlane( pInput->data(), &bufferSrcUV, &inputUVFormat,
+                                         &inputUVDesc );
     }
 
     if ( RIDEHAL_ERROR_NONE != ret )

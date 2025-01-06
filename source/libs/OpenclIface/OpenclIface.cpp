@@ -420,17 +420,17 @@ RideHalError_e OpenclSrv::RegImage( void *pData, uint64_t dmaHandle, cl_mem *pBu
     return ret;
 }
 
-RideHalError_e OpenclSrv::RegPlane( cl_mem *pBufferCL, cl_image_format *pFormat,
+RideHalError_e OpenclSrv::RegPlane( void *pData, cl_mem *pBufferCL, cl_image_format *pFormat,
                                     cl_image_desc *pDesc )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
 
     std::pair<void *, uint32_t> key;
-    key.first = pDesc->mem_object;
+    key.first = pData;
     if ( nullptr == key.first )
     {
-        RIDEHAL_ERROR( "null image CL buffer pointer!" );
+        RIDEHAL_ERROR( "null image CL data pointer!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
     else
@@ -516,13 +516,13 @@ RideHalError_e OpenclSrv::DeregImage( void *pData )
     return ret;
 }
 
-RideHalError_e OpenclSrv::DeregPlane( cl_image_format *pFormat, cl_image_desc *pDesc )
+RideHalError_e OpenclSrv::DeregPlane( void *pData, cl_image_format *pFormat )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
 
     std::pair<void *, uint32_t> key;
-    key.first = pDesc->mem_object;
+    key.first = pData;
     key.second = pFormat->image_channel_order;
     auto it = m_planeMap.find( key );
     if ( it != m_planeMap.end() )
