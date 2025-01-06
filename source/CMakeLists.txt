@@ -20,6 +20,7 @@ set( TARGET_LIBRARIES
     RideHalPostCenterPoint
     RideHalCL2DFlex
     RideHalOpticalFlow
+    RideHalDepthFromStereo
 )
 
 if( NOT TARGET RideHalQnnRuntime )

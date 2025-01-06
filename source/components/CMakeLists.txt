@@ -32,6 +32,7 @@ add_subdirectory(VideoEncoder)
 add_subdirectory(VideoDecoder)
 add_subdirectory(Voxelization)
 add_subdirectory(OpticalFlow)
+add_subdirectory(DepthFromStereo)
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
 	add_subdirectory(GL2DFlex)
