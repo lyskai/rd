@@ -24,6 +24,7 @@
     - [2.20 RideHal OpticalFlowViz Sample](#220-ridehal-opticalflowviz-sample)
     - [2.21 RideHal FrameSync Sample](#221-ridehal-framesync-sample)
     - [2.22 RideHal C2C Sample](#222-ridehal-c2c-sample)
+    - [2.23 RideHal DepthFromStereo Sample](#223-ridehal-depthfromstereo-sample)
   - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
     - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
     - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
@@ -56,7 +57,7 @@ Note: the "-n componentX_name -t componentX_type" must be in the begin for each 
 | parameter | required | type      | comments |
 |-----------|----------|-----------|----------|
 | -n        | true     | string    | The unique component name |
-| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, VideoDecoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex, SharedRing, FpsAdapter, OpticalFlow, OpticalFlowViz, FrameSync, C2C] |
+| -t        | true     | string    | The component type name, options from [DataReader, Camera, Remap, Qnn, C2D, PostProcCenternet, TinyViz, VideoEncoder, VideoDecoder, Recorder, PlrPre, PlrPost, DataOnline, CL2DFlex, PostProcBevdet, GL2DFlex, SharedRing, FpsAdapter, OpticalFlow, OpticalFlowViz, FrameSync, C2C, DepthFromStereo] |
 | -k        | true     | string    | The unique component attribute name |
 | -v        | true     | string    | The attribute value for the previous attribute name |
 | -d        | false    |   -       | Direct the RideHal log to stdout |
@@ -702,6 +703,29 @@ The command line template example:
   -n C2C_CAM0 -t C2C -k channel -v 0 -k type -v sub \
     -k width -v 1920 -k height -v 1080 -k format -v nv12_ubwc\
     -k topic -v /sensor/camera/CAM0/raw \
+```
+
+### 2.23 RideHal DepthFromStereo Sample
+
+| attribute     | required | type      | default | comments |
+|---------------|----------|-----------|---------|----------|
+| direction     | false    | string    | l2r     | the search direction, options from [l2r, r2l] |
+| width         | true     | int       | -       | The input image width |
+| height        | true     | int       | -       | The input image height |
+| format        | false    | string    | nv12    | The input image format, options from [nv12, nv12_ubwc, p010, tp10_ubwc] |
+| pool_size     | false    | int       | 4       | The image memory pool size |
+| fps           | false    | int       | 30      | The frame rate per second |
+| input_topic   | true     | string    | -       | the input topic name |
+| output_topic  | true     | string    | -       | the output topic name |
+
+The command line template example:
+
+```sh
+  -n DFS0 -t DepthFromStereo \
+    -k width -v 1280 -k height -v 416 -k format -v nv12 \
+    -k fps -v 30 -k direction -v l2r \
+    -k input_topic -v /sensor/camera/DFS0/raw \
+    -k output_topic -v /sensor/camera/DFS0/dfs \
 ```
 
 ## 3. Typical RideHal Sample Application pipelines
