@@ -66,18 +66,9 @@ setup_env_qnx() {
             fi
         fi
         source /opt/qnx/env.sh
-
-        if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
-            if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
-                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
-            else
-                echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
-                exit -1
-            fi
-        fi
-        source /opt/qnn_sdk/bin/envsetup.sh
     fi
 
+    setup_qnn_sdk
     sh $homedir/toolchain/build-3rd-party-aarch64-qnx.sh $workdir $destdir
 }
 
@@ -97,16 +88,6 @@ setup_env_linux() {
             cd $LINUX_SDK_ROOT
             echo y | sh ./oecore-x86_64-aarch64-toolchain-nodistro.0.sh -d .
         fi
-
-        if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
-            if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
-                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
-            else
-                echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
-                exit -1
-            fi
-        fi
-        source /opt/qnn_sdk/bin/envsetup.sh
     fi
 
     if [[ -v LINUX_SDK_ROOT ]]; then
@@ -131,6 +112,7 @@ setup_env_linux() {
         exit -1
     fi
 
+    setup_qnn_sdk
     sh $homedir/toolchain/build-3rd-party-aarch64-linux.sh $workdir $destdir
 }
 
@@ -144,13 +126,11 @@ setup_env_ubuntu() {
                 ln -sf $RIDEHAL_TOOLCHAIN_PATH/ubuntu /opt/ubuntu
             fi
         fi
+
         export UBUNTU_SDK_ROOT=/opt/ubuntu
         if [ ! -d $UBUNTU_SDK_ROOT/sysroots/aarch64-oe-linux/usr/include ]; then
             cd $UBUNTU_SDK_ROOT
             echo y | sh ./oecore-x86_64-aarch64-sa8775-ubuntu-toolchain-nodistro.0.sh -d .
-        fi
-        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
-            source $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh
         fi
     fi
 
@@ -159,13 +139,6 @@ setup_env_ubuntu() {
         echo UBUNTU_SDK_ROOT: $UBUNTU_SDK_ROOT
         export UBUNTU_HOST=$UBUNTU_SDK_ROOT/sysroots/x86_64-oesdk-linux
         export UBUNTU_TARGET=$UBUNTU_SDK_ROOT/sysroots/aarch64-oe-linux
-        # export PATH=$UBUNTU_HOST/usr/bin/aarch64-oe-linux:$PATH
-        # Now the gcc toolchain in SDK has issue, use the one installed through
-        # below commands in 20.04, the gcc version is 9.4.0
-        ### apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-        ### rm -rf /lib/ld-linux-aarch64.so.1
-        ### ln -sf /usr/aarch64-linux-gnu/lib/ld-2.31.so /lib/ld-linux-aarch64.so.1
-        ### ln -sf /bin/bash /bin/sh
         export CC=aarch64-linux-gnu-gcc
         export CXX=aarch64-linux-gnu-g++
         export LD=aarch64-linux-gnu-ld
@@ -182,17 +155,22 @@ setup_env_ubuntu() {
         exit -1
     fi
 
-    if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
-        if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
-            ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
-        else
-            echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
-            exit -1
+    setup_qnn_sdk
+    sh $homedir/toolchain/build-3rd-party-aarch64-ubuntu.sh $workdir $destdir
+}
+
+setup_qnn_sdk() {
+    if ! [[ -v QNN_SDK_ROOT ]]; then
+        if [ ! -f /opt/qnn_sdk/bin/envsetup.sh ]; then
+            if [ -f $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk/bin/envsetup.sh ]; then
+                ln -sf $RIDEHAL_TOOLCHAIN_PATH/qnn_sdk /opt/qnn_sdk
+            else
+                echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
+                exit -1
+            fi
+            source /opt/qnn_sdk/bin/envsetup.sh
         fi
     fi
-    source /opt/qnn_sdk/bin/envsetup.sh
-
-    sh $homedir/toolchain/build-3rd-party-aarch64-ubuntu.sh $workdir $destdir
 }
 
 ## Run tests on x86 builds
@@ -333,3 +311,4 @@ tar -C $topdir --xform="s/run/pkg/" --exclude="*.a" \
     --exclude="*.la" --exclude="include" --exclude="share" \
     --exclude="cmake" \
     --use-compress-program=pigz -cf $pkgname run-$target
+
