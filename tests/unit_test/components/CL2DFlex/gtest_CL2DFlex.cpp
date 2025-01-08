@@ -259,7 +259,15 @@ void AccuracyTest( CL2DFlex_Work_Mode_e modeTest, RideHal_ImageFormat_e inputFor
         }
 
         RideHal_SharedBuffer_t input;
-        ret = input.Allocate( &imgProp1 );
+        if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == CL2DFlexConfig.inputFormats[i] )
+        {
+            ret = input.Allocate( CL2DFlexConfig.inputWidths[i], CL2DFlexConfig.inputHeights[i],
+                                  CL2DFlexConfig.inputFormats[i] );
+        }
+        else
+        {
+            ret = input.Allocate( &imgProp1 );
+        }
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         memset( input.data(), 0, input.size );
 
@@ -484,7 +492,15 @@ void PerformanceTest( CL2DFlex_Work_Mode_e modeTest, RideHal_ImageFormat_e input
         }
 
         RideHal_SharedBuffer_t input;
-        ret = input.Allocate( &imgProp1 );
+        if ( RIDEHAL_IMAGE_FORMAT_NV12_UBWC == CL2DFlexConfig.inputFormats[i] )
+        {
+            ret = input.Allocate( CL2DFlexConfig.inputWidths[i], CL2DFlexConfig.inputHeights[i],
+                                  CL2DFlexConfig.inputFormats[i] );
+        }
+        else
+        {
+            ret = input.Allocate( &imgProp1 );
+        }
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         inputs[i] = input;
     }
@@ -951,11 +967,21 @@ void CoverageTest()
     ASSERT_EQ( RIDEHAL_ERROR_FAIL, ret );
 
     ret = OpenclSrvObj.RegBuf( (RideHal_Buffer_t *) nullptr,
-                               nullptr );   // register with null host buffer
+                               nullptr );   // register buffer with null host buffer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     ret = OpenclSrvObj.DeregBuf(
-            (RideHal_Buffer_t *) nullptr );   // deregister with null null host buffer
+            (RideHal_Buffer_t *) nullptr );   // deregister buffer with null null host buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = OpenclSrvObj.RegImage(
+            nullptr, 0, (cl_mem *) nullptr, (cl_image_format *) nullptr,
+            (cl_image_desc *) nullptr );   // register image with null host buffer
+    ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
+
+    ret = OpenclSrvObj.RegPlane(
+            nullptr, (cl_mem *) nullptr, (cl_image_format *) nullptr,
+            (cl_image_desc *) nullptr );   // register plane with null host buffer
     ASSERT_EQ( RIDEHAL_ERROR_BAD_ARGUMENTS, ret );
 
     OpenclIfcae_Arg_t OpenclArg;
@@ -1004,6 +1030,8 @@ TEST( CL2DFlex, ConvertAccuracyTest )
     // md5 of golden1.rgb is 4b528d54b7c5d5164f66719a89f988be
     // md5 of golden2.rgb is f94a6aeae302add0424821660bcd2684
     // md5 of golden3.nv12 is 91ed68589443b87bcfff8ae7e69b03b2
+    // md5 of 0.ubwc is ce5f81f72f9c0ec0c347b1ee55d13584
+    // md5 of golden8.nv12 is 43d33b3417b0b53c594269e5df95e035
     AccuracyTest( CL2DFLEX_WORK_MODE_CONVERT, RIDEHAL_IMAGE_FORMAT_NV12,
                   RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024,
                   "./data/test/CL2DFlex/0.nv12", "./data/test/CL2DFlex/golden1.rgb", false );
@@ -1013,6 +1041,9 @@ TEST( CL2DFlex, ConvertAccuracyTest )
     AccuracyTest( CL2DFLEX_WORK_MODE_CONVERT, RIDEHAL_IMAGE_FORMAT_UYVY, RIDEHAL_IMAGE_FORMAT_NV12,
                   1920, 1024, 1920, 1024, "./data/test/CL2DFlex/0.uyvy",
                   "./data/test/CL2DFlex/golden3.nv12", false );
+    AccuracyTest( CL2DFLEX_WORK_MODE_CONVERT_UBWC, RIDEHAL_IMAGE_FORMAT_NV12_UBWC,
+                  RIDEHAL_IMAGE_FORMAT_NV12, 3840, 2160, 3840, 2160, "./data/test/CL2DFlex/0.ubwc",
+                  "./data/test/CL2DFlex/golden8.nv12", true );
 }
 
 TEST( CL2DFlex, ResizeAccuracyTest )
@@ -1057,6 +1088,9 @@ TEST( CL2DFlex, PerformanceTest )
     printf( "performance test of resize nv12 to rgb\n" );
     PerformanceTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_UYVY,
                      RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1920, 1024, 1152, 800, 100 );
+    printf( "performance test of convert nv12 ubwc to nv12\n" );
+    PerformanceTest( CL2DFLEX_WORK_MODE_CONVERT_UBWC, RIDEHAL_IMAGE_FORMAT_NV12_UBWC,
+                     RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024, 1920, 1024, 1920, 1024, 100 );
 }
 
 TEST( CL2DFlex, MultipleROITest )
