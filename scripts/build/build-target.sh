@@ -168,8 +168,8 @@ setup_qnn_sdk() {
                 echo "qnn_sdk not fould under $RIDEHAL_TOOLCHAIN_PATH"
                 exit -1
             fi
-            source /opt/qnn_sdk/bin/envsetup.sh
         fi
+        source /opt/qnn_sdk/bin/envsetup.sh
     fi
 }
 
