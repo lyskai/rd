@@ -26,6 +26,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleOpticalFlow.cpp
     SampleOpticalFlowViz.cpp
     SampleDepthFromStereo.cpp
+    SampleDepthFromStereoViz.cpp
     SampleFrameSync.cpp
     SysTrace.cpp
 )

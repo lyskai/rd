@@ -55,6 +55,8 @@ private:
     std::string m_inputTopicName;
     std::string m_outputTopicName;
 
+    RideHal_BufferFlags_t m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
+
     std::thread m_thread;
     SharedBufferPool m_dispPool;
     SharedBufferPool m_confPool;

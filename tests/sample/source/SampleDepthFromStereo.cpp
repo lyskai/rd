@@ -39,6 +39,16 @@ RideHalError_e SampleDepthFromStereo::ParseConfig( SampleConfig_t &config )
     m_config.format = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
     m_config.frameRate = Get( config, "fps", 30u );
 
+    bool bCache = Get( config, "cache", true );
+    if ( false == bCache )
+    {
+        m_bufferFlags = 0;
+    }
+    else
+    {
+        m_bufferFlags = RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA;
+    }
+
     m_poolSize = Get( config, "pool_size", 4 );
     if ( 0 == m_poolSize )
     {
@@ -83,7 +93,7 @@ RideHalError_e SampleDepthFromStereo::Init( std::string name, SampleConfig_t &co
                                              4 };
 
         ret = m_dispPool.Init( name + ".disp", LOGGER_LEVEL_INFO, m_poolSize, dispTsProp,
-                               RIDEHAL_BUFFER_USAGE_EVA );
+                               RIDEHAL_BUFFER_USAGE_EVA, m_bufferFlags );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -93,7 +103,7 @@ RideHalError_e SampleDepthFromStereo::Init( std::string name, SampleConfig_t &co
                                              4 };
 
         ret = m_confPool.Init( name + ".conf", LOGGER_LEVEL_INFO, m_poolSize, confTsProp,
-                               RIDEHAL_BUFFER_USAGE_EVA );
+                               RIDEHAL_BUFFER_USAGE_EVA, m_bufferFlags );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -157,6 +167,8 @@ void SampleDepthFromStereo::ThreadMain()
 
                 PROFILER_BEGIN();
                 TRACE_BEGIN( frames.FrameId( 0 ) );
+                memset( disp->sharedBuffer.data(), 0, disp->sharedBuffer.size );
+                memset( conf->sharedBuffer.data(), 0, conf->sharedBuffer.size );
                 ret = m_dfs.Execute( &priImg, &auxImg, &disp->sharedBuffer, &conf->sharedBuffer );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
