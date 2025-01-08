@@ -1043,7 +1043,7 @@ TEST( CL2DFlex, ConvertAccuracyTest )
                   "./data/test/CL2DFlex/golden3.nv12", false );
     AccuracyTest( CL2DFLEX_WORK_MODE_CONVERT_UBWC, RIDEHAL_IMAGE_FORMAT_NV12_UBWC,
                   RIDEHAL_IMAGE_FORMAT_NV12, 3840, 2160, 3840, 2160, "./data/test/CL2DFlex/0.ubwc",
-                  "./data/test/CL2DFlex/golden8.nv12", true );
+                  "./data/test/CL2DFlex/golden8.nv12", false );
 }
 
 TEST( CL2DFlex, ResizeAccuracyTest )
