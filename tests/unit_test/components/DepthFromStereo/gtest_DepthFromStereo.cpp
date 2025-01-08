@@ -112,10 +112,11 @@ static void Eva_DepthFromStereoRun( std::string name, DepthFromStereo_Config_t &
 
     if ( ( false == goldenDispMap.empty() ) && ( false == goldenConfMap.empty() ) )
     {
+#if defined( __QNXNTO__ )
         // for the first run, with below to generate the golden
         SaveRaw( goldenDispMap, dispMap.data(), dispMap.size );
         SaveRaw( goldenConfMap, confMap.data(), confMap.size );
-
+#endif
         ret = dispMapG.Allocate( &dispMapTsProp );
         ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
         ret = confMapG.Allocate( &confMapTsProp );
@@ -168,8 +169,10 @@ TEST( EVA, SANITY_DepthFromStereo )
 {
     DepthFromStereo_Config_t config;
     config.width = 1280;
-    config.height = 400;
-    Eva_DepthFromStereoRun( "DFS0", config );
+    config.height = 416;
+    Eva_DepthFromStereoRun( "DFS0", config, "data/test/dfs/5_left.nv12",
+                            "data/test/dfs/5_right.nv12", "data/test/dfs/5_disp.raw",
+                            "data/test/dfs/5_conf.raw" );
 }
 
 #ifndef GTEST_RIDEHAL
