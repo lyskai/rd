@@ -18,6 +18,7 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleRemap.cpp
     SampleVideoDecoder.cpp
     SampleVideoEncoder.cpp
+    SampleVideoDemuxer.cpp
     SharedBufferPool.cpp
     SampleCL2DFlex.cpp
     SampleDataOnline.cpp
@@ -46,7 +47,7 @@ if( NOT TARGET RideHal )
   message(FATAL_ERROR "RideHal SDK not found")
 endif()
 
-set( TARGET_LIBRARIES RideHal SharedRing )
+set( TARGET_LIBRARIES RideHal SharedRing VidcDemuxer )
 
 if( NOT TARGET TinyViz )
   message(STATUS "build sample without TinyViz")

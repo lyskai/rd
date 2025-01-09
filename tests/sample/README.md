@@ -591,9 +591,10 @@ The command line template example:
 
 | attribute     | required | type      | default | comments |
 |---------------|----------|-----------|---------|----------|
-| width         | true     | int       | -       | The image width |
-| height        | true     | int       | -       | The image height |
-| format        | false    | string    | nv12    | The output image format, options from [nv12, nv12_ubwc, p010] |
+| width         | true     | int       | -       | The frame width |
+| height        | true     | int       | -       | The frame height |
+| input_format  | false    | string    | h265    | The input frame format, options from [h264, h265] |
+| output_format | false    | string    | nv12    | The output image format, options from [nv12, nv12_ubwc, p010] |
 | pool_size     | false    | int       | 4       | The image memory pool size |
 | fps           | false    | int       | 30      | The frame rate per second |
 | input_topic   | true     | string    | -       | the input topic name |
@@ -603,7 +604,9 @@ The command line template example:
 
 ```sh
   -n VDEC1 -t VideoDecoder -k width -v 1920 -k height -v 1024 \
-    -k format -v nv12 -k input_topic -v /sensor/camera/CAM0/hevc \
+    -k input_format -v h265 \
+    -k output_format -v nv12 \
+    -k input_topic -v /sensor/camera/CAM0/hevc \
     -k output_topic -v /sensor/camera/CAM0_DEC/raw \
 ```
 
@@ -751,6 +754,27 @@ The command line template example:
     -k width -v 1280 -k height -v 416 \
     -k input_topic -v /sensor/camera/DFS0/dfs \
     -k output_topic -v /sensor/camera/CAM2/raw \
+```
+
+### 2.25 RideHal VideoDemuxer Sample
+
+| attribute      | required | type      | default | comments |
+|----------------|----------|-----------|---------|----------|
+| input_file     | true     | string    | -       | The input video file path |
+| start_frame_idx| false    | int       | 0       | The index of beginning frame for demuxer |
+| replay_mode    | true     | bool      | false   | The option to enable replay mode |
+| fps            | false    | int       | 30      | The frame rate per second |
+| topic          | true     | string    | -       | the topic name |
+
+The command line template example:
+
+```sh
+  -n VDMUX0 -t VideoDemuxer \
+    -k input_file -v /data/test/test.mp4 \
+    -k replay_mode -v true \
+    -k start_time -v 0 \
+    -k playback_time 2000 \
+    -k topic  -v /sensor/camera/CAM0/hevc
 ```
 
 ## 3. Typical RideHal Sample Application pipelines

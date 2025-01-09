@@ -160,8 +160,8 @@ RideHalError_e SampleVideoDecoder::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
-    m_config.outFormat = Get( config, "format", RIDEHAL_IMAGE_FORMAT_NV12 );
-    m_config.inFormat = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
+    m_config.inFormat = Get( config, "input_format", RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265 );
+    m_config.outFormat = Get( config, "output_format", RIDEHAL_IMAGE_FORMAT_NV12 );
 
     m_config.bInputDynamicMode = true;
     m_config.bOutputDynamicMode = false;

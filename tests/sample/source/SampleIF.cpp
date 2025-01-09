@@ -421,6 +421,14 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         {
             ret = RIDEHAL_IMAGE_FORMAT_TP10_UBWC;
         }
+	else if ( "h264" == format )
+        {
+            ret = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264;
+        }
+        else if ( "h265" == format )
+        {
+            ret = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H265;
+        }
         else
         {
             ret = RIDEHAL_IMAGE_FORMAT_MAX;
