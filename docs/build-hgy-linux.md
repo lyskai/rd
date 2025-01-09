@@ -173,8 +173,11 @@ Unzip QNN SDK package to $WORKSPACE and rename as qnn_sdk.
 ```sh
 source $WORKSPACE/qnn_sdk/bin/envsetup.sh
 ```
+- Prepare multimedia dependency
+    - Find parserinternaldefs.h file in chipcode
+    - copy it to path: $WORKSPACE/linux/sysroots/aarch64-oe-linux/usr/include
 
-- build RideHal SDK:
+- Build RideHal SDK:
 Get source code and put at $WORKSPACE path, then use the following commands to build:
 ```sh
 cd $WORKSPACE/ridehal
