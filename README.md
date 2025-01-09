@@ -21,6 +21,7 @@ Below is a summary information of the current implemented components.
 | [CL2DFlex](./docs/CL2DFlex.md) | YES| Yes| OpenCL | GPU | Color Conversion, Resize |
 | [GL2DFlex](./docs/GL2DFlex.md) | NO | YES| OpenGL | GPU | Color Conversion, ROI Crop, Resize |
 | [OpticalFlow](./docs/OpticalFlow.md) | YES | YES| EVA | EVA | Optical flow |
+| [DepthFromStereo](./docs/DepthFromStereo.md) | YES | YES| EVA | EVA | Depth From Stereo |
 
 # How to build
 

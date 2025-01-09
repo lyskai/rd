@@ -17,6 +17,7 @@
   - [The RideHal CL2DFlex](./CL2DFlex.md)
   - [The RideHal GL2DFlex](./GL2DFlex.md)
   - [The RideHal OpticalFlow](./OpticalFlow.md)
+  - [The RideHal DepthFromStereo](./DepthFromStereo.md)
 
 - The RideHal Sample
   - [The RideHal Sample App](../tests/sample/README.md)
