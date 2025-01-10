@@ -925,6 +925,10 @@ RideHalError_e QnnRuntime::RemoteRegisterBuf( const RideHal_SharedBuffer_t *pSha
         {
             it->second++;
         }
+        else
+        {
+            /* buffer is possbile that remote_register_buf_v2 by others, so do nothing */
+        }
         fd = rpcFd;
     }
 
@@ -958,7 +962,8 @@ RideHalError_e QnnRuntime::RemoteDeRegisterBuf( void *pData, size_t size )
     }
     else
     {
-        RIDEHAL_ERROR( "Can't find buffer %p(%" PRIu64 ") in dma ref map", pData, size );
+        /* buffer is possbile that remote_register_buf_v2 by others */
+        RIDEHAL_INFO( "Can't find buffer %p(%" PRIu64 ") in dma ref map", pData, size );
     }
 
     return ret;
