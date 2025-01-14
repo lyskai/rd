@@ -272,7 +272,7 @@ incList = [ srcIncDir + "/amss/core/comdef.h",
             inputDir  + "/qnx_ap/AMSS/multimedia/inc/ioctlClient.h",
             inputDir  + "/qnx_ap/AMSS/multimedia/video/source/common/drivers/inc/vidc_types.h",
             inputDir  + "/qnx_ap/AMSS/multimedia/video/source/common/drivers/codec/vidc/inc/vidc_api.h",
-            inputDir  + "/qnx_ap/AMSS/multimedia/graphics/include/private/C2D/c2d2.h",
+            inputDir  + "/qnx_ap/AMSS/inc/graphics/include/private/C2D/c2d2.h",
             inputDir  + "/qnx_ap/AMSS/inc/qgptp_helper.hpp",
             inputDir  + "/qnx_ap/AMSS/inc/AEEstd.h",
             inputDir  + "/qnx_ap/AMSS/inc/AEEVaList.h",
@@ -310,10 +310,16 @@ for inc in incList:
 # copy qcom OpenCL extension
 copy_file(inputDir + '/qnx_ap/AMSS/multimedia/graphics-fusa-binaries/include/public/CL/cl_ext_qcom.h', tcIncDir + '/CL')
 
+# multimedia header files
+mm_video_path = inputDir + "/qnx_ap/test/multimedia/experimental/video/"
+copy_file( mm_video_path + "source/filedemux/FileSource/inc/filesource.h", tcIncDir )
+copy_file( mm_video_path + "source/filedemux/FileSource/inc/filesourcetypes.h", tcIncDir )
+copy_file( mm_video_path + "source/filedemux/FileBaseLib/inc/parserinternaldefs.h", tcIncDir )
+
 make_directory( tcIncDir + "/WF" )
 copy_file( srcPatchIncDir + "/WF/wfdplatform.h", tcIncDir + "/WF" )
 
-libListVidc  = [ "libioctlClient.so", "libOSAbstraction.so", "libopenwfd.so" ]
+libListVidc  = [ "libvidc.so", "libFileSource.so", "libioctlClient.so", "libOSAbstraction.so", "libopenwfd.so", "libpool.so", "libss_drv_util.so", "libhwio.so.1", "libtzss_drv.so", "libssloader.so", "libioctlServer.so", "libpil_client.so" ]
 libListC2d   = [ "libc2d30.so" ]
 libListPmem  = [ "libpmem_client.so", "libpmemext.so" ]
 libListQgptp = [ "libqgptp.so", "libdal.so", "libdalconfig.so.1" ]
@@ -350,6 +356,15 @@ for lib in libList:
             break
     if not copied:
         sys.exit("Failed to copy: " + lib )
+
+# multimedia dependent libraries
+mm_build_path = mm_video_path + "build"
+for root, dirs, files in os.walk( mm_build_path ):
+    for name in files:
+        file_item = os.path.join(root, name)
+        ext_name = file_item.split('.')[-1]
+        if ext_name == "so":
+            copy_file( file_item, tcLibDir )
 
 copy_file( srcPrebuiltLibDir + "/libWFD.so", tcLibDir )
 copy_file( srcPrebuiltLibDir + "/libWFD.so.1", tcLibDir )

@@ -42,7 +42,7 @@
   The first time you created the ridehal-toolchain-base-env docker container, a directory named `toolchain` will be created under this path. You need to copy or install the platform toolchain SDK and QNN SDK to `toolchain` path, which would be shown in `/opt/toolchain` path in docker container. For the QNN SDK, rename QNN SDK folder to `qnn_sdk`.
 
   - QOS222:
-
+    Please build multimedia libraries firstly: run make under qnx_ap/test/multimedia/build.
     Using below command to create a qos222 toolchain from QNX CRM.
 
     ```sh
@@ -60,10 +60,12 @@
   - HGY Linux:
 
     Place the HGY Linux SDK `oecore-x86_64-aarch64-toolchain-nodistro.0.sh` under `$PWD/toolchain/linux`, the ridehal build script will automatically install it under `$PWD/toolchain/linux`.
+   Please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include .
 
   - HGY Ubuntu:
 
     Install the Ubuntu SDK to `$PWD/toolchain/ubuntu`.
+    Please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include .
 
   Rerun this container, switch to `/opt/sdk/ridehal` path, then use the scripts to build ridehal package:
 
@@ -92,6 +94,7 @@
 
 cd /path/to/qnx_ap
 source setenv_qos222.sh
+# Please build multimedia libraries firstly: run make under qnx_ap/test/multimedia/build.
 # if want to build with QNN SDK
 source /path/to/QNN_SDK/bin/envsetup.sh
 # for example:  source ~/qnn-release/qaisw-v2.16.0.231027072756_64280-auto/bin/envsetup.sh
@@ -110,6 +113,7 @@ export LINUX_SDK_ROOT=/path/to/linux/oe/sdk
 # LINUX_SDK_ROOT is a directory contains the sysroots, that means there is directory:
 #       ${LINUX_SDK_ROOT}/sysroots/aarch64-oe-linux
 # for examples: export LINUX_SDK_ROOT=/local/mnt/workspace/sdk/ubuntu
+# Please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include
 # if want to build with QNN SDK
 source /path/to/QNN_SDK/bin/envsetup.sh
 # for example:  source ~/qnn-release/qaisw-v2.16.0.231027072756_64280-auto/bin/envsetup.sh
@@ -137,6 +141,7 @@ export UBUNTU_SDK_ROOT=/path/to/ubuntu/sdk
 # UBUNTU_SDK_ROOT is a directory contains the sysroots, that means there is directory:
 #       ${UBUNTU_SDK_ROOT}/sysroots/aarch64-oe-linux
 # for examples: export UBUNTU_SDK_ROOT=/local/mnt/workspace/sdk/ubuntu
+# Please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include
 # if want to build with QNN SDK
 source /path/to/QNN_SDK/bin/envsetup.sh
 # for example:  source ~/qnn-release/qaisw-v2.16.0.231027072756_64280-auto/bin/envsetup.sh
