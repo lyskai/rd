@@ -118,6 +118,7 @@ protected:
     RideHal_ProcessorType_e Get( SampleConfig_t &config, std::string key,
                                  RideHal_ProcessorType_e defaultV );
     bool Get( SampleConfig_t &config, std::string key, bool defaultV );
+    RideHalError_e LoadFile( RideHal_SharedBuffer_t buffer, std::string path );
 
 protected:
     std::string m_name;

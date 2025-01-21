@@ -48,6 +48,10 @@ CL2DFlex_Work_Mode_e SampleCL2DFlex::GetMode( SampleConfig_t &config, std::strin
         {
             ret = CL2DFLEX_WORK_MODE_CONVERT_UBWC;
         }
+        else if ( "remap_nearest" == mode )
+        {
+            ret = CL2DFLEX_WORK_MODE_REMAP_NEAREST;
+        }
         else
         {
             ret = CL2DFLEX_WORK_MODE_MAX;
@@ -95,6 +99,8 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         RIDEHAL_ERROR( "invalid batch_size\n" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
+
+    bool bEnableUndistortion = Get( config, "map_table", false );
 
     for ( uint32_t i = 0; i < m_config.numOfInputs; i++ )
     {
@@ -156,6 +162,67 @@ RideHalError_e SampleCL2DFlex::ParseConfig( SampleConfig_t &config )
         {
             RIDEHAL_ERROR( "invalid roi_height%u\n", i );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+
+        if ( true == bEnableUndistortion )
+        {
+            bool bAllocateOK = true;
+            RideHal_TensorProps_t mapXProp;
+            mapXProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { m_config.outputHeight * m_config.outputWidth, 0 },
+                    1,
+            };
+            ret = m_mapXBuffer[i].Allocate( &mapXProp );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                bAllocateOK = false;
+                RIDEHAL_ERROR( "failed to allocate mapX%u!\n", i );
+            }
+            RideHal_TensorProps_t mapYProp;
+            mapYProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { m_config.outputHeight * m_config.outputWidth, 0 },
+                    1,
+            };
+            ret = m_mapYBuffer[i].Allocate( &mapYProp );
+            if ( RIDEHAL_ERROR_NONE != ret )
+            {
+                bAllocateOK = false;
+                RIDEHAL_ERROR( "failed to allocate mapY%u!\n", i );
+            }
+            if ( true == bAllocateOK )
+            {
+                bool bReadOK = true;
+                std::string mapXPath = Get( config, "mapX_path" + std::to_string( i ),
+                                            "./data/test/CL2DFlex/mapX.raw" );
+                std::string mapYPath = Get( config, "mapY_path" + std::to_string( i ),
+                                            "./data/test/CL2DFlex/mapY.raw" );
+                ret = LoadFile( m_mapXBuffer[i], mapXPath );
+                if ( RIDEHAL_ERROR_NONE == ret )
+                {
+                    m_config.remapTable[i].pMapX = &m_mapXBuffer[i];
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "failed to read mapX table for input %u!\n", i );
+                    bReadOK = false;
+                }
+                ret = LoadFile( m_mapYBuffer[i], mapYPath );
+                if ( RIDEHAL_ERROR_NONE == ret )
+                {
+                    m_config.remapTable[i].pMapY = &m_mapYBuffer[i];
+                }
+                else
+                {
+                    RIDEHAL_ERROR( "failed to read mapY table for input %u!\n", i );
+                    bReadOK = false;
+                }
+                if ( false == bReadOK )
+                {
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+            }
         }
     }
 

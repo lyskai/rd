@@ -11,19 +11,20 @@
 The RideHal CL2DFlex component is based on OpenCL library, it provides user-friendly APIs and visible CL kernels to do color conversion and resize on single image input. Currently support color conversion and resize of multiple image inputs to single output. The supported color conversion pipelines are NV12 to RGB, UYVY to RGB, UYVY to NV12.
 
 # 2. CL2DFlex Data Structures
-- [CL2DFlex_WorkMode_e](../include/ridehal/component/CL2DFlex.hpp#L50)
-- [CL2DFlex_ROIConfig_t](../include/ridehal/component/CL2DFlex.hpp#L61)
-- [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L81)
+- [CL2DFlex_WorkMode_e](../include/ridehal/component/CL2DFlex.hpp#L52)
+- [CL2DFlex_MapTable_t](../include/ridehal/component/CL2DFlex.hpp#L63)
+- [CL2DFlex_ROIConfig_t](../include/ridehal/component/CL2DFlex.hpp#L74)
+- [CL2DFlex_Config_t](../include/ridehal/component/CL2DFlex.hpp#L95)
 
 # 3. CL2DFlex APIs 
-- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L106)
-- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L117)
-- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L123)
-- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L135)
-- [CL2DFlex::ExecuteWithROI](../include/ridehal/component/CL2DFlex.hpp#L149)
-- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L157)
-- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L167)
-- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L176)
+- [CL2DFlex::Init](../include/ridehal/component/CL2DFlex.hpp#L120)
+- [CL2DFlex::RegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L131)
+- [CL2DFlex::Start](../include/ridehal/component/CL2DFlex.hpp#L137)
+- [CL2DFlex::Execute](../include/ridehal/component/CL2DFlex.hpp#L149)
+- [CL2DFlex::ExecuteWithROI](../include/ridehal/component/CL2DFlex.hpp#L163)
+- [CL2DFlex::Stop](../include/ridehal/component/CL2DFlex.hpp#L171)
+- [CL2DFlex::DeRegisterBuffers](../include/ridehal/component/CL2DFlex.hpp#L181)
+- [CL2DFlex::Deinit](../include/ridehal/component/CL2DFlex.hpp#L190)
 
 # 4. Typical Use Case
 

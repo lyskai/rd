@@ -26,6 +26,7 @@
     - [2.22 RideHal C2C Sample](#222-ridehal-c2c-sample)
     - [2.23 RideHal DepthFromStereo Sample](#223-ridehal-depthfromstereo-sample)
     - [2.24 RideHal DepthFromStereoViz Sample](#224-ridehal-depthfromstereoviz-sample)
+    - [2.25 RideHal VideoDemuxer Sample](#225-ridehal-videodemuxer-sample)
   - [3. Typical RideHal Sample Application pipelines](#3-typical-ridehal-sample-application-pipelines)
     - [3.1 4 DataReader based QNN perception pipelines](#31-4-datareader-based-qnn-perception-pipelines)
     - [3.2 1 DataReader and 1 Camera AR231 based QNN perception pipelines](#32-1-datareader-and-1-camera-ar231-based-qnn-perception-pipelines)
@@ -478,6 +479,9 @@ The command line template example:
 | roi_widthX    | false    | int       | =input_widthX  | The ROI width for input X |
 | roi_heightX   | false    | int       | =input_heightX | The ROI height for input X |
 | roi_number    | false    | int       | 1       | The roi configurations number used for ExecuteWithROI |
+| map_table     | false    | bool      | false   | enable or disable create map from map table pointers |
+| mapX_pathX    | false    | string    | "./data/test/CL2DFlex/mapX.raw"   | map table path of width direction for input X |
+| mapY_pathX    | false    | string    | "./data/test/CL2DFlex/mapY.raw"   | map table path of height direction for input X |
 | pool_size     | false    | int       | 4       | the image memory pool size |
 | cache         | false    | bool      | true    | use cached memory or not for the image memory |
 | input_topic   | true     | string    | -       | the input topic name |

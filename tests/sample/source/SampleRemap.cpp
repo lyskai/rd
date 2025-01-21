@@ -23,51 +23,6 @@ static uint32_t s_rideHalFormatToBytesPerPixel[RIDEHAL_IMAGE_FORMAT_MAX] = {
 SampleRemap::SampleRemap() {}
 SampleRemap::~SampleRemap() {}
 
-RideHalError_e SampleRemap::LoadMap( RideHal_SharedBuffer_t buffer, std::string path )
-{
-    RideHalError_e ret = RIDEHAL_ERROR_NONE;
-    FILE *file = nullptr;
-    size_t length = 0;
-    size_t size = buffer.size;
-
-    file = fopen( path.c_str(), "rb" );
-    if ( nullptr == file )
-    {
-        RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
-        ret = RIDEHAL_ERROR_FAIL;
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        fseek( file, 0, SEEK_END );
-        length = (size_t) ftell( file );
-        if ( size != length )
-        {
-            RIDEHAL_ERROR( "Invalid file size for %s, need %d but got %d", path.c_str(), size,
-                           length );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
-    }
-
-    if ( RIDEHAL_ERROR_NONE == ret )
-    {
-        fseek( file, 0, SEEK_SET );
-        auto r = fread( buffer.data(), 1, length, file );
-        if ( length != r )
-        {
-            RIDEHAL_ERROR( "failed to read map table file %s", path.c_str() );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
-    }
-
-    if ( nullptr != file )
-    {
-        fclose( file );
-    }
-
-    return ret;
-}
-
 RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
@@ -237,7 +192,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
                                             "./data/test/remap/mapX.raw" );
                 std::string mapYPath = Get( config, "mapY_path" + std::to_string( i ),
                                             "./data/test/remap/mapY.raw" );
-                ret = LoadMap( m_mapXBuffer[i], mapXPath );
+                ret = LoadFile( m_mapXBuffer[i], mapXPath );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     m_config.inputConfigs[i].remapTable.pMapX = &m_mapXBuffer[i];
@@ -247,7 +202,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
                     RIDEHAL_ERROR( "failed to read mapX table for input %u!\n", i );
                     bReadOK = false;
                 }
-                ret = LoadMap( m_mapYBuffer[i], mapYPath );
+                ret = LoadFile( m_mapYBuffer[i], mapYPath );
                 if ( RIDEHAL_ERROR_NONE == ret )
                 {
                     m_config.inputConfigs[i].remapTable.pMapY = &m_mapYBuffer[i];

@@ -421,7 +421,7 @@ RideHal_ImageFormat_e SampleIF::Get( SampleConfig_t &config, std::string key,
         {
             ret = RIDEHAL_IMAGE_FORMAT_TP10_UBWC;
         }
-	else if ( "h264" == format )
+        else if ( "h264" == format )
         {
             ret = RIDEHAL_IMAGE_FORMAT_COMPRESSED_H264;
         }
@@ -668,6 +668,51 @@ RideHalError_e SampleIF::DeRegisterBuffers( std::string name )
         ret = RIDEHAL_ERROR_FAIL;
     }
 
+
+    return ret;
+}
+
+RideHalError_e SampleIF::LoadFile( RideHal_SharedBuffer_t buffer, std::string path )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    FILE *file = nullptr;
+    size_t length = 0;
+    size_t size = buffer.size;
+
+    file = fopen( path.c_str(), "rb" );
+    if ( nullptr == file )
+    {
+        RIDEHAL_ERROR( "Failed to open file %s", path.c_str() );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_END );
+        length = (size_t) ftell( file );
+        if ( size != length )
+        {
+            RIDEHAL_ERROR( "Invalid file size for %s, need %d but got %d", path.c_str(), size,
+                           length );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_SET );
+        auto r = fread( buffer.data(), 1, length, file );
+        if ( length != r )
+        {
+            RIDEHAL_ERROR( "failed to read map table file %s", path.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( nullptr != file )
+    {
+        fclose( file );
+    }
 
     return ret;
 }

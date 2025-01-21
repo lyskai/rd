@@ -45,9 +45,22 @@ typedef enum
     CL2DFLEX_WORK_MODE_RESIZE_NEAREST_MULTIPLE,    /**<color convert and resize use nearest point,
                                                       execute on multiple batches with different ROI
                                                       paramters*/
-    CL2DFLEX_WORK_MODE_CONVERT_UBWC, /**<convert from ubwc compress format to normal format*/
+    CL2DFLEX_WORK_MODE_CONVERT_UBWC,  /**<convert from ubwc compress format to normal format*/
+    CL2DFLEX_WORK_MODE_REMAP_NEAREST, /**<color convert and remap using nearest point in map table
+                                         to do undistortion*/
     CL2DFLEX_WORK_MODE_MAX
 } CL2DFlex_Work_Mode_e;
+
+/** @brief remap tables for input images */
+typedef struct
+{
+    RideHal_SharedBuffer_t
+            *pMapX; /**<shared buffer for X map, each element is the column coordinate of the mapped
+                       location in the source image, data size is mapWidth * mapHeight*/
+    RideHal_SharedBuffer_t
+            *pMapY; /**<shared buffer for Y map, each element is the row coordinate of the mapped
+                       location in the source image, data size is mapWidth * mapHeight*/
+} CL2DFlex_MapTable_t;
 
 /** @brief CL2DFlex input images ROI configuration */
 typedef struct
@@ -78,6 +91,7 @@ typedef struct
             0; /**<the padding value for letterbox resize with fixed height/width ratio, uint32
                   value in which the lower 24 bits are composed of three 8 bits values representing
                   R,G,B respectively, default set to 0 which means all black */
+    CL2DFlex_MapTable_t remapTable[RIDEHAL_MAX_INPUTS]; /**<remap table, used for remap work mode*/
 } CL2DFlex_Config_t;
 
 class CL2DPipelineBase; /**<pipeline base class*/

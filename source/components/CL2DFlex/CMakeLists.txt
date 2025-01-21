@@ -9,6 +9,7 @@ set( CL2DFLEX_SOURCES
     CL2DPipelineBase.cpp
     CL2DPipelineConvert.cpp
     CL2DPipelineResize.cpp
+    CL2DPipelineRemap.cpp
     CL2DPipelineLetterbox.cpp
     CL2DPipelineConvertUBWC.cpp
     CL2DPipelineResizeMultiple.cpp

@@ -16,6 +16,7 @@ inline const char *Kernels()
 #include "kernel/CL2DPipelineConvertUBWC.cl.h"
 #include "kernel/CL2DPipelineLetterbox.cl.h"
 #include "kernel/CL2DPipelineLetterboxMultiple.cl.h"
+#include "kernel/CL2DPipelineRemap.cl.h"
 #include "kernel/CL2DPipelineResize.cl.h"
 #include "kernel/CL2DPipelineResizeMultiple.cl.h"
             ;

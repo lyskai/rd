@@ -50,11 +50,13 @@ typedef enum
                                                               point from nv12 to rgb, execute on
                                                               multiple batches with different ROI
                                                               paramters*/
-    CL2DFLEX_PIPELINE_CONVERT_NV12UBWC_TO_NV12, /**<decompress from nv12 ubwc to nv12, input width
-                                                   should be equal to output width, input height
-                                                   should be equal to output height, and ROI
-                                                   parameters should not be used, only valid on
-                                                   qnx currently*/
+    CL2DFLEX_PIPELINE_CONVERT_NV12UBWC_TO_NV12,  /**<decompress from nv12 ubwc to nv12, input width
+                                                    should be equal to output width, input height
+                                                    should be equal to output height, and ROI
+                                                    parameters should not be used, only valid on
+                                                    qnx currently*/
+    CL2DFLEX_PIPELINE_REMAP_NEAREST_NV12_TO_RGB, /**<color convert and remap use nearest point in
+                                                    the map table from nv12 to rgb*/
     CL2DFLEX_PIPELINE_MAX
 } CL2DFlex_Pipeline_e;
 

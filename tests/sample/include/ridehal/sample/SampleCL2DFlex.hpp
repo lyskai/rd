@@ -71,6 +71,9 @@ private:
     bool m_executeWithROIs = false;
     uint32_t m_roiNumber = 1;
     CL2DFlex_ROIConfig_t m_ROIs[RIDEHAL_MAX_INPUTS];
+
+    RideHal_SharedBuffer_t m_mapXBuffer[RIDEHAL_MAX_INPUTS];
+    RideHal_SharedBuffer_t m_mapYBuffer[RIDEHAL_MAX_INPUTS];
 };   // class SampleCL2DFlex
 
 }   // namespace sample

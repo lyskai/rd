@@ -9,6 +9,7 @@
 #include "include/CL2DPipelineConvertUBWC.hpp"
 #include "include/CL2DPipelineLetterbox.hpp"
 #include "include/CL2DPipelineLetterboxMultiple.hpp"
+#include "include/CL2DPipelineRemap.hpp"
 #include "include/CL2DPipelineResize.hpp"
 #include "include/CL2DPipelineResizeMultiple.hpp"
 #include "kernel/CL2DFlex.cl.h"
@@ -108,6 +109,18 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
                     RIDEHAL_ERROR( "Invalid ROI values, (ROI.y + ROI.height) > inputHeight!" );
                     ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 }
+                else if ( ( CL2DFLEX_WORK_MODE_REMAP_NEAREST == pConfig->workModes[inputId] ) &&
+                          ( nullptr == pConfig->remapTable[inputId].pMapX ) )
+                {
+                    RIDEHAL_ERROR( "Invalid map table X!" );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
+                else if ( ( CL2DFLEX_WORK_MODE_REMAP_NEAREST == pConfig->workModes[inputId] ) &&
+                          ( nullptr == pConfig->remapTable[inputId].pMapY ) )
+                {
+                    RIDEHAL_ERROR( "Invalid map table Y!" );
+                    ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                }
                 else
                 {
                     // empty else block
@@ -164,6 +177,10 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
                               m_config.workModes[inputId] )
                     {
                         m_pCL2DPipeline[inputId] = new CL2DPipelineResizeMultiple();
+                    }
+                    else if ( CL2DFLEX_WORK_MODE_REMAP_NEAREST == m_config.workModes[inputId] )
+                    {
+                        m_pCL2DPipeline[inputId] = new CL2DPipelineRemap();
                     }
                     else
                     {
