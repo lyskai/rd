@@ -352,6 +352,7 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
         m_nNumStream = pConfig->numStream;
         m_nClientId = pConfig->clientId;
         m_bIsPrimary = pConfig->bPrimary;
+        m_bRecovery = pConfig->bRecovery;
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
@@ -438,6 +439,11 @@ RideHalError_e Camera::Init( const char *pName, const Camera_Config_t *pConfig,
         openParams.numInputs = 1;
         openParams.clientId = m_nClientId;
         openParams.inputs[0] = inputParams;
+
+        if ( m_bRecovery )
+        {
+            openParams.flags |= QCARCAM_OPEN_FLAGS_RECOVERY;
+        }
 
         if ( m_bRequestMode )
         {

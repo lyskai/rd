@@ -78,6 +78,7 @@ typedef struct Camera_Config
     bool bRequestMode; /**< Flag to set request buffer mode */
     bool bPrimary;     /**< Flag to indicate if the session is primary or not when configured the
                           clientId */
+    bool bRecovery;    /**< Flag to enable the self-recovery for the session */
 } Camera_Config_t;
 
 /** Camera Interface */
@@ -237,6 +238,7 @@ private:
     uint32_t m_nRequestId;
     uint32_t m_nClientId;
     bool m_bIsPrimary;
+    bool m_bRecovery;
     void *m_pAppPriv = nullptr;
     RideHal_CamEventCallback_t m_EventCallback = nullptr;
     RideHal_CamFrameCallback_t m_FrameCallback = nullptr;

@@ -134,6 +134,7 @@ RideHalError_e SampleCamera::Init( std::string name, SampleConfig_t &config )
 
         m_camConfig.clientId = Get( config, "client_id", 0u );
         m_camConfig.bPrimary = Get( config, "is_primary", false );
+        m_camConfig.bRecovery = Get( config, "recovery", false );
 
         for ( uint32_t i = 0; i < m_camConfig.numStream; i++ )
         {
