@@ -57,6 +57,8 @@ typedef enum
                                                     qnx currently*/
     CL2DFLEX_PIPELINE_REMAP_NEAREST_NV12_TO_RGB, /**<color convert and remap use nearest point in
                                                     the map table from nv12 to rgb*/
+    CL2DFLEX_PIPELINE_REMAP_NEAREST_NV12_TO_BGR, /**<color convert and remap use nearest point in
+                                                    the map table from nv12 to bgr*/
     CL2DFLEX_PIPELINE_MAX
 } CL2DFlex_Pipeline_e;
 

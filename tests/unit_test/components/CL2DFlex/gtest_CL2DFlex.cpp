@@ -17,6 +17,51 @@ using namespace ridehal::common;
 using namespace ridehal::component;
 using namespace ridehal::test::utils;
 
+RideHalError_e LoadFile( RideHal_SharedBuffer_t buffer, std::string path )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+    FILE *file = nullptr;
+    size_t length = 0;
+    size_t size = buffer.size;
+
+    file = fopen( path.c_str(), "rb" );
+    if ( nullptr == file )
+    {
+        printf( "Failed to open file %s", path.c_str() );
+        ret = RIDEHAL_ERROR_FAIL;
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_END );
+        length = (size_t) ftell( file );
+        if ( size != length )
+        {
+            printf( "Invalid file size for %s, need %d but got %d", path.c_str(), (int) size,
+                    (int) length );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        fseek( file, 0, SEEK_SET );
+        auto r = fread( buffer.data(), 1, length, file );
+        if ( length != r )
+        {
+            printf( "failed to read map table file %s", path.c_str() );
+            ret = RIDEHAL_ERROR_FAIL;
+        }
+    }
+
+    if ( nullptr != file )
+    {
+        fclose( file );
+    }
+
+    return ret;
+}
+
 void ROITest( uint32_t numberTest, CL2DFlex_ROIConfig_t *pROITest, CL2DFlex_Work_Mode_e modeTest,
               RideHal_ImageFormat_e inputFormatTest, RideHal_ImageFormat_e outputFormatTest,
               uint32_t inputWidthTest, uint32_t inputHeightTest, uint32_t outputWidthTest,
@@ -115,7 +160,8 @@ void ROITest( uint32_t numberTest, CL2DFlex_ROIConfig_t *pROITest, CL2DFlex_Work
     imgProp2.width = CL2DFlexConfig.outputWidth;
     imgProp2.height = CL2DFlexConfig.outputHeight;
     imgProp2.format = CL2DFlexConfig.outputFormat;
-    if ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat )
+    if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat ) ||
+         ( RIDEHAL_IMAGE_FORMAT_BGR888 == CL2DFlexConfig.outputFormat ) )
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
@@ -224,6 +270,35 @@ void AccuracyTest( CL2DFlex_Work_Mode_e modeTest, RideHal_ImageFormat_e inputFor
     CL2DFlexConfig.outputHeight = outputHeightTest;
     CL2DFlexConfig.outputFormat = outputFormatTest;
 
+    RideHal_SharedBuffer_t mapXBuffer;
+    RideHal_SharedBuffer_t mapYBuffer;
+    for ( int i = 0; i < CL2DFlexConfig.numOfInputs; i++ )
+    {
+        if ( CL2DFLEX_WORK_MODE_REMAP_NEAREST == CL2DFlexConfig.workModes[i] )
+        {
+            RideHal_TensorProps_t mapXProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { CL2DFlexConfig.outputHeight * CL2DFlexConfig.outputWidth, 0 },
+                    1,
+            };
+            ret = mapXBuffer.Allocate( &mapXProp );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            ret = LoadFile( mapXBuffer, "./data/test/CL2DFlex/mapX.raw" );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            CL2DFlexConfig.remapTable[i].pMapX = &mapXBuffer;
+
+            RideHal_TensorProps_t mapYProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { CL2DFlexConfig.outputHeight * CL2DFlexConfig.outputWidth, 0 },
+                    1,
+            };
+            ret = mapYBuffer.Allocate( &mapYProp );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            ret = LoadFile( mapYBuffer, "./data/test/CL2DFlex/mapY.raw" );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            CL2DFlexConfig.remapTable[i].pMapY = &mapYBuffer;
+        }
+    }
 
     RideHal_SharedBuffer_t inputs[CL2DFlexConfig.numOfInputs];
     for ( int i = 0; i < CL2DFlexConfig.numOfInputs; i++ )
@@ -308,7 +383,8 @@ void AccuracyTest( CL2DFlex_Work_Mode_e modeTest, RideHal_ImageFormat_e inputFor
     imgProp2.width = CL2DFlexConfig.outputWidth;
     imgProp2.height = CL2DFlexConfig.outputHeight;
     imgProp2.format = CL2DFlexConfig.outputFormat;
-    if ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat )
+    if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat ) ||
+         ( RIDEHAL_IMAGE_FORMAT_BGR888 == CL2DFlexConfig.outputFormat ) )
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
@@ -458,6 +534,36 @@ void PerformanceTest( CL2DFlex_Work_Mode_e modeTest, RideHal_ImageFormat_e input
     CL2DFlexConfig.outputHeight = outputHeightTest;
     CL2DFlexConfig.outputFormat = outputFormatTest;
 
+    RideHal_SharedBuffer_t mapXBuffer;
+    RideHal_SharedBuffer_t mapYBuffer;
+    for ( int i = 0; i < CL2DFlexConfig.numOfInputs; i++ )
+    {
+        if ( CL2DFLEX_WORK_MODE_REMAP_NEAREST == CL2DFlexConfig.workModes[i] )
+        {
+            RideHal_TensorProps_t mapXProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { CL2DFlexConfig.outputHeight * CL2DFlexConfig.outputWidth, 0 },
+                    1,
+            };
+            ret = mapXBuffer.Allocate( &mapXProp );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            ret = LoadFile( mapXBuffer, "./data/test/CL2DFlex/mapX.raw" );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            CL2DFlexConfig.remapTable[i].pMapX = &mapXBuffer;
+
+            RideHal_TensorProps_t mapYProp = {
+                    RIDEHAL_TENSOR_TYPE_FLOAT_32,
+                    { CL2DFlexConfig.outputHeight * CL2DFlexConfig.outputWidth, 0 },
+                    1,
+            };
+            ret = mapYBuffer.Allocate( &mapYProp );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            ret = LoadFile( mapYBuffer, "./data/test/CL2DFlex/mapY.raw" );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+            CL2DFlexConfig.remapTable[i].pMapY = &mapYBuffer;
+        }
+    }
+
     RideHal_SharedBuffer_t inputs[CL2DFlexConfig.numOfInputs];
     for ( int i = 0; i < CL2DFlexConfig.numOfInputs; i++ )
     {
@@ -510,7 +616,8 @@ void PerformanceTest( CL2DFlex_Work_Mode_e modeTest, RideHal_ImageFormat_e input
     imgProp2.width = CL2DFlexConfig.outputWidth;
     imgProp2.height = CL2DFlexConfig.outputHeight;
     imgProp2.format = CL2DFlexConfig.outputFormat;
-    if ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat )
+    if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat ) ||
+         ( RIDEHAL_IMAGE_FORMAT_BGR888 == CL2DFlexConfig.outputFormat ) )
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
@@ -640,7 +747,8 @@ void SanityTest()
     imgProp2.width = CL2DFlexConfig.outputWidth;
     imgProp2.height = CL2DFlexConfig.outputHeight;
     imgProp2.format = CL2DFlexConfig.outputFormat;
-    if ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat )
+    if ( ( RIDEHAL_IMAGE_FORMAT_RGB888 == CL2DFlexConfig.outputFormat ) ||
+         ( RIDEHAL_IMAGE_FORMAT_BGR888 == CL2DFlexConfig.outputFormat ) )
     {
         imgProp2.stride[0] = CL2DFlexConfig.outputWidth * 3;
         imgProp2.actualHeight[0] = CL2DFlexConfig.outputHeight;
@@ -1071,6 +1179,15 @@ TEST( CL2DFlex, ResizeAccuracyTest )
                   "./data/test/CL2DFlex/golden7.rgb", false );
 }
 
+TEST( CL2DFlex, RemapAccuracyTest )
+{
+    // md5 of 0.nv12 is a1591f4b8c196a47628f0ef6bc3a721c
+    // md5 of golden9.rgb is 94d20588fa7d89cd285a819cddb0c978
+    AccuracyTest( CL2DFLEX_WORK_MODE_REMAP_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
+                  RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800, "./data/test/CL2DFlex/0.nv12",
+                  "./data/test/CL2DFlex/golden9.rgb", false );
+}
+
 TEST( CL2DFlex, PerformanceTest )
 {
     printf( "performance test of convert nv12 to rgb\n" );
@@ -1091,6 +1208,9 @@ TEST( CL2DFlex, PerformanceTest )
     printf( "performance test of convert nv12 ubwc to nv12\n" );
     PerformanceTest( CL2DFLEX_WORK_MODE_CONVERT_UBWC, RIDEHAL_IMAGE_FORMAT_NV12_UBWC,
                      RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024, 1920, 1024, 1920, 1024, 100 );
+    printf( "performance test of remap nv12 to bgr\n" );
+    PerformanceTest( CL2DFLEX_WORK_MODE_REMAP_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
+                     RIDEHAL_IMAGE_FORMAT_BGR888, 1920, 1024, 1920, 1024, 1152, 800, 100 );
 }
 
 TEST( CL2DFlex, MultipleROITest )

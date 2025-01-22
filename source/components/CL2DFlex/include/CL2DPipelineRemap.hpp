@@ -36,6 +36,9 @@ private:
     RideHalError_e RemapFromNV12ToRGB( cl_mem bufferSrc, uint32_t srcOffset, cl_mem bufferDst,
                                        uint32_t dstOffset, const RideHal_SharedBuffer_t *pInput,
                                        const RideHal_SharedBuffer_t *pOutput );
+    RideHalError_e RemapFromNV12ToBGR( cl_mem bufferSrc, uint32_t srcOffset, cl_mem bufferDst,
+                                       uint32_t dstOffset, const RideHal_SharedBuffer_t *pInput,
+                                       const RideHal_SharedBuffer_t *pOutput );
 
 private:
     cl_mem m_bufferMapX;
