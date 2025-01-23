@@ -176,6 +176,12 @@ RideHalError_e DepthFromStereo::ValidateConfig( const DepthFromStereo_Config_t *
         RIDEHAL_ERROR( "invalid format!" );
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
+    else if ( ( EVA_DFS_SEARCH_L2R != pConfig->dfsSearchDir ) &&
+              ( EVA_DFS_SEARCH_R2L != pConfig->dfsSearchDir ) )
+    {
+        RIDEHAL_ERROR( "invalid serach direction!" );
+        ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+    }
     else
     {
         /* OK */
