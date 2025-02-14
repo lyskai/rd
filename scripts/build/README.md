@@ -39,10 +39,10 @@
   Run the create-ridehal-base-docker.sh, a docker container named ridehal-toolchain-base-env would be created. If you want to rerun this container, just simply run the run-ridehal-base-docker.sh.
 
 - Step 3: Build ridehal package
-  The first time you created the ridehal-toolchain-base-env docker container, a directory named `toolchain` will be created under this path. You need to copy or install the platform toolchain SDK and QNN SDK to `toolchain` path, which would be shown in `/opt/toolchain` path in docker container. For the QNN SDK, rename QNN SDK folder to `qnn_sdk`.
+  - The first time you created the ridehal-toolchain-base-env docker container, a directory named `toolchain` will be created under this path. You need to copy or install the platform toolchain SDK and QNN SDK to `toolchain` path, which would be shown in `/opt/toolchain` path in docker container. For the QNN SDK, rename QNN SDK folder to `qnn_sdk`.
 
   - QOS222:
-    Please build multimedia libraries firstly: run make under qnx_ap/test/multimedia/build.
+    If user needs to build RideHal with Video Demuxer, please build multimedia libraries firstly: run make under qnx_ap/test/multimedia/build.
     Using below command to create a qos222 toolchain from QNX CRM.
 
     ```sh
@@ -60,12 +60,12 @@
   - HGY Linux:
 
     Place the HGY Linux SDK `oecore-x86_64-aarch64-toolchain-nodistro.0.sh` under `$PWD/toolchain/linux`, the ridehal build script will automatically install it under `$PWD/toolchain/linux`.
-   Please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include .
+   If user needs to build RideHal with Video Demuxer, please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include .
 
   - HGY Ubuntu:
 
     Install the Ubuntu SDK to `$PWD/toolchain/ubuntu`.
-    Please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include .
+    If user needs to build RideHal with Video Demuxer, please copy parserinternaldefs.h from apps_proc/vendor/qcom/proprietary/video-driver/test/source/filedemux/FileBaseLib/inc to sysroots/aarch64-oe-linux/usr/include .
 
   Rerun this container, switch to `/opt/sdk/ridehal` path, then use the scripts to build ridehal package:
 
@@ -150,6 +150,12 @@ cd /path/to/ridehal
 ./scripts/build/build-target.sh aarch64-ubuntu .
 # the ridehal-aarch64-ubuntu.tar.gz is the build out package for aarch64 ubuntu
 ```
+
+### CMake options
+- ENABLE_GCOV: Enable GCC Coverage, default is OFF.
+- ENABLE_DEMUXER: Enable building with Video Demuxer, default is OFF.
+
+User could determine whether or not CMake option is enabled by using export commands in build-target.sh .
 
 ## How to run
 For how to run the RideHal package, check this [README](../launch/README.md).

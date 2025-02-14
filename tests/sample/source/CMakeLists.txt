@@ -18,7 +18,6 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleRemap.cpp
     SampleVideoDecoder.cpp
     SampleVideoEncoder.cpp
-    SampleVideoDemuxer.cpp
     SharedBufferPool.cpp
     SampleCL2DFlex.cpp
     SampleDataOnline.cpp
@@ -31,6 +30,10 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleFrameSync.cpp
     SysTrace.cpp
 )
+
+if( ENABLE_DEMUXER )
+  list( APPEND RIDEHAL_SAMPLE_SOURCES SampleVideoDemuxer.cpp )
+endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     list( APPEND RIDEHAL_SAMPLE_SOURCES SampleC2C.cpp )
@@ -47,7 +50,11 @@ if( NOT TARGET RideHal )
   message(FATAL_ERROR "RideHal SDK not found")
 endif()
 
-set( TARGET_LIBRARIES RideHal SharedRing VidcDemuxer )
+set( TARGET_LIBRARIES RideHal SharedRing )
+
+if( ENABLE_DEMUXER )
+  list( APPEND TARGET_LIBRARIES VidcDemuxer )
+endif()
 
 if( NOT TARGET TinyViz )
   message(STATUS "build sample without TinyViz")

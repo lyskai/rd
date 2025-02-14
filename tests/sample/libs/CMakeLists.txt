@@ -1,4 +1,7 @@
 
 add_subdirectory(SharedRing)
 add_subdirectory(TinyViz)
-add_subdirectory(VidcDemuxer)
+
+if( ENABLE_DEMUXER )
+    add_subdirectory(VidcDemuxer)
+endif()

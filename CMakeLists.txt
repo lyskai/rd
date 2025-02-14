@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.15.0)
 project(ridehal LANGUAGES C CXX)
 
 option(ENABLE_GCOV "Enable GCC Code Coverage" OFF)
+option(ENABLE_DEMUXER "Enable Demuxer building" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE RelWithDebInfo)
