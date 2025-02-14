@@ -31,10 +31,6 @@ set( RIDEHAL_SAMPLE_SOURCES
     SysTrace.cpp
 )
 
-if( ENABLE_DEMUXER )
-  list( APPEND RIDEHAL_SAMPLE_SOURCES SampleVideoDemuxer.cpp )
-endif()
-
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     list( APPEND RIDEHAL_SAMPLE_SOURCES SampleC2C.cpp )
 endif()
@@ -52,10 +48,6 @@ endif()
 
 set( TARGET_LIBRARIES RideHal SharedRing )
 
-if( ENABLE_DEMUXER )
-  list( APPEND TARGET_LIBRARIES VidcDemuxer )
-endif()
-
 if( NOT TARGET TinyViz )
   message(STATUS "build sample without TinyViz")
 else()
@@ -71,6 +63,13 @@ if ( NOT DEFINED QNN_SDK_ROOT )
   message(STATUS "build sample without QnnRuntime")
 else()
   list( APPEND RIDEHAL_SAMPLE_SOURCES SampleQnn.cpp )
+endif()
+
+if ( ENABLE_DEMUXER )
+  list( APPEND RIDEHAL_SAMPLE_SOURCES SampleVideoDemuxer.cpp )
+  list( APPEND TARGET_LIBRARIES VidcDemuxer )
+else()
+  message(STATUS "build sample without VideoDemuxer")
 endif()
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
