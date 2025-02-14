@@ -313,7 +313,16 @@ RideHalError_e Camera::ValidateConfig( const Camera_Config_t *pConfig )
     }
     else
     {
-        /* OK */
+        for ( uint32_t i = 0; i < pConfig->numStream; i++ )
+        {
+            if ( pConfig->streamConfig[i].streamId >= MAX_CAMERA_STREAM )
+            {
+                RIDEHAL_ERROR( "Invalid streamId: %u for stream %u",
+                               pConfig->streamConfig[i].streamId, i );
+                ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+                break;
+            }
+        }
     }
 
     return ret;
@@ -802,16 +811,17 @@ RideHalError_e Camera::Deinit()
 
         for ( uint32_t i = 0; i < m_nNumStream; i++ )
         {
-            if ( nullptr != m_pCameraFrames[i] )
+            uint32_t streamId = m_streamConfig[i].streamId;
+            if ( nullptr != m_pCameraFrames[streamId] )
             {
-                delete[] m_pCameraFrames[i];
-                m_pCameraFrames[i] = nullptr;
+                delete[] m_pCameraFrames[streamId];
+                m_pCameraFrames[streamId] = nullptr;
             }
 
-            if ( nullptr != m_pQcarcamBuffer[i] )
+            if ( nullptr != m_pQcarcamBuffer[streamId] )
             {
-                delete[] m_pQcarcamBuffer[i];
-                m_pQcarcamBuffer[i] = nullptr;
+                delete[] m_pQcarcamBuffer[streamId];
+                m_pQcarcamBuffer[streamId] = nullptr;
             }
         }
 
@@ -1253,11 +1263,12 @@ RideHalError_e Camera::FreeBuffers()
 
     for ( int i = 0; i < m_nNumStream; i++ )
     {
-        if ( nullptr != m_pCameraFrames[i] )
+        uint32_t streamId = m_streamConfig[i].streamId;
+        if ( nullptr != m_pCameraFrames[streamId] )
         {
             for ( uint32_t j = 0; j < m_streamConfig[i].bufCnt; j++ )
             {
-                ret = m_pCameraFrames[i][j].sharedBuffer.Free();
+                ret = m_pCameraFrames[streamId][j].sharedBuffer.Free();
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "Free buffer failed index: %u %u, ret: %d", i, j, ret );
@@ -1387,11 +1398,12 @@ RideHalError_e Camera::UnImportBuffers()
 
     for ( int i = 0; i < m_nNumStream; i++ )
     {
-        if ( nullptr != m_pCameraFrames[i] )
+        uint32_t streamId = m_streamConfig[i].streamId;
+        if ( nullptr != m_pCameraFrames[streamId] )
         {
             for ( uint32_t j = 0; j < m_streamConfig[i].bufCnt; j++ )
             {
-                ret = m_pCameraFrames[i][j].sharedBuffer.UnImport();
+                ret = m_pCameraFrames[streamId][j].sharedBuffer.UnImport();
                 if ( RIDEHAL_ERROR_NONE != ret )
                 {
                     RIDEHAL_ERROR( "UnImport buffer failed index: %u %u, ret: %d", i, j, ret );

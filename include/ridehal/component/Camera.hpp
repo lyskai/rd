@@ -19,7 +19,7 @@ namespace ridehal
 namespace component
 {
 
-#define MAX_CAMERA_STREAM ( 4 )
+#define MAX_CAMERA_STREAM ( 8 )
 
 /** @brief Camera frame structure */
 typedef struct
