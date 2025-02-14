@@ -248,7 +248,7 @@ RideHalError_e CL2DPipelineRemap::RemapFromNV12ToBGR( cl_mem bufferSrc, uint32_t
     ret = m_pOpenclSrvObj->Execute( m_pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        RIDEHAL_ERROR( "Failed to execute remap NV12 to RGB OpenCL kernel!" );
+        RIDEHAL_ERROR( "Failed to execute remap NV12 to BGR OpenCL kernel!" );
         ret = RIDEHAL_ERROR_FAIL;
     }
 

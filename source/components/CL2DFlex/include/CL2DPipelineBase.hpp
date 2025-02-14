@@ -28,13 +28,14 @@ typedef enum
     CL2DFLEX_PIPELINE_CONVERT_UYVY_TO_NV12, /**<color convert only from uyvy to nv12, roi.width
                                                should be equal to output width and roi.height should
                                                be equal to output height*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB,    /**<color convert and resize use nearest point
-                                                        from nv12 to rgb*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB,    /**<color convert and resize use nearest point
-                                                        from uyvy to rgb*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12,   /**<color convert and resize use nearest point
-                                                        from uyvy to nv12*/
-    CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB,     /**<resize use nearest point from rgb to rgb*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_RGB,  /**<color convert and resize use nearest point
+                                                      from nv12 to rgb*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_RGB,  /**<color convert and resize use nearest point
+                                                      from uyvy to rgb*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_UYVY_TO_NV12, /**<color convert and resize use nearest point
+                                                      from uyvy to nv12*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_RGB_TO_RGB,   /**<resize use nearest point from rgb to rgb*/
+    CL2DFLEX_PIPELINE_RESIZE_NEAREST_NV12_TO_NV12, /**<resize use nearest point from nv12 to nv12*/
     CL2DFLEX_PIPELINE_LETTERBOX_NEAREST_NV12_TO_RGB, /**<color convert and letterbox with fixed
                                                         height/width ratio use nearest point from
                                                         nv12 to rgb, padding 0 to the redundant

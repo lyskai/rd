@@ -162,7 +162,7 @@ RideHalError_e CL2DPipelineLetterbox::LetterboxFromNV12ToRGB(
     ret = m_pOpenclSrvObj->Execute( m_pKernel, OpenclArgs, numOfArgs, &OpenclWorkParams );
     if ( RIDEHAL_ERROR_NONE != ret )
     {
-        RIDEHAL_ERROR( "Failed to execute convert NV12 to RGB OpenCL kernel!" );
+        RIDEHAL_ERROR( "Failed to execute letterbox NV12 to RGB OpenCL kernel!" );
         ret = RIDEHAL_ERROR_FAIL;
     }
 
