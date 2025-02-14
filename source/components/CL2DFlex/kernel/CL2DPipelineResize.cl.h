@@ -110,15 +110,22 @@ KernelCode(
             int x = get_global_id( 0 );
             int y = get_global_id( 1 );
             __global uchar *ydst = dstPtr + dstOffset + mad24( y, outputStride0, x );
-            int xIn = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
-            int yIn = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
-            int yPtr = mad24( yIn, inputStride0, xIn );
+            int xIn1 = round( (float) ( x + roiX ) / (float) resizeWidth * (float) inputWidth );
+            int yIn1 = round( (float) ( y + roiY ) / (float) resizeHeight * (float) inputHeight );
+            int yPtr = mad24( yIn1, inputStride0, xIn1 );
             ydst[0] = srcPtr[srcOffset + yPtr];
-            __global uchar *udst = dstPtr + dstOffset + outputPlane0Size +
-                                   mad24( y / 2, outputStride1, ( x / 2 ) << 1 );
-            int uPtr = mad24( yIn / 2, inputStride1, ( xIn / 2 ) << 1 );
-            udst[0] = srcPtr[srcOffset + inputPlane0Size + uPtr];
-            udst[1] = srcPtr[srcOffset + inputPlane0Size + uPtr + 1];
+            if ( ( x < resizeWidth / 2 ) && ( y < resizeHeight / 2 ) )
+            {
+                __global uchar *udst =
+                        dstPtr + dstOffset + outputPlane0Size + mad24( y, outputStride1, x << 1 );
+                int xIn2 = round( (float) ( x + roiX / 2 ) / (float) resizeWidth *
+                                  (float) inputWidth );
+                int yIn2 = round( (float) ( y + roiY / 2 ) / (float) resizeHeight *
+                                  (float) inputHeight );
+                int uPtr = mad24( yIn2, inputStride1, xIn2 << 1 );
+                udst[0] = srcPtr[srcOffset + inputPlane0Size + uPtr];
+                udst[1] = srcPtr[srcOffset + inputPlane0Size + uPtr + 1];
+            }
         }
 
 )

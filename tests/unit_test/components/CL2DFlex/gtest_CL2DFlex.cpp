@@ -1162,6 +1162,7 @@ TEST( CL2DFlex, ResizeAccuracyTest )
     // md5 of golden5.rgb is 520d1039f96107ef4db669e9644250fd
     // md5 of golden6.nv12 is 91cdd0def0f40ce3c0fec070c2bccd01
     // md5 of golden7.rgb is a906c3bc49c7b91ec25d6474311d8031
+    // md5 of golden10.nv12 is e5396625f90a049b625b65bc1fdf8183
     AccuracyTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
                   RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800, "./data/test/CL2DFlex/0.nv12",
                   "./data/test/CL2DFlex/golden4.rgb", false );
@@ -1174,6 +1175,9 @@ TEST( CL2DFlex, ResizeAccuracyTest )
     AccuracyTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_RGB888,
                   RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800,
                   "./data/test/CL2DFlex/golden1.rgb", "./data/test/CL2DFlex/golden4.rgb", false );
+    AccuracyTest( CL2DFLEX_WORK_MODE_RESIZE_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
+                  RIDEHAL_IMAGE_FORMAT_NV12, 1920, 1024, 1152, 800, "./data/test/CL2DFlex/0.nv12",
+                  "./data/test/CL2DFlex/golden10.nv12", false );
     AccuracyTest( CL2DFLEX_WORK_MODE_LETTERBOX_NEAREST, RIDEHAL_IMAGE_FORMAT_NV12,
                   RIDEHAL_IMAGE_FORMAT_RGB888, 1920, 1024, 1152, 800, "./data/test/CL2DFlex/0.nv12",
                   "./data/test/CL2DFlex/golden7.rgb", false );

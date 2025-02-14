@@ -106,9 +106,12 @@ The currently supported input/output image format for each work mode of CL2DFLex
 | Resize nearest | UYVY | RGB |
 | Resize nearest | UYVY | NV12 |
 | Resize nearest | RGB | RGB |
+| Resize nearest | NV12 | NV12 |
 | Letterbox nearest | NV12 | RGB |
 | Resize nearest multiple | NV12 | RGB |
 | Letterbox nearest multiple | NV12 | RGB |
+| Remap | NV12 | RGB |
+| Remap | NV12 | BGR |
 
  In the work mode name column, multiple means execute with single input image and multiple output images using different ROI parameters. Letterbox means resize with fixed height/width ratio and add padding to the right or bottom side, so the height/width ratio of output image is the same as ROI box. Nearest means use the nearest point as interpolation algorithm. UBWC means use uncompressed bandwidth compression format image as input.
 
