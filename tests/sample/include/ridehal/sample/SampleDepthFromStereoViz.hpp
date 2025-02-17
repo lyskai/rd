@@ -17,6 +17,16 @@ namespace ridehal
 namespace sample
 {
 
+#define RIDEHAL_DFS_VIZ_COLORS                                                                     \
+    { { 0, 0, 0 }, { 0, 0, 1 }, { 1, 0, 0 }, { 1, 0, 1 },                                          \
+      { 0, 1, 0 }, { 0, 1, 1 }, { 1, 1, 0 }, { 1, 1, 1 } };
+
+#define RIDEHAL_DFS_VIZ_RELATIVE_WEIGHTS                                                           \
+    { 8.77193, 5.40541, 8.77193, 5.74713, 8.77193, 5.40541, 8.77193, 0.00000 };
+
+#define RIDEHAL_DFS_VIZ_CUMULATIVE_WEIGHTS                                                         \
+    { 0.00000, 0.11400, 0.29900, 0.41300, 0.58700, 0.70100, 0.88600, 1.00000 };
+
 /// @brief ridehal::sample::SampleDepthFromStereoViz
 ///
 /// SampleDepthFromStereoViz that to demonstate how to decoding the output of the RideHal component
@@ -57,6 +67,10 @@ private:
 private:
     uint32_t m_width;
     uint32_t m_height;
+
+    float m_colors[8][3] = RIDEHAL_DFS_VIZ_COLORS;
+    float m_relativeWeights[8] = RIDEHAL_DFS_VIZ_RELATIVE_WEIGHTS;
+    float m_cumulativeWeights[8] = RIDEHAL_DFS_VIZ_CUMULATIVE_WEIGHTS;
 
     uint32_t m_poolSize = 4;
 

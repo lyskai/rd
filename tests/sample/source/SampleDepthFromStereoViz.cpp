@@ -15,18 +15,18 @@ namespace sample
 #define KernelCode( ... ) #__VA_ARGS__
 
 static const char *s_pSourceDispColor = KernelCode(   //
-        __constant float map[8][4] = { { 0, 0, 0, 114 },
-                                       { 0, 0, 1, 185 },
-                                       { 1, 0, 0, 114 },
-                                       { 1, 0, 1, 174 },
-                                       { 0, 1, 0, 114 },
-                                       { 0, 1, 1, 185 },
-                                       { 1, 1, 0, 114 },
-                                       { 1, 1, 1, 0 } };
-        __constant float weights[8] = { 8.77193, 5.40541, 8.77193, 5.74713, 8.77193, 5.40541,
-                                        8.77193, 0.00000 };
-        __constant float cumsum[8] = { 0.00000, 0.11400, 0.29900, 0.41300, 0.58700, 0.70100,
-                                       0.88600, 1.00000 };
+        __constant float colors[8][3] = { { 0, 0, 0 },
+                                          { 0, 0, 1 },
+                                          { 1, 0, 0 },
+                                          { 1, 0, 1 },
+                                          { 0, 1, 0 },
+                                          { 0, 1, 1 },
+                                          { 1, 1, 0 },
+                                          { 1, 1, 1 } };
+        __constant float relativeWeights[8] = { 8.77193, 5.40541, 8.77193, 5.74713, 8.77193,
+                                                5.40541, 8.77193, 0.00000 };
+        __constant float cumulativeWeights[8] = { 0.00000, 0.11400, 0.29900, 0.41300, 0.58700,
+                                                  0.70100, 0.88600, 1.00000 };
         //-----------------------------------------------------------------------
         /// @brief Converts disparity to rgb pixel
         /// @param pDisparity the disparity buffer
@@ -53,26 +53,26 @@ static const char *s_pSourceDispColor = KernelCode(   //
             uchar confValue = pConf[pos.y * confStride + pos.x];
             if ( confValue >= confThreshold )
             {
-                // get normalized value
+                // do normalization
                 float val = fmin( fmax( (float) disp / disparityMax, 0.0f ), 1.0f );
                 uint i;
-                // find bin
+                // search to find index to the colors
                 for ( i = 0; i < 7; i++ )
                 {
-                    if ( val < cumsum[i + 1] )
+                    if ( val < cumulativeWeights[i + 1] )
                     {
                         break;
                     }
                 }
 
-                // compute red/green/blue values
-                float weight = 1.0 - ( val - cumsum[i] ) * weights[i];
-                uchar r = ( uchar )( ( weight * map[i][0] + ( 1.0 - weight ) * map[i + 1][0] ) *
-                                     255.0 );
-                uchar g = ( uchar )( ( weight * map[i][1] + ( 1.0 - weight ) * map[i + 1][1] ) *
-                                     255.0 );
-                uchar b = ( uchar )( ( weight * map[i][2] + ( 1.0 - weight ) * map[i + 1][2] ) *
-                                     255.0 );
+                // calculte the relative RGB values according to the depth disparity
+                float weight = 1.0 - ( val - cumulativeWeights[i] ) * relativeWeights[i];
+                uchar r = ( uchar )(
+                        ( weight * colors[i][0] + ( 1.0 - weight ) * colors[i + 1][0] ) * 255.0 );
+                uchar g = ( uchar )(
+                        ( weight * colors[i][1] + ( 1.0 - weight ) * colors[i + 1][1] ) * 255.0 );
+                uchar b = ( uchar )(
+                        ( weight * colors[i][2] + ( 1.0 - weight ) * colors[i + 1][2] ) * 255.0 );
                 vstore3( ( uchar3 )( r, g, b ), 0, pRgb + rgbStride * pos.y + pos.x * 3 );
             }
             else
@@ -215,24 +215,6 @@ RideHalError_e SampleDepthFromStereoViz::ConvertToRgbCPU( RideHal_SharedBuffer_t
 
     uint32_t h, w;
 
-    // color map
-    float map[8][4] = { { 0, 0, 0, 114 }, { 0, 0, 1, 185 }, { 1, 0, 0, 114 }, { 1, 0, 1, 174 },
-                        { 0, 1, 0, 114 }, { 0, 1, 1, 185 }, { 1, 1, 0, 114 }, { 1, 1, 1, 0 } };
-    float sum = 0;
-    for ( int32_t i = 0; i < 8; i++ )
-    {
-        sum += map[i][3];
-    }
-
-    float weights[8];   // relative weights
-    float cumsum[8];    // cumulative weights
-    cumsum[0] = 0;
-    for ( int32_t i = 0; i < 7; i++ )
-    {
-        weights[i] = sum / map[i][3];
-        cumsum[i + 1] = cumsum[i] + map[i][3] / sum;
-    }
-
     for ( h = 0; h < m_height; h++ )
     {
         uint16_t *pDisp = (uint16_t *) ( ( (uint8_t *) pOutDisp ) + h * strideW_Disp );
@@ -249,27 +231,30 @@ RideHalError_e SampleDepthFromStereoViz::ConvertToRgbCPU( RideHal_SharedBuffer_t
                     m_disparityMax = disp;
                 }
 
-                // get normalized value
+                // do normalization
                 float val = std::min( std::max( (float) disp / m_disparityMax, 0.0f ), 1.0f );
 
-                // find bin
+                // search to find index to the colors
                 int32_t i;
                 for ( i = 0; i < 7; i++ )
                 {
-                    if ( val < cumsum[i + 1] )
+                    if ( val < m_cumulativeWeights[i + 1] )
                     {
                         break;
                     }
                 }
 
-                // compute red/green/blue values
-                float weight = 1.0 - ( val - cumsum[i] ) * weights[i];
+                // calculte the relative RGB values according to the depth disparity
+                float weight = 1.0 - ( val - m_cumulativeWeights[i] ) * m_relativeWeights[i];
                 pColorPix[0] = ( uint8_t )(
-                        ( weight * map[i][0] + ( 1.0 - weight ) * map[i + 1][0] ) * 255.0 );
+                        ( weight * m_colors[i][0] + ( 1.0 - weight ) * m_colors[i + 1][0] ) *
+                        255.0 );
                 pColorPix[1] = ( uint8_t )(
-                        ( weight * map[i][1] + ( 1.0 - weight ) * map[i + 1][1] ) * 255.0 );
+                        ( weight * m_colors[i][1] + ( 1.0 - weight ) * m_colors[i + 1][1] ) *
+                        255.0 );
                 pColorPix[2] = ( uint8_t )(
-                        ( weight * map[i][2] + ( 1.0 - weight ) * map[i + 1][2] ) * 255.0 );
+                        ( weight * m_colors[i][2] + ( 1.0 - weight ) * m_colors[i + 1][2] ) *
+                        255.0 );
             }
             else
             {
