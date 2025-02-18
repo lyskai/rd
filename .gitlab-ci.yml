@@ -5,7 +5,8 @@ stages:
   - build
   - test
   - eval
-  - pack
+  - check
+  - release
 
 start:
   stage: start
@@ -125,8 +126,30 @@ perf-eval-ubuntu:
   allow_failure: true
   timeout: 1h
 
+static-stan:
+  stage: check
+  script:
+    - echo "Start code static scan"
+    - sh /data/scripts/run_static_scan.sh
+  artifacts:
+    name: "static-scan-reports"
+    when: on_success
+    expire_in: 6 hours
+    paths:
+      - staticScan-reports
+  tags:
+    - ridehal-dev
+  rules:
+    - if: '$CI_COMMIT_TAG == "master"'
+      when: manual
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+  allow_failure: true
+  timeout: 1h
+
+
 generate packages:
-  stage: pack
+  stage: release
   script:
     - echo "Generating ridehal packages"
     - mkdir packages
