@@ -517,10 +517,18 @@ RideHalError_e VideoDecoder::InitFromConfig( const VideoDecoder_Config_t *cfg )
     {
         m_bNonDynamicAppAllocBuffer[VIDEO_CODEC_BUF_INPUT] = true;
     }
+    else
+    {
+        m_bNonDynamicAppAllocBuffer[VIDEO_CODEC_BUF_INPUT] = false;
+    }
     if ( ( false == m_bDynamicMode[VIDEO_CODEC_BUF_OUTPUT] ) &&
          ( nullptr != cfg->pOutputBufferList ) )
     {
         m_bNonDynamicAppAllocBuffer[VIDEO_CODEC_BUF_OUTPUT] = true;
+    }
+    else
+    {
+        m_bNonDynamicAppAllocBuffer[VIDEO_CODEC_BUF_OUTPUT] = false;
     }
 
     RIDEHAL_INFO( "dec-init: w:%u, h:%u, fps:%u, inbuf: dynamicMode:%d, num:%u, outbuf: "
