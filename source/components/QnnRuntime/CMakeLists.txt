@@ -14,7 +14,11 @@ set( QNN_HEADERS
     ${HEADERS_DIR}/ridehal/component/QnnRuntime.hpp
 )
 
-set( QNN_SAMPLEAPP_DIR ${QNN_SDK_ROOT}/examples/QNN/SampleApp )
+if (EXISTS "${QNN_SDK_ROOT}/examples/QNN/SampleApp/SampleApp")
+    set( QNN_SAMPLEAPP_DIR ${QNN_SDK_ROOT}/examples/QNN/SampleApp/SampleApp )
+else()
+    set( QNN_SAMPLEAPP_DIR ${QNN_SDK_ROOT}/examples/QNN/SampleApp )
+endif()
 
 set( QNN_SOURCES
     ${QNN_SAMPLEAPP_DIR}/src/Log/LogUtils.cpp
