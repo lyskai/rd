@@ -83,18 +83,37 @@ setup_env_linux() {
             fi
         fi
 
-        export LINUX_SDK_ROOT=/opt/linux
-        if [ ! -d $LINUX_SDK_ROOT/sysroots/aarch64-oe-linux/usr/include ]; then
+	export LINUX_SDK_ROOT=/opt/linux
+	if [ ! -d $LINUX_SDK_ROOT/sysroots ]; then
+	    tc_num=$(find -L $LINUX_SDK_ROOT -name "oecore-x86_64-*-toolchain-*.sh" | wc -l)
+            if [ $tc_num -gt 1 ]; then
+                echo "LINUX SDK toolchain more than 1"
+                exit -1
+            fi
+            if [ $tc_num -lt 1 ]; then
+                echo "LINUX SDK toolchain does not exist"
+                exit -1
+            fi
+            toolchain=$(find -L $LINUX_SDK_ROOT -name "oecore-x86_64-*-toolchain-*.sh")
+            export ARCH=`echo basename $toolchain | awk -F '-' '{print $3}'`
+            echo "Toolchain target path not found, installing LINUX SDK"
             cd $LINUX_SDK_ROOT
-            echo y | sh ./oecore-x86_64-aarch64-toolchain-nodistro.0.sh -d .
+            echo y | sh $toolchain -d .
         fi
     fi
 
     if [[ -v LINUX_SDK_ROOT ]]; then
+	target_path=$(find -L $LINUX_SDK_ROOT/sysroots -maxdepth 1 -name "*-oe-linux" -type d)
+        if [ -z $target_path ]; then
+            echo "LINUX toolchain target path does not exist"
+            exit -1
+        fi
+        export ARCH=$(basename $target_path | awk -F '-' '{print $1}')
         echo build with LINUX SDK
         echo LINUX_SDK_ROOT: $LINUX_SDK_ROOT
+	echo LINUX_SDK_ARCH: $ARCH
         export LINUX_HOST=$LINUX_SDK_ROOT/sysroots/x86_64-oesdk-linux
-        export LINUX_TARGET=$LINUX_SDK_ROOT/sysroots/aarch64-oe-linux
+        export LINUX_TARGET=$LINUX_SDK_ROOT/sysroots/$ARCH-oe-linux
         export PATH=$LINUX_HOST/usr/bin/aarch64-oe-linux:$PATH
         export CC=aarch64-oe-linux-gcc
         export CXX=aarch64-oe-linux-g++
@@ -108,7 +127,7 @@ setup_env_linux() {
         export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-linux.cmake
         export TOOLCHAIN_SYSROOT=$LINUX_TARGET
     else
-        echo please specify the LINUX_SDK_ROOT path that contains the sysroots/aarch64-oe-linux
+        echo please specify the LINUX_SDK_ROOT path that contains the sysroots/$ARCH-oe-linux
         exit -1
     fi
 
@@ -128,17 +147,36 @@ setup_env_ubuntu() {
         fi
 
         export UBUNTU_SDK_ROOT=/opt/ubuntu
-        if [ ! -d $UBUNTU_SDK_ROOT/sysroots/aarch64-oe-linux/usr/include ]; then
+	if [ ! -d $UBUNTU_SDK_ROOT/sysroots ]; then
+            tc_num=$(find -L $UBUNTU_SDK_ROOT -name "oecore-x86_64-*-ubuntu-toolchain-*.sh" | wc -l)
+            if [ $tc_num -gt 1 ]; then
+                echo "UBUNTU SDK toolchain more than 1"
+                exit -1
+            fi
+            if [ $tc_num -lt 1 ]; then
+                echo "UBUNTU SDK toolchain does not exist"
+                exit -1
+            fi
+            toolchain=$(find -L $UBUNTU_SDK_ROOT -name "oecore-x86_64-*-ubuntu-toolchain-*.sh")
+            export ARCH=`echo basename $toolchain | awk -F '-' '{print $3}'`
+            echo "Toolchain target path not found, installing UBUNTU SDK"
             cd $UBUNTU_SDK_ROOT
-            echo y | sh ./oecore-x86_64-aarch64-sa8775-ubuntu-toolchain-nodistro.0.sh -d .
+            echo y | sh $toolchain -d .
         fi
     fi
 
     if [[ -v UBUNTU_SDK_ROOT ]]; then
+	target_path=$(find -L $UBUNTU_SDK_ROOT/sysroots -maxdepth 1 -name "*-oe-linux" -type d)
+        if [ -z $target_path ]; then
+            echo "UBUNTU toolchain target path does not exist"
+            exit -1
+        fi
+        export ARCH=$(basename $target_path | awk -F '-' '{print $1}')
         echo build with UBUNTU SDK
         echo UBUNTU_SDK_ROOT: $UBUNTU_SDK_ROOT
+	echo UBUNTU_SDK_ARCH: $ARCH
         export UBUNTU_HOST=$UBUNTU_SDK_ROOT/sysroots/x86_64-oesdk-linux
-        export UBUNTU_TARGET=$UBUNTU_SDK_ROOT/sysroots/aarch64-oe-linux
+        export UBUNTU_TARGET=$UBUNTU_SDK_ROOT/sysroots/$ARCH-oe-linux
         export CC=aarch64-linux-gnu-gcc
         export CXX=aarch64-linux-gnu-g++
         export LD=aarch64-linux-gnu-ld
@@ -151,7 +189,7 @@ setup_env_ubuntu() {
         export CMAKE_TOOLCHAIN_FILE=$homedir/toolchain/toolchain-aarch64-ubuntu.cmake
         export TOOLCHAIN_SYSROOT=$UBUNTU_TARGET
     else
-        echo please specify the UBUNTU_SDK_ROOT path that contains the sysroots/aarch64-oe-linux
+        echo please specify the UBUNTU_SDK_ROOT path that contains the sysroots/$ARCH-oe-linux
         exit -1
     fi
 
