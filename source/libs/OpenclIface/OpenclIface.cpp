@@ -45,36 +45,32 @@ RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level,
 
     if ( CL_SUCCESS == retCL )
     {
-        if ( OPENCLIFACE_PERF_HIGH == priority )
+        m_context = clCreateContext( NULL, 1, &m_deviceID, NULL, NULL, &retCL );
+        if ( CL_SUCCESS != retCL )
         {
-            m_properties[1] = CL_PERF_HINT_HIGH_QCOM;
-        }
-        else if ( OPENCLIFACE_PERF_NORMAL == priority )
-        {
-            m_properties[1] = CL_PERF_HINT_NORMAL_QCOM;
-        }
-        else if ( OPENCLIFACE_PERF_LOW == priority )
-        {
-            m_properties[1] = CL_PERF_HINT_LOW_QCOM;
-        }
-        else
-        {
-            RIDEHAL_ERROR( "Invalid performance priority argument setting" );
-            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+            RIDEHAL_ERROR( "Unable to create context, retCL = %d", retCL );
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
     if ( CL_SUCCESS == retCL )
     {
-#if defined( __QNXNTO__ )
-        m_context = clCreateContext( NULL, 1, &m_deviceID, NULL, NULL, &retCL );
-#else
-        m_context = clCreateContext( m_properties, 1, &m_deviceID, NULL, NULL, &retCL );
-#endif
-        if ( CL_SUCCESS != retCL )
+        if ( OPENCLIFACE_PERF_HIGH == priority )
         {
-            RIDEHAL_ERROR( "Unable to create context, retCL = %d", retCL );
-            ret = RIDEHAL_ERROR_FAIL;
+            clSetPerfHintQCOM( m_context, CL_PERF_HINT_HIGH_QCOM );
+        }
+        else if ( OPENCLIFACE_PERF_NORMAL == priority )
+        {
+            clSetPerfHintQCOM( m_context, CL_PERF_HINT_NORMAL_QCOM );
+        }
+        else if ( OPENCLIFACE_PERF_LOW == priority )
+        {
+            clSetPerfHintQCOM( m_context, CL_PERF_HINT_LOW_QCOM );
+        }
+        else
+        {
+            RIDEHAL_ERROR( "Invalid performance priority argument setting" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
         }
     }
 

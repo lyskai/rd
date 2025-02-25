@@ -194,13 +194,11 @@ public:
 
 
 private:
-    cl_platform_id m_platformID;     /**OpenCL platform ID*/
-    cl_device_id m_deviceID;         /**OpenCL device ID*/
-    cl_command_queue m_commandQueue; /**OpenCL command queue*/
-    cl_context m_context;            /**OpenCL context*/
-    cl_program m_program;            /**OpenCL program*/
-    cl_context_properties m_properties[3] = { CL_CONTEXT_PERF_HINT_QCOM, CL_PERF_HINT_NORMAL_QCOM,
-                                              0 };       /**OpenCL performance priority level*/
+    cl_platform_id m_platformID;                         /**OpenCL platform ID*/
+    cl_device_id m_deviceID;                             /**OpenCL device ID*/
+    cl_command_queue m_commandQueue;                     /**OpenCL command queue*/
+    cl_context m_context;                                /**OpenCL context*/
+    cl_program m_program;                                /**OpenCL program*/
     std::map<void *, OpenclIface_MemInfo_t> m_bufferMap; /**OpenCL buffer memory map*/
     std::map<void *, OpenclIface_MemInfo_t> m_imageMap;  /**OpenCL image memory map*/
     std::map<std::pair<void *, uint32_t>, OpenclIface_MemInfo_t>
