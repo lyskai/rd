@@ -131,7 +131,7 @@ RideHalError_e CL2DFlex::Init( const char *pName, const CL2DFlex_Config_t *pConf
         if ( RIDEHAL_ERROR_NONE == ret )
         {
             m_config = *pConfig;
-            ret = m_OpenclSrvObj.Init( pName, level );
+            ret = m_OpenclSrvObj.Init( pName, level, m_config.priority );
             if ( RIDEHAL_ERROR_NONE != ret )
             {
                 RIDEHAL_ERROR( "Init OpenCL failed!" );

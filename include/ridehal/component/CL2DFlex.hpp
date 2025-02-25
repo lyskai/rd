@@ -92,6 +92,8 @@ typedef struct
                   value in which the lower 24 bits are composed of three 8 bits values representing
                   R,G,B respectively, default set to 0 which means all black */
     CL2DFlex_MapTable_t remapTable[RIDEHAL_MAX_INPUTS]; /**<remap table, used for remap work mode*/
+    OpenclIfcae_Perf_e priority =
+            OPENCLIFACE_PERF_NORMAL; /**<OpenCL performance priority level, default set to normal*/
 } CL2DFlex_Config_t;
 
 class CL2DPipelineBase; /**<pipeline base class*/

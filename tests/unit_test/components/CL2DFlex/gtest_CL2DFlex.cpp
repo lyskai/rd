@@ -1059,7 +1059,8 @@ void CoverageTest()
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     OpenclSrv OpenclSrvObj;
-    ret = OpenclSrvObj.Init( pName, LOGGER_LEVEL_ERROR );   // success init OpenclSrv
+    ret = OpenclSrvObj.Init( pName, LOGGER_LEVEL_ERROR,
+                             OPENCLIFACE_PERF_LOW );   // success init OpenclSrv with low priority
     ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
 
     ret = OpenclSrvObj.LoadFromSource( "" );   // create program with null source

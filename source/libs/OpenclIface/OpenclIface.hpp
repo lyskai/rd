@@ -27,6 +27,15 @@ namespace OpenclIface
 ** Typedefs
 =================================================================================================*/
 
+/** @brief OpenCL performance priority level */
+typedef enum
+{
+    OPENCLIFACE_PERF_HIGH,   /**request highest priority for all submissions for any command*/
+    OPENCLIFACE_PERF_NORMAL, /**request balanced priority for all submissions for any command, the
+                                default setting*/
+    OPENCLIFACE_PERF_LOW     /**request lower priority for all submissions for any command*/
+} OpenclIfcae_Perf_e;
+
 /** @brief OpenCL execute arguments structure */
 typedef struct
 {
@@ -61,12 +70,14 @@ public:
      * @brief Initialize the OpenclIface object
      * @param[in] pName the OpenclIface unique instance name
      * @param[in] level the logger message level
+     * @param[in] priority the desired performance priority level for this OpenCL context
      * @return RIDEHAL_ERROR_NONE on success, others on failure
      * @note Do all the initialization work for a OpenclIface object: get platform ID, get device
      * ID, create context, create command queue, get device info. Must be called at the beginning of
      * pipeline.
      */
-    RideHalError_e Init( const char *pName, Logger_Level_e level );
+    RideHalError_e Init( const char *pName, Logger_Level_e level,
+                         OpenclIfcae_Perf_e priority = OPENCLIFACE_PERF_NORMAL );
 
     /**
      * @brief Load OpenCL program from source file
@@ -183,11 +194,13 @@ public:
 
 
 private:
-    cl_platform_id m_platformID;                         /**OpenCL platform ID*/
-    cl_device_id m_deviceID;                             /**OpenCL device ID*/
-    cl_command_queue m_commandQueue;                     /**OpenCL command queue*/
-    cl_context m_context;                                /**OpenCL context*/
-    cl_program m_program;                                /**OpenCL program*/
+    cl_platform_id m_platformID;     /**OpenCL platform ID*/
+    cl_device_id m_deviceID;         /**OpenCL device ID*/
+    cl_command_queue m_commandQueue; /**OpenCL command queue*/
+    cl_context m_context;            /**OpenCL context*/
+    cl_program m_program;            /**OpenCL program*/
+    cl_context_properties m_properties[3] = { CL_CONTEXT_PERF_HINT_QCOM, CL_PERF_HINT_NORMAL_QCOM,
+                                              0 };       /**OpenCL performance priority level*/
     std::map<void *, OpenclIface_MemInfo_t> m_bufferMap; /**OpenCL buffer memory map*/
     std::map<void *, OpenclIface_MemInfo_t> m_imageMap;  /**OpenCL image memory map*/
     std::map<std::pair<void *, uint32_t>, OpenclIface_MemInfo_t>

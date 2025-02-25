@@ -12,7 +12,8 @@ namespace libs
 namespace OpenclIface
 {
 
-RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level )
+RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level,
+                                OpenclIfcae_Perf_e priority )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
     cl_int retCL = CL_SUCCESS;
@@ -44,7 +45,32 @@ RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level )
 
     if ( CL_SUCCESS == retCL )
     {
+        if ( OPENCLIFACE_PERF_HIGH == priority )
+        {
+            m_properties[1] = CL_PERF_HINT_HIGH_QCOM;
+        }
+        else if ( OPENCLIFACE_PERF_NORMAL == priority )
+        {
+            m_properties[1] = CL_PERF_HINT_NORMAL_QCOM;
+        }
+        else if ( OPENCLIFACE_PERF_LOW == priority )
+        {
+            m_properties[1] = CL_PERF_HINT_LOW_QCOM;
+        }
+        else
+        {
+            RIDEHAL_ERROR( "Invalid performance priority argument setting" );
+            ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+    }
+
+    if ( CL_SUCCESS == retCL )
+    {
+#if defined( __QNXNTO__ )
         m_context = clCreateContext( NULL, 1, &m_deviceID, NULL, NULL, &retCL );
+#else
+        m_context = clCreateContext( m_properties, 1, &m_deviceID, NULL, NULL, &retCL );
+#endif
         if ( CL_SUCCESS != retCL )
         {
             RIDEHAL_ERROR( "Unable to create context, retCL = %d", retCL );
