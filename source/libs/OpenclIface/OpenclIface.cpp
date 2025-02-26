@@ -45,32 +45,30 @@ RideHalError_e OpenclSrv::Init( const char *pName, Logger_Level_e level,
 
     if ( CL_SUCCESS == retCL )
     {
-        m_context = clCreateContext( NULL, 1, &m_deviceID, NULL, NULL, &retCL );
-        if ( CL_SUCCESS != retCL )
-        {
-            RIDEHAL_ERROR( "Unable to create context, retCL = %d", retCL );
-            ret = RIDEHAL_ERROR_FAIL;
-        }
-    }
-
-    if ( CL_SUCCESS == retCL )
-    {
+        cl_context_properties properties[] = { CL_CONTEXT_PRIORITY_HINT_QCOM,
+                                               CL_PRIORITY_HINT_NORMAL_QCOM, 0 };
         if ( OPENCLIFACE_PERF_HIGH == priority )
         {
-            clSetPerfHintQCOM( m_context, CL_PERF_HINT_HIGH_QCOM );
+            properties[1] = CL_PRIORITY_HINT_HIGH_QCOM;
         }
         else if ( OPENCLIFACE_PERF_NORMAL == priority )
         {
-            clSetPerfHintQCOM( m_context, CL_PERF_HINT_NORMAL_QCOM );
+            properties[1] = CL_PRIORITY_HINT_NORMAL_QCOM;
         }
         else if ( OPENCLIFACE_PERF_LOW == priority )
         {
-            clSetPerfHintQCOM( m_context, CL_PERF_HINT_LOW_QCOM );
+            properties[1] = CL_PRIORITY_HINT_LOW_QCOM;
         }
         else
         {
             RIDEHAL_ERROR( "Invalid performance priority argument setting" );
             ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
+        }
+        m_context = clCreateContext( properties, 1, &m_deviceID, NULL, NULL, &retCL );
+        if ( CL_SUCCESS != retCL )
+        {
+            RIDEHAL_ERROR( "Unable to create context, retCL = %d", retCL );
+            ret = RIDEHAL_ERROR_FAIL;
         }
     }
 
