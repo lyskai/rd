@@ -1565,6 +1565,251 @@ TEST( QnnRuntime, InputOutputCheck )
 #endif
 }
 
+TEST( QnnRuntime, ExecuteWithRegDeRegEachTime )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnn0;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
+
+    ret = qnn0.Init( "QNNBR", pQnnConfig, LOGGER_LEVEL_VERBOSE );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    ret = qnn0.GetInputInfo( &tensorInputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    ret = qnn0.GetOutputInfo( &tensorOutputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    const uint32_t inputNum = tensorInputList.num;
+    RideHal_SharedBuffer_t inputs[inputNum];
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    const uint32_t outputNum = tensorOutputList.num;
+    RideHal_SharedBuffer_t outputs[outputNum];
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    uint32_t loopNumber = 100;
+    const char *envValue = getenv( "QNN_TEST_LOOP_NUMBER" );
+    if ( nullptr != envValue )
+    {
+        loopNumber = (uint32_t) atoi( envValue );
+    }
+    for ( uint32_t l = 0; l < loopNumber; l++ )
+    {
+        printf( "ExecuteWithRegDeRegEachTime: %u\n", l );
+
+        ret = qnn0.RegisterBuffers( inputs, inputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.RegisterBuffers( outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.Execute( inputs, inputNum, outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.DeRegisterBuffers( inputs, inputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.DeRegisterBuffers( outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+
+    ret = qnn0.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+#ifdef QNN_GTEST_ENABLE_BUFFER_FREE
+    for ( int i = 0; i < inputNum; ++i )
+    {
+        ret = inputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+    for ( int i = 0; i < outputNum; ++i )
+    {
+        ret = outputs[i].Free();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+    }
+#endif
+}
+
+TEST( QnnRuntime, ExecuteWithAllocBufferEachTime )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnn0;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
+
+    ret = qnn0.Init( "QNNBF", pQnnConfig, LOGGER_LEVEL_VERBOSE );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Start();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorInputList;
+    ret = qnn0.GetInputInfo( &tensorInputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    QnnRuntime_TensorInfoList_t tensorOutputList;
+    ret = qnn0.GetOutputInfo( &tensorOutputList );
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    uint32_t loopNumber = 100;
+    const char *envValue = getenv( "QNN_TEST_LOOP_NUMBER" );
+    if ( nullptr != envValue )
+    {
+        loopNumber = (uint32_t) atoi( envValue );
+    }
+    for ( uint32_t l = 0; l < loopNumber; l++ )
+    {
+        printf( "ExecuteWithAllocBufferEachTime: %u\n", l );
+        const uint32_t inputNum = tensorInputList.num;
+        RideHal_SharedBuffer_t inputs[inputNum];
+        for ( int i = 0; i < inputNum; ++i )
+        {
+            ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+
+        const uint32_t outputNum = tensorOutputList.num;
+        RideHal_SharedBuffer_t outputs[outputNum];
+        for ( int i = 0; i < outputNum; ++i )
+        {
+            ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+
+        ret = qnn0.RegisterBuffers( inputs, inputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.RegisterBuffers( outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.Execute( inputs, inputNum, outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.DeRegisterBuffers( inputs, inputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.DeRegisterBuffers( outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        for ( int i = 0; i < inputNum; ++i )
+        {
+            ret = inputs[i].Free();
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+        for ( int i = 0; i < outputNum; ++i )
+        {
+            ret = outputs[i].Free();
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+    }
+
+    ret = qnn0.Stop();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+    ret = qnn0.Deinit();
+    ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+}
+
+
+TEST( QnnRuntime, InitDeInitStress )
+{
+    RideHalError_e ret = RIDEHAL_ERROR_NONE;
+
+    QnnRuntime qnn0;
+    QnnRuntime_Config_t qnnConfig;
+    QnnRuntime_Config_t *pQnnConfig = &qnnConfig;
+
+    qnnConfig.modelPath = "data/centernet/program.bin";
+    qnnConfig.processorType = RIDEHAL_PROCESSOR_HTP0;
+
+    uint32_t loopNumber = 100;
+    const char *envValue = getenv( "QNN_TEST_LOOP_NUMBER" );
+    if ( nullptr != envValue )
+    {
+        loopNumber = (uint32_t) atoi( envValue );
+    }
+    for ( uint32_t l = 0; l < loopNumber; l++ )
+    {
+        printf( "InitDeInitStress: %u\n", l );
+
+        ret = qnn0.Init( "QNNBF", pQnnConfig, LOGGER_LEVEL_VERBOSE );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.Start();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        QnnRuntime_TensorInfoList_t tensorInputList;
+        ret = qnn0.GetInputInfo( &tensorInputList );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        QnnRuntime_TensorInfoList_t tensorOutputList;
+        ret = qnn0.GetOutputInfo( &tensorOutputList );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        const uint32_t inputNum = tensorInputList.num;
+        RideHal_SharedBuffer_t inputs[inputNum];
+        for ( int i = 0; i < inputNum; ++i )
+        {
+            ret = inputs[i].Allocate( &tensorInputList.pInfo[i].properties );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+
+        const uint32_t outputNum = tensorOutputList.num;
+        RideHal_SharedBuffer_t outputs[outputNum];
+        for ( int i = 0; i < outputNum; ++i )
+        {
+            ret = outputs[i].Allocate( &tensorOutputList.pInfo[i].properties );
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+
+        ret = qnn0.Execute( inputs, inputNum, outputs, outputNum );
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.Stop();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        ret = qnn0.Deinit();
+        ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+
+        for ( int i = 0; i < inputNum; ++i )
+        {
+            ret = inputs[i].Free();
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+        for ( int i = 0; i < outputNum; ++i )
+        {
+            ret = outputs[i].Free();
+            ASSERT_EQ( RIDEHAL_ERROR_NONE, ret );
+        }
+    }
+}
+
 
 #ifndef GTEST_RIDEHAL
 int main( int argc, char **argv )
