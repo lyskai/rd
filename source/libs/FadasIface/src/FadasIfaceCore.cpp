@@ -518,7 +518,7 @@ AEEResult FadasIface_FadasDeregBuf( remote_handle64 handle, int32_t bufFd, uint3
         {
             retVal = FadasDeregBuf( ptr );
             ptr += bufSize;
-            if ( FADAS_ERROR_NONE != ret )
+            if ( FADAS_ERROR_NONE != retVal )
             {
                 FARF( ERROR, "Failed to do FadasDeregBuf!" );
                 ret = AEE_EFAILED;
