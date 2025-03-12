@@ -43,8 +43,8 @@ typedef struct
 /** @brief UDO package information */
 typedef struct
 {
-    const char *interfaceProvider; /**<name of interface provider*/
-    const char *udoLibPath;        /**<uod library path*/
+    const char *interfaceProvider; /**<The name of the interface provider*/
+    const char *udoLibPath;        /**<The UDO library path*/
 } QnnRuntime_UdoPackage_t;
 
 /** @brief Qnn model loading type */

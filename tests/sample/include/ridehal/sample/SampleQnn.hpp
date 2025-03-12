@@ -55,6 +55,12 @@ private:
         SAMPLE_QNN_IMAGE_CONVERT_CHROMA_FIRST,
     } SampleQnn_ImageConvertType_e;
 
+    typedef struct
+    {
+        std::string interfaceProvider; /**<name of interface provider*/
+        std::string udoLibPath;        /**<uod library path*/
+    } UdoPackage_t;
+
 private:
     QnnRuntime_Config_t m_config;
     SampleQnn_ImageConvertType_e m_imageConvertType = SAMPLE_QNN_IMAGE_CONVERT_DEFAULT;
@@ -67,6 +73,7 @@ private:
     std::string m_modelInOutInfoTopicName;
 
     std::string m_modelPath;
+    std::vector<UdoPackage_t> m_udoPkgs;
     std::vector<QnnRuntime_UdoPackage_t> m_opPackagePaths;
     std::thread m_thread;
     bool m_stop;

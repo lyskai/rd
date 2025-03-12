@@ -100,6 +100,7 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
     {
         std::vector<std::string> opPackagePaths;
         split( opPackagePaths, opPackagePathsStr, ',' );
+        m_udoPkgs.resize( opPackagePaths.size() );
         m_opPackagePaths.resize( opPackagePaths.size() );
         for ( int i = 0; i < opPackagePaths.size(); ++i )
         {
@@ -111,8 +112,10 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
                 ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
                 break;
             }
-            m_opPackagePaths[i].udoLibPath = opPackage[0].c_str();
-            m_opPackagePaths[i].interfaceProvider = opPackage[1].c_str();
+            m_udoPkgs[i].udoLibPath = opPackage[0];
+            m_udoPkgs[i].interfaceProvider = opPackage[1];
+            m_opPackagePaths[i].udoLibPath = m_udoPkgs[i].udoLibPath.c_str();
+            m_opPackagePaths[i].interfaceProvider = m_udoPkgs[i].interfaceProvider.c_str();
             RIDEHAL_INFO( "opPackage params %d, udoLibPath: %s, interfaceProvider: %s\n", i,
                           m_opPackagePaths[i].udoLibPath, m_opPackagePaths[i].interfaceProvider );
         }
