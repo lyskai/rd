@@ -150,6 +150,8 @@ RideHalError_e SampleVideoEncoder::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    m_config.bSyncFrameSeqHdr = Get( config, "sync_frame", false );
+
     m_inputTopicName = Get( config, "input_topic", "" );
     if ( "" == m_inputTopicName )
     {

@@ -143,6 +143,7 @@ RideHalError_e VideoEncoder::InitFromConfig( const VideoEncoder_Config_t *cfg )
     m_inFormat = cfg->inFormat;
     m_outFormat = cfg->outFormat;
 
+    m_bEnableSyncFrameSeq = cfg->bSyncFrameSeqHdr;
     m_bDynamicMode[VIDEO_CODEC_BUF_INPUT] = cfg->bInputDynamicMode;
     m_bDynamicMode[VIDEO_CODEC_BUF_OUTPUT] = cfg->bOutputDynamicMode;
     m_bufNum[VIDEO_CODEC_BUF_INPUT] = cfg->numInputBufferReq;
@@ -352,6 +353,14 @@ RideHalError_e VideoEncoder::InitDrvProperty()
         m_vidcEncoderData.bitrate.target_bitrate = m_bitRate;
         ret = m_drvClient.SetDrvProperty( VIDC_I_TARGET_BITRATE, sizeof( vidc_target_bitrate_type ),
                                           (uint8_t *) ( &m_vidcEncoderData.bitrate ) );
+    }
+
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        RIDEHAL_DEBUG( "Setting VIDC_I_ENC_SYNC_FRAME_SEQ_HDR" );
+        m_vidcEncoderData.enableSyncFrameSeq.enable = m_bEnableSyncFrameSeq;
+        ret = m_drvClient.SetDrvProperty( VIDC_I_ENC_SYNC_FRAME_SEQ_HDR, sizeof( vidc_enable_type ),
+                                          (uint8_t *) ( &m_vidcEncoderData.enableSyncFrameSeq ) );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )

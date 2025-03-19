@@ -75,6 +75,7 @@ typedef struct
     uint32_t numOutputBufferReq;
     bool bInputDynamicMode;
     bool bOutputDynamicMode;
+    bool bSyncFrameSeqHdr = false;                      /**< enable sync frame sequence header */
     RideHal_SharedBuffer_t *pInputBufferList = nullptr; /**< set input buffer in non-dynamic mode */
     RideHal_SharedBuffer_t *pOutputBufferList =
             nullptr; /**< set output buffer in non-dynamic mode */
@@ -124,6 +125,7 @@ typedef struct
     vidc_iperiod_type iPeriod;      /**< The data type to set I frame period pattern for encoder */
     vidc_idr_period_type idrPeriod; /**< The IDR frame periodicity within Intra coded frames */
     vidc_target_bitrate_type bitrate; /**< The encoder target bitrate */
+    vidc_enable_type enableSyncFrameSeq; /**< Enable sync frame sequence header */
     vidc_plane_def_type planeDefY;    /**< Specifies layout of raw data for planeY */
     vidc_plane_def_type planeDefUV;   /**< Specifies layout of raw data for planeUV */
 } VidcEncoderData_t;
@@ -232,6 +234,8 @@ private:
     VideoEncoder_RateControlMode_e m_rateControl;
     VidcEncoderData_t m_vidcEncoderData;
 
+    bool m_bEnableSyncFrameSeq = false;
+    
     void InFrameCallback( const VideoCodec_InputFrame_t *pInputFrame );
     void OutFrameCallback( const VideoCodec_OutputFrame_t *pOutputFrame );
     void EventCallback( const VideoCodec_EventType_e eventId, const void *pPayload );
