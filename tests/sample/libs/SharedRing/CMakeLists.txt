@@ -18,9 +18,11 @@ target_include_directories(SharedRing PUBLIC
     ${CMAKE_PREFIX_PATH}/include
 )
 
-find_package(RideHal)
 if( NOT TARGET RideHal )
-  message(FATAL_ERROR "RideHal SDK not found")
+  find_package(RideHal)
+  if( NOT TARGET RideHal )
+    message(FATAL_ERROR "RideHal SDK not found")
+  endif()
 endif()
 
 target_link_libraries(SharedRing 

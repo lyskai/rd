@@ -41,9 +41,11 @@ endif()
 
 set( RIDEHAL_SAMPLE_DEFINITIONS )
 
-find_package(RideHal)
 if( NOT TARGET RideHal )
-  message(FATAL_ERROR "RideHal SDK not found")
+  find_package(RideHal)
+  if( NOT TARGET RideHal )
+    message(FATAL_ERROR "RideHal SDK not found")
+  endif()
 endif()
 
 set( TARGET_LIBRARIES RideHal SharedRing )
