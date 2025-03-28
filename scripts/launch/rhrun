@@ -14,6 +14,9 @@ export CDSP_LIBRARY_PATH=$cdsp0skeldir
 export CDSP0_LIBRARY_PATH=$cdsp0skeldir
 export CDSP1_LIBRARY_PATH=$cdsp1skeldir
 
+# unset DISPLAY to avoid SDL from using X11
+unset DISPLAY
+
 if [ -f /usr/lib/libEGL_adreno.so ] ; then
 echo setup env for Linux SDL
 export SDL_VIDEO_EGL_DRIVER=/usr/lib/libEGL_adreno.so
