@@ -112,7 +112,7 @@ static void Eva_DepthFromStereoRun( std::string name, DepthFromStereo_Config_t &
 
     if ( ( false == goldenDispMap.empty() ) && ( false == goldenConfMap.empty() ) )
     {
-#if defined( __QNXNTO__ )
+#if 0
         // for the first run, with below to generate the golden
         SaveRaw( goldenDispMap, dispMap.data(), dispMap.size );
         SaveRaw( goldenConfMap, confMap.data(), confMap.size );

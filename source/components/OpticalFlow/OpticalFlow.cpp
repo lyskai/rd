@@ -12,7 +12,7 @@ namespace component
 #define RIDEHAL_EVA_OF_NUM_ICONFIG 11
 #define RIDEHAL_EVA_OF_NUM_FCONFIG 14
 
-#define ALIGN_S( size, align ) ( ( ( ( size ) + (align) -1 ) / ( align ) ) * ( align ) )
+#define ALIGN_S( size, align ) ( ( ( ( size ) + ( align ) - 1 ) / ( align ) ) * ( align ) )
 
 static const char *evaOFIConfigStrings[RIDEHAL_EVA_OF_NUM_ICONFIG] = {
         EVA_OF_ICONFIG_ACTUAL_FPS,
@@ -534,6 +534,10 @@ RideHalError_e OpticalFlow::RegisterEvaMem( const RideHal_SharedBuffer_t *pBuffe
         mem.nOffset = pBuffer->offset;
         mem.pAddress = pBuffer->data();
         mem.hMemHandle = (void *) pBuffer->buffer.dmaHandle;
+        if ( 0 != ( pBuffer->buffer.flags & RIDEHAL_BUFFER_FLAGS_CACHE_WB_WA ) )
+        {
+            mem.bCached = true;
+        }
         rc = EvaMemRegister( m_hOFSession, &mem );
         if ( EVA_SUCCESS != rc )
         {
