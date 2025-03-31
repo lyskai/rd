@@ -13,6 +13,8 @@ set( TARGET_LIBRARIES RideHalComponentCommon qcxclient qcxosal )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" )
     list( APPEND TARGET_LIBRARIES qcxplatform cutils )
+else()
+    list( APPEND TARGET_LIBRARIES xml2 )
 endif()
 
 add_library( RideHalCamera OBJECT ${CAMERA_SOURCES} )
