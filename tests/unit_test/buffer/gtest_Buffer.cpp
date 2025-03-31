@@ -7,6 +7,7 @@
 #include <chrono>
 #include <stdio.h>
 #include <thread>
+#include <algorithm>
 
 using namespace ridehal::common;
 using namespace std::chrono_literals;
