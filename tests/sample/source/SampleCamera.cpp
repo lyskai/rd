@@ -16,6 +16,15 @@ SampleCamera ::~SampleCamera() {}
 
 void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 {
+    CameraFrame_t camFrame = *pFrame;
+
+    std::unique_lock<std::mutex> lck( m_lock );
+    m_camFrameQueue.push( camFrame );
+    m_condVar.notify_one();
+}
+
+void SampleCamera::ProcessFrame( CameraFrame_t *pFrame )
+{
     DataFrames_t frames;
     DataFrame_t frame;
     SharedBuffer_t *pSharedBuffer = new SharedBuffer_t;
@@ -284,17 +293,54 @@ RideHalError_e SampleCamera::Start()
         }
     }
 
+    if ( RIDEHAL_ERROR_NONE == ret )
+    {
+        m_stop = false;
+        m_thread = std::thread( &SampleCamera::ThreadMain, this );
+    }
+
     return ret;
+}
+
+void SampleCamera::ThreadMain()
+{
+    while ( !m_stop )
+    {
+        CameraFrame_t frame;
+        std::unique_lock<std::mutex> lck( m_lock );
+        (void) m_condVar.wait_for( lck, std::chrono::milliseconds( 10 ) );
+        if ( !m_camFrameQueue.empty() )
+        {
+            frame = m_camFrameQueue.front();
+            m_camFrameQueue.pop();
+            ProcessFrame( &frame );
+        }
+    }
 }
 
 RideHalError_e SampleCamera::Stop()
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    m_stop = true;
+    if ( m_thread.joinable() )
+    {
+        m_thread.join();
+    }
+
     TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_camera.Stop();
     TRACE_END( SYSTRACE_TASK_STOP );
     PROFILER_SHOW();
+
+    while ( !m_camFrameQueue.empty() )
+    {
+        CameraFrame_t frame;
+        std::unique_lock<std::mutex> lck( m_lock );
+        frame = m_camFrameQueue.front();
+        m_camFrameQueue.pop();
+        ProcessFrame( &frame );
+    }
 
     return ret;
 }
@@ -314,3 +360,4 @@ REGISTER_SAMPLE( Camera, SampleCamera );
 
 }   // namespace sample
 }   // namespace ridehal
+
