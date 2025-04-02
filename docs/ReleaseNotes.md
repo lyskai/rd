@@ -1,11 +1,13 @@
 *Menu*:
 - [1. Overview](#1-overview)
 - [2. Feature Changes](#2-feature-changes)
-  - [2.1 Version 1.8.0](#21-version-180)
-  - [2.2 Version 1.7.1](#22-version-171)
+  - [2.1 Version 1.9.0](#21-version-190)
+  - [2.2 Version 1.8.0](#22-version-180)
+  - [2.3 Version 1.7.1](#23-version-171)
 - [3. Quality Improvements](#3-quality-improvements)
-  - [3.1 Version 1.8.0](#31-version-180)
-  - [3.2 Version 1.7.1](#32-version-171)
+  - [3.1 Version 1.9.0](#31-version-190)
+  - [3.2 Version 1.8.0](#32-version-180)
+  - [3.3 Version 1.7.1](#33-version-171)
 - [4. Verified Platforms](#4-verified-platforms)
 
 # 1. Overview
@@ -17,14 +19,20 @@ The RideHal is Qualcomm ADAS hardware abstraction layer that provides user frien
 - The RideHal Logger can be customized and easily integrated with customer ADAS application log system.
 
 # 2. Feature Changes
-## 2.1 Version 1.8.0
+## 2.1 Version 1.9.0
+- DFS: EVA memory register with bCache setup according to buffer flags
+- VideoEncoder: Add sync frame sequence header option
+- Sample: Enable rsm for HGY Linux
+- FadasIface: Add fadas skel lib for variant v68/v73/v75
+- SampleCamera: Use thread/queue to control frame request/release
+## 2.2 Version 1.8.0
 - CL2DFlex: Add perf priority to OpenCL Iface
 - CL2DFlex: Add resize from NV12 to NV12 function to CL2DFlex component
 - CL2DFlex: Add remap from NV12 to BGR pipeline and test cases for CL2DFlex
 - CL2DFlex: Add remap from NV12 to RGB pipeline for CL2DFlex component
 - Camera: Add session recovery support
 - Sample: re-implement the DFS method to convert disparity to depth heatmap
-## 2.2 Version 1.7.1
+## 2.3 Version 1.7.1
 - QnnRuntime: Support QNN Async Execute feature
 - Camera: HGY multi-client buffer import support
 - CL2DFlex: Add convert NV12 UBWC to NV12 pipeline
@@ -33,7 +41,12 @@ The RideHal is Qualcomm ADAS hardware abstraction layer that provides user frien
 - Sample: Add DepthFromStereo Sample
 
 # 3. Quality Improvements
-## 3.1 Version 1.8.0
+## 3.1 Version 1.9.0
+- Camera: add xml2 as a depend library
+- TinyViz: unset DISPLAY to avoid SDL from using X11
+- Build: Fix RideHal package not found warnings
+- Sample: Fix QNN udo path string that use after free issue
+## 3.2 Version 1.8.0
 - CL2DFlex: Fix priority setting parameter issue for OpenCL Iface
 - CL2DFlex: Modify OpenCL priority setting method to fit QNX platform
 - CL2DFlex: Add CL2DFlex resize from NV12 to NV12 gtest
@@ -47,7 +60,7 @@ The RideHal is Qualcomm ADAS hardware abstraction layer that provides user frien
 - Sample: Fix SampleVideoDemuxer building issue with CMake option
 - Build: Update building scripts to adapt HGY cortexa7x toolchain
 - Build: Add static scan to CI
-## 3.2 Version 1.7.1
+## 3.3 Version 1.7.1
 - Remap: Modify DSP mapping table parse method from whole buffer to fd zero copy
 - Build: Update the toolchain create script for HQX CS2.1
 - Camera: Fix coredump issue if no callback registerred

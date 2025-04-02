@@ -66,7 +66,7 @@ target_link_libraries( RideHal INTERFACE ${_ridehal_libs} )
 target_link_directories( RideHal INTERFACE ${_ridehal_library_dir} )
 target_compile_definitions( RideHal INTERFACE ${_ridehal_defines} )
 
-set( RIDEHAL_VERSION "1.8.0" )
+set( RIDEHAL_VERSION "1.9.0" )
 set( RIDEHAL_LIBRARIES RideHal )
 
 message( STATUS "RideHal version: ${RideHal_VERSION} : ${_ridehal_prefix}" )
