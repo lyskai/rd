@@ -58,12 +58,12 @@ static const char *s_pSourceBboxDet = KernelCode( __kernel void BboxDet(
             uint reg_idx = ( y * width + x );
             float2 xyReg = convert_float2( vload2( reg_idx, reg ) );
             float2 whReg = convert_float2( vload2( reg_idx, wh ) );
-            float2 wh2 = ( float2 )( width, height );
-            xyReg = ( xyReg + regOffset ) * regScale + ( float2 )( x, y );
+            float2 wh2 = (float2) ( width, height );
+            xyReg = ( xyReg + regOffset ) * regScale + (float2) ( x, y );
             whReg = ( whReg + whOffset ) * whScale * 0.5f;
 
-            float4 imgWH4 = ( float4 )( imgWidth, imgHeight, imgWidth, imgHeight );
-            float4 roiXY4 = ( float4 )( roiX, roiY, roiX, roiY );
+            float4 imgWH4 = (float4) ( imgWidth, imgHeight, imgWidth, imgHeight );
+            float4 roiXY4 = (float4) ( roiX, roiY, roiX, roiY );
 
             coords.s01 = ( xyReg - whReg ) / wh2;
             coords.s23 = ( xyReg + whReg ) / wh2;
@@ -93,8 +93,8 @@ static float fastPow( float p )
     {
         uint32_t i;
         float f;
-    } v = { ( uint32_t )( ( 1 << 23 ) * ( clipp + 121.2740575f + 27.7280233f / ( 4.84252568f - z ) -
-                                          1.49012907f * z ) ) };
+    } v = { (uint32_t) ( ( 1 << 23 ) * ( clipp + 121.2740575f + 27.7280233f / ( 4.84252568f - z ) -
+                                         1.49012907f * z ) ) };
 
     return v.f;
 }
@@ -502,8 +502,8 @@ void SamplePostProcCenternet::PostProcCPU( DataFrames_t &tensors )
     objs.frameId = tensors.FrameId( 0 );
     objs.timestamp = tensors.Timestamp( 0 );
     m_pub.Publish( objs );
-    RIDEHAL_DEBUG( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
-                   tensors.FrameId( 0 ) );
+    RIDEHAL_INFO( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
+                  tensors.FrameId( 0 ) );
 }
 
 RideHalError_e SamplePostProcCenternet::PostProcCL( DataFrames_t &tensors )
@@ -551,8 +551,8 @@ RideHalError_e SamplePostProcCenternet::PostProcCL( DataFrames_t &tensors )
     objs.frameId = tensors.FrameId( 0 );
     objs.timestamp = tensors.Timestamp( 0 );
     m_pub.Publish( objs );
-    RIDEHAL_DEBUG( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
-                   tensors.FrameId( 0 ) );
+    RIDEHAL_INFO( "number of detections %" PRIu64 " for frame %" PRIu64, objs.objs.size(),
+                  tensors.FrameId( 0 ) );
 
     return ret;
 }
