@@ -21,16 +21,13 @@ set( TARGET_LIBRARIES
     RideHalCL2DFlex
     RideHalOpticalFlow
     RideHalDepthFromStereo
+    RideHalGL2DFlex
 )
 
 if( NOT TARGET RideHalQnnRuntime )
   message(STATUS "build RideHal without QNN")
 else()
   list( APPEND TARGET_LIBRARIES RideHalQnnRuntime )
-endif()
-
-if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
-    list( APPEND TARGET_LIBRARIES RideHalGL2DFlex )
 endif()
 
 add_library( RideHal SHARED ${RIDEHAL_SOURCES} )

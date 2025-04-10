@@ -162,6 +162,7 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
             m_outputResolution.height = pConfig->outputResolution.height;
 
             std::lock_guard<std::mutex> l( s_mutLock );
+#if !defined( __QNXNTO__ )
 
             if ( RIDEHAL_ERROR_NONE == ret )
             {
@@ -190,7 +191,7 @@ RideHalError_e GL2DFlex::Init( const char *pName, const GL2DFlex_Config_t *pConf
             {
                 s_devRefCnt++;
             }
-
+#endif
             /* Complete initialization */
             if ( RIDEHAL_ERROR_NONE == ret )
             {
@@ -273,11 +274,12 @@ RideHalError_e GL2DFlex::Deinit()
                                        rc );
                     }
                 }
-
+#if !defined( __QNXNTO__ )
                 if ( it->second->bo != nullptr )
                 {
                     gbm_bo_destroy( it->second->bo );
                 }
+#endif
             }
         }
         m_inputImageMap.clear();
@@ -296,11 +298,12 @@ RideHalError_e GL2DFlex::Deinit()
                                        rc );
                     }
                 }
-
+#if !defined( __QNXNTO__ )
                 if ( it->second->bo != nullptr )
                 {
                     gbm_bo_destroy( it->second->bo );
                 }
+#endif
             }
         }
         m_outputImageMap.clear();
@@ -311,7 +314,7 @@ RideHalError_e GL2DFlex::Deinit()
         {
             RIDEHAL_ERROR( "Failed to delete GL program" );
         }
-
+#if !defined( __QNXNTO__ )
         if ( ( s_devRefCnt == 0 ) && ( s_gbmDev != nullptr ) )
         {
             s_drmDevFd = drmClose( s_drmDevFd );
@@ -323,6 +326,7 @@ RideHalError_e GL2DFlex::Deinit()
 
             gbm_device_destroy( s_gbmDev );
         }
+#endif
     }
 
     ret = ComponentIF::Deinit();
@@ -469,15 +473,7 @@ RideHalError_e GL2DFlex::RegisterInputBuffers( const RideHal_SharedBuffer_t *pIn
         bufferAddr = pInputBuffers[i].data();
         if ( m_inputImageMap.find( bufferAddr ) == m_inputImageMap.end() )
         {
-            RideHal_ImageFormat_e format = pInputBuffers[i].imgProps.format;
-            uint32_t width = pInputBuffers[i].imgProps.width;
-            uint32_t height = pInputBuffers[i].imgProps.height;
-            uint32_t stride = pInputBuffers[i].imgProps.stride[0];
-            uint32_t handle = pInputBuffers[i].buffer.dmaHandle;
-            size_t offset = pInputBuffers[i].offset;
-
-            ret = CreateGLInputImage( bufferAddr, format, width, height, stride, handle, offset,
-                                      inputInfo );
+            ret = CreateGLInputImage( &pInputBuffers[i], inputInfo );
             if ( ret != RIDEHAL_ERROR_NONE )
             {
                 RIDEHAL_ERROR( "Failed to create GL input image for input buffer %u", i );
@@ -505,15 +501,7 @@ RideHalError_e GL2DFlex::RegisterOutputBuffers( const RideHal_SharedBuffer_t *pO
             bufferAddr = (void *) ( (uint8_t *) pOutputBuffers[i].data() + k * outputSize );
             if ( m_outputImageMap.find( bufferAddr ) == m_outputImageMap.end() )
             {
-                RideHal_ImageFormat_e format = pOutputBuffers[i].imgProps.format;
-                uint32_t width = pOutputBuffers[i].imgProps.width;
-                uint32_t height = pOutputBuffers[i].imgProps.height;
-                uint32_t stride = pOutputBuffers[i].imgProps.stride[0];
-                uint32_t handle = pOutputBuffers[i].buffer.dmaHandle;
-                size_t offset = pOutputBuffers[i].offset;
-
-                ret = CreateGLOutputImage( bufferAddr, format, width, height, stride, handle,
-                                           offset, outputInfo );
+                ret = CreateGLOutputImage( &pOutputBuffers[i], outputInfo );
                 if ( ret != RIDEHAL_ERROR_NONE )
                 {
                     RIDEHAL_ERROR( "Failed to create GL output image for output buffer %u batch %u",
@@ -558,11 +546,12 @@ RideHalError_e GL2DFlex::DeregisterInputBuffers( const RideHal_SharedBuffer_t *p
                                 i, rc );
                     }
                 }
-
+#if !defined( __QNXNTO__ )
                 if ( m_inputImageMap[bufferAddr]->bo != nullptr )
                 {
                     gbm_bo_destroy( m_inputImageMap[bufferAddr]->bo );
                 }
+#endif
 
                 (void) m_inputImageMap.erase( bufferAddr );
             }
@@ -607,11 +596,12 @@ RideHalError_e GL2DFlex::DeregisterOutputBuffers( const RideHal_SharedBuffer_t *
                                            i, k, rc );
                         }
                     }
-
+#if !defined( __QNXNTO__ )
                     if ( m_outputImageMap[bufferAddr]->bo != nullptr )
                     {
                         gbm_bo_destroy( m_outputImageMap[bufferAddr]->bo );
                     }
+#endif
 
                     (void) m_outputImageMap.erase( bufferAddr );
                 }
@@ -641,7 +631,11 @@ RideHalError_e GL2DFlex::EGLInit()
 
     if ( !m_bEGLReady )
     {
+#if defined( __QNXNTO__ )
+        m_display = eglGetDisplay( EGL_DEFAULT_DISPLAY );
+#else
         m_display = eglGetPlatformDisplay( EGL_PLATFORM_GBM_KHR, NULL, NULL );
+#endif
         if ( nullptr == m_display )
         {
             ret = RIDEHAL_ERROR_FAIL;
@@ -875,15 +869,7 @@ RideHalError_e GL2DFlex::GetInputImageInfo( const RideHal_SharedBuffer_t *pInput
 
     if ( m_inputImageMap.find( bufferAddr ) == m_inputImageMap.end() )
     {
-        RideHal_ImageFormat_e format = pInputBuffer->imgProps.format;
-        uint32_t width = pInputBuffer->imgProps.width;
-        uint32_t height = pInputBuffer->imgProps.height;
-        uint32_t stride = pInputBuffer->imgProps.stride[0];
-        uint32_t handle = pInputBuffer->buffer.dmaHandle;
-        size_t offset = pInputBuffer->offset;
-
-        ret = CreateGLInputImage( bufferAddr, format, width, height, stride, handle, offset,
-                                  inputInfo );
+        ret = CreateGLInputImage( pInputBuffer, inputInfo );
     }
     else
     {
@@ -905,15 +891,7 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
 
     if ( m_outputImageMap.find( bufferAddr ) == m_outputImageMap.end() )
     {
-        RideHal_ImageFormat_e format = pOutputBuffer->imgProps.format;
-        uint32_t width = pOutputBuffer->imgProps.width;
-        uint32_t height = pOutputBuffer->imgProps.height;
-        uint32_t stride = pOutputBuffer->imgProps.stride[0];
-        uint32_t handle = pOutputBuffer->buffer.dmaHandle;
-        size_t offset = pOutputBuffer->offset;
-
-        ret = CreateGLOutputImage( bufferAddr, format, width, height, stride, handle, offset,
-                                   outputInfo );
+        ret = CreateGLOutputImage( pOutputBuffer, outputInfo );
     }
     else
     {
@@ -924,13 +902,21 @@ RideHalError_e GL2DFlex::GetOutputImageInfo( const RideHal_SharedBuffer_t *pOutp
 }
 
 
-RideHalError_e GL2DFlex::CreateGLInputImage( void *bufferAddr, RideHal_ImageFormat_e format,
-                                             uint32_t width, uint32_t height, uint32_t stride,
-                                             uint32_t handle, size_t offset,
+RideHalError_e GL2DFlex::CreateGLInputImage( const RideHal_SharedBuffer_t *pBuffer,
                                              std::shared_ptr<GL_ImageInfo_t> &inputInfo )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    void *bufferAddr = pBuffer->data();
+    RideHal_ImageFormat_e format = pBuffer->imgProps.format;
+    uint32_t width = pBuffer->imgProps.width;
+    uint32_t height = pBuffer->imgProps.height;
+    uint32_t stride = pBuffer->imgProps.stride[0];
+    uint32_t handle = pBuffer->buffer.dmaHandle;
+    size_t offset = pBuffer->offset;
+    size_t size = pBuffer->size;
+
+#if !defined( __QNXNTO__ )
     struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
                                          GetGBMFormatType( format ) };
     inputInfo->bo =
@@ -940,6 +926,7 @@ RideHalError_e GL2DFlex::CreateGLInputImage( void *bufferAddr, RideHal_ImageForm
         ret = RIDEHAL_ERROR_FAIL;
         RIDEHAL_ERROR( "Failed to import gbm bo for input" );
     }
+#endif
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -960,7 +947,36 @@ RideHalError_e GL2DFlex::CreateGLInputImage( void *bufferAddr, RideHal_ImageForm
                 RIDEHAL_ERROR( "Failed to Create GL Pipeline" );
             }
         }
+#if defined( __QNXNTO__ )
+        EGLint eglImageAttribs[] = { EGL_WIDTH,
+                                     (EGLint) width,
+                                     EGL_HEIGHT,
+                                     (EGLint) height,
+                                     EGL_IMAGE_FORMAT_QCOM,
+                                     (EGLint) GetEGLFormatType( format ),
+#ifdef EGLIMAGE_WITH_UVA
+                                     EGL_IMAGE_EXT_BUFFER_BASE_ADDR_LOW_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) bufferAddr & 0xFFFFFFFF ),
+                                     EGL_IMAGE_EXT_BUFFER_BASE_ADDR_HIGH_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) bufferAddr >> 32 ),
+#else
+                                     EGL_IMAGE_EXT_BUFFER_DESCRIPTOR_LOW_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) handle & 0xFFFFFFFF ),
+                                     EGL_IMAGE_EXT_BUFFER_DESCRIPTOR_HIGH_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) handle >> 32 ),
+                                     EGL_IMAGE_EXT_BUFFER_MEMORY_TYPE_QCOM,
+                                     EGL_IMAGE_EXT_BUFFER_MEMORY_TYPE_ION_QCOM,
+#endif
+                                     EGL_IMAGE_EXT_BUFFER_STRIDE_QCOM,
+                                     (EGLint) stride,
+                                     EGL_IMAGE_EXT_BUFFER_SIZE_QCOM,
+                                     (EGLint) size,
+                                     EGL_NONE };
 
+        // Create EGLImage from PMEM with specified format
+        inputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_NEW_IMAGE_QCOM,
+                                              (EGLClientBuffer) 0, eglImageAttribs );
+#else
         int fd = gbm_bo_get_fd( inputInfo->bo );
         EGLint eglImageAttribs[] = { EGL_WIDTH,
                                      (EGLint) width,
@@ -977,6 +993,7 @@ RideHalError_e GL2DFlex::CreateGLInputImage( void *bufferAddr, RideHal_ImageForm
                                      EGL_NONE };
         inputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                               NULL, eglImageAttribs );
+#endif
         if ( nullptr == inputInfo->image )
         {
             ret = RIDEHAL_ERROR_FAIL;
@@ -1025,13 +1042,21 @@ RideHalError_e GL2DFlex::CreateGLInputImage( void *bufferAddr, RideHal_ImageForm
 }
 
 
-RideHalError_e GL2DFlex::CreateGLOutputImage( void *bufferAddr, RideHal_ImageFormat_e format,
-                                              uint32_t width, uint32_t height, uint32_t stride,
-                                              uint32_t handle, size_t offset,
+RideHalError_e GL2DFlex::CreateGLOutputImage( const RideHal_SharedBuffer_t *pBuffer,
                                               std::shared_ptr<GL_ImageInfo_t> &outputInfo )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
+    void *bufferAddr = pBuffer->data();
+    RideHal_ImageFormat_e format = pBuffer->imgProps.format;
+    uint32_t width = pBuffer->imgProps.width;
+    uint32_t height = pBuffer->imgProps.height;
+    uint32_t stride = pBuffer->imgProps.stride[0];
+    uint32_t handle = pBuffer->buffer.dmaHandle;
+    size_t offset = pBuffer->offset;
+    size_t size = pBuffer->size;
+
+#if !defined( __QNXNTO__ )
     struct gbm_import_fd_data fdData = { (int) handle, width, height, stride,
                                          GetGBMFormatType( format ) };
     outputInfo->bo =
@@ -1041,6 +1066,7 @@ RideHalError_e GL2DFlex::CreateGLOutputImage( void *bufferAddr, RideHal_ImageFor
         ret = RIDEHAL_ERROR_FAIL;
         RIDEHAL_ERROR( "Failed to import gbm bo for output" );
     }
+#endif
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
@@ -1061,7 +1087,36 @@ RideHalError_e GL2DFlex::CreateGLOutputImage( void *bufferAddr, RideHal_ImageFor
                 RIDEHAL_ERROR( "Failed to Create GL Pipeline" );
             }
         }
+#if defined( __QNXNTO__ )
+        EGLint eglImageAttribs[] = { EGL_WIDTH,
+                                     (EGLint) width,
+                                     EGL_HEIGHT,
+                                     (EGLint) height,
+                                     EGL_IMAGE_FORMAT_QCOM,
+                                     (EGLint) GetEGLFormatType( format ),
+#ifdef EGLIMAGE_WITH_UVA
+                                     EGL_IMAGE_EXT_BUFFER_BASE_ADDR_LOW_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) bufferAddr & 0xFFFFFFFF ),
+                                     EGL_IMAGE_EXT_BUFFER_BASE_ADDR_HIGH_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) bufferAddr >> 32 ),
+#else
+                                     EGL_IMAGE_EXT_BUFFER_DESCRIPTOR_LOW_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) handle & 0xFFFFFFFF ),
+                                     EGL_IMAGE_EXT_BUFFER_DESCRIPTOR_HIGH_QCOM,
+                                     (EGLint) ( (uint64_t) (uintptr_t) handle >> 32 ),
+                                     EGL_IMAGE_EXT_BUFFER_MEMORY_TYPE_QCOM,
+                                     EGL_IMAGE_EXT_BUFFER_MEMORY_TYPE_ION_QCOM,
+#endif
+                                     EGL_IMAGE_EXT_BUFFER_STRIDE_QCOM,
+                                     (EGLint) stride,
+                                     EGL_IMAGE_EXT_BUFFER_SIZE_QCOM,
+                                     (EGLint) size,
+                                     EGL_NONE };
 
+        // Create EGLImage from PMEM with specified format
+        outputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_NEW_IMAGE_QCOM,
+                                               (EGLClientBuffer) 0, eglImageAttribs );
+#else
         int fd = gbm_bo_get_fd( outputInfo->bo );
         EGLint eglImageAttribs[] = { EGL_WIDTH,
                                      (EGLint) width,
@@ -1079,6 +1134,7 @@ RideHalError_e GL2DFlex::CreateGLOutputImage( void *bufferAddr, RideHal_ImageFor
 
         outputInfo->image = eglCreateImageKHR( m_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                                NULL, eglImageAttribs );
+#endif
         if ( nullptr == outputInfo->image )
         {
             ret = RIDEHAL_ERROR_FAIL;
@@ -1318,6 +1374,15 @@ uint32_t GL2DFlex::GetEGLFormatType( RideHal_ImageFormat_e format )
     uint32_t eglFormat = (uint32_t) RIDEHAL_IMAGE_FORMAT_MAX;
     switch ( format )
     {
+#if defined( __QNXNTO__ )
+        case RIDEHAL_IMAGE_FORMAT_UYVY:
+            eglFormat = EGL_FORMAT_UYVY_QCOM;
+            break;
+        case RIDEHAL_IMAGE_FORMAT_RGB888:
+            eglFormat = EGL_FORMAT_RGB_888_QCOM;
+            break;
+
+#else
         case RIDEHAL_IMAGE_FORMAT_UYVY:
             eglFormat = DRM_FORMAT_UYVY;
             break;
@@ -1330,6 +1395,7 @@ uint32_t GL2DFlex::GetEGLFormatType( RideHal_ImageFormat_e format )
         case RIDEHAL_IMAGE_FORMAT_RGB888:
             eglFormat = DRM_FORMAT_RGB888;
             break;
+#endif
         default:
             RIDEHAL_ERROR( "Unsupported EGL image format" );
             break;
@@ -1338,7 +1404,7 @@ uint32_t GL2DFlex::GetEGLFormatType( RideHal_ImageFormat_e format )
     return eglFormat;
 }
 
-
+#if !defined( __QNXNTO__ )
 uint32_t GL2DFlex::GetGBMFormatType( RideHal_ImageFormat_e format )
 {
     uint32_t gbmFormat = (uint32_t) RIDEHAL_IMAGE_FORMAT_MAX;
@@ -1363,6 +1429,7 @@ uint32_t GL2DFlex::GetGBMFormatType( RideHal_ImageFormat_e format )
 
     return gbmFormat;
 }
+#endif
 
 
 inline RideHalError_e GL2DFlex::GLErrorCheck()
@@ -1381,4 +1448,3 @@ inline RideHalError_e GL2DFlex::GLErrorCheck()
 
 }   // namespace component
 }   // namespace ridehal
-

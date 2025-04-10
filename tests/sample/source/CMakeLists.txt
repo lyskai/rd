@@ -29,14 +29,11 @@ set( RIDEHAL_SAMPLE_SOURCES
     SampleDepthFromStereoViz.cpp
     SampleFrameSync.cpp
     SysTrace.cpp
+    SampleGL2DFlex.cpp
 )
 
 if( "${CMAKE_SYSTEM_NAME}" STREQUAL "QNX" )
     list( APPEND RIDEHAL_SAMPLE_SOURCES SampleC2C.cpp )
-endif()
-
-if( "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" )
-    list( APPEND RIDEHAL_SAMPLE_SOURCES SampleGL2DFlex.cpp )
 endif()
 
 set( RIDEHAL_SAMPLE_DEFINITIONS )
