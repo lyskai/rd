@@ -771,11 +771,18 @@ RideHalError_e Camera::Deinit()
         }
         else
         {
-            status = QCarCamRelease( m_QcarCamHndl );
-            if ( QCARCAM_RET_OK != status )
+	    if ( true == m_bReservedOK )
             {
-                RIDEHAL_ERROR( "QCarCamRelease failed %d", status );
-                ret = RIDEHAL_ERROR_FAIL;
+                status = QCarCamRelease( m_QcarCamHndl );
+                if ( QCARCAM_RET_OK != status )
+                {
+                    RIDEHAL_ERROR( "QCarCamRelease failed %d", status );
+                    ret = RIDEHAL_ERROR_FAIL;
+                }
+                else
+                {
+                    m_bReservedOK = false;
+                }
             }
 
             status = QCarCamClose( m_QcarCamHndl );

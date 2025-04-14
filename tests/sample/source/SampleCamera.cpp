@@ -18,9 +18,23 @@ void SampleCamera::FrameCallBack( CameraFrame_t *pFrame )
 {
     CameraFrame_t camFrame = *pFrame;
 
-    std::unique_lock<std::mutex> lck( m_lock );
-    m_camFrameQueue.push( camFrame );
-    m_condVar.notify_one();
+    if ( !m_stop )
+    {
+        std::unique_lock<std::mutex> lck( m_lock );
+        m_camFrameQueue.push( camFrame );
+        m_condVar.notify_one();
+    }
+    else
+    {
+        if ( false == m_camConfig.bRequestMode )
+        {
+            m_camera.ReleaseFrame( &camFrame );
+        }
+        else
+        {
+            m_camera.RequestFrame( &camFrame );
+        }
+    }
 }
 
 void SampleCamera::ProcessFrame( CameraFrame_t *pFrame )
@@ -328,19 +342,18 @@ RideHalError_e SampleCamera::Stop()
         m_thread.join();
     }
 
+    while ( !m_camFrameQueue.empty() )
+    {
+        std::unique_lock<std::mutex> lck( m_lock );
+        CameraFrame_t frame = m_camFrameQueue.front();
+        m_camFrameQueue.pop();
+        ProcessFrame( &frame );
+    }
+
     TRACE_BEGIN( SYSTRACE_TASK_STOP );
     ret = m_camera.Stop();
     TRACE_END( SYSTRACE_TASK_STOP );
     PROFILER_SHOW();
-
-    while ( !m_camFrameQueue.empty() )
-    {
-        CameraFrame_t frame;
-        std::unique_lock<std::mutex> lck( m_lock );
-        frame = m_camFrameQueue.front();
-        m_camFrameQueue.pop();
-        ProcessFrame( &frame );
-    }
 
     return ret;
 }
