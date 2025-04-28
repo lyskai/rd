@@ -60,7 +60,7 @@ RideHalError_e SampleIF::Init( std::string name )
     return ret;
 }
 
-RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
+RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor, int rsmPriority )
 {
     RideHalError_e ret = RIDEHAL_ERROR_NONE;
 
@@ -79,7 +79,7 @@ RideHalError_e SampleIF::Init( RideHal_ProcessorType_e processor )
         memset( &m_acquireCmdV2, 0, sizeof( m_acquireCmdV2 ) );
         m_acquireCmdV2.resource = (rsm_resource_group) processor;
         m_acquireCmdV2.priority = QUEUE_PRIORITY_DEFAULT;
-        m_acquireCmdV2.configure.priority = REQUEST_PRIORITY_DEFAULT;
+        m_acquireCmdV2.configure.priority = static_cast<rsm_request_priority>( rsmPriority );
         m_acquireCmdV2.duration_us = 0;
         m_acquireCmdV2.timeout_us = 1000000;
         int rc = rsm_register_v2( &m_handle );

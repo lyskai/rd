@@ -66,6 +66,7 @@ private:
 
     RideHal_SharedBuffer_t m_mapXBuffer[RIDEHAL_MAX_INPUTS];
     RideHal_SharedBuffer_t m_mapYBuffer[RIDEHAL_MAX_INPUTS];
+    int m_rsmPriority;
 };   // class SampleRemap
 
 }   // namespace sample

@@ -37,11 +37,17 @@ class SampleIF;
 typedef SampleIF *( *Sample_CreateFunction_t )();
 
 #define REGISTER_SAMPLE( name, class_name )                                                        \
-    static SampleIF *CreatSample##name() { return new class_name(); }                              \
+    static SampleIF *CreatSample##name()                                                           \
+    {                                                                                              \
+        return new class_name();                                                                   \
+    }                                                                                              \
     class Register##class_name                                                                     \
     {                                                                                              \
     public:                                                                                        \
-        Register##class_name() { SampleIF::RegisterSample( #name, CreatSample##name ); }           \
+        Register##class_name()                                                                     \
+        {                                                                                          \
+            SampleIF::RegisterSample( #name, CreatSample##name );                                  \
+        }                                                                                          \
     };                                                                                             \
     const Register##class_name g_register##name;
 
@@ -96,7 +102,7 @@ public:
 protected:
     RideHalError_e Init( std::string name );
 
-    RideHalError_e Init( RideHal_ProcessorType_e processor );
+    RideHalError_e Init( RideHal_ProcessorType_e processor, int rsmPriority = 0 );
     RideHalError_e Lock();
     RideHalError_e Unlock();
 

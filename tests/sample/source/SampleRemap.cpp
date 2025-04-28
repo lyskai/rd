@@ -241,6 +241,7 @@ RideHalError_e SampleRemap::ParseConfig( SampleConfig_t &config )
         ret = RIDEHAL_ERROR_BAD_ARGUMENTS;
     }
 
+    m_rsmPriority = Get( config, "rsm_priority", 0 );
     return ret;
 }
 
@@ -273,7 +274,7 @@ RideHalError_e SampleRemap::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = SampleIF::Init( m_config.processor );
+        ret = SampleIF::Init( m_config.processor, m_rsmPriority );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )

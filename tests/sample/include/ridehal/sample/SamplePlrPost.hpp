@@ -76,6 +76,7 @@ private:
     std::vector<uint32_t> m_indexs = { 3, 0, 1, 4, 2 };
 
     PostCenterPoint m_plrPost;
+    int m_rsmPriority;
 };   // class SamplePlrPost
 
 }   // namespace sample

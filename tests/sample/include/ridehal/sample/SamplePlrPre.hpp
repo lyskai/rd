@@ -64,6 +64,7 @@ private:
     DataPublisher<DataFrames_t> m_pub;
 
     Voxelization m_plrPre;
+    int m_rsmPriority;
 };   // class SamplePlrPre
 
 }   // namespace sample

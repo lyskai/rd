@@ -88,6 +88,7 @@ private:
     DataPublisher<ModelInOutInfo_t> m_modelInOutInfoPub;
 
     QnnRuntime m_qnn;
+    int m_rsmPriority;
 };   // class SampleQnn
 
 }   // namespace sample

@@ -123,6 +123,7 @@ RideHalError_e SampleQnn::ParseConfig( SampleConfig_t &config )
         m_config.pUdoPackages = &m_opPackagePaths[0];
     }
 
+    m_rsmPriority = Get( config, "rsm_priority", 0 );
     return ret;
 }
 
@@ -138,7 +139,7 @@ RideHalError_e SampleQnn::Init( std::string name, SampleConfig_t &config )
 
     if ( RIDEHAL_ERROR_NONE == ret )
     {
-        ret = SampleIF::Init( m_config.processorType );
+        ret = SampleIF::Init( m_config.processorType, m_rsmPriority );
     }
 
     if ( RIDEHAL_ERROR_NONE == ret )
